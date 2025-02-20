@@ -1,12 +1,15 @@
 # short
 
 - object.is_empty()
-- failing list test
-- object, array empty check >> NULL, NULL + BLANK, DEFAULT_DATA?
-- boundary enforcement list vs array
-- updated object test
+- remove superflous m8 is_empty() methods
+- remove list DEFAULT_DATA
+- array to validate read() size
+- check size validation works in object read()
 
 # medium
+
+- additional object checks
+- failing list test
 
 - fx enum
 - validation to include empty check?
