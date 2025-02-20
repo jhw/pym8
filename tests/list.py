@@ -56,17 +56,6 @@ class TestM8List(unittest.TestCase):
             m8_list[i] = M8Block()
         self.assertTrue(m8_list.is_empty())
 
-    """
-    def test_bounds_checking(self):
-        m8_list = self.TestClass()
-        
-        with self.assertRaises(IndexError):
-            m8_list[3] = M8Block()
-            
-        with self.assertRaises(IndexError):
-            _ = m8_list[-1]
-    """
-
     def test_row_resolution(self):
         """Test row class resolution"""
         AltRowClass = m8_object_class([

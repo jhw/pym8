@@ -9,10 +9,14 @@ class M8Array:
 
     @classmethod
     def read(cls, data):
+        required_length = cls.LENGTH * struct.calcsize(cls.TYPE)
+        if len(data) < required_length:
+            raise ValueError(f"Data too short: got {len(data)} bytes, need {required_length}")
+        
         instance = cls()
-        instance._data = bytearray(data)
+        instance._data = bytearray(data[:required_length])  # Only take the bytes we need
         return instance
-
+                
     def clone(self):
         return self.__class__.read(bytes(self._data))
 

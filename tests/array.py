@@ -94,5 +94,25 @@ class TestM8Array(unittest.TestCase):
         self.assertEqual(array1[0], 0xFF)
         self.assertEqual(array2[0], 0x00)
 
+    def test_size_validation(self):
+        """Test size validation in read()"""
+        # Our test array needs 3 bytes (length=3, fmt="B")
+        
+        # Test data too short
+        short_data = bytes([0xFF, 0xFF])  # Only 2 bytes
+        with self.assertRaises(ValueError) as ctx:
+            self.TestClass.read(short_data)
+        self.assertIn("Data too short", str(ctx.exception))
+    
+        # Test exact size works
+        exact_data = bytes([0xFF, 0xFF, 0xFF])
+        array = self.TestClass.read(exact_data)
+        self.assertEqual(len(array.as_list()), 3)
+    
+        # Test longer data works (extra bytes ignored)
+        long_data = bytes([0xFF, 0xFF, 0xFF, 0xFF])
+        array = self.TestClass.read(long_data)
+        self.assertEqual(len(array.as_list()), 3)
+
 if __name__ == '__main__':
     unittest.main()

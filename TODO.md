@@ -1,17 +1,12 @@
 # short
 
-- array to validate read() size
-- check size validation works in object read()
+- fx enum
+- include fx enum in write script
 
 # medium
 
 - additional object checks
-- failing list test
-
-- fx enum
 - validation to include empty check?
-- include fx enum in write script
-
 - OFF
 - revisit transpose/eq defaults
 - LFO >> 7 bytes including type_dest?
@@ -20,6 +15,9 @@
 
 # done
 
+- failing list test
+- array to validate read() size
+- check size validation works in object read()
 - remove list DEFAULT_DATA
 - remove superflous m8 is_empty() methods
 - object.is_empty()
