@@ -1,6 +1,5 @@
 # short
 
-- utils/bits tests
 - updated object test
 - array test 
 - list test
@@ -19,6 +18,7 @@
 
 # done
 
+- utils/bits tests
 - NULL (0x00) and BLANK (0xFF)
 - github repo
 - update dump_snapshot for new files
