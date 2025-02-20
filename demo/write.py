@@ -1,0 +1,66 @@
+import os
+from m8.core import M8ValidationError
+from m8.project import M8Project
+from m8.instruments import M8MacroSynth
+from m8.modulators import M8AHDEnvelope
+from m8.phrases import M8Phrase, M8PhraseStep, M8FXTuples, M8FXTuple
+from m8.chains import M8Chain, M8ChainStep
+from m8.song import M8SongRow
+
+try:
+    # Load the project
+    project = M8Project.read_from_file("DEFAULT-4-0-1.m8s")
+    
+    # Set project metadata
+    project.metadata.directory = "/Songs/woldo/"
+    project.metadata.name = "HELLO_MACRO2"
+    
+    # Create and assign macro synth to first slot
+    macro_synth = M8MacroSynth(
+        mixer_delay = 0xC0
+    )
+    project.instruments[0] = macro_synth
+    
+    # Create and configure AHD envelope modulator with kwargs
+    ahd_mod = M8AHDEnvelope(
+        destination=0x01,
+        decay=0x40
+    )
+    macro_synth.modulators[0] = ahd_mod
+    
+    # Create phrase and configure first step with kwargs
+    phrase = M8Phrase()
+    step = M8PhraseStep(
+        note=0x40,
+        velocity=0x40,
+        instrument=0x00
+    )
+    for i in range(4):
+        phrase[i*4] = step.clone()
+        
+    # Assign phrase to first slot
+    project.phrases[0] = phrase
+    
+    # Create chain and set first step to use phrase 0
+    chain = M8Chain()
+    chain_step = M8ChainStep(
+        phrase=0x00,
+        transpose=0x00
+    )
+    chain[0] = chain_step
+
+    # Assign chain to first slot
+    project.chains[0] = chain
+    
+    # Set the first element of the first row in the song to chain 0
+    project.song[0][0] = 0x00
+
+    # Validate project before saving
+    project.validate()
+    
+    # Save project
+    os.makedirs('tmp', exist_ok=True)
+    project.write_to_file("tmp/HELLO_MACRO2.m8s")
+
+except M8ValidationError as e:
+    print(f"Project validation failed: {str(e)}")
