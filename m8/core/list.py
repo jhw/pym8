@@ -1,4 +1,4 @@
-from m8 import M8Block
+from m8 import M8Block, NULL
 from m8.core import m8_class_name
 
 import struct
@@ -49,7 +49,7 @@ class M8List(list):
                         return False
                 else:
                     # If no DEFAULT_DATA, check if write() output contains any non-zero bytes
-                    if any(b != 0x00 for b in row.write()):
+                    if any(b != NULL for b in row.write()):
                         return False
         return True
     
@@ -62,7 +62,7 @@ class M8List(list):
 def m8_list_class(row_size, row_count, row_class=M8Block, row_class_resolver=None):
     name = m8_class_name("M8List")
     block_sz = row_size * row_count
-    default_data = bytes([0x00] * block_sz)
+    default_data = bytes([NULL] * block_sz)
     attributes = {
         "ROW_SIZE": row_size,
         "ROW_COUNT": row_count,

@@ -1,4 +1,4 @@
-from m8 import M8Block
+from m8 import M8Block, NULL
 from m8.core import m8_class_name
 from m8.utils.bits import split_byte, join_nibbles
 
@@ -218,7 +218,7 @@ def expand_field_map(field_map):
         }
     return expanded
 
-def m8_object_class(field_map, block_sz=None, block_byte=0x00, block_head_byte=0x00):
+def m8_object_class(field_map, block_sz=None, block_byte=NULL, block_head_byte=NULL):
     name = m8_class_name("M8Object")
     field_map = expand_field_map(field_map)  # Convert list to dictionary
 

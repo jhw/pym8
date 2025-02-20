@@ -1,4 +1,4 @@
-from m8 import M8ValidationError
+from m8 import M8ValidationError, NULL, BLANK
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
 
@@ -9,8 +9,8 @@ CHAIN_COUNT = 255
 
 M8ChainStepBase = m8_object_class(
     field_map=[
-        ("phrase", 0xFF, 0, 1, "UINT8"),
-        ("transpose", 0x00, 1, 2, "UINT8")
+        ("phrase", BLANK, 0, 1, "UINT8"),
+        ("transpose", NULL, 1, 2, "UINT8")
     ]
 )
 
@@ -20,8 +20,8 @@ class M8ChainStep(M8ChainStepBase):
         super().__init__(**kwargs)
 
     def is_empty(self):
-        return (self.phrase == 0xFF and
-                self.transpose == 0x00)
+        return (self.phrase == BLANK and
+                self.transpose == NULL)
 
 M8ChainBase = m8_list_class(
     row_class=M8ChainStep,
@@ -37,7 +37,7 @@ class M8Chain(M8ChainBase):
     def validate_phrases(self, phrases):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
-                if step.phrase != 0xFF and (
+                if step.phrase != BLANK and (
                     step.phrase >= len(phrases) or 
                     phrases[step.phrase].is_empty()
                 ):

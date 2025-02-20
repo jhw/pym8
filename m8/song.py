@@ -1,4 +1,4 @@
-from m8 import M8ValidationError
+from m8 import M8ValidationError, NULL, BLANK
 from m8.core.array import m8_array_class
 from m8.core.list import m8_list_class
 
@@ -6,7 +6,7 @@ COL_COUNT = 8
 ROW_COUNT = 255
 
 M8SongRowBase = m8_array_class(
-    default=0xFF,
+    default=BLANK,
     length=COL_COUNT,
     fmt="B"
 )
@@ -20,7 +20,7 @@ class M8SongRow(M8SongRowBase):
         if not self.is_empty():
             for col_idx in range(COL_COUNT):
                 chain_idx = self[col_idx]
-                if chain_idx != 0xFF and (
+                if chain_idx != BLANK and (
                     chain_idx >= len(chains) or 
                     chains[chain_idx].is_empty()
                 ):
@@ -30,7 +30,7 @@ class M8SongRow(M8SongRowBase):
                     )
 
     def as_list(self):
-        return [(i, v) for i, v in enumerate(self) if v != 0xFF] 
+        return [(i, v) for i, v in enumerate(self) if v != BLANK] 
 
 M8SongMatrixBase = m8_list_class(
     row_class=M8SongRow,

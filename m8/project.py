@@ -1,3 +1,4 @@
+from m8 import NULL
 from m8.core.object import m8_object_class
 from m8.utils.bits import split_byte, join_nibbles
 
@@ -25,8 +26,8 @@ OFFSETS = {
 
 M8VersionBase = m8_object_class(
     field_map=[
-        ("minor|patch", 0x00, 0, 1, "UINT4_2"), 
-        ("_|major", 0x00, 1, 2, "UINT4_2")
+        ("minor|patch", NULL, 0, 1, "UINT4_2"), 
+        ("_|major", NULL, 1, 2, "UINT4_2")
     ]
 )
 

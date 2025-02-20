@@ -1,7 +1,5 @@
 # short
 
-- NULL (0x00) and BLANK (0xFF)
-- snapshot generator to ask about core/m8/tests/demos
 - utils/bits tests >> reduce size of object test?
 - extended object tests
 - array, list tests
@@ -9,9 +7,9 @@
 # medium
 
 - OFF
+- snapshot generator to ask about core/m8/tests/demos
 - demo/write to include fx in phrase
 - revisit transpose/eq defaults
-- m8i files
 - LFO >> 7 bytes including type_dest?
 - demo/write enums
 
@@ -19,6 +17,7 @@
 
 # done
 
+- NULL (0x00) and BLANK (0xFF)
 - github repo
 - update dump_snapshot for new files
 - move validation error to project

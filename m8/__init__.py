@@ -1,3 +1,5 @@
+NULL, BLANK = 0x00, 0xFF
+
 class M8ValidationError(Exception):
     pass
 
@@ -12,7 +14,7 @@ class M8Block:
         return instance
 
     def is_empty(self):
-        return all(b == 0x00 for b in self.data)
+        return all(b == NULL for b in self.data)
     
     def write(self):
         return self.data

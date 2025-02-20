@@ -1,4 +1,4 @@
-from m8 import M8Block
+from m8 import M8Block, NULL
 from m8.core import m8_class_name
 
 import struct
@@ -36,7 +36,7 @@ class M8Array:
     def as_list(self):
         return list(struct.unpack(self.TYPE * self.LENGTH, self._data))
 
-def m8_array_class(length, fmt, default=0x00):
+def m8_array_class(length, fmt, default=NULL):
     name = m8_class_name("M8Array")
     block_sz = length * struct.calcsize(fmt)
     default_data = bytes([default] * block_sz)

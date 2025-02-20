@@ -1,4 +1,4 @@
-from m8 import M8ValidationError, M8Block
+from m8 import M8ValidationError, M8Block, NULL, BLANK
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
 
@@ -11,8 +11,8 @@ PHRASE_COUNT = 255
 
 M8FXTupleBase = m8_object_class(
     field_map=[
-        ("key", 0xFF, 0, 1, "UINT8"),
-        ("value", 0x00, 1, 2, "UINT8")
+        ("key", BLANK, 0, 1, "UINT8"),
+        ("value", NULL, 1, 2, "UINT8")
     ]
 )
 
@@ -22,7 +22,7 @@ class M8FXTuple(M8FXTupleBase):
         super().__init__(**kwargs)
 
     def is_empty(self):
-        return self.key == 0xFF
+        return self.key == BLANK
 
 M8FXTuplesBase = m8_list_class(
     row_class=M8FXTuple,
@@ -37,9 +37,9 @@ class M8FXTuples(M8FXTuplesBase):
 
 M8PhraseStepBase = m8_object_class(
     field_map=[
-        ("note", 0xFF, 0, 1, "UINT8"),
-        ("velocity", 0xFF, 1, 2, "UINT8"),
-        ("instrument", 0xFF, 2, 3, "UINT8")
+        ("note", BLANK, 0, 1, "UINT8"),
+        ("velocity", BLANK, 1, 2, "UINT8"),
+        ("instrument", BLANK, 2, 3, "UINT8")
     ]
 )
 
@@ -63,9 +63,9 @@ class M8PhraseStep(M8PhraseStepBase):
         return instance
 
     def is_empty(self):
-        return (self.note == 0xFF and
-                self.velocity == 0xFF and
-                self.instrument == 0xFF and
+        return (self.note == BLANK and
+                self.velocity == BLANK and
+                self.instrument == BLANK and
                 self.fx.is_empty())
 
     def as_dict(self):
@@ -92,7 +92,7 @@ class M8Phrase(M8PhraseBase):
     def validate_instruments(self, instruments):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
-                if step.instrument != 0xFF and (
+                if step.instrument != BLANK and (
                     step.instrument >= len(instruments) or
                     isinstance(instruments[step.instrument], M8Block)
                 ):

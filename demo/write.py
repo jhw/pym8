@@ -1,5 +1,5 @@
 import os
-from m8 import M8ValidationError
+from m8 import M8ValidationError, NULL
 from m8.project import M8Project
 from m8.instruments import M8MacroSynth
 from m8.modulators import M8AHDEnvelope
@@ -33,7 +33,7 @@ try:
     step = M8PhraseStep(
         note=0x40,
         velocity=0x40,
-        instrument=0x00
+        instrument=NULL
     )
     for i in range(4):
         phrase[i*4] = step.clone()
@@ -44,8 +44,8 @@ try:
     # Create chain and set first step to use phrase 0
     chain = M8Chain()
     chain_step = M8ChainStep(
-        phrase=0x00,
-        transpose=0x00
+        phrase=NULL,
+        transpose=NULL
     )
     chain[0] = chain_step
 
@@ -53,7 +53,7 @@ try:
     project.chains[0] = chain
     
     # Set the first element of the first row in the song to chain 0
-    project.song[0][0] = 0x00
+    project.song[0][0] = NULL
 
     # Validate project before saving
     project.validate()
