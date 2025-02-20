@@ -2,8 +2,6 @@
 
 A Python package for the parsing of Dirtywave M8 files
 
-https://dirtywave.com/
-
 # Why?
 
 Because whilst the M8 is amazing, it doesn't support every possible workflow use case
@@ -16,12 +14,14 @@ This is a lot easier via scripting as opposed to copy/paste
 
 ## M8
 
+- https://dirtywave.com/
 - https://github.com/AlexCharlton/m8-files
 - https://github.com/Twinside/m8-files
 - https://github.com/whitlockjc/m8-js
 
 ## Sunvox
 
+- https://warmplace.ru/soft/sunvox/
 - https://github.com/metrasynth/radiant-voices
 - https://github.com/jhw/salient-voices
 
