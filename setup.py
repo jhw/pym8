@@ -71,7 +71,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     # packages=setuptools.find_packages(),
-    packages=filter_packages("sv"),
+    packages=filter_packages("pym8"),
     install_requires=requirements,
     # - https://stackoverflow.com/a/57932258/124179
     setup_requires=['setuptools_scm'],
