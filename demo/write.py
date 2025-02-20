@@ -9,7 +9,7 @@ from m8.song import M8SongRow
 
 try:
     # Load the project
-    project = M8Project.read_from_file("DEFAULT-4-0-1.m8s")
+    project = M8Project.read_from_file("templates/DEFAULT-4-0-1.m8s")
     
     # Set project metadata
     project.metadata.directory = "/Songs/woldo/"
