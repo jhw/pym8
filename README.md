@@ -21,7 +21,10 @@ This is much simplified if you can script up said variations and not have to man
 
 ## Sunvox
 
+I often think of Sunvox as a precursor to the M8 - single founder (@nightradio), tracker- based, great sounding engine
+
 - https://warmplace.ru/soft/sunvox/
+- https://www.youtube.com/watch?v=mEdXXKk1hRI
 - https://github.com/metrasynth/radiant-voices
 - https://github.com/jhw/salient-voices
 
