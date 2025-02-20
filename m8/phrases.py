@@ -21,9 +21,6 @@ class M8FXTuple(M8FXTupleBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def is_empty(self):
-        return self.key == BLANK
-
 M8FXTuplesBase = m8_list_class(
     row_class=M8FXTuple,
     row_size=FX_BLOCK_SIZE,

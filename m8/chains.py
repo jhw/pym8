@@ -19,10 +19,6 @@ class M8ChainStep(M8ChainStepBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def is_empty(self):
-        return (self.phrase == BLANK and
-                self.transpose == NULL)
-
 M8ChainBase = m8_list_class(
     row_class=M8ChainStep,
     row_size=STEP_BLOCK_SIZE,

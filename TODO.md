@@ -1,6 +1,5 @@
 # short
 
-- remove superflous m8 is_empty() methods
 - remove list DEFAULT_DATA
 - array to validate read() size
 - check size validation works in object read()
@@ -22,6 +21,7 @@
 
 # done
 
+- remove superflous m8 is_empty() methods
 - object.is_empty()
 - snapshot generator to ask about core/m8/tests/demos
 - list test
