@@ -42,15 +42,6 @@ class M8List(list):
             if hasattr(row, 'is_empty'):
                 if not row.is_empty():
                     return False
-            else:
-                # Check against default data for the row class
-                if hasattr(row, 'DEFAULT_DATA'):
-                    if row.write() != row.DEFAULT_DATA:
-                        return False
-                else:
-                    # If no DEFAULT_DATA, check if write() output contains any non-zero bytes
-                    if any(b != NULL for b in row.write()):
-                        return False
         return True
     
     def as_list(self):
@@ -61,12 +52,9 @@ class M8List(list):
 
 def m8_list_class(row_size, row_count, row_class=M8Block, row_class_resolver=None):
     name = m8_class_name("M8List")
-    block_sz = row_size * row_count
-    default_data = bytes([NULL] * block_sz)
     attributes = {
         "ROW_SIZE": row_size,
         "ROW_COUNT": row_count,
-        "DEFAULT_DATA": default_data,
         "ROW_CLASS": row_class,
     }
 
