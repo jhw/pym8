@@ -6,6 +6,8 @@ from m8.instruments import M8Instruments
 from m8.phrases import M8Phrases
 from m8.song import M8SongMatrix
 
+# https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
+
 OFFSETS = {
     "version": 0x0A,
     "metadata": 0x0E,

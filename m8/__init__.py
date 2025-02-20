@@ -1,0 +1,19 @@
+class M8ValidationError(Exception):
+    pass
+
+class M8Block:
+    def __init__(self):
+        self.data = bytearray()
+
+    @classmethod
+    def read(cls, data):
+        instance = cls()
+        instance.data = data
+        return instance
+
+    def is_empty(self):
+        return all(b == 0x00 for b in self.data)
+    
+    def write(self):
+        return self.data
+

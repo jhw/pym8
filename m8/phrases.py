@@ -1,4 +1,4 @@
-from m8.core import M8ValidationError, M8Block
+from m8 import M8ValidationError, M8Block
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
 

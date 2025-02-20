@@ -1,5 +1,5 @@
 import os
-from m8.core import M8ValidationError
+from m8 import M8ValidationError
 from m8.project import M8Project
 from m8.instruments import M8MacroSynth
 from m8.modulators import M8AHDEnvelope

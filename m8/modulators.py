@@ -1,4 +1,4 @@
-from m8.core import M8Block
+from m8 import M8Block
 from m8.utils.bits import split_byte
 from m8.core.object import m8_object_class
 from m8.core.list import m8_list_class

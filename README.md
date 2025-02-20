@@ -16,3 +16,7 @@ https://github.com/whitlockjc/m8-js
 
 https://github.com/metrasynth/radiant-voices
 https://github.com/jhw/salient-voices
+
+# Caveats (20/02/2025)
+
+- only supports M8 format v4.0.1

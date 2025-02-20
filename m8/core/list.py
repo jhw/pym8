@@ -1,4 +1,5 @@
-from m8.core import M8Block, m8_class_name
+from m8 import M8Block
+from m8.core import m8_class_name
 
 import struct
 

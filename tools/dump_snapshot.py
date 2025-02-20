@@ -1,6 +1,8 @@
 import os
 
-def generate_snapshot(file_list = ["m8/core/__init__.py",
+def generate_snapshot(file_list = ["m8/__init__.py",
+                                   "m8/utils/bits.py",
+                                   "m8/core/__init__.py",
                                    "m8/core/array.py",
                                    "m8/core/list.py",
                                    "m8/core/object.py",
