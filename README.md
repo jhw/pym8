@@ -1,6 +1,6 @@
 # Overview
 
-A python package for reading and writing Dirtywave M8 files
+A python package for the parsing of Dirtywave M8 files
 
 https://dirtywave.com/
 

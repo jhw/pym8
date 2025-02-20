@@ -1,4 +1,4 @@
-## enums 
+# enums 
 
 - phrase note 
 - phrase FX 
@@ -9,19 +9,19 @@
 - amp limit types 
 - modulation targets
 
-## instruments
+# instruments
 
 - wavsynth
 - sampler
 - fm
 - hypersynth
 
-## modulatoes
+# modulators
 
 - lfo
 - sidechain trigger
 
-## features
+# features
 
 - tables
 - eq

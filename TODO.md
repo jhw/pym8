@@ -1,19 +1,26 @@
 # short
 
-- single test script
-- setup.py
+- demo/write to re-use input file name
+- move bitwise stuff to utils
+- move validation error to project
+
 - github repo
+
+- demo/write to include fx in phrase
+- extended object tests
+- array, list tests
 
 # medium
 
-- more tests
-- demo/write to re-use input file name and log
 - revisit transpose/eq defaults
-- ability to read/write instruments
+- instrument file handling capability
 - LFO >> 7 bytes including type_dest?
 - demo/write enums
 
 # thoughts
 
 # done
+
+- setup.py
+- single test script
 
