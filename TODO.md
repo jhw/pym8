@@ -1,6 +1,5 @@
 # short
 
-- demo/write to re-use input file name
 - move bitwise stuff to utils
 - move validation error to project
 
