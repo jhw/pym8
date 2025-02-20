@@ -1,6 +1,6 @@
 # short
 
-- instrument registry
+- abstraction of macrosynth from instruments
 
 # medium
 
