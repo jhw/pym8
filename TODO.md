@@ -2,14 +2,15 @@
 
 - move bitwise stuff to utils
 - move validation error to project
-
 - github repo
+
+# medium
 
 - demo/write to include fx in phrase
 - extended object tests
 - array, list tests
 
-# medium
+- snapshot generator to ask about core/m8/tests/demos
 
 - revisit transpose/eq defaults
 - instrument file handling capability
