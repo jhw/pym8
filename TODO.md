@@ -1,9 +1,11 @@
 # short
 
-- fx enum
-- include fx enum in write script
+- instrument registry
 
 # medium
+
+- fx enum
+- include fx enum in write script
 
 - additional object checks
 - validation to include empty check?
