@@ -1,5 +1,5 @@
 from m8.core.object import m8_object_class
-from m8.core import split_byte, join_nibbles
+from m8.utils.bits import split_byte, join_nibbles
 
 from m8.chains import M8Chains
 from m8.instruments import M8Instruments

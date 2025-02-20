@@ -1,7 +1,8 @@
 # short
 
-- move bitwise stuff to utils
 - move validation error to project
+- move M8 block to root
+- update dump_snapshot for new files
 - github repo
 
 # medium
@@ -21,6 +22,7 @@
 
 # done
 
+- move bitwise stuff to utils
 - setup.py
 - single test script
 
