@@ -61,7 +61,7 @@ setuptools.setup(
     version="0.1.0",
     author="jhw",
     author_email="justin.worrall@gmail.com",
-    description="A python package for the parsing of Dirtywave M8 files",
+    description="A Python package for the parsing of Dirtywave M8 files",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/jhw/pym8",

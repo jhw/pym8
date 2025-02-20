@@ -1,8 +1,16 @@
 # Overview
 
-A python package for the parsing of Dirtywave M8 files
+A Python package for the parsing of Dirtywave M8 files
 
 https://dirtywave.com/
+
+# Why?
+
+Because whilst the M8 is amazing, it doesn't support every possible workflow use case
+
+In particular I like to get started by generating lots of different variations of particular patterns, listening and seeing which ones I like, and iterating from there
+
+This is a lot easier via scripting as opposed to copy/paste
 
 # Inspiration
 
