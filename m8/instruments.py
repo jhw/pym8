@@ -85,14 +85,10 @@ def instrument_row_class(data):
     instr_type = struct.unpack('B', data[:1])[0]
     return M8MacroSynth if instr_type == M8MacroSynth.TYPE else M8Block
 
-M8InstrumentsBase = m8_list_class(
+M8Instruments = m8_list_class(
     row_size=BLOCK_SIZE,
     row_count=BLOCK_COUNT,
     row_class_resolver=instrument_row_class
 )
 
-class M8Instruments(M8InstrumentsBase):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 

@@ -1,5 +1,3 @@
-
-
 # instruments
 
 - wavsynth

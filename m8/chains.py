@@ -7,17 +7,12 @@ STEP_COUNT = 16
 CHAIN_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
 CHAIN_COUNT = 255
 
-M8ChainStepBase = m8_object_class(
+M8ChainStep = m8_object_class(
     field_map=[
         ("phrase", BLANK, 0, 1, "UINT8"),
         ("transpose", NULL, 1, 2, "UINT8")
     ]
 )
-
-class M8ChainStep(M8ChainStepBase):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
 M8ChainBase = m8_list_class(
     row_class=M8ChainStep,

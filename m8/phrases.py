@@ -9,28 +9,18 @@ STEP_COUNT = 16
 PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
 PHRASE_COUNT = 255
 
-M8FXTupleBase = m8_object_class(
+M8FXTuple = m8_object_class(
     field_map=[
         ("key", BLANK, 0, 1, "UINT8"),
         ("value", NULL, 1, 2, "UINT8")
     ]
 )
 
-class M8FXTuple(M8FXTupleBase):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-M8FXTuplesBase = m8_list_class(
+M8FXTuples = m8_list_class(
     row_class=M8FXTuple,
     row_size=FX_BLOCK_SIZE,
     row_count=FX_BLOCK_COUNT
 )
-
-class M8FXTuples(M8FXTuplesBase):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
 M8PhraseStepBase = m8_object_class(
     field_map=[

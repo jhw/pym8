@@ -40,14 +40,10 @@ def modulator_row_class(data):
     else:
         return M8Block
 
-M8ModulatorsBase = m8_list_class(
+M8Modulators = m8_list_class(
     row_size=BLOCK_SIZE,
     row_count=BLOCK_COUNT,
     row_class_resolver=modulator_row_class
 )
 
-class M8Modulators(M8ModulatorsBase):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
