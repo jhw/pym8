@@ -1,6 +1,6 @@
 # short
 
-- abstraction of macrosynth from instruments
+- abstraction of macrosynth from instruments >> eliminate TYPE?
 
 # medium
 
