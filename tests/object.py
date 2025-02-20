@@ -184,5 +184,39 @@ class TestM8Object(unittest.TestCase):
         with self.assertRaises(AttributeError):
             obj = self.TestClass(invalid_field=123)
 
+    def test_is_empty(self):
+        """Test is_empty() functionality"""
+        # Test with default values
+        obj = self.TestClass()
+        self.assertTrue(obj.is_empty(), "New object should be empty")
+
+        # Test with modified values
+        obj.single_byte = 0x43  # Default is 0x42
+        self.assertFalse(obj.is_empty(), "Object with modified single_byte should not be empty")
+        obj.single_byte = 0x42  # Reset to default
+
+        obj.upper = 0x2  # Default is 0x1
+        self.assertFalse(obj.is_empty(), "Object with modified upper nibble should not be empty")
+        obj.upper = 0x1  # Reset to default
+
+        obj.lower = 0x3  # Default is 0x2
+        self.assertFalse(obj.is_empty(), "Object with modified lower nibble should not be empty")
+        obj.lower = 0x2  # Reset to default
+
+        obj.floating = 1.6  # Default is 1.5
+        self.assertFalse(obj.is_empty(), "Object with modified float should not be empty")
+        obj.floating = 1.5  # Reset to default
+
+        obj.text = "TEMP"  # Default is "TEST"
+        self.assertFalse(obj.is_empty(), "Object with modified text should not be empty")
+        obj.text = "TEST"  # Reset to default
+
+        # Verify resetting all values back to default results in empty
+        self.assertTrue(obj.is_empty(), "Object with all default values should be empty")
+
+        # Test with String padding spaces
+        obj.text = "TEST  "  # Default "TEST" with extra spaces
+        self.assertTrue(obj.is_empty(), "Object with space-padded default text should be empty")
+
 if __name__ == '__main__':
     unittest.main()

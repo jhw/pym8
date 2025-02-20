@@ -201,7 +201,36 @@ class M8Object:
                 result[field_name] = self.get_int(field_name)
                 
         return result
-            
+
+    def is_empty(self):
+        """Return True if all fields match their default values"""
+        for field_name, field in self.FIELD_MAP.items():
+            if field["format"] == "UINT4_2":
+                # For UINT4_2, check both nibbles against defaults
+                names = field_name.split("|")
+                default = field.get("default", 0)
+                default_upper, default_lower = split_byte(default)
+                
+                if names[0] != "_" and self.get_int(names[0]) != default_upper:
+                    return False
+                if names[1] != "_" and self.get_int(names[1]) != default_lower:
+                    return False
+            else:
+                # For other types, compare current value with default
+                default = field.get("default", None)
+                if default is not None:
+                    if field["format"] == "STRING":
+                        current = self.get_string(field_name).rstrip()
+                        if current != str(default).rstrip():
+                            return False
+                    elif field["format"] == "FLOAT32":
+                        if not abs(self.get_float(field_name) - float(default)) < 1e-6:
+                            return False
+                    else:  # UINT8
+                        if self.get_int(field_name) != int(default):
+                            return False
+        return True
+
     def write(self):
         return bytes(self._data)
 
