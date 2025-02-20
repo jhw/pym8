@@ -1,11 +1,12 @@
 # short
 
-- list test
 - snapshot generator to ask about core/m8/tests/demos
 
 # medium
 
+- failing list test
 - object, array empty check >> NULL, NULL + BLANK, DEFAULT_DATA?
+- boundary enforcement list vs array
 - updated object test
 
 - fx enum
@@ -19,6 +20,7 @@
 
 # done
 
+- list test
 - utils/bits tests
 - NULL (0x00) and BLANK (0xFF)
 - github repo
