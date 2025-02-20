@@ -1,17 +1,19 @@
 # short
 
-- utils/bits tests >> reduce size of object test?
-- extended object tests
-- array, list tests
+- utils/bits tests
+- updated object test
+- array test 
+- list test
+- snapshot generator to ask about core/m8/tests/demos
 
 # medium
 
+- fx enum
+- include fx enum in write script
+
 - OFF
-- snapshot generator to ask about core/m8/tests/demos
-- demo/write to include fx in phrase
 - revisit transpose/eq defaults
 - LFO >> 7 bytes including type_dest?
-- demo/write enums
 
 # thoughts
 
