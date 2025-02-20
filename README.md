@@ -27,4 +27,5 @@ This is much simplified if you can script up said variations and not have to man
 
 # Caveats
 
-- [20/02/2025] only supports M8 format v4.0.1
+- [20/02/2025] song, chain, phrase, instrument [Macrosynth], modulators [ADSR, AHD] only
+- [20/02/2025] M8 format v4.0.1 only
