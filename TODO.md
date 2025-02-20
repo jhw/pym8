@@ -1,11 +1,12 @@
 # short
 
-- updated object test
-- array test 
 - list test
 - snapshot generator to ask about core/m8/tests/demos
 
 # medium
+
+- object, array empty check >> NULL, NULL + BLANK, DEFAULT_DATA?
+- updated object test
 
 - fx enum
 - include fx enum in write script
