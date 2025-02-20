@@ -16,14 +16,14 @@ This is a lot easier via scripting as opposed to copy/paste
 
 ## M8
 
-https://github.com/AlexCharlton/m8-files
-https://github.com/Twinside/m8-files
-https://github.com/whitlockjc/m8-js
+- https://github.com/AlexCharlton/m8-files
+- https://github.com/Twinside/m8-files
+- https://github.com/whitlockjc/m8-js
 
 ## Sunvox
 
-https://github.com/metrasynth/radiant-voices
-https://github.com/jhw/salient-voices
+- https://github.com/metrasynth/radiant-voices
+- https://github.com/jhw/salient-voices
 
 # Caveats (20/02/2025)
 
