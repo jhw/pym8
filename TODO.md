@@ -1,5 +1,6 @@
 # short
 
+- object.is_empty()
 - failing list test
 - object, array empty check >> NULL, NULL + BLANK, DEFAULT_DATA?
 - boundary enforcement list vs array
