@@ -55,6 +55,27 @@ class M8PhraseStep(M8PhraseStepBase):
                 self.instrument == BLANK and
                 self.fx.is_empty())
 
+    @property
+    def available_slot(self):
+        for slot_idx, fx in enumerate(self.fx):
+            if fx.is_empty() or (fx.key == BLANK):
+                return slot_idx
+        return None
+    
+    def add_fx(self, key, value):
+        slot = self.available_slot
+        if slot is None:
+            raise M8IndexError("No empty FX slots available in this step")
+            
+        self.fx[slot] = M8FXTuple(key=key, value=value)
+        return slot
+        
+    def set_fx(self, key, value, slot):
+        if not (0 <= slot < FX_BLOCK_COUNT):
+            raise M8IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
+            
+        self.fx[slot] = M8FXTuple(key=key, value=value)    
+
     def as_dict(self):
         base_dict = super().as_dict()
         base_dict["fx"] = [fx.as_dict() for fx in self.fx if not fx.is_empty()]
@@ -64,7 +85,7 @@ class M8PhraseStep(M8PhraseStepBase):
         buffer = bytearray(super().write())
         buffer.extend(self.fx.write())
         return bytes(buffer)
-    
+        
 M8PhraseBase = m8_list_class(
     row_class=M8PhraseStep,
     row_size=STEP_BLOCK_SIZE,

@@ -3,7 +3,7 @@ from m8 import M8ValidationError, NULL
 from m8.project import M8Project
 from m8.instruments.macrosynth import M8MacroSynth
 from m8.modulators import M8AHDEnvelope
-from m8.phrases import M8Phrase, M8PhraseStep, M8FXTuples, M8FXTuple
+from m8.phrases import M8Phrase, M8PhraseStep
 from m8.chains import M8Chain, M8ChainStep
 from m8.song import M8SongRow
 
@@ -28,10 +28,10 @@ try:
     )
     macro_synth.modulators[0] = ahd_mod
     
-    # Create phrase and configure first step with kwargs
+    # Create phrase
     phrase = M8Phrase()
     
-    # Create a step with note properties and FX command
+    # Create steps with note properties and FX command
     for i in range(4):
         step = M8PhraseStep(
             note=0x40,
@@ -39,10 +39,9 @@ try:
             instrument=0  # Set to use the first instrument (our macro synth)
         )
         
-        # Add delay volume FX to the step
-        # We'll use the first FX slot for this
-        delay_fx = M8FXTuple(key=0x2B, value=0x80)  # volume delay?
-        step.fx[0] = delay_fx
+        # Add delay volume FX to the step using our new API
+        # No need to create FX tuple directly or specify slot
+        step.add_fx(key=0x2B, value=0x80)  # volume delay
         
         # Assign step to every 4th position
         phrase[i*4] = step

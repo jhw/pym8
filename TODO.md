@@ -1,6 +1,5 @@
 # short [01-extended-api]
 
-- phrase add/set fx
 - instrument add/set modulator
 - project add/set instrument
 - project add/set phrase
@@ -22,6 +21,7 @@
 
 # done
 
+- phrase add/set fx
 - M8IndexError
 - notes on enums
 - LFO >> 7 bytes including type_dest?
