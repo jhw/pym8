@@ -1,6 +1,5 @@
 # short [01-extended-api]
 
-- notes on enums
 - M8IndexError
 - phrase add/set fx
 - instrument add/set modulator
@@ -22,6 +21,7 @@
 
 # done
 
+- notes on enums
 - LFO >> 7 bytes including type_dest?
 - create project test from demos
 - fx enum
