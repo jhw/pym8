@@ -31,8 +31,7 @@ M8ADSREnvelope = m8_object_class(
 
 def modulator_row_class(data):
     first_byte = struct.unpack("B", data[:1])[0]
-    mod_type, _ = split_byte(first_byte)  # Extract type from upper nibble, ignore destination
-    
+    mod_type, _ = split_byte(first_byte)  # Extract type from upper nibble, ignore destination    
     if mod_type == NULL:
         return M8AHDEnvelope
     elif mod_type == 0x01:

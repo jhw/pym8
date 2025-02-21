@@ -1,22 +1,24 @@
 # short
 
-- abstraction of macrosynth from instruments >> eliminate TYPE?
-
-# medium
-
+- validation to include empty check?
 - fx enum
 - include fx enum in write script
 
+# medium
+
 - additional object checks
-- validation to include empty check?
 - OFF
 - revisit transpose/eq defaults
 - LFO >> 7 bytes including type_dest?
 
 # thoughts
 
+- abstract modulators as per instruments?
+  - probably not worth it
+
 # done
 
+- abstraction of macrosynth from instruments >> eliminate TYPE?
 - failing list test
 - array to validate read() size
 - check size validation works in object read()

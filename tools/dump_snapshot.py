@@ -18,9 +18,10 @@ def prompt_for_directory(directory):
 def collect_files():
     """Collect files based on user input"""
     root_directories = [
+        "m8/utils",
         "m8/core",
         "m8",
-        "m8/utils",
+        "m8/instruments",
         "tests",
         "demo",
         "tools"
