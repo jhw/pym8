@@ -1,12 +1,12 @@
 # short
 
 - additional object checks
+- create project test from demos
 
 # medium
 
 - revisit transpose/eq defaults
 - OFF note
-
 - LFO >> 7 bytes including type_dest?
 - three FX groups?
 
