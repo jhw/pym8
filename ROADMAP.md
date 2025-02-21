@@ -7,24 +7,16 @@
 
 # modulators
 
-- lfo
-- sidechain modulator
-
-# enums 
-
-- filter types 
-- amp limit types 
-- phrase note 
-- macrosynth shapes
-- modulation targets
+- sidechain
 
 # features
 
-- m8i file handling
+- phrase OFF
 - tables
 - eq
 - midi
 
 # tooling
 
+- m8i files
 - block hunter

@@ -1,17 +1,13 @@
 # short [01-extended-api]
 
-- project add/set instrument
-- project add/set phrase
-- project add/set chain
-- refactor examples to use simplified api
+- phrase/chain step apis
 - refactor project test to use simplified api
 
 # medium
 
-- revised templates
-
+- enhanced song api
+- song/chain/phrase/instrument api which hides idx
 - revisit transpose/eq defaults
-- OFF note
 
 # thoughts
 
@@ -20,6 +16,10 @@
 
 # done
 
+- project add/set instrument
+- project add/set phrase
+- project add/set chain
+- refactor examples to use simplified api
 - instrument add/set modulator
 - phrase add/set fx
 - M8IndexError

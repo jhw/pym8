@@ -19,7 +19,7 @@ try:
     macro_synth = M8MacroSynth(
         mixer_delay = 0xC0
     )
-    project.instruments[0] = macro_synth
+    project.add_instrument(macro_synth)
     
     # Create and configure AHD envelope modulator with kwargs
     ahd_mod = M8AHDEnvelope(
@@ -44,23 +44,23 @@ try:
         
         # Assign step to every 4th position
         phrase[i*4] = step
-        
-    # Assign phrase to first slot
-    project.phrases[0] = phrase
     
-    # Create chain and set first step to use phrase 0
+    # Add phrase to project and get its index
+    phrase_idx = project.add_phrase(phrase)
+    
+    # Create chain and set first step to use the phrase we just added
     chain = M8Chain()
     chain_step = M8ChainStep(
-        phrase=0,  # Use the phrase we created above (index 0)
+        phrase=phrase_idx,  # Use the phrase we created above
         transpose=NULL
     )
     chain[0] = chain_step
     
-    # Assign chain to first slot
-    project.chains[0] = chain
+    # Add chain to project and get its index
+    chain_idx = project.add_chain(chain)
     
-    # Set the first element of the first row in the song to chain 0
-    project.song[0][0] = 0  # Use the chain we created (index 0)
+    # Set the first element of the first row in the song to our chain
+    project.song[0][0] = chain_idx  # Use the chain we created
     
     # Validate project before saving
     project.validate()
@@ -72,8 +72,5 @@ try:
     
     print(f"Project written to {filename}")
     
-except M8ValidationError as e:
-    print(f"Project validation failed: {str(e)}")
-except M8IndexError as e:
-    print(f"Index error: {str(e)}")
-
+except (M8ValidationError, M8IndexError) as e:
+    print(f"Project creation failed: {str(e)}")
