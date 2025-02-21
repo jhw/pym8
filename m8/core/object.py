@@ -1,4 +1,4 @@
-from m8 import M8Block, NULL
+from m8 import NULL
 from m8.core import m8_class_name
 from m8.utils.bits import split_byte, join_nibbles
 

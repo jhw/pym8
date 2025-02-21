@@ -1,18 +1,24 @@
-# short [01-extended-api]
+# short
+
+- clean out volumes / M8
+- create default 401 and m8macro and export to laptop
+- inspect m8macro with focus on modulators and FX 
+- create pymacro and compare with m8macro, with same focus 
+- move pymacro to M8 and see if it will load / render 
 
 # medium
 
-- enhanced song api
-- song/chain/phrase/instrument api which hides idx
 - revisit transpose/eq defaults
 
 # thoughts
 
+- song/chain/phrase/instrument api which hides idx?
 - abstract modulators as per instruments?
   - probably not worth it
 
 # done
 
+- enhanced song api
 - refactor project test to use simplified api
 - phrase/chain step apis
 - project add/set instrument

@@ -1,4 +1,4 @@
-from m8 import M8Block, NULL
+from m8 import M8Block, M8IndexError, NULL
 from m8.core.object import m8_object_class
 from m8.utils.bits import split_byte, join_nibbles
 
