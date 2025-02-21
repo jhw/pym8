@@ -51,17 +51,17 @@ class TestM8ProjectMemoryCycle(unittest.TestCase):
         self.original_project.metadata.directory = "/Songs/test/"
         self.original_project.metadata.name = "MEMORY_TEST"
         
-        # Configure instrument
+        # Configure instrument and add to project
         self._create_instrument()
         
-        # Configure phrase
-        self._create_phrase()
+        # Configure phrase and add to project
+        phrase_idx = self._create_phrase()
         
-        # Configure chain
-        self._create_chain()
+        # Configure chain that references phrase and add to project
+        chain_idx = self._create_chain(phrase_idx)
         
-        # Configure song
-        self._configure_song()
+        # Configure song to use the chain
+        self.original_project.song[0][0] = chain_idx
     
     def _create_instrument(self):
         """Create and assign a MacroSynth instrument with a modulator."""
@@ -70,7 +70,6 @@ class TestM8ProjectMemoryCycle(unittest.TestCase):
             mixer_delay=0xA0,
             mixer_reverb=0x40
         )
-        self.original_project.instruments[0] = macro_synth
         
         # Add an envelope modulator
         modulator = M8AHDEnvelope(
@@ -80,36 +79,49 @@ class TestM8ProjectMemoryCycle(unittest.TestCase):
             hold=0x10,
             decay=0x40
         )
-        macro_synth.modulators[0] = modulator
+        
+        # Add modulator to instrument
+        macro_synth.add_modulator(modulator)
+        
+        # Add instrument to project
+        return self.original_project.add_instrument(macro_synth)
     
     def _create_phrase(self):
         """Create a test phrase with notes and effects."""
         phrase = M8Phrase()
+        
         for i in range(4):
+            # Create step with incrementing notes
             step = M8PhraseStep(
-                note=0x40 + i,  # Incrementing notes
+                note=0x40 + i,
                 velocity=0x60,
                 instrument=0    # Use our macro synth
             )
             
-            # Add an effect to each step
-            fx = M8FXTuple(key=0x2B, value=0x80 - (i * 0x10))
-            step.fx[0] = fx
+            # Add an effect to the step
+            step.add_fx(key=0x2B, value=0x80 - (i * 0x10))
             
-            phrase[i*4] = step  # Place a note every 4 steps
+            # Add step to phrase
+            phrase.set_step(step, i*4)  # Place a note every 4 steps
         
-        self.original_project.phrases[0] = phrase
+        # Add phrase to project
+        return self.original_project.add_phrase(phrase)
     
-    def _create_chain(self):
+    def _create_chain(self, phrase_idx):
         """Create a chain that references the phrase."""
         chain = M8Chain()
-        chain_step = M8ChainStep(phrase=0, transpose=0)
-        chain[0] = chain_step
-        self.original_project.chains[0] = chain
-    
-    def _configure_song(self):
-        """Configure the song to use the chain."""
-        self.original_project.song[0][0] = 0  # Assign chain 0 to first track, first row
+        
+        # Create chain step that references our phrase
+        chain_step = M8ChainStep(
+            phrase=phrase_idx, 
+            transpose=0
+        )
+        
+        # Add step to chain
+        chain.add_step(chain_step)
+        
+        # Add chain to project
+        return self.original_project.add_chain(chain)
     
     def _compare_metadata(self):
         """Compare metadata between original and reloaded projects."""

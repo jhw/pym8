@@ -1,7 +1,5 @@
 # short [01-extended-api]
 
-- refactor project test to use simplified api
-
 # medium
 
 - enhanced song api
@@ -15,6 +13,7 @@
 
 # done
 
+- refactor project test to use simplified api
 - phrase/chain step apis
 - project add/set instrument
 - project add/set phrase
