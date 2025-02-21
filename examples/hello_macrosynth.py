@@ -1,5 +1,5 @@
 import os
-from m8 import M8ValidationError, NULL
+from m8 import M8ValidationError, M8IndexError, NULL
 from m8.project import M8Project
 from m8.instruments.macrosynth import M8MacroSynth
 from m8.modulators import M8AHDEnvelope
@@ -26,7 +26,7 @@ try:
         destination=0x01,
         decay=0x40
     )
-    macro_synth.modulators[0] = ahd_mod
+    macro_synth.add_modulator(ahd_mod)
     
     # Create phrase
     phrase = M8Phrase()
@@ -40,7 +40,6 @@ try:
         )
         
         # Add delay volume FX to the step using our new API
-        # No need to create FX tuple directly or specify slot
         step.add_fx(key=0x2B, value=0x80)  # volume delay
         
         # Assign step to every 4th position
@@ -75,3 +74,6 @@ try:
     
 except M8ValidationError as e:
     print(f"Project validation failed: {str(e)}")
+except M8IndexError as e:
+    print(f"Index error: {str(e)}")
+

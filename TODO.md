@@ -1,6 +1,5 @@
 # short [01-extended-api]
 
-- instrument add/set modulator
 - project add/set instrument
 - project add/set phrase
 - project add/set chain
@@ -21,6 +20,7 @@
 
 # done
 
+- instrument add/set modulator
 - phrase add/set fx
 - M8IndexError
 - notes on enums

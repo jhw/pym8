@@ -1,4 +1,4 @@
-from m8 import M8Block, load_class
+from m8 import M8Block, M8IndexError, load_class
 from m8.core.list import m8_list_class
 from m8.modulators import M8Modulators
 
@@ -25,6 +25,27 @@ class M8InstrumentBase:
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
         return instance
 
+    @property
+    def available_modulator_slot(self):
+        for slot_idx, mod in enumerate(self.modulators):
+            if isinstance(mod, M8Block) or mod.destination == 0:
+                return slot_idx
+        return None
+
+    def add_modulator(self, modulator):
+        slot = self.available_modulator_slot
+        if slot is None:
+            raise M8IndexError("No empty modulator slots available in this instrument")
+            
+        self.modulators[slot] = modulator
+        return slot
+        
+    def set_modulator(self, modulator, slot):
+        if not (0 <= slot < len(self.modulators)):
+            raise M8IndexError(f"Modulator slot index must be between 0 and {len(self.modulators)-1}")
+            
+        self.modulators[slot] = modulator
+
     def as_dict(self):
         return {
             "synth": self.synth_params.as_dict(),
@@ -42,7 +63,6 @@ class M8InstrumentBase:
         buffer.extend(bytes([0] * (MODULATORS_OFFSET - SYNTH_PARAMS_SIZE)))
         buffer.extend(self.modulators.write())
         return bytes(buffer)
-
 
 def instrument_row_class(data):
     instr_type = struct.unpack('B', data[:1])[0]
