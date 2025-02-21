@@ -1,11 +1,19 @@
-# short
+# short [01-extended-api]
+
+- remove enums
+- M8IndexError
+- phrase add/set fx
+- instrument add/set modulator
+- project add/set instrument
+- project add/set phrase
+- prohect add/set chain
 
 # medium
 
+- new templates
 - more tests
 - revisit transpose/eq defaults
 - OFF note
-- three FX groups?
 
 # thoughts
 
