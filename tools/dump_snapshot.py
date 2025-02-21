@@ -23,7 +23,7 @@ def collect_files():
         "m8",
         "m8/instruments",
         "tests",
-        "demo",
+        "examples",
         "tools"
     ]
     

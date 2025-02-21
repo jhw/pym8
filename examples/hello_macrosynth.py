@@ -14,7 +14,7 @@ try:
     
     # Set project metadata
     project.metadata.directory = "/Songs/woldo/"
-    project.metadata.name = "HELLO_MACRO2"
+    project.metadata.name = "HELLO_MACRO"
     
     # Create and assign macro synth to first slot
     macro_synth = M8MacroSynth(
@@ -70,7 +70,7 @@ try:
     
     # Save project
     os.makedirs('tmp', exist_ok=True)
-    project.write_to_file("tmp/HELLO_MACRO2.m8s")
+    project.write_to_file("tmp/HELLO_MACRO.m8s")
     
     print("Project successfully created!")
     

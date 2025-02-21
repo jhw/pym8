@@ -1,7 +1,6 @@
 # short
 
 - additional object checks
-- create project test from demos
 
 # medium
 
@@ -17,6 +16,7 @@
 
 # done
 
+- create project test from demos
 - fx enum
 - include fx enum in write script
 - validation to include empty check?
