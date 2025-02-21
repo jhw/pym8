@@ -1,15 +1,14 @@
 # short
 
-- validation to include empty check?
-- fx enum
-- include fx enum in write script
+- additional object checks
 
 # medium
 
-- additional object checks
-- OFF
 - revisit transpose/eq defaults
+- OFF note
+
 - LFO >> 7 bytes including type_dest?
+- three FX groups?
 
 # thoughts
 
@@ -18,6 +17,9 @@
 
 # done
 
+- fx enum
+- include fx enum in write script
+- validation to include empty check?
 - abstraction of macrosynth from instruments >> eliminate TYPE?
 - failing list test
 - array to validate read() size

@@ -12,13 +12,10 @@
 
 # enums 
 
-- phrase note 
-- phrase FX 
-- macrosynth shapes
-- instrument types
-- modulation types
 - filter types 
 - amp limit types 
+- phrase note 
+- macrosynth shapes
 - modulation targets
 
 # features

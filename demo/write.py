@@ -6,6 +6,7 @@ from m8.modulators import M8AHDEnvelope
 from m8.phrases import M8Phrase, M8PhraseStep, M8FXTuples, M8FXTuple
 from m8.chains import M8Chain, M8ChainStep
 from m8.song import M8SongRow
+from m8.enums.fx import M8FXEnum
 
 try:
     # Load the project
@@ -30,13 +31,22 @@ try:
     
     # Create phrase and configure first step with kwargs
     phrase = M8Phrase()
-    step = M8PhraseStep(
-        note=0x40,
-        velocity=0x40,
-        instrument=NULL
-    )
+    
+    # Create a step with note properties and FX command
     for i in range(4):
-        phrase[i*4] = step.clone()
+        step = M8PhraseStep(
+            note=0x40,
+            velocity=0x40,
+            instrument=0  # Set to use the first instrument (our macro synth)
+        )
+        
+        # Add delay volume FX to the step
+        # We'll use the first FX slot for this
+        delay_fx = M8FXTuple(key=M8FXEnum.VDE, value=0x80)  # Set delay volume to 0x80
+        step.fx[0] = delay_fx
+        
+        # Assign step to every 4th position
+        phrase[i*4] = step
         
     # Assign phrase to first slot
     project.phrases[0] = phrase
@@ -44,23 +54,25 @@ try:
     # Create chain and set first step to use phrase 0
     chain = M8Chain()
     chain_step = M8ChainStep(
-        phrase=NULL,
+        phrase=0,  # Use the phrase we created above (index 0)
         transpose=NULL
     )
     chain[0] = chain_step
-
+    
     # Assign chain to first slot
     project.chains[0] = chain
     
     # Set the first element of the first row in the song to chain 0
-    project.song[0][0] = NULL
-
+    project.song[0][0] = 0  # Use the chain we created (index 0)
+    
     # Validate project before saving
     project.validate()
     
     # Save project
     os.makedirs('tmp', exist_ok=True)
     project.write_to_file("tmp/HELLO_MACRO2.m8s")
-
+    
+    print("Project successfully created!")
+    
 except M8ValidationError as e:
     print(f"Project validation failed: {str(e)}")
