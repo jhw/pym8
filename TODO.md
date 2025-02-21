@@ -1,6 +1,5 @@
 # short [01-extended-api]
 
-- phrase/chain step apis
 - refactor project test to use simplified api
 
 # medium
@@ -16,6 +15,7 @@
 
 # done
 
+- phrase/chain step apis
 - project add/set instrument
 - project add/set phrase
 - project add/set chain

@@ -41,20 +41,20 @@ try:
         
         # Add delay volume FX to the step using our new API
         step.add_fx(key=0x2B, value=0x80)  # volume delay
-        
-        # Assign step to every 4th position
-        phrase[i*4] = step
+        phrase.set_step(step, i*4)
     
     # Add phrase to project and get its index
     phrase_idx = project.add_phrase(phrase)
     
-    # Create chain and set first step to use the phrase we just added
+    # Create chain 
     chain = M8Chain()
+    
+    # Create chain step and add it to the chain using the new method
     chain_step = M8ChainStep(
         phrase=phrase_idx,  # Use the phrase we created above
         transpose=NULL
     )
-    chain[0] = chain_step
+    chain.add_step(chain_step)
     
     # Add chain to project and get its index
     chain_idx = project.add_chain(chain)

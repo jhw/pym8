@@ -1,4 +1,4 @@
-from m8 import M8ValidationError, NULL, BLANK
+from m8 import M8ValidationError, M8IndexError, NULL, BLANK
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
 
@@ -36,7 +36,28 @@ class M8Chain(M8ChainBase):
                         f"Chain step {step_idx} references non-existent or empty "
                         f"phrase {step.phrase}"
                     )
+    
+    @property
+    def available_step_slot(self):
+        for slot_idx, step in enumerate(self):
+            if step.phrase == BLANK:  # Empty step has BLANK phrase
+                return slot_idx
+        return None
         
+    def add_step(self, step):
+        slot = self.available_step_slot
+        if slot is None:
+            raise M8IndexError("No empty step slots available in this chain")
+            
+        self[slot] = step
+        return slot
+        
+    def set_step(self, step, slot):
+        if not (0 <= slot < len(self)):
+            raise M8IndexError(f"Step slot index must be between 0 and {len(self)-1}")
+            
+        self[slot] = step
+
 M8ChainsBase = m8_list_class(
     row_class=M8Chain,
     row_size=CHAIN_BLOCK_SIZE,
