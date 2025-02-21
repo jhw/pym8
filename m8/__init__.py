@@ -5,9 +5,6 @@ def load_class(class_path):
     module = __import__(module_name, fromlist=[class_name])
     return getattr(module, class_name)
 
-class M8ValidationError(Exception):
-    pass
-
 class M8Block:
     def __init__(self):
         self.data = bytearray()
@@ -24,4 +21,8 @@ class M8Block:
     def write(self):
         return self.data
 
-    
+class M8ValidationError(Exception):
+    pass
+
+class M8IndexError(IndexError):
+    pass

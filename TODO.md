@@ -1,11 +1,12 @@
 # short [01-extended-api]
 
-- M8IndexError
 - phrase add/set fx
 - instrument add/set modulator
 - project add/set instrument
 - project add/set phrase
-- prohect add/set chain
+- project add/set chain
+- refactor examples to use simplified api
+- refactor project test to use simplified api
 
 # medium
 
@@ -21,6 +22,7 @@
 
 # done
 
+- M8IndexError
 - notes on enums
 - LFO >> 7 bytes including type_dest?
 - create project test from demos
