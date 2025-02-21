@@ -1,6 +1,6 @@
 # short [01-extended-api]
 
-- remove enums
+- notes on enums
 - M8IndexError
 - phrase add/set fx
 - instrument add/set modulator
@@ -10,8 +10,8 @@
 
 # medium
 
-- new templates
-- more tests
+- revised templates
+
 - revisit transpose/eq defaults
 - OFF note
 

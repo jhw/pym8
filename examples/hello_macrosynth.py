@@ -6,7 +6,6 @@ from m8.modulators import M8AHDEnvelope
 from m8.phrases import M8Phrase, M8PhraseStep, M8FXTuples, M8FXTuple
 from m8.chains import M8Chain, M8ChainStep
 from m8.song import M8SongRow
-from m8.enums.fx import M8FXEnum
 
 try:
     # Load the project
@@ -42,7 +41,7 @@ try:
         
         # Add delay volume FX to the step
         # We'll use the first FX slot for this
-        delay_fx = M8FXTuple(key=M8FXEnum.VDE, value=0x80)  # Set delay volume to 0x80
+        delay_fx = M8FXTuple(key=0x2B, value=0x80)  # volume delay?
         step.fx[0] = delay_fx
         
         # Assign step to every 4th position

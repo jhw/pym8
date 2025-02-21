@@ -6,7 +6,6 @@ from m8.instruments.macrosynth import M8MacroSynth
 from m8.modulators import M8AHDEnvelope
 from m8.phrases import M8Phrase, M8PhraseStep, M8FXTuple
 from m8.chains import M8Chain, M8ChainStep
-from m8.enums.fx import M8FXEnum
 
 class TestM8ProjectMemoryCycle(unittest.TestCase):
     """Test the serialization/deserialization cycle of M8Project without file I/O."""
@@ -94,7 +93,7 @@ class TestM8ProjectMemoryCycle(unittest.TestCase):
             )
             
             # Add an effect to each step
-            fx = M8FXTuple(key=M8FXEnum.VDE, value=0x80 - (i * 0x10))
+            fx = M8FXTuple(key=0x2B, value=0x80 - (i * 0x10))
             step.fx[0] = fx
             
             phrase[i*4] = step  # Place a note every 4 steps
