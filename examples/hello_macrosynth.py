@@ -70,9 +70,10 @@ try:
     
     # Save project
     os.makedirs('tmp', exist_ok=True)
-    project.write_to_file("tmp/HELLO_MACRO.m8s")
+    filename = f"tmp/{project.metadata.name.replace(' ', '')}.m8s"
+    project.write_to_file(filename)
     
-    print("Project successfully created!")
+    print(f"Project written to {filename}")
     
 except M8ValidationError as e:
     print(f"Project validation failed: {str(e)}")

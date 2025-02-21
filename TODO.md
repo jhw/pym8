@@ -1,10 +1,9 @@
 # short
 
-- revisit transpose/eq defaults
-
 # medium
 
 - more tests
+- revisit transpose/eq defaults
 - OFF note
 - three FX groups?
 
