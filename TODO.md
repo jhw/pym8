@@ -1,13 +1,10 @@
 # short
 
-# hello_macro/PYMACRO
-
-- note is E-6 (transpose?)
-- should instrument transpose be on?
-- modulation defaults are messed up (FF everywhere)
-- instrument pool is full of wavsynth (00?)
+- default set of instrument modulators
 
 # medium
+
+- instrument pool is full of wavsynth (00?)
 
 # thoughts
 
@@ -22,6 +19,7 @@
 Error reading M8 project file: name 'M8ADSRLFO' is not defined
 ```
 
+- note is E-6 (transpose?)
 - clean out volumes / M8
 - create default 401 and m8macro and export to laptop
 - inspect m8macro with focus on modulators and FX 

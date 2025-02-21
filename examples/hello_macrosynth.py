@@ -34,8 +34,8 @@ try:
     # Create steps with note properties and FX command
     for i in range(4):
         step = M8PhraseStep(
-            note=0x40,
-            velocity=0x40,
+            note=0x24, # C-4?
+            velocity=0x6F,
             instrument=0  # Set to use the first instrument (our macro synth)
         )
         
