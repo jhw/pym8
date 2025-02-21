@@ -48,7 +48,7 @@ def modulator_row_class(data):
     elif mod_type == 0x01:
         return M8ADSREnvelope
     elif mod_type == 0x03:
-        return M8ADSRLFO
+        return M8LFO
     else:
         return M8Block
 

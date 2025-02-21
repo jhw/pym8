@@ -1,10 +1,5 @@
 # short
 
-```
-(env) jhw@Justins-MacBook-Air pym8 % python tools/inspect_m8s.py templates/M8MACRO.m8s
-Error reading M8 project file: name 'M8ADSRLFO' is not defined
-```
-
 # hello_macro/PYMACRO
 
 - note is E-6 (transpose?)
@@ -21,6 +16,11 @@ Error reading M8 project file: name 'M8ADSRLFO' is not defined
   - probably not worth it
 
 # done
+
+```
+(env) jhw@Justins-MacBook-Air pym8 % python tools/inspect_m8s.py templates/M8MACRO.m8s
+Error reading M8 project file: name 'M8ADSRLFO' is not defined
+```
 
 - clean out volumes / M8
 - create default 401 and m8macro and export to laptop
