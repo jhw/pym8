@@ -1,9 +1,8 @@
 # short
 
-- additional object checks
-
 # medium
 
+- more tests
 - revisit transpose/eq defaults
 - OFF note
 - LFO >> 7 bytes including type_dest?
