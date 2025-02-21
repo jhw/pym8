@@ -1,14 +1,18 @@
 # short
 
-- clean out volumes / M8
-- create default 401 and m8macro and export to laptop
-- inspect m8macro with focus on modulators and FX 
-- create pymacro and compare with m8macro, with same focus 
-- move pymacro to M8 and see if it will load / render 
+```
+(env) jhw@Justins-MacBook-Air pym8 % python tools/inspect_m8s.py templates/M8MACRO.m8s
+Error reading M8 project file: name 'M8ADSRLFO' is not defined
+```
+
+# hello_macro/PYMACRO
+
+- note is E-6 (transpose?)
+- should instrument transpose be on?
+- modulation defaults are messed up (FF everywhere)
+- instrument pool is full of wavsynth (00?)
 
 # medium
-
-- revisit transpose/eq defaults
 
 # thoughts
 
@@ -18,6 +22,11 @@
 
 # done
 
+- clean out volumes / M8
+- create default 401 and m8macro and export to laptop
+- inspect m8macro with focus on modulators and FX 
+- create pymacro and compare with m8macro, with same focus 
+- move pymacro to M8 and see if it will load / render 
 - enhanced song api
 - refactor project test to use simplified api
 - phrase/chain step apis
