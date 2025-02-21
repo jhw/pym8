@@ -26,7 +26,7 @@ try:
         destination=0x01,
         decay=0x40
     )
-    macro_synth.add_modulator(ahd_mod)
+    macro_synth.set_modulator(ahd_mod, slot = 0)
     
     # Create phrase
     phrase = M8Phrase()

@@ -1,6 +1,6 @@
 from m8 import M8Block, M8IndexError, load_class
 from m8.core.list import m8_list_class
-from m8.modulators import M8Modulators
+from m8.modulators import M8Modulators, M8AHDEnvelope, M8LFO
 
 import struct
 
@@ -17,6 +17,13 @@ class M8InstrumentBase:
     def __init__(self, synth_params_class, type, **kwargs):
         self.synth_params = synth_params_class(type=type, **kwargs)
         self.modulators = M8Modulators()
+        # START TEMP CODE
+        for modulator in [M8AHDEnvelope(),
+                          M8AHDEnvelope(),
+                          M8LFO(),
+                          M8LFO()]:
+            self.modulators.append(modulator)
+        # END TEMP CODE
 
     @classmethod
     def read(cls, data, synth_params_class):

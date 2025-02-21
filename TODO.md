@@ -1,13 +1,15 @@
 # short
 
-- initialise instruments with set of modulators
+- convert M8List to take default set of items
+- refactor modulator initialisation code
 
-- add cutoff filter to PYMACRO
-- re- test PYMACRO
+- default modulator rendering is messed up
 
 # medium
 
-- instrument pool is full of wavsynth (00?)
+- instrument pool is full of wavsynths (00?)
+
+- add cutoff filter to PYMACRO
 
 # thoughts
 
@@ -17,6 +19,7 @@
 
 # done
 
+- initialise instruments with set of modulators
 - modulator default values (screenshot)
 
 ```
