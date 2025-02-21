@@ -20,12 +20,23 @@ M8AHDEnvelope = m8_object_class(
 
 M8ADSREnvelope = m8_object_class(
     field_map=[
-        ("type|destination", 0x01, 0, 1, "UINT4_2"),  # type in upper nibble, destination in lower
+        ("type|destination", 0x10, 0, 1, "UINT4_2"),  # type in upper nibble, destination in lower
         ("amount", BLANK, 1, 2, "UINT8"),
         ("attack", NULL, 2, 3, "UINT8"),
         ("decay", NULL, 3, 4, "UINT8"),
         ("sustain", NULL, 4, 5, "UINT8"),
         ("release", NULL, 5, 6, "UINT8")
+    ]
+)
+
+M8LFO = m8_object_class(
+    field_map=[
+        ("type|destination", 0x30, 0, 1, "UINT4_2"), 
+        ("amount", BLANK, 1, 2, "UINT8"),
+        ("shape", NULL, 2, 3, "UINT8"),
+        ("trigger", NULL, 3, 4, "UINT8"),
+        ("freq", NULL, 4, 5, "UINT8"),
+        ("retrigger", NULL, 5, 6, "UINT8")
     ]
 )
 
@@ -36,6 +47,8 @@ def modulator_row_class(data):
         return M8AHDEnvelope
     elif mod_type == 0x01:
         return M8ADSREnvelope
+    elif mod_type == 0x03:
+        return M8ADSRLFO
     else:
         return M8Block
 

@@ -1,11 +1,11 @@
 # short
 
+- revisit transpose/eq defaults
+
 # medium
 
 - more tests
-- revisit transpose/eq defaults
 - OFF note
-- LFO >> 7 bytes including type_dest?
 - three FX groups?
 
 # thoughts
@@ -15,6 +15,7 @@
 
 # done
 
+- LFO >> 7 bytes including type_dest?
 - create project test from demos
 - fx enum
 - include fx enum in write script
