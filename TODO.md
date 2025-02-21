@@ -1,6 +1,9 @@
 # short
 
-- default set of instrument modulators
+- initialise instruments with set of modulators
+
+- add cutoff filter to PYMACRO
+- re- test PYMACRO
 
 # medium
 
@@ -13,6 +16,8 @@
   - probably not worth it
 
 # done
+
+- modulator default values (screenshot)
 
 ```
 (env) jhw@Justins-MacBook-Air pym8 % python tools/inspect_m8s.py templates/M8MACRO.m8s

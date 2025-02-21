@@ -12,7 +12,7 @@ class TestM8ProjectMemoryCycle(unittest.TestCase):
     
     def setUp(self):
         """Set up test environment and load template file."""
-        template_path = "templates/DEFAULT-4-0-1.m8s"
+        template_path = "templates/DEFAULT401.m8s"
         self.assertTrue(os.path.exists(template_path), f"Template file not found: {template_path}")
         self.original_project = M8Project.read_from_file(template_path)
     
