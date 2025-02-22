@@ -1,14 +1,12 @@
 # short
 
-- missing checks in object get/set int, compared to other types 
+- macrosynth enums [notes]
 
 # medium
 
-- macrosynth enums [notes]
-
+- NULL vs BLANK
 - api generator prompt
 - api test suite
-
 - transpose/eq/pitch/fine_tune synth parameters
 
 # rejected
@@ -19,6 +17,7 @@
 
 # done
 
+- missing checks in object get/set int, compared to other types 
 - add timestamp to prompt outputs
 - refactor dump snapshot to iterate through a series of root directories
 - m8/api/__init__.py

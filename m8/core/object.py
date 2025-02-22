@@ -37,6 +37,8 @@ class M8Object:
     def get_int(self, field_name):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
+            if field.format not in ["UINT8", "UINT4_2"]:
+                raise ValueError(f"Field '{field_name}' is not an integer field")
             return field.read_value(self._data, part_index)
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
@@ -62,10 +64,12 @@ class M8Object:
     def set_int(self, field_name, value):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
+            if field.format not in ["UINT8", "UINT4_2"]:
+                raise ValueError(f"Field '{field_name}' is not an integer field")
             field.write_value(self._data, int(value), part_index)
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
-
+        
     def set_float(self, field_name, value):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
