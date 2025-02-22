@@ -48,14 +48,27 @@ class M8List(list):
         return [row.as_dict() for row in self if hasattr(row, "as_dict")]
 
     def write(self):
-        return b"".join(row.write() for row in self)
-
-def m8_list_class(row_size, row_count, row_class=M8Block, row_class_resolver=None):
+        result = bytearray()
+        for row in self:
+            row_data = row.write()
+            # Ensure each row occupies exactly ROW_SIZE bytes
+            if len(row_data) < self.ROW_SIZE:
+                # Pad with the default byte if the row data is shorter than expected
+                default_byte = getattr(self, "DEFAULT_BYTE", NULL)  # Default to NULL if not defined
+                row_data = row_data + bytes([default_byte] * (self.ROW_SIZE - len(row_data)))
+            elif len(row_data) > self.ROW_SIZE:
+                # Truncate if the row data is longer than expected
+                row_data = row_data[:self.ROW_SIZE]
+            result.extend(row_data)
+        return bytes(result)
+    
+def m8_list_class(row_size, row_count, row_class=M8Block, row_class_resolver=None, default_byte=NULL):
     name = m8_class_name("M8List")
     attributes = {
         "ROW_SIZE": row_size,
         "ROW_COUNT": row_count,
         "ROW_CLASS": row_class,
+        "DEFAULT_BYTE": default_byte,  # Store the default byte for padding
     }
 
     if row_class_resolver:

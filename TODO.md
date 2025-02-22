@@ -1,12 +1,12 @@
 # short
 
-- refactor M8List to write to fixed blocks
-
-# medium
-
 - convert M8List to take default set of items
   - refactor modulator initialisation code
 
+# medium
+
+
+- refactor block_byte [object] and default [array] as default_byte
 - add cutoff filter to PYMACRO
 
 # issues
@@ -22,6 +22,7 @@
 
 # done
 
+- refactor M8List to write to fixed blocks
 - initialise instruments with set of modulators
 - modulator default values (screenshot)
 
