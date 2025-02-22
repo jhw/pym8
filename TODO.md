@@ -1,15 +1,20 @@
 # short
 
-- enum support
+- as_dict() to return enum keys if they exist
+
+- macrosynth enum implementation
 
 # examples
 
 ## hello_macrosynth.py
 
+- enums :)
 - remove fx
 - filter env, amp, chorus
 
 # medium
+
+- non- core tests
 
 - transpose/eq/pitch/fine_tune synth parameters
 

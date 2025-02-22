@@ -1,6 +1,23 @@
 import unittest
 import struct
+from enum import Enum, auto
 from m8.core.fields import M8Field, M8FieldMap
+
+# Sample enums for testing
+class TestEnum(Enum):
+    FIRST = 0x01
+    SECOND = 0x02
+    THIRD = 0x03
+
+class UpperNibbleEnum(Enum):
+    TYPE_A = 0x01
+    TYPE_B = 0x02
+    TYPE_C = 0x03
+
+class LowerNibbleEnum(Enum):
+    MODE_X = 0x01
+    MODE_Y = 0x02
+    MODE_Z = 0x03
 
 class TestM8Field(unittest.TestCase):
     def test_field_initialization(self):
@@ -36,6 +53,51 @@ class TestM8Field(unittest.TestCase):
         # Test invalid format
         with self.assertRaises(ValueError):
             M8Field("invalid", 0, 0, 1, "INVALID_FORMAT")
+
+    def test_field_with_enum_initialization(self):
+        """Test field initialization with enum support"""
+        # Test UINT8 field with enum
+        field = M8Field("enum_byte", 0x02, 0, 1, "UINT8", TestEnum)
+        self.assertEqual(field.name, "enum_byte")
+        self.assertEqual(field.default, 0x02)
+        self.assertEqual(field.enums, TestEnum)
+        
+        # Test composite UINT4_2 field with enum for both parts
+        field = M8Field("upper|lower", 0x12, 0, 1, "UINT4_2", (UpperNibbleEnum, LowerNibbleEnum))
+        self.assertEqual(field.name, "upper|lower")
+        self.assertEqual(field.enums[0], UpperNibbleEnum)
+        self.assertEqual(field.enums[1], LowerNibbleEnum)
+        
+        # Test composite UINT4_2 field with enum for only upper part
+        field = M8Field("upper|lower", 0x12, 0, 1, "UINT4_2", (UpperNibbleEnum, None))
+        self.assertEqual(field.enums[0], UpperNibbleEnum)
+        self.assertIsNone(field.enums[1])
+        
+        # Test composite UINT4_2 field with enum for only lower part
+        field = M8Field("upper|lower", 0x12, 0, 1, "UINT4_2", (None, LowerNibbleEnum))
+        self.assertIsNone(field.enums[0])
+        self.assertEqual(field.enums[1], LowerNibbleEnum)
+        
+        # Test invalid enum format for UINT8
+        with self.assertRaises(ValueError):
+            M8Field("enum_byte", 0x01, 0, 1, "UINT8", "not an enum")
+        
+        # Test invalid enum format for UINT4_2
+        with self.assertRaises(ValueError):
+            M8Field("upper|lower", 0x12, 0, 1, "UINT4_2", TestEnum)  # Should be a tuple
+            
+        with self.assertRaises(ValueError):
+            M8Field("upper|lower", 0x12, 0, 1, "UINT4_2", (TestEnum,))  # Tuple too short
+            
+        with self.assertRaises(ValueError):
+            M8Field("upper|lower", 0x12, 0, 1, "UINT4_2", ("not an enum", "also not an enum"))
+            
+        # Test invalid enum for other field types
+        with self.assertRaises(ValueError):
+            M8Field("text", "TEST", 0, 4, "STRING", TestEnum)
+            
+        with self.assertRaises(ValueError):
+            M8Field("float", 1.5, 0, 4, "FLOAT32", TestEnum)
 
     def test_get_format_string(self):
         """Test format string generation"""
@@ -159,6 +221,69 @@ class TestM8Field(unittest.TestCase):
         # Combined byte should have both parts
         self.assertEqual(data[0], 0x73)
 
+    def test_enum_get_set_typed_value(self):
+        """Test getting and setting typed values with enums"""
+        # Test UINT8 field with enum
+        field = M8Field("enum_byte", 0x01, 0, 1, "UINT8", TestEnum)
+        data = bytearray([0x02])  # SECOND enum value
+        
+        # Read value - should return enum member
+        value = field.get_typed_value(data)
+        self.assertIsInstance(value, TestEnum)
+        self.assertEqual(value, TestEnum.SECOND)
+        
+        # Write value using enum
+        field.set_typed_value(data, TestEnum.THIRD)
+        self.assertEqual(data[0], 0x03)
+        
+        # Write value using integer
+        field.set_typed_value(data, 0x01)
+        self.assertEqual(data[0], 0x01)
+        
+        # Read value after writing integer
+        value = field.get_typed_value(data)
+        self.assertEqual(value, TestEnum.FIRST)
+        
+        # Test with invalid enum value
+        data[0] = 0x99  # Not a valid enum value
+        value = field.get_typed_value(data)
+        self.assertEqual(value, 0x99)  # Should return the raw integer
+        
+        # Test composite field with enums
+        field = M8Field("type|mode", 0x12, 0, 1, "UINT4_2", (UpperNibbleEnum, LowerNibbleEnum))
+        data = bytearray([0x23])  # TYPE_B in upper, MODE_Z in lower
+        
+        # Read upper nibble
+        value = field.get_typed_value(data, 0)
+        self.assertIsInstance(value, UpperNibbleEnum)
+        self.assertEqual(value, UpperNibbleEnum.TYPE_B)
+        
+        # Read lower nibble
+        value = field.get_typed_value(data, 1)
+        self.assertIsInstance(value, LowerNibbleEnum)
+        self.assertEqual(value, LowerNibbleEnum.MODE_Z)
+        
+        # Write upper nibble using enum
+        field.set_typed_value(data, UpperNibbleEnum.TYPE_C, 0)
+        self.assertEqual(data[0], 0x33)  # 0x3 in upper, 0x3 in lower unchanged
+        
+        # Write lower nibble using enum
+        field.set_typed_value(data, LowerNibbleEnum.MODE_Y, 1)
+        self.assertEqual(data[0], 0x32)  # 0x3 in upper unchanged, 0x2 in lower
+        
+        # Test with None enum
+        field = M8Field("type|value", 0x12, 0, 1, "UINT4_2", (UpperNibbleEnum, None))
+        data = bytearray([0x23])
+        
+        # Read upper nibble (has enum)
+        value = field.get_typed_value(data, 0)
+        self.assertIsInstance(value, UpperNibbleEnum)
+        self.assertEqual(value, UpperNibbleEnum.TYPE_B)
+        
+        # Read lower nibble (no enum)
+        value = field.get_typed_value(data, 1)
+        self.assertEqual(value, 0x3)  # Should be raw integer
+
     def test_check_default(self):
         """Test checking if field has default value"""
         # Test UINT8 field
@@ -215,6 +340,15 @@ class TestM8FieldMap(unittest.TestCase):
             ("text", "TEST", 6, 10, "STRING")
         ]
         self.field_map = M8FieldMap(self.field_defs)
+        
+        # Create a field map with enum fields
+        self.enum_field_defs = [
+            ("enum_byte", 0x01, 0, 1, "UINT8", TestEnum),
+            ("type|mode", 0x12, 1, 2, "UINT4_2", (UpperNibbleEnum, LowerNibbleEnum)),
+            ("part|_", 0x30, 2, 3, "UINT4_2", (UpperNibbleEnum, None)),
+            ("_|option", 0x05, 3, 4, "UINT4_2", (None, LowerNibbleEnum))
+        ]
+        self.enum_field_map = M8FieldMap(self.enum_field_defs)
 
     def test_initialization(self):
         """Test field map initialization"""
@@ -229,6 +363,13 @@ class TestM8FieldMap(unittest.TestCase):
         # Check part map entries
         self.assertEqual(self.field_map.part_map["upper"], ("upper|lower", 0))
         self.assertEqual(self.field_map.part_map["lower"], ("upper|lower", 1))
+        
+        # Test enum fields
+        self.assertTrue("enum_byte" in self.enum_field_map.fields)
+        self.assertEqual(self.enum_field_map.fields["enum_byte"].enums, TestEnum)
+        
+        self.assertTrue("type|mode" in self.enum_field_map.fields)
+        self.assertEqual(self.enum_field_map.fields["type|mode"].enums, (UpperNibbleEnum, LowerNibbleEnum))
 
     def test_get_field(self):
         """Test getting fields by name"""
@@ -254,6 +395,18 @@ class TestM8FieldMap(unittest.TestCase):
         # Test non-existent field
         with self.assertRaises(AttributeError):
             self.field_map.get_field("non_existent")
+            
+        # Get enum field
+        field, part_index = self.enum_field_map.get_field("enum_byte")
+        self.assertEqual(field.name, "enum_byte")
+        self.assertEqual(field.enums, TestEnum)
+        self.assertIsNone(part_index)
+        
+        # Get composite enum field part
+        field, part_index = self.enum_field_map.get_field("type")
+        self.assertEqual(field.name, "type|mode")
+        self.assertEqual(part_index, 0)
+        self.assertEqual(field.enums[0], UpperNibbleEnum)
 
     def test_has_field(self):
         """Test checking if field exists"""
@@ -269,6 +422,12 @@ class TestM8FieldMap(unittest.TestCase):
         
         # Non-existent fields
         self.assertFalse(self.field_map.has_field("non_existent"))
+        
+        # Enum fields
+        self.assertTrue(self.enum_field_map.has_field("enum_byte"))
+        self.assertTrue(self.enum_field_map.has_field("type|mode"))
+        self.assertTrue(self.enum_field_map.has_field("type"))
+        self.assertTrue(self.enum_field_map.has_field("mode"))
 
     def test_max_offset(self):
         """Test getting maximum byte offset"""
