@@ -13,6 +13,9 @@
 
 - instrument id field to reflect position in list
 - transpose/eq/pitch/fine_tune
+- more pythonic api
+- consistency of core api
+- test coverage
 - enums
 
 # thoughts
