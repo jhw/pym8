@@ -1,15 +1,18 @@
 # short
 
-- convert M8List to take default set of items
-- refactor modulator initialisation code
-
-- default modulator rendering is messed up
+- refactor M8List to write to fixed blocks
 
 # medium
 
-- instrument pool is full of wavsynths (00?)
+- convert M8List to take default set of items
+  - refactor modulator initialisation code
 
 - add cutoff filter to PYMACRO
+
+# issues
+
+- modulators beyond modulator 1 are messed up
+- instrument pool is full of wavsynths (0x00)
 
 # thoughts
 
