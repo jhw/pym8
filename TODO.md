@@ -1,29 +1,25 @@
 # short
 
+- enum support
+
 # pymacro
 
 - remove fx
-- LP filter envelope
-- amp and limit
-- chorus
+- filter env, amp, chorus
 
 # medium
 
-- instrument id field to reflect position in list
 - transpose/eq/pitch/fine_tune
-- more pythonic api
-- consistency of core api
-- test coverage
-- enums
 
-# thoughts
+# rejected
 
-- song/chain/phrase/instrument api which hides idx?
-- abstract modulators as per instruments?
-  - probably not worth it
+- individual modules for modulators
+- instrument idx field
+- song/chain/phrase/instrument api which hides idx
 
 # done
 
+- field map abstractions
 - refactor block_byte [object] and default [array] as default_byte
 - remove passing of instrument type fields
 - modulators beyond modulator 1 are messed up

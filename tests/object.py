@@ -99,67 +99,143 @@ class TestM8Object(unittest.TestCase):
         self.assertAlmostEqual(obj.floating, 2.5)
         self.assertEqual(obj.text, "XYZW")
 
-    def test_edge_cases(self):
-        """Test edge cases and boundary values"""
-        obj = self.TestClass()
+    def test_data_length_validation(self):
+        """Test data length validation when reading"""
+        # Create a byte array shorter than required
+        short_data = bytearray([0x77, 0x84])  # Only 2 bytes
         
-        # Test maximum values
-        obj.single_byte = 0xFF
-        self.assertEqual(obj.single_byte, 0xFF)
-        
-        obj.upper = 0xF
-        obj.lower = 0xF
-        self.assertEqual(obj.upper, 0xF)
-        self.assertEqual(obj.lower, 0xF)
-        self.assertEqual(obj.write()[1], 0xFF)  # Combined byte should be 0xFF
-        
-        # Test string truncation and padding
-        obj.text = "TOO_LONG_STRING"
-        self.assertEqual(obj.text, "TOO_")  # Should truncate to field size (4)
-        
-        obj.text = "AB"
-        self.assertEqual(obj.write()[6:10], b'AB  ')  # Should pad with spaces
-        
-        # Test zero values
-        obj.single_byte = 0
-        obj.upper = 0
-        obj.lower = 0
-        obj.floating = 0.0
-        self.assertEqual(obj.single_byte, 0)
-        self.assertEqual(obj.upper, 0)
-        self.assertEqual(obj.lower, 0)
-        self.assertEqual(obj.floating, 0.0)
+        # Attempting to read should raise an exception
+        with self.assertRaises(Exception):
+            self.TestClass.read(short_data)
+            
+        # Creating a longer array should work fine
+        long_data = bytearray([0x77, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        obj = self.TestClass.read(long_data)
+        self.assertEqual(obj.single_byte, 0x77)
 
-    def test_read_write_operations(self):
-        """Test comprehensive read/write operations"""
-        # Create object with known values
-        obj1 = self.TestClass(
-            single_byte=0x42,
-            upper=0x5,
-            lower=0x6,
-            floating=1.234,
-            text="TEST"
+    def test_as_dict(self):
+        """Test converting object to dictionary"""
+        obj = self.TestClass(
+            single_byte=0x55,
+            upper=0x7,
+            lower=0x3,
+            floating=2.5,
+            text="ABCD"
         )
         
-        # Write to bytes
-        data = obj1.write()
+        # Get dictionary representation
+        data_dict = obj.as_dict()
         
-        # Read into new object
-        obj2 = self.TestClass.read(data)
+        # Verify all fields are included
+        self.assertEqual(data_dict["single_byte"], 0x55)
+        self.assertEqual(data_dict["upper"], 0x7)
+        self.assertEqual(data_dict["lower"], 0x3)
+        self.assertAlmostEqual(data_dict["floating"], 2.5)
+        self.assertEqual(data_dict["text"], "ABCD")
+
+    def test_clone(self):
+        """Test cloning an object"""
+        # Create original object
+        obj1 = self.TestClass(
+            single_byte=0x55,
+            upper=0x7,
+            lower=0x3,
+            floating=2.5,
+            text="ABCD"
+        )
         
-        # Verify all values match
+        # Clone it
+        obj2 = obj1.clone()
+        
+        # Verify values match
         self.assertEqual(obj1.single_byte, obj2.single_byte)
         self.assertEqual(obj1.upper, obj2.upper)
         self.assertEqual(obj1.lower, obj2.lower)
         self.assertAlmostEqual(obj1.floating, obj2.floating)
         self.assertEqual(obj1.text, obj2.text)
         
-        # Verify the actual bytes match
-        self.assertEqual(obj1.write(), obj2.write())
+        # Verify modification of clone doesn't affect original
+        obj2.single_byte = 0x99
+        obj2.text = "WXYZ"
         
-        # Test reading with different data sizes
-        with self.assertRaises(Exception):  # Should handle too-short data
-            self.TestClass.read(data[:-1])
+        self.assertEqual(obj1.single_byte, 0x55)  # Original unchanged
+        self.assertEqual(obj2.single_byte, 0x99)  # Clone modified
+        
+        self.assertEqual(obj1.text, "ABCD")  # Original unchanged
+        self.assertEqual(obj2.text, "WXYZ")  # Clone modified
+
+    def test_attribute_errors(self):
+        """Test handling of invalid attribute access"""
+        obj = self.TestClass()
+        
+        # Accessing non-existent attribute should raise AttributeError
+        with self.assertRaises(AttributeError):
+            value = obj.non_existent_field
+            
+        # Setting non-existent attribute should add it as a regular Python attribute
+        obj.custom_attribute = "custom value"
+        self.assertEqual(obj.custom_attribute, "custom value")
+        
+        # This shouldn't affect the binary representation
+        data1 = obj.write()
+        del obj.custom_attribute
+        data2 = obj.write()
+        self.assertEqual(data1, data2)
+
+    def test_is_empty(self):
+        """Test is_empty() functionality"""
+        # Test with default values
+        obj = self.TestClass()
+        self.assertTrue(obj.is_empty())
+        
+        # Modify each field and test is_empty
+        orig_value = obj.single_byte
+        obj.single_byte = 0x99
+        self.assertFalse(obj.is_empty())
+        obj.single_byte = orig_value
+        self.assertTrue(obj.is_empty())
+        
+        orig_value = obj.upper
+        obj.upper = 0x8
+        self.assertFalse(obj.is_empty())
+        obj.upper = orig_value
+        self.assertTrue(obj.is_empty())
+        
+        orig_value = obj.lower
+        obj.lower = 0x7
+        self.assertFalse(obj.is_empty())
+        obj.lower = orig_value
+        self.assertTrue(obj.is_empty())
+        
+        orig_value = obj.floating
+        obj.floating = 3.14
+        self.assertFalse(obj.is_empty())
+        obj.floating = orig_value
+        self.assertTrue(obj.is_empty())
+        
+        orig_value = obj.text
+        obj.text = "WXYZ"
+        self.assertFalse(obj.is_empty())
+        obj.text = orig_value
+        self.assertTrue(obj.is_empty())
+
+    def test_string_handling(self):
+        """Test special handling for string fields"""
+        obj = self.TestClass()
+        
+        # Test string truncation for too-long strings
+        obj.text = "TOO_LONG_STRING"
+        self.assertEqual(obj.text, "TOO_")  # Should be truncated to field size
+        
+        # Test null termination
+        obj.text = "AB"
+        raw_data = obj.write()
+        self.assertEqual(raw_data[6:10], b'AB\x00\x00')  # Should be null-terminated
+        
+        # Test reading string with embedded nulls
+        raw_bytes = bytearray([0x42, 0x12, 0, 0, 0, 0, ord('A'), ord('B'), 0, ord('D')])
+        obj = self.TestClass.read(raw_bytes)
+        self.assertEqual(obj.text, "AB")  # Should stop at first null
 
     def test_default_constructor_args(self):
         """Test constructor argument handling"""
@@ -184,39 +260,6 @@ class TestM8Object(unittest.TestCase):
         with self.assertRaises(AttributeError):
             obj = self.TestClass(invalid_field=123)
 
-    def test_is_empty(self):
-        """Test is_empty() functionality"""
-        # Test with default values
-        obj = self.TestClass()
-        self.assertTrue(obj.is_empty(), "New object should be empty")
-
-        # Test with modified values
-        obj.single_byte = 0x43  # Default is 0x42
-        self.assertFalse(obj.is_empty(), "Object with modified single_byte should not be empty")
-        obj.single_byte = 0x42  # Reset to default
-
-        obj.upper = 0x2  # Default is 0x1
-        self.assertFalse(obj.is_empty(), "Object with modified upper nibble should not be empty")
-        obj.upper = 0x1  # Reset to default
-
-        obj.lower = 0x3  # Default is 0x2
-        self.assertFalse(obj.is_empty(), "Object with modified lower nibble should not be empty")
-        obj.lower = 0x2  # Reset to default
-
-        obj.floating = 1.6  # Default is 1.5
-        self.assertFalse(obj.is_empty(), "Object with modified float should not be empty")
-        obj.floating = 1.5  # Reset to default
-
-        obj.text = "TEMP"  # Default is "TEST"
-        self.assertFalse(obj.is_empty(), "Object with modified text should not be empty")
-        obj.text = "TEST"  # Reset to default
-
-        # Verify resetting all values back to default results in empty
-        self.assertTrue(obj.is_empty(), "Object with all default values should be empty")
-
-        # Test with String padding spaces
-        obj.text = "TEST  "  # Default "TEST" with extra spaces
-        self.assertTrue(obj.is_empty(), "Object with space-padded default text should be empty")
 
 if __name__ == '__main__':
     unittest.main()
