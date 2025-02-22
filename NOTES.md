@@ -9,7 +9,6 @@
 
 - implement above enums in M8/enums 
 - include enum refs in instrument, modulator field map definitions
-- remove FX from hello macrosynth
 - refactor volume to use mod destination enum
 - add low pass filter to instrument 
 - add second AHD modulator for filter cutoff 

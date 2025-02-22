@@ -33,16 +33,13 @@ try:
     # Create phrase
     phrase = M8Phrase()
     
-    # Create steps with note properties and FX command
+    # Create steps with note properties
     for i in range(4):
         step = M8PhraseStep(
             note=0x24, # C-4?
             velocity=0x6F,
             instrument=0  # Set to use the first instrument (our macro synth)
         )
-        
-        # Add delay volume FX to the step using our new API
-        step.add_fx(key=0x2B, value=0x80)  # volume delay
         phrase.set_step(step, i*4)
     
     # Add phrase to project and get its index
