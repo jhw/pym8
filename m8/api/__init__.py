@@ -1,3 +1,5 @@
+BLANK = 0xFF
+
 class M8ValidationError(Exception):
     pass
 

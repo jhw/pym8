@@ -7,6 +7,9 @@
 - NULL vs BLANK
 - api generator prompt
 - api test suite
+
+# thoughts
+
 - transpose/eq/pitch/fine_tune synth parameters
 
 # rejected

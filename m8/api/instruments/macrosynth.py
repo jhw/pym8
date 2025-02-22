@@ -1,4 +1,5 @@
-from m8 import NULL, BLANK
+from m8 import NULL
+from m8.api import BLANK
 from m8.api.instruments import M8InstrumentBase
 from m8.core.object import m8_object_class
 

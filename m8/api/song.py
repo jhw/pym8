@@ -1,5 +1,5 @@
-from m8 import NULL, BLANK
-from m8.api import M8ValidationError
+from m8 import NULL
+from m8.api import M8ValidationError, BLANK
 from m8.core.array import m8_array_class
 from m8.core.list import m8_list_class
 

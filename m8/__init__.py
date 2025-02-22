@@ -1,4 +1,4 @@
-NULL, BLANK = 0x00, 0xFF
+NULL = 0x00
 
 class M8Block:
     def __init__(self):
