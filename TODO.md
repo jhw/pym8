@@ -1,15 +1,19 @@
 # short
 
-# medium
-
 - refactor block_byte [object] and default [array] as default_byte
 
-- add cutoff filter to PYMACRO
+# pymacro
 
-# issues
+- remove fx
+- LP filter envelope
+- amp and limit
+- chorus
 
-- modulators beyond modulator 1 are messed up
-- instrument pool is full of wavsynths (0x00)
+# medium
+
+- instrument id field to reflect position in list
+- transpose/eq/pitch/fine_tune
+- enums
 
 # thoughts
 
@@ -19,6 +23,8 @@
 
 # done
 
+- modulators beyond modulator 1 are messed up
+- instrument pool is full of wavsynths (0x00)
 - convert M8List to take default set of items
   - refactor modulator initialisation code
 - refactor M8List to write to fixed blocks
