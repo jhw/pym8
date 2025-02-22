@@ -2,6 +2,7 @@ from m8 import NULL
 from m8.core import m8_class_name
 from m8.core.fields import M8FieldMap
 
+from enum import Enum
 import struct
 
 class M8Object:
@@ -109,13 +110,21 @@ class M8Object:
                 # For composite fields, split into parts
                 for i, part_name in enumerate(field.parts):
                     if part_name != "_":  # Skip placeholder parts
-                        result[part_name] = field.get_typed_value(self._data, i)
+                        value = field.get_typed_value(self._data, i)
+                        # Convert enum members to their names
+                        if isinstance(value, Enum):
+                            value = value.name
+                        result[part_name] = value
             else:
                 # For regular fields
-                result[field_name] = field.get_typed_value(self._data)
+                value = field.get_typed_value(self._data)
+                # Convert enum members to their names
+                if isinstance(value, Enum):
+                    value = value.name
+                result[field_name] = value
                 
         return result
-
+            
     def is_empty(self):
         """Return True if all fields match their default values"""
         for field_name, field in self.FIELD_MAP.fields.items():

@@ -113,25 +113,66 @@ class TestM8Object(unittest.TestCase):
         obj = self.TestClass.read(long_data)
         self.assertEqual(obj.single_byte, 0x77)
 
-    def test_as_dict(self):
-        """Test converting object to dictionary"""
-        obj = self.TestClass(
-            single_byte=0x55,
-            upper=0x7,
-            lower=0x3,
-            floating=2.5,
-            text="ABCD"
+    def test_as_dict_with_enums(self):
+        """Test as_dict method with enum fields"""
+        # Create a sample M8Object class with enums
+        from enum import Enum
+        from m8.core.object import m8_object_class
+        
+        class TestEnum(Enum):
+            FIRST = 0x01
+            SECOND = 0x02
+            THIRD = 0x03
+        
+        class TypeEnum(Enum):
+            TYPE_A = 0x01
+            TYPE_B = 0x02
+            TYPE_C = 0x03
+        
+        class ModeEnum(Enum):
+            MODE_X = 0x01
+            MODE_Y = 0x02
+            MODE_Z = 0x03
+        
+        # Create object class with enum fields
+        TestObject = m8_object_class(
+            field_map=[
+                ("category", 0x02, 0, 1, "UINT8", TestEnum),
+                ("type|mode", 0x12, 1, 2, "UINT4_2", (TypeEnum, ModeEnum)),
+                ("value|_", 0x30, 2, 3, "UINT4_2", (TestEnum, None)),
+                ("name", "TEST", 3, 7, "STRING"),
+                ("level", 1.5, 7, 11, "FLOAT32")
+            ]
         )
         
-        # Get dictionary representation
-        data_dict = obj.as_dict()
+        # Create an instance with specific values
+        obj = TestObject()
+        obj.category = TestEnum.THIRD  # 0x03
+        obj.type = TypeEnum.TYPE_B     # 0x02
+        obj.mode = ModeEnum.MODE_Z     # 0x03
+        obj.value = TestEnum.SECOND    # 0x02
+        obj.name = "ENUM"
+        obj.level = 2.5
         
-        # Verify all fields are included
-        self.assertEqual(data_dict["single_byte"], 0x55)
-        self.assertEqual(data_dict["upper"], 0x7)
-        self.assertEqual(data_dict["lower"], 0x3)
-        self.assertAlmostEqual(data_dict["floating"], 2.5)
-        self.assertEqual(data_dict["text"], "ABCD")
+        # Get dictionary representation
+        result = obj.as_dict()
+        
+        # Verify enum values are converted to their names
+        self.assertEqual(result["category"], "THIRD")
+        self.assertEqual(result["type"], "TYPE_B")
+        self.assertEqual(result["mode"], "MODE_Z")
+        self.assertEqual(result["value"], "SECOND")
+        
+        # Regular fields should be unchanged
+        self.assertEqual(result["name"], "ENUM")
+        self.assertAlmostEqual(result["level"], 2.5)
+        
+        # Test with invalid enum value (not in enum)
+        # Manually set raw value that doesn't correspond to an enum
+        obj._data[0] = 0x99  # Invalid value for category field
+        result = obj.as_dict()
+        self.assertEqual(result["category"], 0x99)  # Should be raw integer
+        
 
     def test_clone(self):
         """Test cloning an object"""

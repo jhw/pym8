@@ -1,7 +1,5 @@
 # short
 
-- as_dict() to return enum keys if they exist
-
 - macrosynth enum implementation
 
 # examples
@@ -26,6 +24,7 @@
 
 # done
 
+- as_dict() to return enum keys if they exist
 - field map abstractions
 - refactor block_byte [object] and default [array] as default_byte
 - remove passing of instrument type fields
