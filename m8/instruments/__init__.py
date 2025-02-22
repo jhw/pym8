@@ -16,14 +16,12 @@ MODULATORS_OFFSET = 63
 class M8InstrumentBase:
     def __init__(self, synth_params_class, type, **kwargs):
         self.synth_params = synth_params_class(type=type, **kwargs)
-        self.modulators = M8Modulators()
-        # START TEMP CODE
-        for modulator in [M8AHDEnvelope(),
-                          M8AHDEnvelope(),
-                          M8LFO(),
-                          M8LFO()]:
-            self.modulators.append(modulator)
-        # END TEMP CODE
+        self.modulators = M8Modulators(items=[
+            M8AHDEnvelope(),
+            M8AHDEnvelope(),
+            M8LFO(),
+            M8LFO()
+        ])
 
     @classmethod
     def read(cls, data, synth_params_class):

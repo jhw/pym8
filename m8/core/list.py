@@ -4,15 +4,31 @@ from m8.core import m8_class_name
 import struct
 
 class M8List(list):
-    def __init__(self):
+    def __init__(self, items=None):
         super().__init__()
 
         if not hasattr(self.__class__, "ROW_CLASS"):
             raise AttributeError(f"{self.__class__.__name__} must define ROW_CLASS")
 
-        for _ in range(self.ROW_COUNT):
-            self.append(self.ROW_CLASS())
-    
+        # Initialize with empty rows or provided items
+        if items is None:
+            # Default initialization with empty rows
+            for _ in range(self.ROW_COUNT):
+                self.append(self.ROW_CLASS())
+        else:
+            # Initialize with provided items
+            if len(items) > self.ROW_COUNT:
+                raise ValueError(f"Too many items: got {len(items)}, max is {self.ROW_COUNT}")
+            
+            # Add provided items
+            for item in items:
+                self.append(item)
+            
+            # Fill remaining slots with empty rows
+            remaining = self.ROW_COUNT - len(items)
+            for _ in range(remaining):
+                self.append(self.ROW_CLASS())
+
     @classmethod
     def read(cls, data):
         instance = cls()

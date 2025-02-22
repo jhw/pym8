@@ -22,6 +22,28 @@ class TestM8List(unittest.TestCase):
         m8_list = self.TestClass()
         self.assertEqual(len(m8_list), 3)
         self.assertIsInstance(m8_list[0], self.TestRowClass)
+
+    def test_initialization_with_items(self):
+        """Test list initialization with custom items"""
+        # Create custom items
+        item1 = self.TestRowClass()
+        item1.value = 0xFF
+        
+        item2 = self.TestRowClass()
+        item2.value = 0xEE
+    
+        # Initialize list with items
+        m8_list = self.TestClass(items=[item1, item2])
+    
+        # Check that items were properly added
+        self.assertEqual(len(m8_list), 3)  # Should still have ROW_COUNT items
+        self.assertEqual(m8_list[0].value, 0xFF)
+        self.assertEqual(m8_list[1].value, 0xEE)
+        self.assertEqual(m8_list[2].value, 0x42)  # Default value for the auto-created item
+    
+        # Test with too many items
+        with self.assertRaises(ValueError):
+            self.TestClass(items=[item1, item1, item1, item1])  # ROW_COUNT is 3
         
     def test_row_access(self):
         """Test row access and modification"""
