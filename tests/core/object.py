@@ -1,5 +1,6 @@
-import unittest
 from m8.core.object import m8_object_class
+
+import unittest
 
 class TestM8Object(unittest.TestCase):
     def setUp(self):

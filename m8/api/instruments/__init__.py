@@ -1,6 +1,7 @@
-from m8 import M8Block, M8IndexError, load_class
-from m8.core.list import m8_list_class
+from m8 import M8Block
+from m8.api import M8IndexError, load_class
 from m8.api.modulators import M8Modulators, M8AHDEnvelope, M8LFO
+from m8.core.list import m8_list_class
 
 import struct
 

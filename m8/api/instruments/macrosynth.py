@@ -1,6 +1,6 @@
 from m8 import NULL, BLANK
-from m8.core.object import m8_object_class
 from m8.api.instruments import M8InstrumentBase
+from m8.core.object import m8_object_class
 
 M8MacroSynthParams = m8_object_class(
     field_map=[

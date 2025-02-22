@@ -1,7 +1,8 @@
-import unittest
-import struct
-from enum import Enum, auto
 from m8.core.fields import M8Field, M8FieldMap
+
+from enum import Enum, auto
+import struct
+import unittest
 
 # Sample enums for testing
 class TestEnum(Enum):

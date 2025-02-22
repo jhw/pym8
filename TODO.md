@@ -1,6 +1,5 @@
 # short
 
-- m8/api/__init__.py
 - missing checks in object get/set int, compared to other types 
 - refactor dump snapshot to iterate through a series of root directories
 
@@ -21,6 +20,7 @@
 
 # done
 
+- m8/api/__init__.py
 - move tools/dump_snapshot to tools/prompts/init_chat
 - add core subdir to tests
 - M8/API

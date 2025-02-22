@@ -1,10 +1,11 @@
-from m8 import M8Block, M8IndexError, NULL
+from m8 import M8Block, NULL
+from m8.api import M8IndexError
 from m8.core.object import m8_object_class
-from m8.utils.bits import split_byte, join_nibbles
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.phrases import M8Phrases
 from m8.api.song import M8SongMatrix
+from m8.utils.bits import split_byte, join_nibbles
 
 # https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
 

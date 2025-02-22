@@ -1,7 +1,8 @@
-import unittest
-import struct
 from m8 import NULL
 from m8.core.array import m8_array_class
+
+import struct
+import unittest
 
 class TestM8Array(unittest.TestCase):
     def setUp(self):

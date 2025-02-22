@@ -1,7 +1,8 @@
 from m8 import NULL
 from m8.utils.bits import split_byte, join_nibbles
-import struct
+
 from enum import Enum
+import struct
 
 # Format map for field types
 FORMAT_MAP = {

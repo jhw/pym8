@@ -1,7 +1,8 @@
-import unittest
 from m8 import M8Block, NULL
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
+
+import unittest
 
 class TestM8List(unittest.TestCase):
     def setUp(self):

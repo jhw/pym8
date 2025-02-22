@@ -1,11 +1,13 @@
-import unittest
-import os
-from m8 import M8ValidationError, NULL
-from m8.api.project import M8Project
+from m8 import NULL
+from m8.api import M8ValidationError
+from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.instruments.macrosynth import M8MacroSynth
 from m8.api.modulators import M8AHDEnvelope
 from m8.api.phrases import M8Phrase, M8PhraseStep, M8FXTuple
-from m8.api.chains import M8Chain, M8ChainStep
+from m8.api.project import M8Project
+
+import unittest
+import os
 
 class TestM8ProjectMemoryCycle(unittest.TestCase):
     """Test the serialization/deserialization cycle of M8Project without file I/O."""
