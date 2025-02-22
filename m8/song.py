@@ -6,7 +6,7 @@ COL_COUNT = 8
 ROW_COUNT = 255
 
 M8SongRowBase = m8_array_class(
-    default=BLANK,
+    default_byte=BLANK,
     length=COL_COUNT,
     fmt="B"
 )

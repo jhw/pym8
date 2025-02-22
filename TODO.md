@@ -1,7 +1,5 @@
 # short
 
-- refactor block_byte [object] and default [array] as default_byte
-
 # pymacro
 
 - remove fx
@@ -26,6 +24,7 @@
 
 # done
 
+- refactor block_byte [object] and default [array] as default_byte
 - remove passing of instrument type fields
 - modulators beyond modulator 1 are messed up
 - instrument pool is full of wavsynths (0x00)

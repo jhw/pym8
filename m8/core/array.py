@@ -40,10 +40,10 @@ class M8Array:
     def as_list(self):
         return list(struct.unpack(self.TYPE * self.LENGTH, self._data))
 
-def m8_array_class(length, fmt, default=NULL):
+def m8_array_class(length, fmt, default_byte=NULL):
     name = m8_class_name("M8Array")
     block_sz = length * struct.calcsize(fmt)
-    default_data = bytes([default] * block_sz)
+    default_data = bytes([default_byte] * block_sz)
 
     return type(name, (M8Array,), {
         "LENGTH": length,

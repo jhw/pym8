@@ -247,7 +247,7 @@ def expand_field_map(field_map):
         }
     return expanded
 
-def m8_object_class(field_map, block_sz=None, block_byte=NULL, block_head_byte=NULL):
+def m8_object_class(field_map, block_sz=None, default_byte=NULL, block_head_byte=NULL):
     name = m8_class_name("M8Object")
     field_map = expand_field_map(field_map)  # Convert list to dictionary
 
@@ -263,7 +263,7 @@ def m8_object_class(field_map, block_sz=None, block_byte=NULL, block_head_byte=N
     if block_sz is None:
         block_sz = max(field["end"] for field in field_map.values())
 
-    default_data = bytearray([block_byte] * block_sz)
+    default_data = bytearray([default_byte] * block_sz)
     default_data[0] = block_head_byte
 
     return type(name, (M8Object,), {

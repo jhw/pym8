@@ -9,7 +9,7 @@ class TestM8Array(unittest.TestCase):
         self.TestClass = m8_array_class(
             length=3,
             fmt="B",  # unsigned byte
-            default=0x42
+            default_byte=0x42
         )
 
     def test_initialization(self):
