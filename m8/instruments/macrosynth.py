@@ -4,7 +4,7 @@ from m8.core.object import m8_object_class
 
 M8MacroSynthParams = m8_object_class(
     field_map=[
-        ("type", None, 0, 1, "UINT8"),
+        ("type", 0x01, 0, 1, "UINT8"),
         ("name", " ", 1, 13, "STRING"),  
         ("transpose|eq", 0x41, 13, 14, "UINT4_2"),
         ("table_tick", 0x01, 14, 15, "UINT8"),
@@ -31,7 +31,7 @@ M8MacroSynthParams = m8_object_class(
 
 class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
-        super().__init__(type = 0x01, synth_params_class=M8MacroSynthParams, **kwargs)
+        super().__init__(synth_params_class=M8MacroSynthParams, **kwargs)
 
     @classmethod
     def read(cls, data):

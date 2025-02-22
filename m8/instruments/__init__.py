@@ -14,8 +14,8 @@ SYNTH_PARAMS_SIZE = 33
 MODULATORS_OFFSET = 63
 
 class M8InstrumentBase:
-    def __init__(self, synth_params_class, type, **kwargs):
-        self.synth_params = synth_params_class(type=type, **kwargs)
+    def __init__(self, synth_params_class, **kwargs):
+        self.synth_params = synth_params_class(**kwargs)
         self.modulators = M8Modulators(items=[
             M8AHDEnvelope(),
             M8AHDEnvelope(),

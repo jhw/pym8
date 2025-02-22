@@ -26,6 +26,7 @@
 
 # done
 
+- remove passing of instrument type fields
 - modulators beyond modulator 1 are messed up
 - instrument pool is full of wavsynths (0x00)
 - convert M8List to take default set of items

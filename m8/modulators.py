@@ -10,7 +10,7 @@ BLOCK_COUNT = 4
 
 M8AHDEnvelope = m8_object_class(
     field_map=[
-        ("type|destination", NULL, 0, 1, "UINT4_2"),  # type in upper nibble, destination in lower
+        ("type|destination", 0x00, 0, 1, "UINT4_2"),  # type in upper nibble, destination in lower
         ("amount", BLANK, 1, 2, "UINT8"),
         ("attack", NULL, 2, 3, "UINT8"),
         ("hold", NULL, 3, 4, "UINT8"),
@@ -43,7 +43,7 @@ M8LFO = m8_object_class(
 def modulator_row_class(data):
     first_byte = struct.unpack("B", data[:1])[0]
     mod_type, _ = split_byte(first_byte)  # Extract type from upper nibble, ignore destination    
-    if mod_type == NULL:
+    if mod_type == 0x00:
         return M8AHDEnvelope
     elif mod_type == 0x01:
         return M8ADSREnvelope
