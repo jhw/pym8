@@ -2,14 +2,16 @@
 
 - enum support
 
-# pymacro
+# examples
+
+## hello_macrosynth.py
 
 - remove fx
 - filter env, amp, chorus
 
 # medium
 
-- transpose/eq/pitch/fine_tune
+- transpose/eq/pitch/fine_tune synth parameters
 
 # rejected
 
