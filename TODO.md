@@ -1,15 +1,14 @@
 # short
 
 - missing checks in object get/set int, compared to other types 
-- refactor dump snapshot to iterate through a series of root directories
 
 # medium
 
 - macrosynth enums [notes]
 
-- add timestamp to prompt outputs
 - api generator prompt
-- api tests
+- api test suite
+
 - transpose/eq/pitch/fine_tune synth parameters
 
 # rejected
@@ -20,6 +19,8 @@
 
 # done
 
+- add timestamp to prompt outputs
+- refactor dump snapshot to iterate through a series of root directories
 - m8/api/__init__.py
 - move tools/dump_snapshot to tools/prompts/init_chat
 - add core subdir to tests
