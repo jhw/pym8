@@ -1,3 +1,24 @@
+### macrosynth enums 22/02/25
+
+- /M8/enums/instruments/macrosynth/M8MacroSynthShapes
+- /M8/enums/instruments/M8FilterTypes
+- /M8/enums/instruments/M8AmpLimitTypes
+- /M8/enums/instruments/macrosynth/M8MacroSynthModDestinations
+
+---
+
+- implement above enums in M8/enums 
+- include enum refs in instrument, modulator field map definitions
+- remove FX from hello macrosynth
+- refactor volume to use mod destination enum
+- add low pass filter to instrument 
+- add second AHD modulator for filter cutoff 
+- add instrument shape
+- add instrument (amp) level and limit 
+- add instrument chorus
+- run hello macrosynth
+- check inspect_m8s shows enum keys where applicable 
+
 ### m8macro.m8s 21/02/25
 
 ```

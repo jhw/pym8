@@ -2,7 +2,7 @@ import os
 import sys
 import cmd
 
-from m8.project import OFFSETS
+from m8.api.project import OFFSETS
 
 # Default state variables
 DEFAULT_COLS = 16

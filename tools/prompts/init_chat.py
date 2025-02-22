@@ -19,10 +19,12 @@ def collect_files():
     """Collect files based on user input"""
     root_directories = [
         "m8/utils",
-        "m8/core",
-        "m8",
-        "m8/instruments",
-        "tests",
+        "m8/core",        
+        "m8/api",
+        "m8/api/instruments",
+        "tests/utils",
+        "tests/core",
+        "tests/api",
         "examples",
         "tools"
     ]

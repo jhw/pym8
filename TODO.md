@@ -1,19 +1,16 @@
 # short
 
-- macrosynth enum implementation
-
-# examples
-
-## hello_macrosynth.py
-
-- enums :)
-- remove fx
-- filter env, amp, chorus
+- m8/api/__init__.py
+- missing checks in object get/set int, compared to other types 
+- refactor dump snapshot to iterate through a series of root directories
 
 # medium
 
-- non- core tests
+- macrosynth enums [notes]
 
+- add timestamp to prompt outputs
+- api generator prompt
+- api tests
 - transpose/eq/pitch/fine_tune synth parameters
 
 # rejected
@@ -24,6 +21,9 @@
 
 # done
 
+- move tools/dump_snapshot to tools/prompts/init_chat
+- add core subdir to tests
+- M8/API
 - as_dict() to return enum keys if they exist
 - field map abstractions
 - refactor block_byte [object] and default [array] as default_byte

@@ -1,11 +1,11 @@
 import os
 from m8 import M8ValidationError, M8IndexError, NULL
-from m8.project import M8Project
-from m8.instruments.macrosynth import M8MacroSynth
-from m8.modulators import M8AHDEnvelope
-from m8.phrases import M8Phrase, M8PhraseStep
-from m8.chains import M8Chain, M8ChainStep
-from m8.song import M8SongRow
+from m8.api.project import M8Project
+from m8.api.instruments.macrosynth import M8MacroSynth
+from m8.api.modulators import M8AHDEnvelope
+from m8.api.phrases import M8Phrase, M8PhraseStep
+from m8.api.chains import M8Chain, M8ChainStep
+from m8.api.song import M8SongRow
 
 try:
     # Load the project

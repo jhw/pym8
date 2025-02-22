@@ -1,11 +1,11 @@
 from m8 import M8Block, M8IndexError, load_class
 from m8.core.list import m8_list_class
-from m8.modulators import M8Modulators, M8AHDEnvelope, M8LFO
+from m8.api.modulators import M8Modulators, M8AHDEnvelope, M8LFO
 
 import struct
 
 INSTRUMENT_TYPES = {
-    0x01: "m8.instruments.macrosynth.M8MacroSynth"
+    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
 }
 
 BLOCK_SIZE = 215

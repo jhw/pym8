@@ -1,5 +1,5 @@
 from m8 import M8Block
-from m8.project import M8Project
+from m8.api.project import M8Project
 
 import sys
 import os
