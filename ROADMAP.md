@@ -2,21 +2,21 @@
 
 - wavsynth
 - sampler
-- fm
+- fmsynth
 - hypersynth
 
 # modulators
 
-- sidechain
+- [remaining modulators]
 
 # features
 
 - phrase OFF
 - tables
 - eq
-- midi
+- midi mapping
 
 # tooling
 
-- m8i files
-- block hunter
+- m8i file handling
+- block hunter script

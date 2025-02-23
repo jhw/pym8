@@ -1,10 +1,11 @@
 # short
 
-- note and mod dest enums
+- NULL vs BLANK
+- phrase note, mod dest enums
+- wavsynth
 
 # medium
 
-- NULL vs BLANK
 - api generator prompt
 - api test suite
 
