@@ -1,6 +1,7 @@
 # short
 
 - phrase note, mod dest enums
+- add delay send to hello_macrosynth
 - wavsynth
 
 # medium
@@ -21,6 +22,7 @@
 
 # done
 
+- as_dict lenient enum handling
 - add low pass filter to instrument 
 - add second AHD modulator for filter cutoff 
 - add instrument shape
