@@ -7,7 +7,7 @@ from m8.enums.instruments.macrosynth import M8MacroSynthShapes
 
 M8MacroSynthParams = m8_object_class(
     field_map=[
-        ("type", 0x01, 0, 1, "UINT8"),
+        ("type", 0x01, 0, 1, "UINT8"),  # Type is defined here in the params
         ("name", " ", 1, 13, "STRING"),  
         ("transpose|eq", 0x41, 13, 14, "UINT4_2"),
         ("table_tick", 0x01, 14, 15, "UINT8"),
@@ -33,8 +33,5 @@ M8MacroSynthParams = m8_object_class(
 )
 
 class M8MacroSynth(M8InstrumentBase):
-    def _get_type(self):
-        return 0x01
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

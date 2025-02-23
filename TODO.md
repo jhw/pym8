@@ -1,6 +1,6 @@
 # short
 
-- investigate why synth_params_class check is required at macrosynth.py constructor level
+- refactor macrosynth as macro_synth
 
 - helpers to initialise modulators on per- instrument basis
 
@@ -25,6 +25,7 @@
 
 # done
 
+- investigate why synth_params_class check is required at macrosynth.py constructor level
 - factory functions taking self.synth_params.type to instantiate modulators
 - as_dict lenient enum handling
 - add low pass filter to instrument 

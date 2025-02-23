@@ -25,40 +25,34 @@ def get_class_paths(base_name):
 
 class M8InstrumentBase:
     def __init__(self, **kwargs):
-        # Get params class path from instrument type
-        instr_type = self._get_type()
-        if instr_type not in INSTRUMENT_TYPES:
-            raise ValueError(f"Unknown instrument type: {instr_type}")
-            
-        _, params_path = get_class_paths(INSTRUMENT_TYPES[instr_type])
+        # First create the synth params
+        _, params_path = get_class_paths(INSTRUMENT_TYPES[0x01])  # For now hardcoded to MacroSynth
         params_class = load_class(params_path)
         self.synth_params = params_class(**kwargs)
         
-        # Use factory functions to create modulators based on type from synth_params
+        # Now create modulators using the type from synth params
         M8Modulators = create_modulators_class(self.synth_params.type)
         default_modulators = create_default_modulators(self.synth_params.type)
         self.modulators = M8Modulators(items=default_modulators)
 
     @classmethod
     def read(cls, data):
-        instance = cls()
+        # Get the type from the first byte and validate
         instr_type = data[0]
         if instr_type not in INSTRUMENT_TYPES:
             raise ValueError(f"Unknown instrument type: {instr_type}")
             
+        # Create instance and load its params
+        instance = cls()
         _, params_path = get_class_paths(INSTRUMENT_TYPES[instr_type])
         params_class = load_class(params_path)
         instance.synth_params = params_class.read(data[:SYNTH_PARAMS_SIZE])
         
-        # Create modulators class based on type from synth_params
+        # Create modulators based on the loaded params
         M8Modulators = create_modulators_class(instance.synth_params.type)
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
         
         return instance
-
-    def _get_type(self):
-        """Get instrument type - to be implemented by subclasses"""
-        raise NotImplementedError
 
     @property
     def available_modulator_slot(self):
