@@ -6,70 +6,81 @@ from m8.api.modulators import M8AHDEnvelope
 from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
+from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
+from m8.enums.instruments.macrosynth import M8MacroSynthShapes
 
 import os
+import random
 
 try:
-    # Load the project
+    # Load the base project template
     project = M8Project.read_from_file("templates/DEFAULT401.m8s")
     
-    # Set project metadata
+    # Configure project metadata
     project.metadata.directory = "/Songs/woldo/"
     project.metadata.name = "PYMACRO"
     
-    # Create and assign macro synth to first slot
+    # Create and configure macro synth instrument
     macro_synth = M8MacroSynth(
-        mixer_delay = 0xC0
+        mixer_delay=0xC0,
+        mixer_chorus=0xC0,
+        filter_type=M8FilterTypes.LOWPASS,
+        filter_cutoff=0x30,
+        shape=random.choice(list(M8MacroSynthShapes)),
+        amp_limit=M8AmpLimitTypes.SIN,
+        amp_level=0x40
     )
+    
+    # Add instrument to first slot
     project.add_instrument(macro_synth)
     
-    # Create and configure AHD envelope modulator with kwargs
-    ahd_mod = M8AHDEnvelope(
+    # Create and configure first AHD envelope modulator
+    ahd_mod1 = M8AHDEnvelope(
         destination=0x01,
         decay=0x40
     )
-    macro_synth.set_modulator(ahd_mod, slot = 0)
+    macro_synth.set_modulator(ahd_mod1, slot=0)
     
-    # Create phrase
+    # Create and configure second AHD envelope modulator
+    ahd_mod2 = M8AHDEnvelope(
+        destination=0x07,
+        amount=0xFF,
+        decay=0x20  # Half of first modulator's decay
+    )
+    macro_synth.set_modulator(ahd_mod2, slot=1)
+    
+    # Create a basic phrase with repeating notes
     phrase = M8Phrase()
-    
-    # Create steps with note properties
     for i in range(4):
         step = M8PhraseStep(
-            note=0x24, # C-4?
+            note=0x24,  # C-4
             velocity=0x6F,
-            instrument=0  # Set to use the first instrument (our macro synth)
+            instrument=0  # Reference our macro synth in the first slot
         )
         phrase.set_step(step, i*4)
     
-    # Add phrase to project and get its index
+    # Add phrase to project
     phrase_idx = project.add_phrase(phrase)
     
-    # Create chain 
+    # Create a chain with our phrase
     chain = M8Chain()
-    
-    # Create chain step and add it to the chain using the new method
     chain_step = M8ChainStep(
-        phrase=phrase_idx,  # Use the phrase we created above
+        phrase=phrase_idx,
         transpose=NULL
     )
     chain.add_step(chain_step)
     
-    # Add chain to project and get its index
+    # Add chain to project and assign to first song position
     chain_idx = project.add_chain(chain)
+    project.song[0][0] = chain_idx
     
-    # Set the first element of the first row in the song to our chain
-    project.song[0][0] = chain_idx  # Use the chain we created
-    
-    # Validate project before saving
+    # Validate and save the project
     project.validate()
-    
-    # Save project
     os.makedirs('tmp', exist_ok=True)
     filename = f"tmp/{project.metadata.name.replace(' ', '')}.m8s"
     project.write_to_file(filename)
     
-    print(f"Project written to {filename}")
+    print(f"Project successfully written to {filename}")
     
 except (M8ValidationError, M8IndexError) as e:
     print(f"Project creation failed: {str(e)}")

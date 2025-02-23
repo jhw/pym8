@@ -1,17 +1,9 @@
 # short
 
-- add low pass filter to instrument 
-- add second AHD modulator for filter cutoff 
-- add instrument shape
-- add instrument (amp) level and limit 
-- add instrument chorus
-
-- run hello macrosynth
-- check inspect_m8s shows enum keys where applicable 
+- note and mod dest enums
 
 # medium
 
-- note, mod dest enums
 - NULL vs BLANK
 - api generator prompt
 - api test suite
@@ -28,6 +20,13 @@
 
 # done
 
+- add low pass filter to instrument 
+- add second AHD modulator for filter cutoff 
+- add instrument shape
+- add instrument (amp) level and limit 
+- add instrument chorus
+- run hello macrosynth
+- check inspect_m8s shows enum keys where applicable 
 - include enum refs in instrument, modulator field map definitions
 - /M8/enums/instruments/macrosynth/M8MacroSynthShapes
 - /M8/enums/instruments/M8FilterTypes
