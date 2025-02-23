@@ -1,17 +1,19 @@
 # short
 
-- phrase note, mod dest enums
-- add delay send to hello_macrosynth
-- wavsynth
+- modulators on per synth basis
 
 # medium
 
+- phrase note enum 
+- mod dest enum
+- add delay send to hello_macrosynth
+
 - api test suite
-- NULL vs BLANK
 - api generator prompt
 
 # thoughts
 
+- NULL vs BLANK?
 - transpose/eq/pitch/fine_tune synth parameters
 
 # rejected
