@@ -14,13 +14,15 @@ BLOCK_COUNT = 128
 SYNTH_PARAMS_SIZE = 33
 MODULATORS_OFFSET = 63
 
+
 def get_class_paths(base_name):
     """Get instrument and params class paths from base name"""
-    # Convert snake_case to PascalCase without underscores for class names
+    # Convert snake_case to PascalCase for class names and module name
     class_prefix = "".join(word.title() for word in base_name.split("_"))
+    module_name = base_name.replace("_", "")
     return (
-        f"m8.api.instruments.macrosynth.M8{class_prefix}",
-        f"m8.api.instruments.macrosynth.M8{class_prefix}Params"
+        f"m8.api.instruments.{module_name}.M8{class_prefix}",
+        f"m8.api.instruments.{module_name}.M8{class_prefix}Params"
     )
 
 class M8InstrumentBase:
