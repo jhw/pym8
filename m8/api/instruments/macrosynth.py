@@ -2,6 +2,8 @@ from m8 import NULL
 from m8.api import BLANK
 from m8.api.instruments import M8InstrumentBase
 from m8.core.object import m8_object_class
+from m8.enums.instruments import M8AmpLimitTypes, M8FilterTypes
+from m8.enums.instruments.macrosynth import M8MacroSynthShapes
 
 M8MacroSynthParams = m8_object_class(
     field_map=[
@@ -12,16 +14,16 @@ M8MacroSynthParams = m8_object_class(
         ("volume", NULL, 15, 16, "UINT8"), 
         ("pitch", NULL, 16, 17, "UINT8"), 
         ("fine_tune", 0x80, 17, 18, "UINT8"),
-        ("shape", NULL, 18, 19, "UINT8"),
+        ("shape", NULL, 18, 19, "UINT8", M8MacroSynthShapes),
         ("timbre", 0x80, 19, 20, "UINT8"),
         ("color", 0x80, 20, 21, "UINT8"),
         ("degrade", NULL, 21, 22, "UINT8"),
         ("redux", NULL, 22, 23, "UINT8"),
-        ("filter_type", NULL, 23, 24, "UINT8"),
+        ("filter_type", NULL, 23, 24, "UINT8", M8FilterTypes),
         ("filter_cutoff", BLANK, 24, 25, "UINT8"),
         ("filter_resonance", NULL, 25, 26, "UINT8"),
         ("amp_level", NULL, 26, 27, "UINT8"),
-        ("amp_limit", NULL, 27, 28, "UINT8"),
+        ("amp_limit", NULL, 27, 28, "UINT8", M8AmpLimitTypes),
         ("mixer_pan", 0x80, 28, 29, "UINT8"),
         ("mixer_dry", 0xC0, 29, 30, "UINT8"),
         ("mixer_chorus", NULL, 30, 31, "UINT8"),
