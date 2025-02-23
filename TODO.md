@@ -1,9 +1,5 @@
 # short
 
-- /M8/enums/instruments/macrosynth/M8MacroSynthShapes
-- /M8/enums/instruments/M8FilterTypes
-- /M8/enums/instruments/M8AmpLimitTypes
-
 - include enum refs in instrument, modulator field map definitions
 - refactor volume to use mod destination enum
 - add low pass filter to instrument 
@@ -33,6 +29,9 @@
 
 # done
 
+- /M8/enums/instruments/macrosynth/M8MacroSynthShapes
+- /M8/enums/instruments/M8FilterTypes
+- /M8/enums/instruments/M8AmpLimitTypes
 - missing checks in object get/set int, compared to other types 
 - add timestamp to prompt outputs
 - refactor dump snapshot to iterate through a series of root directories
