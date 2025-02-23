@@ -1,6 +1,6 @@
 # short
 
-- factory functions taking self.synth_params.type to instantiate modulators
+- why does macrosynth con
 
 # medium
 
@@ -23,6 +23,7 @@
 
 # done
 
+- factory functions taking self.synth_params.type to instantiate modulators
 - as_dict lenient enum handling
 - add low pass filter to instrument 
 - add second AHD modulator for filter cutoff 

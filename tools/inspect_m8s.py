@@ -55,12 +55,8 @@ def main():
     if not file_path.lower().endswith('.m8s'):
         print(f"Warning: File does not have .m8s extension: {file_path}")
     
-    try:
-        project = M8Project.read_from_file(file_path)
-        print_project_info(project)
-    except Exception as e:
-        print(f"Error reading M8 project file: {str(e)}")
-        sys.exit(1)
+    project = M8Project.read_from_file(file_path)
+    print_project_info(project)
 
 if __name__ == "__main__":
     main()

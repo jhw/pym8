@@ -9,6 +9,7 @@ import struct
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4
 
+# Base modulator classes remain the same
 M8AHDEnvelope = m8_object_class(
     field_map=[
         ("type|destination", 0x00, 0, 1, "UINT4_2"),  # type in upper nibble, destination in lower
@@ -41,22 +42,42 @@ M8LFO = m8_object_class(
     ]
 )
 
-def modulator_row_class(data):
-    first_byte = struct.unpack("B", data[:1])[0]
-    mod_type, _ = split_byte(first_byte)  # Extract type from upper nibble, ignore destination    
-    if mod_type == 0x00:
-        return M8AHDEnvelope
-    elif mod_type == 0x01:
-        return M8ADSREnvelope
-    elif mod_type == 0x03:
-        return M8LFO
-    else:
-        return M8Block
+def create_modulator_row_class_resolver(instrument_type):
+    """Factory function to create a row class resolver based on instrument type"""
+    def resolver(data):
+        first_byte = struct.unpack("B", data[:1])[0]
+        mod_type, _ = split_byte(first_byte)  # Extract type from upper nibble
+        
+        # For now, the logic remains the same for all instrument types
+        # but can be customized based on instrument_type in the future
+        if mod_type == 0x00:
+            return M8AHDEnvelope
+        elif mod_type == 0x01:
+            return M8ADSREnvelope
+        elif mod_type == 0x03:
+            return M8LFO
+        else:
+            return M8Block
 
-M8Modulators = m8_list_class(
-    row_size=BLOCK_SIZE,
-    row_count=BLOCK_COUNT,
-    row_class_resolver=modulator_row_class
-)
+    return resolver
 
+def create_modulators_class(instrument_type):
+    """Factory function to create an M8Modulators class based on instrument type"""
+    row_class_resolver = create_modulator_row_class_resolver(instrument_type)
+    
+    return m8_list_class(
+        row_size=BLOCK_SIZE,
+        row_count=BLOCK_COUNT,
+        row_class_resolver=row_class_resolver
+    )
 
+# Update M8InstrumentBase to use the factory functions
+def create_default_modulators(instrument_type):
+    """Create default modulator instances based on instrument type"""
+    # This can be customized based on instrument type in the future
+    return [
+        M8AHDEnvelope(),
+        M8AHDEnvelope(),
+        M8LFO(),
+        M8LFO()
+    ]

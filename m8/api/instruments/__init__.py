@@ -1,6 +1,6 @@
 from m8 import M8Block
 from m8.api import M8IndexError, load_class
-from m8.api.modulators import M8Modulators, M8AHDEnvelope, M8LFO
+from m8.api.modulators import create_modulators_class, create_default_modulators
 from m8.core.list import m8_list_class
 
 import struct
@@ -17,18 +17,21 @@ MODULATORS_OFFSET = 63
 class M8InstrumentBase:
     def __init__(self, synth_params_class, **kwargs):
         self.synth_params = synth_params_class(**kwargs)
-        self.modulators = M8Modulators(items=[
-            M8AHDEnvelope(),
-            M8AHDEnvelope(),
-            M8LFO(),
-            M8LFO()
-        ])
+        
+        # Use factory functions to create modulators based on type from synth_params
+        M8Modulators = create_modulators_class(self.synth_params.type)
+        default_modulators = create_default_modulators(self.synth_params.type)
+        self.modulators = M8Modulators(items=default_modulators)
 
     @classmethod
     def read(cls, data, synth_params_class):
-        instance = cls()
+        instance = cls(synth_params_class=synth_params_class)
         instance.synth_params = synth_params_class.read(data[:SYNTH_PARAMS_SIZE])
+        
+        # Create modulators class based on type from synth_params
+        M8Modulators = create_modulators_class(instance.synth_params.type)
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
+        
         return instance
 
     @property
@@ -79,5 +82,4 @@ def instrument_row_class(data):
 M8Instruments = m8_list_class(
     row_size=BLOCK_SIZE,
     row_count=BLOCK_COUNT,
-    row_class_resolver=instrument_row_class
-)
+    row_class_resolver=instrument_row_class)
