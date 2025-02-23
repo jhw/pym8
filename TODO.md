@@ -1,6 +1,8 @@
 # short
 
-- why does macrosynth con
+- investigate why synth_params_class check is required at macrosynth.py constructor level
+
+- helpers to initialise modulators on per- instrument basis
 
 # medium
 
