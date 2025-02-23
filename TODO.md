@@ -1,13 +1,12 @@
 # short
 
-- modulators on per synth basis
+- factory functions taking self.synth_params.type to instantiate modulators
 
 # medium
 
 - phrase note enum 
 - mod dest enum
 - add delay send to hello_macrosynth
-
 - api test suite
 - api generator prompt
 
