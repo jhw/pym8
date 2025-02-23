@@ -1,13 +1,13 @@
 # short
 
-- NULL vs BLANK
 - phrase note, mod dest enums
 - wavsynth
 
 # medium
 
-- api generator prompt
 - api test suite
+- NULL vs BLANK
+- api generator prompt
 
 # thoughts
 
