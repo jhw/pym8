@@ -33,12 +33,8 @@ M8MacroSynthParams = m8_object_class(
 )
 
 class M8MacroSynth(M8InstrumentBase):
-    def __init__(self, **kwargs):
-        if  "synth_params_class" not in kwargs:
-            super().__init__(synth_params_class=M8MacroSynthParams, **kwargs)
-        else:
-            super().__init__(**kwargs)
+    def _get_type(self):
+        return 0x01
 
-    @classmethod
-    def read(cls, data):
-        return super().read(data, synth_params_class=M8MacroSynthParams)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

@@ -6,7 +6,7 @@ from m8.core.list import m8_list_class
 import struct
 
 INSTRUMENT_TYPES = {
-    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
+    0x01: "macro_synth"
 }
 
 BLOCK_SIZE = 215
@@ -14,9 +14,25 @@ BLOCK_COUNT = 128
 SYNTH_PARAMS_SIZE = 33
 MODULATORS_OFFSET = 63
 
+def get_class_paths(base_name):
+    """Get instrument and params class paths from base name"""
+    # Convert snake_case to PascalCase without underscores for class names
+    class_prefix = "".join(word.title() for word in base_name.split("_"))
+    return (
+        f"m8.api.instruments.macrosynth.M8{class_prefix}",
+        f"m8.api.instruments.macrosynth.M8{class_prefix}Params"
+    )
+
 class M8InstrumentBase:
-    def __init__(self, synth_params_class, **kwargs):
-        self.synth_params = synth_params_class(**kwargs)
+    def __init__(self, **kwargs):
+        # Get params class path from instrument type
+        instr_type = self._get_type()
+        if instr_type not in INSTRUMENT_TYPES:
+            raise ValueError(f"Unknown instrument type: {instr_type}")
+            
+        _, params_path = get_class_paths(INSTRUMENT_TYPES[instr_type])
+        params_class = load_class(params_path)
+        self.synth_params = params_class(**kwargs)
         
         # Use factory functions to create modulators based on type from synth_params
         M8Modulators = create_modulators_class(self.synth_params.type)
@@ -24,15 +40,25 @@ class M8InstrumentBase:
         self.modulators = M8Modulators(items=default_modulators)
 
     @classmethod
-    def read(cls, data, synth_params_class):
-        instance = cls(synth_params_class=synth_params_class)
-        instance.synth_params = synth_params_class.read(data[:SYNTH_PARAMS_SIZE])
+    def read(cls, data):
+        instance = cls()
+        instr_type = data[0]
+        if instr_type not in INSTRUMENT_TYPES:
+            raise ValueError(f"Unknown instrument type: {instr_type}")
+            
+        _, params_path = get_class_paths(INSTRUMENT_TYPES[instr_type])
+        params_class = load_class(params_path)
+        instance.synth_params = params_class.read(data[:SYNTH_PARAMS_SIZE])
         
         # Create modulators class based on type from synth_params
         M8Modulators = create_modulators_class(instance.synth_params.type)
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
         
         return instance
+
+    def _get_type(self):
+        """Get instrument type - to be implemented by subclasses"""
+        raise NotImplementedError
 
     @property
     def available_modulator_slot(self):
@@ -60,23 +86,24 @@ class M8InstrumentBase:
             "synth": self.synth_params.as_dict(),
             "modulators": [
                 mod.as_dict() for mod in self.modulators 
-                if isinstance(mod, M8Block) is False  # Skip empty modulator slots
-                and (mod.destination != 0)  # Only include modulators with non-zero destination
+                if isinstance(mod, M8Block) is False
+                and (mod.destination != 0)
             ]
         }
     
     def write(self):
         buffer = bytearray()
         buffer.extend(self.synth_params.write())
-        # Add padding between synth params and modulators
         buffer.extend(bytes([0] * (MODULATORS_OFFSET - SYNTH_PARAMS_SIZE)))
         buffer.extend(self.modulators.write())
         return bytes(buffer)
 
 def instrument_row_class(data):
+    """Factory function to create appropriate instrument class based on type byte"""
     instr_type = struct.unpack('B', data[:1])[0]
     if instr_type in INSTRUMENT_TYPES:
-        return load_class(INSTRUMENT_TYPES[instr_type])
+        instrument_path, _ = get_class_paths(INSTRUMENT_TYPES[instr_type])
+        return load_class(instrument_path)
     return M8Block
 
 M8Instruments = m8_list_class(
