@@ -1,5 +1,5 @@
 from m8 import M8Block
-from m8.api.modulators.macrosynth import M8MacroSynthAHDEnvelope, M8MacroSynthADSREnvelope, M8MacroSynthLFO
+from m8.api import load_class
 from m8.core.list import m8_list_class
 from m8.utils.bits import split_byte
 
@@ -8,26 +8,56 @@ import struct
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4
 
-# Update M8InstrumentBase to use the factory functions
-def create_default_modulators(instrument_type):
-    return [
-        M8MacroSynthAHDEnvelope(),
-        M8MacroSynthAHDEnvelope(),
-        M8MacroSynthLFO(),
-        M8MacroSynthLFO()
+# Map instrument types to their modulator type paths
+MODULATOR_TYPES = {
+    0x01: {  # MacroSynth
+        0x00: "m8.api.modulators.macrosynth.M8MacroSynthAHDEnvelope",
+        0x01: "m8.api.modulators.macrosynth.M8MacroSynthADSREnvelope",
+        0x03: "m8.api.modulators.macrosynth.M8MacroSynthLFO"
+    }
+    # Add other instrument types and their modulators here
+}
+
+# Default modulator configuration for each instrument type (just the type IDs)
+DEFAULT_MODULATORS = {
+    0x01: [  # MacroSynth defaults
+        0x00,  # Two AHD envelopes
+        0x00,
+        0x03,  # Two LFOs
+        0x03
     ]
+}
+
+def get_default_modulator_set(instrument_type):
+    """Get the list of default modulator classes for an instrument type"""
+    if instrument_type not in MODULATOR_TYPES:
+        raise ValueError(f"Unknown instrument type: {instrument_type}")
+        
+    result = []
+    for mod_type in DEFAULT_MODULATORS[instrument_type]:
+        # Get class path from MODULATOR_TYPES and instantiate
+        full_path = MODULATOR_TYPES[instrument_type][mod_type]
+        ModClass = load_class(full_path)
+        result.append(ModClass())
+        
+    return result
+
+def create_default_modulators(instrument_type):
+    """Create default modulator instances for an instrument type"""
+    return get_default_modulator_set(instrument_type)
 
 def create_modulator_row_class_resolver(instrument_type):
     """Factory function to create a row class resolver based on instrument type"""
+    if instrument_type not in MODULATOR_TYPES:
+        raise ValueError(f"Unknown instrument type: {instrument_type}")
+        
     def resolver(data):
         first_byte = struct.unpack("B", data[:1])[0]
         mod_type, _ = split_byte(first_byte)
-        if mod_type == 0x00:
-            return M8MacroSynthAHDEnvelope
-        elif mod_type == 0x01:
-            return M8MacroSynthADSREnvelope
-        elif mod_type == 0x03:
-            return M8MacroSynthLFO
+        
+        if mod_type in MODULATOR_TYPES[instrument_type]:
+            class_path = MODULATOR_TYPES[instrument_type][mod_type]
+            return load_class(class_path)
         else:
             return M8Block
 
@@ -42,5 +72,3 @@ def create_modulators_class(instrument_type):
         row_count=BLOCK_COUNT,
         row_class_resolver=row_class_resolver
     )
-
-

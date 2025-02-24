@@ -1,12 +1,16 @@
 # short
 
-- modulators root to dynamically instantiate modulators
+- default modulators doesn't need to include instrument type
+- macrosynth mod dest enums
+- include mod dest enum ref in hello_macrosynth
 
 # medium
 
-- mod dest enums
+
 - phrase note enum 
+
 - add delay send to hello_macrosynth
+
 - api test suite
 - api generator prompt
 
@@ -25,6 +29,7 @@
 
 # done
 
+- modulators root to dynamically instantiate modulators
 - modulator directory
 - remove params
 - investigate why synth_params_class check is required at macrosynth.py constructor level
