@@ -1,5 +1,7 @@
 # short
 
+- does M8Object get_xxx really need format checking code?
+
 - to_dict to render hex codes
 
 - add_xxx to return slot position
