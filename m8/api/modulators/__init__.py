@@ -8,14 +8,20 @@ import struct
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4
 
+# Update M8InstrumentBase to use the factory functions
+def create_default_modulators(instrument_type):
+    return [
+        M8MacroSynthAHDEnvelope(),
+        M8MacroSynthAHDEnvelope(),
+        M8MacroSynthLFO(),
+        M8MacroSynthLFO()
+    ]
+
 def create_modulator_row_class_resolver(instrument_type):
     """Factory function to create a row class resolver based on instrument type"""
     def resolver(data):
         first_byte = struct.unpack("B", data[:1])[0]
-        mod_type, _ = split_byte(first_byte)  # Extract type from upper nibble
-        
-        # For now, the logic remains the same for all instrument types
-        # but can be customized based on instrument_type in the future
+        mod_type, _ = split_byte(first_byte)
         if mod_type == 0x00:
             return M8MacroSynthAHDEnvelope
         elif mod_type == 0x01:
@@ -37,13 +43,4 @@ def create_modulators_class(instrument_type):
         row_class_resolver=row_class_resolver
     )
 
-# Update M8InstrumentBase to use the factory functions
-def create_default_modulators(instrument_type):
-    """Create default modulator instances based on instrument type"""
-    # This can be customized based on instrument type in the future
-    return [
-        M8MacroSynthAHDEnvelope(),
-        M8MacroSynthAHDEnvelope(),
-        M8MacroSynthLFO(),
-        M8MacroSynthLFO()
-    ]
+
