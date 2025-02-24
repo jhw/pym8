@@ -106,6 +106,10 @@ class M8Object:
                         # Convert enum members to their names
                         if isinstance(value, Enum):
                             value = value.name
+                        # Convert integers to hex strings if no enum is present
+                        elif isinstance(value, int) and field.format in ["UINT8", "UINT4_2"]:
+                            if field.enums is None or (field.is_composite and (field.enums[i] is None)):
+                                value = f"0x{value:02X}"
                         result[part_name] = value
             else:
                 # For regular fields
@@ -113,6 +117,10 @@ class M8Object:
                 # Convert enum members to their names
                 if isinstance(value, Enum):
                     value = value.name
+                # Convert integers to hex strings if no enum is present
+                elif isinstance(value, int) and field.format in ["UINT8", "UINT4_2"]:
+                    if field.enums is None:
+                        value = f"0x{value:02X}"
                 result[field_name] = value
                 
         return result
