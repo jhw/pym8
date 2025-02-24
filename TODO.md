@@ -1,19 +1,20 @@
 # short
 
-- refactor macrosynth as macro_synth
-
-- helpers to initialise modulators on per- instrument basis
+- modulator directory
+- modulators root to dynamically instantiate modulators
 
 # medium
 
+- mod dest enums
 - phrase note enum 
-- mod dest enum
 - add delay send to hello_macrosynth
 - api test suite
 - api generator prompt
 
 # thoughts
 
+- alternative inheritance pattern for instruments?
+- refactor macrosynth as macro_synth?
 - NULL vs BLANK?
 - transpose/eq/pitch/fine_tune synth parameters
 
@@ -25,6 +26,7 @@
 
 # done
 
+- remove params
 - investigate why synth_params_class check is required at macrosynth.py constructor level
 - factory functions taking self.synth_params.type to instantiate modulators
 - as_dict lenient enum handling

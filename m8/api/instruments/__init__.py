@@ -3,10 +3,8 @@ from m8.api import M8IndexError, load_class
 from m8.api.modulators import create_modulators_class, create_default_modulators
 from m8.core.list import m8_list_class
 
-import struct
-
 INSTRUMENT_TYPES = {
-    0x01: "macro_synth"
+    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
 }
 
 BLOCK_SIZE = 215
@@ -14,25 +12,14 @@ BLOCK_COUNT = 128
 SYNTH_PARAMS_SIZE = 33
 MODULATORS_OFFSET = 63
 
-
-def get_class_paths(base_name):
-    """Get instrument and params class paths from base name"""
-    # Convert snake_case to PascalCase for class names and module name
-    class_prefix = "".join(word.title() for word in base_name.split("_"))
-    module_name = base_name.replace("_", "")
-    return (
-        f"m8.api.instruments.{module_name}.M8{class_prefix}",
-        f"m8.api.instruments.{module_name}.M8{class_prefix}Params"
-    )
-
 class M8InstrumentBase:
     def __init__(self, **kwargs):
-        # First create the synth params
-        _, params_path = get_class_paths(INSTRUMENT_TYPES[0x01])  # For now hardcoded to MacroSynth
+        # Get params class path from instrument path
+        params_path = f"{INSTRUMENT_TYPES[0x01]}Params"  # For now hardcoded to MacroSynth
         params_class = load_class(params_path)
         self.synth_params = params_class(**kwargs)
         
-        # Now create modulators using the type from synth params
+        # Create modulators using the type from synth params
         M8Modulators = create_modulators_class(self.synth_params.type)
         default_modulators = create_default_modulators(self.synth_params.type)
         self.modulators = M8Modulators(items=default_modulators)
@@ -46,7 +33,7 @@ class M8InstrumentBase:
             
         # Create instance and load its params
         instance = cls()
-        _, params_path = get_class_paths(INSTRUMENT_TYPES[instr_type])
+        params_path = f"{INSTRUMENT_TYPES[instr_type]}Params"
         params_class = load_class(params_path)
         instance.synth_params = params_class.read(data[:SYNTH_PARAMS_SIZE])
         
@@ -96,10 +83,9 @@ class M8InstrumentBase:
 
 def instrument_row_class(data):
     """Factory function to create appropriate instrument class based on type byte"""
-    instr_type = struct.unpack('B', data[:1])[0]
+    instr_type = data[0]
     if instr_type in INSTRUMENT_TYPES:
-        instrument_path, _ = get_class_paths(INSTRUMENT_TYPES[instr_type])
-        return load_class(instrument_path)
+        return load_class(INSTRUMENT_TYPES[instr_type])
     return M8Block
 
 M8Instruments = m8_list_class(
