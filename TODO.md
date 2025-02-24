@@ -1,14 +1,12 @@
 # short
 
-- macrosynth mod dest enums
-- include mod dest enum ref in hello_macrosynth
+- M8ModTypes enum
+- extend MacroSynthModDestinations enum
 
 # medium
 
 - phrase note enum 
-
 - add delay send to hello_macrosynth
-
 - api test suite
 - api generator prompt
 
@@ -27,6 +25,8 @@
 
 # done
 
+- macrosynth mod dest enums
+- include mod dest enum ref in hello_macrosynth
 - default modulators doesn't need to include instrument type
 - modulators root to dynamically instantiate modulators
 - modulator directory

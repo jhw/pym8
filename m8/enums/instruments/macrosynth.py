@@ -1,5 +1,10 @@
 from enum import IntEnum
 
+class M8MacroSynthModDestinations(IntEnum):
+    OFF = 0x00
+    VOLUME = 0x01
+    CUTOFF = 0x07
+
 class M8MacroSynthShapes(IntEnum):
     CSAW = 0x00
     MORPH = 0x01
@@ -49,3 +54,4 @@ class M8MacroSynthShapes(IntEnum):
     PARTICLE_NOISE = 0x2D
     DIGITAL_MOD = 0x2E
     MORSE_NOISE = 0x2F
+

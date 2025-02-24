@@ -7,7 +7,7 @@ from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
 from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
-from m8.enums.instruments.macrosynth import M8MacroSynthShapes
+from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
 
 import os
 import random
@@ -38,14 +38,14 @@ try:
     
     # Create and configure first AHD envelope modulator
     ahd_mod1 = M8MacroSynthAHDEnvelope(
-        destination=0x01,
+        destination=M8MacroSynthModDestinations.VOLUME,
         decay=0x40
     )
     macro_synth.set_modulator(ahd_mod1, slot=0)
     
     # Create and configure second AHD envelope modulator
     ahd_mod2 = M8MacroSynthAHDEnvelope(
-        destination=0x07,
+        destination=M8MacroSynthModDestinations.CUTOFF,
         amount=0xA0,
         decay=0x40  # Same decay as first modulator
     )
