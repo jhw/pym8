@@ -1,13 +1,14 @@
 # short
 
-- does M8Object get_xxx really need format checking code?
 - to_dict to render hex codes
+
 - add_xxx to return slot position
 - hello_macrosynth to use slot position returned by add_instrument
 
 # medium
 
 - hello_macrosynth delay send
+
 - api test suite
 - api generator prompt
 
@@ -26,6 +27,7 @@
 
 # done
 
+- does M8Object get_xxx really need format checking code?
 - phrase note enum 
 - extend MacroSynthModDestinations enum
 - instrument types enum

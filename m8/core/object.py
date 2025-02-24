@@ -37,8 +37,6 @@ class M8Object:
     def get_int(self, field_name):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
-            if field.format not in ["UINT8", "UINT4_2"]:
-                raise ValueError(f"Field '{field_name}' is not an integer field")
             return field.read_value(self._data, part_index)
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
@@ -46,8 +44,6 @@ class M8Object:
     def get_float(self, field_name):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
-            if field.format != "FLOAT32":
-                raise ValueError(f"Field '{field_name}' is not a FLOAT32 field")
             return field.get_typed_value(self._data)
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
@@ -55,8 +51,6 @@ class M8Object:
     def get_string(self, field_name, encoding="utf-8"):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
-            if field.format != "STRING":
-                raise ValueError(f"Field '{field_name}' is not a STRING field")
             return field.get_typed_value(self._data)
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
@@ -64,8 +58,6 @@ class M8Object:
     def set_int(self, field_name, value):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
-            if field.format not in ["UINT8", "UINT4_2"]:
-                raise ValueError(f"Field '{field_name}' is not an integer field")
             field.write_value(self._data, int(value), part_index)
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
@@ -73,8 +65,6 @@ class M8Object:
     def set_float(self, field_name, value):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
-            if field.format != "FLOAT32":
-                raise ValueError(f"Field '{field_name}' is not a FLOAT32 field")
             field.set_typed_value(self._data, float(value))
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
@@ -82,8 +72,6 @@ class M8Object:
     def set_string(self, field_name, value, encoding="utf-8"):
         try:
             field, part_index = self.FIELD_MAP.get_field(field_name)
-            if field.format != "STRING":
-                raise ValueError(f"Field '{field_name}' is not a STRING field")
             field.set_typed_value(self._data, value)
         except AttributeError:
             raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
