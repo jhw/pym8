@@ -1,12 +1,11 @@
 # short
 
-- failing chain, phrase is_empty() tests
-- instruments, modulators tests
-- project tests
+- hello_macrosynth delay send
 
 # medium
 
-- hello_macrosynth delay send
+- project test
+- failing api tests
 - array as_list hex values
 
 # thoughts
@@ -23,6 +22,7 @@
 
 # done
 
+- instruments, modulators tests
 - add_xxx to return slot position
 - hello_macrosynth to use slot position returned by add_instrument
 - to_dict to render hex codes
