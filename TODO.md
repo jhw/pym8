@@ -1,12 +1,16 @@
-# short
+# short [01-fx]
 
-- hello_macrosynth delay send
+- create a template with all fx from one group in a single phrase
+- import into laptop
+- script to iterate fx
+- compare key numbers with rust values
+- manually create enum
 
 # medium
 
-- project test
 - failing api tests
-- array as_list hex values
+- project test
+- array as_list() hex values
 
 # thoughts
 
