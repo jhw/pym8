@@ -1,11 +1,9 @@
 # short
 
-- add_xxx to return slot position
-- hello_macrosynth to use slot position returned by add_instrument
+- hello_macrosynth delay send
 
 # medium
 
-- hello_macrosynth delay sen
 - array as_list hex values
 - api test suite
 
@@ -18,12 +16,13 @@
 
 # rejected
 
-- individual modules for modulators
 - instrument idx field
 - song/chain/phrase/instrument api which hides idx
 
 # done
 
+- add_xxx to return slot position
+- hello_macrosynth to use slot position returned by add_instrument
 - to_dict to render hex codes
 - does M8Object get_xxx really need format checking code?
 - phrase note enum 
