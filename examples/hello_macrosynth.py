@@ -45,7 +45,7 @@ try:
     
     # Create and configure second AHD envelope modulator
     ahd_mod2 = M8MacroSynthAHDEnvelope(
-        destination=M8MacroSynthModDestinations.CUTOFF,
+        destination=M8MacroSynthModDestinations.FILTER_CUTOFF,
         amount=0xA0,
         decay=0x40  # Same decay as first modulator
     )

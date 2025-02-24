@@ -3,7 +3,19 @@ from enum import IntEnum
 class M8MacroSynthModDestinations(IntEnum):
     OFF = 0x00
     VOLUME = 0x01
-    CUTOFF = 0x07
+    PITCH = 0x02
+    TIMBRE = 0x03
+    COLOR = 0x04
+    DEGRADE = 0x05
+    REDUX = 0x06
+    FILTER_CUTOFF = 0x07
+    FILTER_RESONANCE = 0x08
+    AMP_LEVEL = 0x09
+    MIXER_PAN = 0x0A
+    MOD_AMP = 0x0B
+    MOD_RATE = 0x0C
+    MOD_BOTH = 0x0D
+    MOD_BINV = 0x0E
 
 class M8MacroSynthShapes(IntEnum):
     CSAW = 0x00
