@@ -1,5 +1,10 @@
 # short
 
+- to_dict to render hex codes
+
+- add_xxx to return slot position
+- hello_macrosynth to use slot position returned by add_instrument
+
 - hello_macrosynth delay send
 
 # medium

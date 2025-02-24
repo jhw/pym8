@@ -2,6 +2,7 @@ from m8 import M8Block, NULL
 from m8.api import M8ValidationError, M8IndexError, BLANK
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
+from m8.enums.phrases import M8Notes
 
 FX_BLOCK_SIZE = 2
 FX_BLOCK_COUNT = 3
@@ -25,7 +26,7 @@ M8FXTuples = m8_list_class(
 
 M8PhraseStepBase = m8_object_class(
     field_map=[
-        ("note", BLANK, 0, 1, "UINT8"),
+        ("note", BLANK, 0, 1, "UINT8", M8Notes),
         ("velocity", BLANK, 1, 2, "UINT8"),
         ("instrument", BLANK, 2, 3, "UINT8")
     ]
