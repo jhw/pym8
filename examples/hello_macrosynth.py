@@ -8,6 +8,7 @@ from m8.api.project import M8Project
 from m8.api.song import M8SongRow
 from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
 from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
+from m8.enums.phrases import M8Notes
 
 import os
 import random
@@ -55,7 +56,7 @@ try:
     phrase = M8Phrase()
     for i in range(4):
         step = M8PhraseStep(
-            note=0x24,  # C-4
+            note=M8Notes.C_4,
             velocity=0x6F,
             instrument=0  # Reference our macro synth in the first slot
         )

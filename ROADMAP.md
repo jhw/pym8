@@ -7,8 +7,6 @@
 
 # modulators
 
-- [remaining modulators]
-
 # features
 
 - phrase OFF
