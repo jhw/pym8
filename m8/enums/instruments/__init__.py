@@ -1,5 +1,8 @@
 from enum import IntEnum
 
+class M8InstrumentTypes(IntEnum):
+    MACROSYNTH = 0x01
+
 class M8ModTypes(IntEnum):
     AHD = 0x00
     ADSR = 0x01

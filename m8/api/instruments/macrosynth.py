@@ -2,12 +2,12 @@ from m8 import NULL
 from m8.api import BLANK
 from m8.api.instruments import M8InstrumentBase
 from m8.core.object import m8_object_class
-from m8.enums.instruments import M8AmpLimitTypes, M8FilterTypes
+from m8.enums.instruments import M8InstrumentTypes, M8AmpLimitTypes, M8FilterTypes
 from m8.enums.instruments.macrosynth import M8MacroSynthShapes
 
 M8MacroSynthParams = m8_object_class(
     field_map=[
-        ("type", 0x01, 0, 1, "UINT8"),  # Type is defined here in the params
+        ("type", 0x01, 0, 1, "UINT8", M8InstrumentTypes),
         ("name", " ", 1, 13, "STRING"),  
         ("transpose|eq", 0x41, 13, 14, "UINT4_2"),
         ("table_tick", 0x01, 14, 15, "UINT8"),

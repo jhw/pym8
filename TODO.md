@@ -1,12 +1,13 @@
 # short
 
-- instrument types enum
 - extend MacroSynthModDestinations enum
+
+- phrase note enum 
 
 # medium
 
-- phrase note enum 
 - add delay send to hello_macrosynth
+
 - api test suite
 - api generator prompt
 
@@ -25,6 +26,7 @@
 
 # done
 
+- instrument types enum
 - M8ModTypes enum
 - macrosynth mod dest enums
 - include mod dest enum ref in hello_macrosynth
