@@ -2,7 +2,7 @@ from m8 import NULL
 from m8.api import M8ValidationError, M8IndexError
 from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.instruments.macrosynth import M8MacroSynth
-from m8.api.modulators import M8AHDEnvelope
+from m8.api.modulators.macrosynth import M8MacroSynthAHDEnvelope
 from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
@@ -37,14 +37,14 @@ try:
     project.add_instrument(macro_synth)
     
     # Create and configure first AHD envelope modulator
-    ahd_mod1 = M8AHDEnvelope(
+    ahd_mod1 = M8MacroSynthAHDEnvelope(
         destination=0x01,
         decay=0x40
     )
     macro_synth.set_modulator(ahd_mod1, slot=0)
     
     # Create and configure second AHD envelope modulator
-    ahd_mod2 = M8AHDEnvelope(
+    ahd_mod2 = M8MacroSynthAHDEnvelope(
         destination=0x07,
         amount=0xA0,
         decay=0x40  # Same decay as first modulator

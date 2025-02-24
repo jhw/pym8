@@ -1,6 +1,5 @@
 # short
 
-- modulator directory
 - modulators root to dynamically instantiate modulators
 
 # medium
@@ -26,6 +25,7 @@
 
 # done
 
+- modulator directory
 - remove params
 - investigate why synth_params_class check is required at macrosynth.py constructor level
 - factory functions taking self.synth_params.type to instantiate modulators
