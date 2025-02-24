@@ -1,11 +1,13 @@
 # short
 
-- hello_macrosynth delay send
+- failing chain, phrase is_empty() tests
+- instruments, modulators tests
+- project tests
 
 # medium
 
+- hello_macrosynth delay send
 - array as_list hex values
-- api test suite
 
 # thoughts
 
