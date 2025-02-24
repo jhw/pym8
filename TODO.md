@@ -1,11 +1,9 @@
 # short
 
-- default modulators doesn't need to include instrument type
 - macrosynth mod dest enums
 - include mod dest enum ref in hello_macrosynth
 
 # medium
-
 
 - phrase note enum 
 
@@ -29,6 +27,7 @@
 
 # done
 
+- default modulators doesn't need to include instrument type
 - modulators root to dynamically instantiate modulators
 - modulator directory
 - remove params

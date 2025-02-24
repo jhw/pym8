@@ -18,15 +18,8 @@ MODULATOR_TYPES = {
     # Add other instrument types and their modulators here
 }
 
-# Default modulator configuration for each instrument type (just the type IDs)
-DEFAULT_MODULATORS = {
-    0x01: [  # MacroSynth defaults
-        0x00,  # Two AHD envelopes
-        0x00,
-        0x03,  # Two LFOs
-        0x03
-    ]
-}
+# Default modulator types: 2 envelopes followed by 2 LFOs
+DEFAULT_MODULATORS = [0x00, 0x00, 0x03, 0x03]
 
 def get_default_modulator_set(instrument_type):
     """Get the list of default modulator classes for an instrument type"""
@@ -34,7 +27,7 @@ def get_default_modulator_set(instrument_type):
         raise ValueError(f"Unknown instrument type: {instrument_type}")
         
     result = []
-    for mod_type in DEFAULT_MODULATORS[instrument_type]:
+    for mod_type in DEFAULT_MODULATORS:
         # Get class path from MODULATOR_TYPES and instantiate
         full_path = MODULATOR_TYPES[instrument_type][mod_type]
         ModClass = load_class(full_path)
