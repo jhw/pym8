@@ -1,11 +1,12 @@
 from m8 import NULL
 from m8.api import BLANK
 from m8.core.object import m8_object_class
+from m8.enums.instruments import M8ModTypes
 from m8.enums.instruments.macrosynth import M8MacroSynthModDestinations
 
 M8MacroSynthAHDEnvelope = m8_object_class(
     field_map=[
-        ("type|destination", 0x00, 0, 1, "UINT4_2", (None, M8MacroSynthModDestinations)),
+        ("type|destination", 0x00, 0, 1, "UINT4_2", (M8ModTypes, M8MacroSynthModDestinations)),
         ("amount", BLANK, 1, 2, "UINT8"),
         ("attack", NULL, 2, 3, "UINT8"),
         ("hold", NULL, 3, 4, "UINT8"),
@@ -15,7 +16,7 @@ M8MacroSynthAHDEnvelope = m8_object_class(
 
 M8MacroSynthADSREnvelope = m8_object_class(
     field_map=[
-        ("type|destination", 0x10, 0, 1, "UINT4_2", (None, M8MacroSynthModDestinations)),
+        ("type|destination", 0x10, 0, 1, "UINT4_2", (M8ModTypes, M8MacroSynthModDestinations)),
         ("amount", BLANK, 1, 2, "UINT8"),
         ("attack", NULL, 2, 3, "UINT8"),
         ("decay", 0x80, 3, 4, "UINT8"),
@@ -26,7 +27,7 @@ M8MacroSynthADSREnvelope = m8_object_class(
 
 M8MacroSynthLFO = m8_object_class(
     field_map=[
-        ("type|destination", 0x30, 0, 1, "UINT4_2", (None, M8MacroSynthModDestinations)), 
+        ("type|destination", 0x30, 0, 1, "UINT4_2", (M8ModTypes, M8MacroSynthModDestinations)), 
         ("amount", BLANK, 1, 2, "UINT8"),
         ("shape", NULL, 2, 3, "UINT8"),
         ("trigger", NULL, 3, 4, "UINT8"),

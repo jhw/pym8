@@ -1,6 +1,6 @@
 # short
 
-- M8ModTypes enum
+- instrument types enum
 - extend MacroSynthModDestinations enum
 
 # medium
@@ -25,6 +25,7 @@
 
 # done
 
+- M8ModTypes enum
 - macrosynth mod dest enums
 - include mod dest enum ref in hello_macrosynth
 - default modulators doesn't need to include instrument type

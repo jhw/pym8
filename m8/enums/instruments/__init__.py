@@ -1,5 +1,10 @@
 from enum import IntEnum
 
+class M8ModTypes(IntEnum):
+    AHD = 0x00
+    ADSR = 0x01
+    LFO = 0x03
+    
 class M8FilterTypes(IntEnum):
     OFF = 0x00
     LOWPASS = 0x01
