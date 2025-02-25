@@ -1,3 +1,32 @@
+### m8i files and JSON serialisation 25/02/25
+
+- you might want to load trash80's synth drums and create patterns with thos
+- for this you would need to load m8i files
+- but you might also want to serialise those instruments to json / deserialise from json
+- in the interests of transparency and of instrument modification
+
+---
+
+- this all starts with as_dict/as_list
+- but you need to roll back enum and hex support into a new json layer which implements then as part of JSON encoders/decoders
+- this layer will also need the ability to create classes from json
+- and for that to work you probably need factory functions embedded in the relevat api classes
+
+---
+
+- roll back as_dict hex and enum support
+- roll back array as_list indexation support
+- check as_dict/as_list code still works but is as generic as possible
+- consider renaming read as read_m8s
+- new JSON serialisation layer with encoders and decoders
+- factory deserialisation functions for all api classes
+- convert hello macrosynth to print json
+
+---
+
+- extend instrument with read_m8i functions
+- extend instrument with read/write_json functions
+
 ### macrosynth enums 22/02/25
 
 - /M8/enums/instruments/macrosynth/M8MacroSynthShapes

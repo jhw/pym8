@@ -10,9 +10,10 @@
 
 # medium
 
+- m8i and json [notes]
+
 - failing api tests
 - project test
-- array as_list() hex values
 
 # thoughts
 
