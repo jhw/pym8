@@ -1,10 +1,12 @@
 # short [01-fx]
 
-- create a template with all fx from one group in a single phrase
-- import into laptop
-- script to iterate fx
-- compare key numbers with rust values
-- manually create enum
+- complete fx enums
+- check how to join enums
+- add enums(s) to FX keys
+- convert hello_macrosynth to use random SDL
+- check as_dict() SDL rendering
+- export to M8 and check SDL rendering
+- compare with Rust enums
 
 # medium
 
@@ -26,6 +28,9 @@
 
 # done
 
+- import into laptop
+- script to iterate fx
+- create a template with all fx from one group in a single phrase
 - instruments, modulators tests
 - add_xxx to return slot position
 - hello_macrosynth to use slot position returned by add_instrument
