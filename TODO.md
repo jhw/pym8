@@ -1,10 +1,12 @@
 # short
 
+- remove field_map enum support
+
 - json serialisation
 
 # medium
 
-- dynamic instrument- based FX
+- json deserialisation
 
 - m8i files
 - add back as_dict(), as_list() tests
