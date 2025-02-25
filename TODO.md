@@ -1,10 +1,9 @@
 # short
 
-- support for list of enums
-- add enums(s) to FX keys
+- move enums to core classes
+- add enum to fx keys
+
 - convert hello_macrosynth to use random SDL
-- check as_dict() SDL rendering
-- export to M8 and check SDL rendering
 - compare with Rust enums
 
 # medium
@@ -31,6 +30,7 @@
 
 # done
 
+- support for list of enums
 - remove custom as_dict
 - remove enum and hex support in as_dict
 - remove attribute checks in object getter/setter methods
