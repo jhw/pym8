@@ -1,7 +1,6 @@
 # short [01-fx]
 
-- complete fx enums
-- check how to join enums
+- joining enums
 - add enums(s) to FX keys
 - convert hello_macrosynth to use random SDL
 - check as_dict() SDL rendering
@@ -12,6 +11,7 @@
 
 - m8i and json [notes]
 
+- toml file
 - failing api tests
 - project test
 
@@ -29,6 +29,8 @@
 
 # done
 
+- complete fx enums
+- remove unnecessary attribute error checks
 - import into laptop
 - script to iterate fx
 - create a template with all fx from one group in a single phrase
