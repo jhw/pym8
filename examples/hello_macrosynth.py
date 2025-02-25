@@ -83,9 +83,6 @@ try:
     project.write_to_file(filename)
     
     print(f"Project successfully written to {filename}")
-    print(f"Instrument added at index: {instrument_idx}")
-    print(f"Phrase added at index: {phrase_idx}")
-    print(f"Chain added at index: {chain_idx}")
     
 except (M8ValidationError, M8IndexError) as e:
     print(f"Project creation failed: {str(e)}")

@@ -1,8 +1,6 @@
-# short [01-fx]
+# short
 
-- remove custom as_dict
-
-- joining enums
+- support for list of enums
 - add enums(s) to FX keys
 - convert hello_macrosynth to use random SDL
 - check as_dict() SDL rendering
@@ -12,8 +10,11 @@
 # medium
 
 - m8i and json [notes]
+
+- add back as_dict(), as_list() tests
+- custom modulator is_empty() method
 - toml file
-- failing api tests
+- commented out api tests
 - project test
 
 # thoughts
@@ -30,6 +31,7 @@
 
 # done
 
+- remove custom as_dict
 - remove enum and hex support in as_dict
 - remove attribute checks in object getter/setter methods
 - complete fx enums

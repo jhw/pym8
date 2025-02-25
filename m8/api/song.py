@@ -30,9 +30,6 @@ class M8SongRow(M8SongRowBase):
                         f"chain {chain_idx}"
                     )
 
-    def as_list(self):
-        return [(i, v) for i, v in enumerate(self) if v != BLANK] 
-
 M8SongMatrixBase = m8_list_class(
     row_class=M8SongRow,
     row_size=COL_COUNT,

@@ -73,30 +73,6 @@ class TestM8Song(unittest.TestCase):
         # Check that the row number is included in the error
         self.assertIn("Row 20", str(context.exception))
 
-    def test_song_row_as_list(self):
-        """Test as_list() implementation for song rows"""
-        row = M8SongRow()
-        
-        # Empty row should return empty list
-        self.assertEqual(row.as_list(), [])
-        
-        # Fill some columns and check the result
-        row[1] = 10
-        row[3] = 20
-        row[6] = 30
-        
-        # Result should be a list of (index, value) tuples excluding BLANK values
-        expected = [(1, 10), (3, 20), (6, 30)]
-        self.assertEqual(row.as_list(), expected)
-        
-        # Test with a mix of BLANK and non-BLANK values
-        row[2] = BLANK
-        row[4] = BLANK
-        row[5] = 25
-        
-        expected = [(1, 10), (3, 20), (5, 25), (6, 30)]
-        self.assertEqual(row.as_list(), expected)
-
     def test_matrix_row_isolation(self):
         """Test that changes to one row don't affect other rows"""
         matrix = M8SongMatrix()

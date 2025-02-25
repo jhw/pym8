@@ -7,7 +7,7 @@ import os
 def print_project_info(project):
     """Print formatted information about an M8 project, skipping empty elements"""
     print(f"--- version ---")
-    print(project.version.as_list())
+    print(project.version.as_dict())
     
     print(f"--- metadata ---")
     print(project.metadata.as_dict())

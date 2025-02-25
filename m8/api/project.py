@@ -24,17 +24,12 @@ OFFSETS = {
     "eq": 0x1AD5A + 4
 }
 
-M8VersionBase = m8_object_class(
+M8Version = m8_object_class(
     field_map=[
         ("minor|patch", NULL, 0, 1, "UINT4_2"), 
         ("_|major", NULL, 1, 2, "UINT4_2")
     ]
 )
-
-class M8Version(M8VersionBase):
-
-    def as_list(self):
-        return [self.major, self.minor, self.patch]
 
 M8Metadata = m8_object_class(
     field_map=[
