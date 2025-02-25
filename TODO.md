@@ -1,5 +1,8 @@
 # short [01-fx]
 
+- remove enum and hex support in as_dict
+- remove custom as_dict
+
 - joining enums
 - add enums(s) to FX keys
 - convert hello_macrosynth to use random SDL
@@ -9,7 +12,6 @@
 
 # medium
 
-- remove attribute checks in object getter/setter methods
 - m8i and json [notes]
 - toml file
 - failing api tests
@@ -29,6 +31,7 @@
 
 # done
 
+- remove attribute checks in object getter/setter methods
 - complete fx enums
 - remove unnecessary attribute error checks
 - import into laptop
