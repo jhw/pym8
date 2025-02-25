@@ -1,12 +1,13 @@
 # short
 
-- move enums to core classes
+- move macrosynth enums to m8/enums
 - add enum to fx keys
-
 - convert hello_macrosynth to use random SDL
 - compare with Rust enums
 
 # medium
+
+- ** phrases require instrument info as fx has instrument subclass **
 
 - m8i and json [notes]
 
