@@ -1,6 +1,5 @@
 # short [01-fx]
 
-- remove enum and hex support in as_dict
 - remove custom as_dict
 
 - joining enums
@@ -31,6 +30,7 @@
 
 # done
 
+- remove enum and hex support in as_dict
 - remove attribute checks in object getter/setter methods
 - complete fx enums
 - remove unnecessary attribute error checks

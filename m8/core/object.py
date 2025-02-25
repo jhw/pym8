@@ -82,27 +82,15 @@ class M8Object:
                 for i, part_name in enumerate(field.parts):
                     if part_name != "_":  # Skip placeholder parts
                         value = field.get_typed_value(self._data, i)
-                        # Convert enum members to their names
-                        if isinstance(value, Enum):
-                            value = value.name
-                        # Convert integers to hex strings if no enum is present
-                        elif isinstance(value, int) and field.format in ["UINT8", "UINT4_2"]:
-                            if field.enums is None or (field.is_composite and (field.enums[i] is None)):
-                                value = f"0x{value:02X}"
+                        # Return the raw value directly
                         result[part_name] = value
             else:
                 # For regular fields
                 value = field.get_typed_value(self._data)
-                # Convert enum members to their names
-                if isinstance(value, Enum):
-                    value = value.name
-                # Convert integers to hex strings if no enum is present
-                elif isinstance(value, int) and field.format in ["UINT8", "UINT4_2"]:
-                    if field.enums is None:
-                        value = f"0x{value:02X}"
+                # Return the raw value directly
                 result[field_name] = value
-                
-        return result
+                    
+        return result            
             
     def is_empty(self):
         """Return True if all fields match their default values"""

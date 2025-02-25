@@ -144,41 +144,6 @@ class TestM8Phrases(unittest.TestCase):
         self.assertEqual(step2.fx[2].key, BLANK)
         self.assertEqual(step2.fx[2].value, NULL)
 
-    def test_phrase_step_as_dict(self):
-        """Test phrase step conversion to dictionary, especially FX handling"""
-        step = M8PhraseStep(
-            note=M8Notes.A_5,
-            velocity=0x50,
-            instrument=4
-        )
-        
-        # Add FX
-        step.add_fx(key=0x10, value=0x20)
-        
-        # Convert to dict
-        result = step.as_dict()
-        
-        # Check base attributes (note should be enum name)
-        self.assertEqual(result["note"], "A_5")
-        self.assertEqual(result["velocity"], "0x50")
-        self.assertEqual(result["instrument"], "0x04")
-        
-        # Check FX list - should only include non-empty FX
-        self.assertEqual(len(result["fx"]), 1)
-        self.assertEqual(result["fx"][0]["key"], "0x10")
-        self.assertEqual(result["fx"][0]["value"], "0x20")
-        
-        # Add another FX
-        step.add_fx(key=0x30, value=0x40)
-        
-        # Convert to dict again
-        result = step.as_dict()
-        
-        # Should now have 2 FX in result
-        self.assertEqual(len(result["fx"]), 2)
-        self.assertEqual(result["fx"][1]["key"], "0x30")
-        self.assertEqual(result["fx"][1]["value"], "0x40")
-
     def test_phrase_step_clone(self):
         """Test phrase step cloning including FX"""
         step = M8PhraseStep(
