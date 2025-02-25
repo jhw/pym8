@@ -1,16 +1,12 @@
 # short
 
-- move macrosynth enums to m8/enums
-- add enum to fx keys
-- convert hello_macrosynth to use random SDL
-- compare with Rust enums
+- json serialisation
 
 # medium
 
-- ** phrases require instrument info as fx has instrument subclass **
+- dynamic instrument- based FX
 
-- m8i and json [notes]
-
+- m8i files
 - add back as_dict(), as_list() tests
 - custom modulator is_empty() method
 - toml file
