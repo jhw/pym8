@@ -35,37 +35,61 @@ class M8Object:
         return self.__class__.read(bytes(self._data))
 
     def get_int(self, field_name):
-        field, part_index = self.FIELD_MAP.get_field(field_name)
-        return field.read_value(self._data, part_index)
+        try:
+            field, part_index = self.FIELD_MAP.get_field(field_name)
+            return field.read_value(self._data, part_index)
+        except AttributeError:
+            raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
 
     def get_float(self, field_name):
-        field, part_index = self.FIELD_MAP.get_field(field_name)
-        return field.get_typed_value(self._data)
+        try:
+            field, part_index = self.FIELD_MAP.get_field(field_name)
+            return field.get_typed_value(self._data)
+        except AttributeError:
+            raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
 
     def get_string(self, field_name, encoding="utf-8"):
-        field, part_index = self.FIELD_MAP.get_field(field_name)
-        return field.get_typed_value(self._data)
+        try:
+            field, part_index = self.FIELD_MAP.get_field(field_name)
+            return field.get_typed_value(self._data)
+        except AttributeError:
+            raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
 
     def set_int(self, field_name, value):
-        field, part_index = self.FIELD_MAP.get_field(field_name)
-        field.write_value(self._data, int(value), part_index)
+        try:
+            field, part_index = self.FIELD_MAP.get_field(field_name)
+            field.write_value(self._data, int(value), part_index)
+        except AttributeError:
+            raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
         
     def set_float(self, field_name, value):
-        field, part_index = self.FIELD_MAP.get_field(field_name)
-        field.set_typed_value(self._data, float(value))
+        try:
+            field, part_index = self.FIELD_MAP.get_field(field_name)
+            field.set_typed_value(self._data, float(value))
+        except AttributeError:
+            raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
 
     def set_string(self, field_name, value, encoding="utf-8"):
-        field, part_index = self.FIELD_MAP.get_field(field_name)
-        field.set_typed_value(self._data, value)
+        try:
+            field, part_index = self.FIELD_MAP.get_field(field_name)
+            field.set_typed_value(self._data, value)
+        except AttributeError:
+            raise AttributeError(f"Field '{field_name}' not found in {self.__class__.__name__}")
 
     def __getattr__(self, name):
-        field, part_index = self.FIELD_MAP.get_field(name)
-        return field.get_typed_value(self._data, part_index)
+        try:
+            field, part_index = self.FIELD_MAP.get_field(name)
+            return field.get_typed_value(self._data, part_index)
+        except AttributeError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
 
     def __setattr__(self, name, value):
         if "_data" in self.__dict__:
-            field, part_index = self.FIELD_MAP.get_field(name)
-            field.set_typed_value(self._data, value, part_index)
+            try:
+                field, part_index = self.FIELD_MAP.get_field(name)
+                field.set_typed_value(self._data, value, part_index)
+            except AttributeError:
+                object.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
 

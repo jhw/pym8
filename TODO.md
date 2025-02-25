@@ -1,7 +1,5 @@
 # short [01-fx]
 
-- add back attribute tests to field map
-
 - joining enums
 - add enums(s) to FX keys
 - convert hello_macrosynth to use random SDL
@@ -11,8 +9,8 @@
 
 # medium
 
+- remove attribute checks in object getter/setter methods
 - m8i and json [notes]
-
 - toml file
 - failing api tests
 - project test
