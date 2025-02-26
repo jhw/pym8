@@ -1,11 +1,17 @@
-# short
+# short [01-remove-enums]
 
-- remove field_map enum support
-
-- json serialisation
+- remove utils/enums and test
+- remove enums from core
+- remove enums from core tests
+- manually remove enums from api field maps
+- re- test
+- include macrosynth enums in enums
+- include fx in hello macrosynth
+- re- test
 
 # medium
 
+- json serialisation
 - json deserialisation
 
 - m8i files
@@ -29,6 +35,7 @@
 
 # done
 
+- remove tests/api
 - support for list of enums
 - remove custom as_dict
 - remove enum and hex support in as_dict
