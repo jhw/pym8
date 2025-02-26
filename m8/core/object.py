@@ -1,5 +1,5 @@
 from m8 import NULL
-from m8.core import m8_class_name
+from m8.core import auto_name_decorator
 from m8.core.fields import M8FieldMap
 
 import struct
@@ -133,10 +133,8 @@ class M8Object:
         from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
-
-def m8_object_class(field_map, block_sz=None, default_byte=NULL, block_head_byte=NULL):
-    name = m8_class_name("M8Object")
-    
+@auto_name_decorator
+def m8_object_class(field_map, name=None, block_sz=None, default_byte=NULL, block_head_byte=NULL):
     # Create field map directly from the client-provided field definitions
     field_map_obj = M8FieldMap(field_map)
     

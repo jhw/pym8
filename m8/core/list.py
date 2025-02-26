@@ -1,5 +1,5 @@
 from m8 import M8Block, NULL
-from m8.core import m8_class_name
+from m8.core import auto_name_decorator
 
 import struct
 
@@ -136,9 +136,9 @@ class M8List(list):
         """Create an instance from a JSON string"""
         from m8.core.serialization import from_json
         return from_json(json_str, cls)
-    
-def m8_list_class(row_size, row_count, row_class=M8Block, row_class_resolver=None, default_byte=NULL):
-    name = m8_class_name("M8List")
+
+@auto_name_decorator
+def m8_list_class(row_size, row_count, name=None, row_class=M8Block, row_class_resolver=None, default_byte=NULL):
     attributes = {
         "ROW_SIZE": row_size,
         "ROW_COUNT": row_count,

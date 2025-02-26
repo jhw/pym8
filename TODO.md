@@ -1,7 +1,5 @@
 # short
 
-- auto_name_decorator
-
 - change hello_macrosynth to dump json
 - delete tools/inspect_m8s.py
 - script to test loading json
@@ -33,6 +31,7 @@
 
 # done
 
+- auto_name_decorator
 - include fx in hello macrosynth
 - re- test
 - include macrosynth enums in enums

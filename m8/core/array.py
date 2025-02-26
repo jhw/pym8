@@ -1,5 +1,5 @@
 from m8 import NULL
-from m8.core import m8_class_name
+from m8.core import auto_name_decorator
 
 import struct
 
@@ -75,8 +75,8 @@ class M8Array:
         from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
-def m8_array_class(length, fmt, default_byte=NULL):
-    name = m8_class_name("M8Array")
+@auto_name_decorator
+def m8_array_class(length, fmt, name=None, default_byte=NULL):
     block_sz = length * struct.calcsize(fmt)
     default_data = bytes([default_byte] * block_sz)
 
