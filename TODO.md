@@ -1,6 +1,5 @@
 # short [01-remove-enums]
 
-- remove utils/enums and test
 - remove enums from core
 - remove enums from core tests
 - manually remove enums from api field maps
@@ -35,6 +34,7 @@
 
 # done
 
+- remove utils/enums and test
 - remove tests/api
 - support for list of enums
 - remove custom as_dict
