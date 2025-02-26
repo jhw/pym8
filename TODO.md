@@ -1,12 +1,17 @@
 # short
 
-- remove is_empty()
-- replace dynamic class refs with info required to recreate
-- inspector cli
+- auto_name_decorator
+
+- change hello_macrosynth to dump json
+- delete tools/inspect_m8s.py
+- script to test loading json
 
 # medium
 
 - separate fx from phrases
+
+- inspector cli
+- remove is_empty()
 - json enum, hex
 - m8i files
 - toml file
