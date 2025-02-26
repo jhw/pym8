@@ -1,13 +1,19 @@
 # short
 
-- script to test loading json
+- run_profile.py doesn't need to save profile, or save it to tmp
+
+```
+(env) jhw@Justins-MacBook-Air pym8 % python dev/test_deserialisation.py tmp/PYMACRO.json
+Found non-dict phrases in m8.api.project.M8Project: <class 'm8.api.project.M8Project'>
+*** CIRCULAR REFERENCE DETECTED: phrases is an M8Project ***
+Converted phrases back to a dictionary
+```
 
 # medium
 
-- separate fx from phrases
-
-- inspector cli
 - remove is_empty()
+- separate fx from phrases
+- inspector cli
 - json enum, hex
 - m8i files
 - toml file
