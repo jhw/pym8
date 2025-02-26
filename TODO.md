@@ -2,7 +2,6 @@
 
 - remove enums from core
 - remove enums from core tests
-- manually remove enums from api field maps
 - re- test
 - include macrosynth enums in enums
 - include fx in hello macrosynth
@@ -34,6 +33,7 @@
 
 # done
 
+- manually remove enums from api field maps
 - remove utils/enums and test
 - remove tests/api
 - support for list of enums
