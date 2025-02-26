@@ -1,7 +1,5 @@
 # short
 
-- change hello_macrosynth to dump json
-- delete tools/inspect_m8s.py
 - script to test loading json
 
 # medium
@@ -31,6 +29,8 @@
 
 # done
 
+- change hello_macrosynth to dump json
+- delete tools/inspect_m8s.py
 - auto_name_decorator
 - include fx in hello macrosynth
 - re- test

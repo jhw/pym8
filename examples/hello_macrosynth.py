@@ -92,10 +92,9 @@ try:
     # Validate and save the project
     project.validate()
     os.makedirs('tmp', exist_ok=True)
-    filename = f"tmp/{project.metadata.name.replace(' ', '')}.m8s"
-    project.write_to_file(filename)
-    
-    print(f"Project successfully written to {filename}")
+    filename = f"tmp/{project.metadata.name.replace(' ', '')}"
+    project.write_to_file(f"{filename}.m8s")
+    project.write_to_json_file(f"{filename}.json")
     
 except (M8ValidationError, M8IndexError) as e:
     print(f"Project creation failed: {str(e)}")
