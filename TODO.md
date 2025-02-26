@@ -1,16 +1,16 @@
 # short
 
-# medium
-
-- json enum rendering
-- json hex rendering
-
+- test json deserialisation >> cli inspector?
+- json enum, hex
 - separate fx from phrases
+
+# medium
 
 - m8i files
 - add back as_dict(), as_list() tests
 - custom modulator is_empty() method
 - toml file
+- serialisation tests
 - api tests
 
 # thoughts
