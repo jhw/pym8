@@ -1,6 +1,5 @@
 # short [01-remove-enums]
 
-- include macrosynth enums in enums
 - include fx in hello macrosynth
 - re- test
 
@@ -31,6 +30,7 @@
 
 # done
 
+- include macrosynth enums in enums
 - remove enums from core
 - remove enums from core tests
 - re- test

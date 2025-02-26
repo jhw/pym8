@@ -25,7 +25,7 @@ def generate_notes_enum():
 # Create the notes enum
 M8Notes = generate_notes_enum()
 
-class M8SequencerFX:
+class M8SequencerFX(IntEnum):
     ARP = 0x0
     ARC = 0x45
     CHA = 0x1
@@ -58,7 +58,7 @@ class M8SequencerFX:
     KIL = 0x5
     OFF = 0x1a
 
-class M8MixerFX:
+class M8MixerFX(IntEnum):
     VMV = 0x1b
     VCH = 0x2a
     VDE = 0x2b
