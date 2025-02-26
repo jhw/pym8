@@ -9,6 +9,7 @@ from m8.api.song import M8SongRow
 from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
 from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
 from m8.enums.phrases import M8Notes
+from m8.enums.phrases.macrosynth import M8MacroSynthFX
 import os
 import random
 
@@ -53,12 +54,24 @@ try:
     
     # Create a basic phrase with repeating notes
     phrase = M8Phrase()
+    
+    # Possible SDL FX values
+    sdl_values = [0x00, 0x40, 0x80, 0xC0]
+    
     for i in range(4):
+        # Create a step with a note, velocity, and instrument
         step = M8PhraseStep(
             note=M8Notes.C_4,
             velocity=0x6F,
             instrument=instrument_idx  # Use the stored instrument index
         )
+        
+        # Add an SDL (delay) FX to the step with a random value
+        # SDL is defined in M8MacroSynthFX enum
+        sdl_value = random.choice(sdl_values)
+        step.add_fx(M8MacroSynthFX.SDL, sdl_value)
+        
+        # Add the step to the phrase at position i*4
         phrase.set_step(step, i*4)
     
     # Add phrase to project

@@ -1,11 +1,9 @@
-# short [01-remove-enums]
+# short
 
-- include fx in hello macrosynth
-- re- test
+- simple json serialisation w/ hex
 
 # medium
 
-- simple json serialisation
 - simple json deserialisation
 - json hex rendering
 - json enum rendering (how?)
@@ -31,6 +29,8 @@
 
 # done
 
+- include fx in hello macrosynth
+- re- test
 - include macrosynth enums in enums
 - remove enums from core
 - remove enums from core tests
