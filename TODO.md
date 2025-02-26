@@ -1,13 +1,7 @@
 # short
 
-- run_profile.py doesn't need to save profile, or save it to tmp
-
-```
-(env) jhw@Justins-MacBook-Air pym8 % python dev/test_deserialisation.py tmp/PYMACRO.json
-Found non-dict phrases in m8.api.project.M8Project: <class 'm8.api.project.M8Project'>
-*** CIRCULAR REFERENCE DETECTED: phrases is an M8Project ***
-Converted phrases back to a dictionary
-```
+- remove local from/to_json imports
+- replace from_json_naive
 
 # medium
 
@@ -34,6 +28,15 @@ Converted phrases back to a dictionary
 - song/chain/phrase/instrument api which hides idx
 
 # done
+
+- run_profile.py doesn't need to save profile, or save it to tmp
+
+```
+(env) jhw@Justins-MacBook-Air pym8 % python dev/test_deserialisation.py tmp/PYMACRO.json
+Found non-dict phrases in m8.api.project.M8Project: <class 'm8.api.project.M8Project'>
+*** CIRCULAR REFERENCE DETECTED: phrases is an M8Project ***
+Converted phrases back to a dictionary
+```
 
 - change hello_macrosynth to dump json
 - delete tools/inspect_m8s.py

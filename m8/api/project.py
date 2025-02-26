@@ -7,6 +7,8 @@ from m8.api.phrases import M8Phrases
 from m8.api.song import M8SongMatrix
 from m8.utils.bits import split_byte, join_nibbles
 
+import json
+
 # https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
 
 OFFSETS = {
@@ -41,6 +43,50 @@ M8Metadata = m8_object_class(
         ("key", 0, 146, 147, "UINT8")
     ]
 )
+
+def from_json_naive(json_str, target_class=None):
+    """A simpler JSON deserializer that explicitly handles class types"""
+    data = json.loads(json_str)
+    
+    if not isinstance(data, dict) or "__class__" not in data:
+        return data
+    
+    # If this is a Project, handle it specially
+    if data["__class__"] == "m8.api.project.M8Project":
+        # from m8.core.object import M8Version, M8Metadata
+        
+        project = M8Project()
+        
+        # Explicitly deserialize each component with the correct type
+        if "version" in data:
+            project.version = M8Version.from_dict(data["version"])
+            
+        if "metadata" in data:
+            project.metadata = M8Metadata.from_dict(data["metadata"])
+            
+        if "song" in data:
+            project.song = M8SongMatrix.from_dict(data["song"])
+            
+        if "chains" in data:
+            project.chains = M8Chains.from_dict(data["chains"])
+            
+        if "phrases" in data:
+            project.phrases = M8Phrases.from_dict(data["phrases"])
+            
+        if "instruments" in data:
+            project.instruments = M8Instruments.from_dict(data["instruments"])
+            
+        return project
+    
+    # For other types, use the regular deserialization
+    cls_path = data.pop("__class__")
+    cls = _get_class_from_string(cls_path)
+    
+    if "__list__" in data:
+        items = data.pop("__list__")
+        return cls.from_list(items) if hasattr(cls, "from_list") else cls(items=items)
+    
+    return cls.from_dict(data) if hasattr(cls, "from_dict") else cls(**data)
 
 class M8Project:
 
@@ -213,8 +259,15 @@ class M8Project:
     def read_from_json_file(cls, filename):
         """Read project from a JSON file"""
         with open(filename, "r") as f:
-            return cls.from_json(f.read())
+            json_str = f.read()
 
+        """
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)
+        """
+        # Use the simplified deserializer
+        return from_json_naive(json_str, cls)
+        
     def to_json(self, indent=2):
         """Convert project to JSON string"""
         from m8.core.serialization import to_json
@@ -223,5 +276,10 @@ class M8Project:
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
+        """
         from m8.core.serialization import from_json
         return from_json(json_str, cls)
+        """
+        # Use the simplified deserializer
+        return from_json_naive(json_str, cls)
+
