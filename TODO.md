@@ -1,14 +1,14 @@
 # short
 
-- test json deserialisation >> cli inspector?
-- json enum, hex
-- separate fx from phrases
+- remove is_empty()
+- replace dynamic class refs with info required to recreate
+- inspector cli
 
 # medium
 
+- separate fx from phrases
+- json enum, hex
 - m8i files
-- add back as_dict(), as_list() tests
-- custom modulator is_empty() method
 - toml file
 - serialisation tests
 - api tests
