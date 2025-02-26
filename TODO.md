@@ -1,12 +1,11 @@
 # short
 
-- simple json serialisation w/ hex
-
 # medium
 
-- simple json deserialisation
+- json enum rendering
 - json hex rendering
-- json enum rendering (how?)
+
+- separate fx from phrases
 
 - m8i files
 - add back as_dict(), as_list() tests

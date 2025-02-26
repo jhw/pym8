@@ -38,7 +38,42 @@ class M8Array:
         return bytes(self._data)
 
     def as_list(self):
+        """Convert array to list for serialization"""
         return list(struct.unpack(self.TYPE * self.LENGTH, self._data))
+
+    def as_dict(self):
+        """Convert array to dict for serialization"""
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "values": self.as_list()
+        }
+        
+    @classmethod
+    def from_list(cls, values):
+        """Create an instance from a list of values"""
+        instance = cls()
+        for i, value in enumerate(values):
+            if i < instance.LENGTH:
+                instance[i] = value
+        return instance
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create an instance from a dictionary"""
+        if "values" in data:
+            return cls.from_list(data["values"])
+        return cls()
+
+    def to_json(self, indent=None):
+        """Convert array to JSON string"""
+        from m8.core.serialization import to_json
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)
 
 def m8_array_class(length, fmt, default_byte=NULL):
     name = m8_class_name("M8Array")
@@ -50,5 +85,3 @@ def m8_array_class(length, fmt, default_byte=NULL):
         "TYPE": fmt,
         "DEFAULT_DATA": default_data,
     })
-
-

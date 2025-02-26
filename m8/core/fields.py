@@ -121,6 +121,19 @@ class M8Field:
             
             return current == int(self.default)
 
+    def serialize_value(self, value):
+        """Convert a value to a serializable form based on field type"""
+        # For JSON serialization, just return the value as is
+        return value
+        
+    def deserialize_value(self, value):
+        """Convert a serialized value back to the appropriate type"""
+        if self.format == "FLOAT32":
+            return float(value)
+        elif self.format in ["UINT8", "UINT4_2"]:
+            return int(value)
+        return value
+
 
 class M8FieldMap:
     """Manages field definitions for M8 objects"""

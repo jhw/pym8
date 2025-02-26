@@ -160,3 +160,68 @@ class M8Project:
     def write_to_file(self, filename: str):
         with open(filename, "wb") as f:
             f.write(self.write())
+
+    def as_dict(self):
+        """Convert project to dictionary for serialization"""
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "version": self.version.as_dict(),
+            "metadata": self.metadata.as_dict(),
+            "song": self.song.as_dict(),
+            "chains": self.chains.as_dict(),
+            "phrases": self.phrases.as_dict(),
+            "instruments": self.instruments.as_dict()
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create a project from a dictionary"""
+        instance = cls()
+        
+        # Deserialize version
+        if "version" in data:
+            instance.version = M8Version.from_dict(data["version"])
+            
+        # Deserialize metadata
+        if "metadata" in data:
+            instance.metadata = M8Metadata.from_dict(data["metadata"])
+            
+        # Deserialize song
+        if "song" in data:
+            instance.song = M8SongMatrix.from_dict(data["song"])
+            
+        # Deserialize chains
+        if "chains" in data:
+            instance.chains = M8Chains.from_dict(data["chains"])
+            
+        # Deserialize phrases
+        if "phrases" in data:
+            instance.phrases = M8Phrases.from_dict(data["phrases"])
+            
+        # Deserialize instruments
+        if "instruments" in data:
+            instance.instruments = M8Instruments.from_dict(data["instruments"])
+        
+        return instance
+        
+    def write_to_json_file(self, filename):
+        """Write project to a JSON file"""
+        with open(filename, "w") as f:
+            f.write(self.to_json(indent=2))
+            
+    @classmethod
+    def read_from_json_file(cls, filename):
+        """Read project from a JSON file"""
+        with open(filename, "r") as f:
+            return cls.from_json(f.read())
+
+    def to_json(self, indent=2):
+        """Convert project to JSON string"""
+        from m8.core.serialization import to_json
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)

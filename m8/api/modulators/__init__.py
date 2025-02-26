@@ -60,8 +60,42 @@ def create_modulators_class(instrument_type):
     """Factory function to create an M8Modulators class based on instrument type"""
     row_class_resolver = create_modulator_row_class_resolver(instrument_type)
     
-    return m8_list_class(
+    M8Modulators = m8_list_class(
         row_size=BLOCK_SIZE,
         row_count=BLOCK_COUNT,
         row_class_resolver=row_class_resolver
     )
+    
+    return M8Modulators
+
+def create_modulator_from_dict(data, instrument_type):
+    """Create a modulator instance from a dictionary based on its type"""
+    if not data or "type" not in data or instrument_type not in MODULATOR_TYPES:
+        return None
+    
+    mod_type = data["type"]
+    
+    # If we have explicit class information, use that
+    if "__class__" in data:
+        from m8.core.serialization import _get_class_from_string
+        try:
+            ModClass = _get_class_from_string(data["__class__"])
+            return ModClass.from_dict(data)
+        except (ImportError, AttributeError):
+            pass
+    
+    # Fall back to type lookup
+    if mod_type in MODULATOR_TYPES[instrument_type]:
+        class_path = MODULATOR_TYPES[instrument_type][mod_type]
+        ModClass = load_class(class_path)
+        return ModClass.from_dict(data)
+    
+    return None
+
+def get_modulator_type_from_class(mod_class):
+    """Get the modulator type value from its class"""
+    for instr_type, mod_types in MODULATOR_TYPES.items():
+        for mod_type, class_path in mod_types.items():
+            if class_path == f"{mod_class.__module__}.{mod_class.__name__}":
+                return mod_type
+    return None

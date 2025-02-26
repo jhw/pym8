@@ -65,13 +65,13 @@ class M8InstrumentBase:
         self.modulators[slot] = modulator
 
     def as_dict(self):
+        """Convert instrument to dictionary for serialization"""
         return {
-            "synth": self.synth_params.as_dict(),
-            "modulators": [
-                mod.as_dict() for mod in self.modulators 
-                if isinstance(mod, M8Block) is False
-                and (mod.destination != 0)
-            ]
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "type": self.synth_params.type,
+            "synth_params": self.synth_params.as_dict(),
+            "modulators": [mod.as_dict() if hasattr(mod, "as_dict") else None 
+                           for mod in self.modulators]
         }
     
     def write(self):
@@ -80,6 +80,49 @@ class M8InstrumentBase:
         buffer.extend(bytes([0] * (MODULATORS_OFFSET - SYNTH_PARAMS_SIZE)))
         buffer.extend(self.modulators.write())
         return bytes(buffer)
+        
+    @classmethod
+    def from_dict(cls, data):
+        """Create an instrument from a dictionary"""
+        instance = cls()
+        
+        # Get synth params class
+        if "type" in data and "synth_params" in data:
+            instr_type = data["type"]
+            if instr_type in INSTRUMENT_TYPES:
+                params_path = f"{INSTRUMENT_TYPES[instr_type]}Params"
+                params_class = load_class(params_path)
+                instance.synth_params = params_class.from_dict(data["synth_params"])
+        
+        # Deserialize modulators
+        if "modulators" in data:
+            # Create appropriate modulators class
+            M8Modulators = create_modulators_class(instance.synth_params.type)
+            instance.modulators = M8Modulators()
+            
+            from m8.api.modulators import MODULATOR_TYPES
+            
+            for i, mod_data in enumerate(data["modulators"]):
+                if mod_data is not None and i < len(instance.modulators):
+                    # Determine modulator type
+                    if "type" in mod_data and instance.synth_params.type in MODULATOR_TYPES:
+                        mod_type = mod_data["type"]
+                        if mod_type in MODULATOR_TYPES[instance.synth_params.type]:
+                            ModClass = load_class(MODULATOR_TYPES[instance.synth_params.type][mod_type])
+                            instance.modulators[i] = ModClass.from_dict(mod_data)
+        
+        return instance
+        
+    def to_json(self, indent=None):
+        """Convert instrument to JSON string"""
+        from m8.core.serialization import to_json
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)
 
 def instrument_row_class(data):
     """Factory function to create appropriate instrument class based on type byte"""

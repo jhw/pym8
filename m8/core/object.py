@@ -72,8 +72,12 @@ class M8Object:
             object.__setattr__(self, name, value)
 
     def as_dict(self):
+        """Convert object to dict for serialization"""
         result = {}
-    
+        
+        # Include class information
+        result["__class__"] = f"{self.__class__.__module__}.{self.__class__.__name__}"
+        
         # Handle all fields
         for field_name, field in self.FIELD_MAP.fields.items():
             if field.is_composite:
@@ -86,7 +90,7 @@ class M8Object:
                 # For regular fields
                 value = field.get_typed_value(self._data)
                 result[field_name] = value
-                    
+                        
         return result            
             
     def is_empty(self):
@@ -105,6 +109,29 @@ class M8Object:
 
     def write(self):
         return bytes(self._data)
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create an instance from a dictionary"""
+        instance = cls()
+        
+        # Process each field in the data dictionary
+        for key, value in data.items():
+            if cls.FIELD_MAP.has_field(key):
+                setattr(instance, key, value)
+                
+        return instance
+
+    def to_json(self, indent=None):
+        """Convert object to JSON string"""
+        from m8.core.serialization import to_json
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)
 
 
 def m8_object_class(field_map, block_sz=None, default_byte=NULL, block_head_byte=NULL):

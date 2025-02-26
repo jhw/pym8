@@ -61,7 +61,24 @@ class M8List(list):
         return True
     
     def as_list(self):
-        return [row.as_dict() for row in self if hasattr(row, "as_dict")]
+        """Convert list to list of dictionaries for serialization"""
+        result = []
+        for item in self:
+            if hasattr(item, "as_dict"):
+                result.append(item.as_dict())
+            elif hasattr(item, "as_list"):
+                result.append({"__list__": item.as_list(), "__class__": f"{item.__class__.__module__}.{item.__class__.__name__}"})
+            else:
+                # For simple types or M8Blocks
+                result.append(None)  # Use None for empty items
+        return result
+
+    def as_dict(self):
+        """Convert list to dictionary for serialization"""
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "items": self.as_list()
+        }
 
     def write(self):
         result = bytearray()
@@ -78,6 +95,48 @@ class M8List(list):
             result.extend(row_data)
         return bytes(result)
     
+    @classmethod
+    def from_list(cls, items):
+        """Create an instance from a list of items"""
+        instance = cls()
+        
+        for i, item_data in enumerate(items):
+            if i < len(instance) and item_data is not None:
+                # Determine class for this item
+                row_class = cls.ROW_CLASS
+                
+                # If the class has a resolver, use it if there's class info
+                if hasattr(cls, "ROW_CLASS_RESOLVER") and isinstance(item_data, dict) and "__class__" in item_data:
+                    class_path = item_data["__class__"]
+                    from m8.core.serialization import _get_class_from_string
+                    row_class = _get_class_from_string(class_path)
+                    
+                # Create the item
+                if hasattr(row_class, "from_dict"):
+                    instance[i] = row_class.from_dict(item_data)
+                elif hasattr(row_class, "from_list") and "__list__" in item_data:
+                    instance[i] = row_class.from_list(item_data["__list__"])
+        
+        return instance
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create an instance from a dictionary"""
+        if "items" in data:
+            return cls.from_list(data["items"])
+        return cls()
+
+    def to_json(self, indent=None):
+        """Convert list to JSON string"""
+        from m8.core.serialization import to_json
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)
+    
 def m8_list_class(row_size, row_count, row_class=M8Block, row_class_resolver=None, default_byte=NULL):
     name = m8_class_name("M8List")
     attributes = {
@@ -91,5 +150,3 @@ def m8_list_class(row_size, row_count, row_class=M8Block, row_class_resolver=Non
         attributes["ROW_CLASS_RESOLVER"] = row_class_resolver
 
     return type(name, (M8List,), attributes)
-
-

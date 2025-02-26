@@ -78,14 +78,48 @@ class M8PhraseStep(M8PhraseStepBase):
         self.fx[slot] = M8FXTuple(key=key, value=value)    
 
     def as_dict(self):
-        base_dict = super().as_dict()
-        base_dict["fx"] = [fx.as_dict() for fx in self.fx if not fx.is_empty()]
-        return base_dict
+        """Convert phrase step to dictionary for serialization"""
+        result = {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "note": self.note,
+            "velocity": self.velocity,
+            "instrument": self.instrument,
+            "fx": [fx.as_dict() for fx in self.fx if not fx.is_empty()]
+        }
+        return result
     
     def write(self):
         buffer = bytearray(super().write())
         buffer.extend(self.fx.write())
         return bytes(buffer)
+        
+    @classmethod
+    def from_dict(cls, data):
+        """Create a phrase step from a dictionary"""
+        instance = cls(
+            note=data.get("note", BLANK),
+            velocity=data.get("velocity", BLANK),
+            instrument=data.get("instrument", BLANK)
+        )
+        
+        # Add FX
+        if "fx" in data:
+            for i, fx_data in enumerate(data["fx"]):
+                if i < len(instance.fx):
+                    instance.fx[i] = M8FXTuple.from_dict(fx_data)
+        
+        return instance
+        
+    def to_json(self, indent=None):
+        """Convert phrase step to JSON string"""
+        from m8.core.serialization import to_json
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)
         
 M8PhraseBase = m8_list_class(
     row_class=M8PhraseStep,
@@ -130,6 +164,37 @@ class M8Phrase(M8PhraseBase):
             raise M8IndexError(f"Step slot index must be between 0 and {len(self)-1}")
             
         self[slot] = step
+            
+    def as_dict(self):
+        """Convert phrase to dictionary for serialization"""
+        result = {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "steps": [step.as_dict() for step in self if not step.is_empty()]
+        }
+        return result
+        
+    @classmethod
+    def from_dict(cls, data):
+        """Create a phrase from a dictionary"""
+        instance = cls()
+        
+        if "steps" in data:
+            for i, step_data in enumerate(data["steps"]):
+                if i < len(instance):
+                    instance[i] = M8PhraseStep.from_dict(step_data)
+        
+        return instance
+        
+    def to_json(self, indent=None):
+        """Convert phrase to JSON string"""
+        from m8.core.serialization import to_json
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        from m8.core.serialization import from_json
+        return from_json(json_str, cls)
         
 M8PhrasesBase = m8_list_class(
     row_class=M8Phrase,
@@ -148,4 +213,3 @@ class M8Phrases(M8PhrasesBase):
                 phrase.validate_instruments(instruments)
             except M8ValidationError as e:
                 raise M8ValidationError(f"Phrase {phrase_idx}: {str(e)}") from e
-
