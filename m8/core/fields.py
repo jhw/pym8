@@ -1,7 +1,6 @@
 from m8 import NULL
 from m8.utils.bits import split_byte, join_nibbles
 
-from enum import Enum
 import struct
 
 # Format map for field types
@@ -14,13 +13,12 @@ FORMAT_MAP = {
 
 class M8Field:
     """Represents a single field in an M8 object"""
-    def __init__(self, name, default, start, end, format_type, enums=None):
+    def __init__(self, name, default, start, end, format_type):
         self.name = name
         self.default = default
         self.start = start
         self.end = end
         self.format = format_type
-        self.enums = enums
         
         # Validate format
         if format_type not in FORMAT_MAP:
@@ -29,21 +27,6 @@ class M8Field:
         # For UINT4_2 fields, parse the composite names
         self.is_composite = format_type == "UINT4_2" and "|" in name
         self.parts = name.split("|") if self.is_composite else [name]
-        
-        # Validate enums if provided
-        if enums is not None:
-            if format_type == "UINT8":
-                if not isinstance(enums, type) or not issubclass(enums, Enum):
-                    raise ValueError(f"Enum for UINT8 field '{name}' must be an Enum class")
-            elif format_type == "UINT4_2" and self.is_composite:
-                if not isinstance(enums, tuple) or len(enums) != 2:
-                    raise ValueError(f"Enums for UINT4_2 field '{name}' must be a tuple of length 2")
-                # Check each part of the tuple - can be None or an Enum class
-                for i, enum in enumerate(enums):
-                    if enum is not None and (not isinstance(enum, type) or not issubclass(enum, Enum)):
-                        raise ValueError(f"Enum at position {i} for UINT4_2 field '{name}' must be None or an Enum class")
-            else:
-                raise ValueError(f"Enums are only supported for UINT8 and composite UINT4_2 fields, not '{format_type}' field '{name}'")
     
     def get_format_string(self):
         """Returns the struct format string for this field"""
@@ -89,48 +72,18 @@ class M8Field:
             data[self.start:self.end] = struct.pack(self.get_format_string(), new_value)
         else:
             data[self.start:self.end] = struct.pack(self.get_format_string(), value)
-    
-    def _get_enum_value(self, raw_value, part_index=None):
-        """Convert raw integer to enum member if applicable"""
-        if self.enums is None:
-            return raw_value
-        
-        if self.format == "UINT8":
-            try:
-                return self.enums(raw_value)
-            except ValueError:
-                # If value doesn't match any enum, return the raw value
-                return raw_value
-        elif self.format == "UINT4_2" and self.is_composite and part_index is not None:
-            enum = self.enums[part_index]
-            if enum is None:
-                return raw_value
-            try:
-                return enum(raw_value)
-            except ValueError:
-                # If value doesn't match any enum, return the raw value
-                return raw_value
-        
-        return raw_value
-    
-    def _get_raw_value(self, value):
-        """Convert enum member to raw integer if applicable"""
-        if isinstance(value, Enum):
-            return value.value
-        return value
         
     def get_typed_value(self, data, part_index=None):
-        """Get value with proper type (string, float, int, or enum)"""
+        """Get value with proper type (string, float, int)"""
         if self.format == "STRING":
             return data[self.start:self.end].split(b'\x00', 1)[0].decode('utf-8', errors='ignore')
         elif self.format == "FLOAT32":
             return struct.unpack("<f", data[self.start:self.end])[0]
         else:
-            raw_value = self.read_value(data, part_index)
-            return self._get_enum_value(raw_value, part_index)
+            return self.read_value(data, part_index)
     
     def set_typed_value(self, data, value, part_index=None):
-        """Set value with proper type handling (including enums)"""
+        """Set value with proper type handling"""
         if self.format == "STRING":
             # Encode and either trim or pad with nulls
             encoded = value.encode('utf-8')
@@ -145,9 +98,8 @@ class M8Field:
         elif self.format == "FLOAT32":
             data[self.start:self.end] = struct.pack("<f", float(value))
         else:
-            # Handle enum values by converting to their integer value
-            raw_value = self._get_raw_value(value)
-            self.write_value(data, raw_value, part_index)
+            # Convert to integer
+            self.write_value(data, int(value), part_index)
     
     def check_default(self, data, part_index=None):
         """Check if the field has its default value in the given data"""
@@ -180,11 +132,9 @@ class M8FieldMap:
         for field_def in field_defs:
             # Handle the original list format from client code
             name, default, start, end, fmt = field_def[:5]
-            # Get optional enums parameter if provided (6th element)
-            enums = field_def[5] if len(field_def) > 5 else None
                 
             # Create field object
-            field = M8Field(name, default, start, end, fmt, enums)
+            field = M8Field(name, default, start, end, fmt)
             self.fields[name] = field
             
             # Register part names for lookup

@@ -1,23 +1,21 @@
 # short [01-remove-enums]
 
-- remove enums from core
-- remove enums from core tests
-- re- test
 - include macrosynth enums in enums
 - include fx in hello macrosynth
 - re- test
 
 # medium
 
-- json serialisation
-- json deserialisation
+- simple json serialisation
+- simple json deserialisation
+- json hex rendering
+- json enum rendering (how?)
 
 - m8i files
 - add back as_dict(), as_list() tests
 - custom modulator is_empty() method
 - toml file
-- commented out api tests
-- project test
+- api tests
 
 # thoughts
 
@@ -33,6 +31,9 @@
 
 # done
 
+- remove enums from core
+- remove enums from core tests
+- re- test
 - manually remove enums from api field maps
 - remove utils/enums and test
 - remove tests/api

@@ -2,7 +2,6 @@ from m8 import NULL
 from m8.core import m8_class_name
 from m8.core.fields import M8FieldMap
 
-from enum import Enum
 import struct
 
 class M8Object:
@@ -82,12 +81,10 @@ class M8Object:
                 for i, part_name in enumerate(field.parts):
                     if part_name != "_":  # Skip placeholder parts
                         value = field.get_typed_value(self._data, i)
-                        # Return the raw value directly
                         result[part_name] = value
             else:
                 # For regular fields
                 value = field.get_typed_value(self._data)
-                # Return the raw value directly
                 result[field_name] = value
                     
         return result            
