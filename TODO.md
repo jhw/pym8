@@ -18,6 +18,7 @@
 
 # thoughts
 
+- are modulator fx instrument specific or generic?
 - inheritance pattern for instruments?
 - refactor macrosynth as macro_synth?
 - NULL vs BLANK?
