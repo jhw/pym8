@@ -1,6 +1,6 @@
 from m8 import M8Block, NULL
 from m8.api import M8IndexError
-from m8.core.serialization import from_json, to_json
+from m8.api.serialization import from_json, to_json
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.phrases import M8Phrases

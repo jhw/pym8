@@ -1,6 +1,6 @@
 from m8 import NULL
 from m8.api import M8ValidationError, BLANK
-from m8.core.serialization import from_json, to_json
+from m8.api.serialization import from_json, to_json
 
 import struct
 

@@ -33,11 +33,11 @@ class M8Block:
 
     def to_json(self, indent=None):
         """Convert block to JSON string"""
-        from m8.core.serialization import to_json
+        from m8.api.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
+        from m8.api.serialization import from_json
         return from_json(json_str, cls)

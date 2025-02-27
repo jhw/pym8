@@ -1,6 +1,6 @@
 from m8 import NULL
 from m8.api import M8ValidationError, M8IndexError, BLANK
-from m8.core.serialization import from_json, to_json
+from m8.api.serialization import from_json, to_json
 
 STEP_BLOCK_SIZE = 2
 STEP_COUNT = 16

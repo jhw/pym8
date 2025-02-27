@@ -1,7 +1,7 @@
 from m8 import NULL
 from m8.api import BLANK
 from m8.api.instruments import M8InstrumentBase
-from m8.core.serialization import from_json, to_json
+from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte, join_nibbles
 
 class M8MacroSynthParams:

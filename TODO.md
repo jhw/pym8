@@ -1,8 +1,6 @@
 # short
 
-- simplify serialisation
 - remove all tests
-- move serialisation to api
 - remove core package
 - separate fx from phrases
 - collapse instrument / instrument params distinction
@@ -33,6 +31,8 @@
 
 # done
 
+- move serialisation to api
+- simplify serialisation
 - complete project/version/metadata refactoring
 - complete instruments, modulator refactoring
 - remove set_caller_module

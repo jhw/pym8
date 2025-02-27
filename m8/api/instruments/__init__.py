@@ -1,7 +1,7 @@
 from m8 import M8Block, NULL
 from m8.api import M8IndexError, M8ValidationError, load_class, BLANK
 from m8.api.modulators import create_modulators_class, create_default_modulators
-from m8.core.serialization import from_json, to_json
+from m8.api.serialization import from_json, to_json
 
 INSTRUMENT_TYPES = {
     0x01: "m8.api.instruments.macrosynth.M8MacroSynth"

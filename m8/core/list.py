@@ -108,7 +108,7 @@ class M8List(list):
                 # If the class has a resolver, use it if there's class info
                 if hasattr(cls, "ROW_CLASS_RESOLVER") and isinstance(item_data, dict) and "__class__" in item_data:
                     class_path = item_data["__class__"]
-                    from m8.core.serialization import _get_class_from_string
+                    from m8.api.serialization import _get_class_from_string
                     row_class = _get_class_from_string(class_path)
                     
                 # Create the item
@@ -128,13 +128,13 @@ class M8List(list):
 
     def to_json(self, indent=None):
         """Convert list to JSON string"""
-        from m8.core.serialization import to_json
+        from m8.api.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
+        from m8.api.serialization import from_json
         return from_json(json_str, cls)
 
 @auto_name_decorator

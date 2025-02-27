@@ -1,6 +1,6 @@
 from m8 import M8Block, NULL
 from m8.api import load_class
-from m8.core.serialization import from_json, to_json
+from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte
 
 BLOCK_SIZE = 6
