@@ -1,6 +1,7 @@
 from m8 import M8Block
 from m8.api import M8IndexError, M8ValidationError, load_class
-from m8.api.modulators import create_modulators_class, create_default_modulators
+# Import the new function from modulators
+from m8.api.modulators import get_modulators_class_for_instrument, create_default_modulators
 
 INSTRUMENT_TYPES = {
     0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
@@ -19,9 +20,9 @@ class M8InstrumentBase:
         self.synth_params = params_class(**kwargs)
         
         # Create modulators using the type from synth params
-        M8Modulators = create_modulators_class(self.synth_params.type)
+        ModulatorsClass = get_modulators_class_for_instrument(self.synth_params.type)
         default_modulators = create_default_modulators(self.synth_params.type)
-        self.modulators = M8Modulators(default_modulators)
+        self.modulators = ModulatorsClass(default_modulators)
 
     @classmethod
     def read(cls, data):
@@ -37,8 +38,8 @@ class M8InstrumentBase:
         instance.synth_params = params_class.read(data[:SYNTH_PARAMS_SIZE])
         
         # Create modulators based on the loaded params
-        M8Modulators = create_modulators_class(instance.synth_params.type)
-        instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
+        ModulatorsClass = get_modulators_class_for_instrument(instance.synth_params.type)
+        instance.modulators = ModulatorsClass.read(data[MODULATORS_OFFSET:])
         
         return instance
 
@@ -105,8 +106,8 @@ class M8InstrumentBase:
         # Deserialize modulators
         if "modulators" in data:
             # Create appropriate modulators class
-            M8Modulators = create_modulators_class(instance.synth_params.type)
-            instance.modulators = M8Modulators()
+            ModulatorsClass = get_modulators_class_for_instrument(instance.synth_params.type)
+            instance.modulators = ModulatorsClass()
             
             from m8.api.modulators import MODULATOR_TYPES
             
@@ -220,4 +221,3 @@ class M8Instruments(list):
                         instance[instr_idx] = M8InstrumentBase.from_dict(instr_data)
         
         return instance
-    

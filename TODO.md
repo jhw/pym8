@@ -1,8 +1,11 @@
 # short
 
+- liberate M8Modulators
+
 - remove checks for "__class__"
 
-- liberate M8Modulators
+- avoid use of "items" in serialised data
+- refactor serialised song as matrix
 
 - collapse instrument /instrument params distinction
 - consider separating modulators into separate classes
