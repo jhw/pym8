@@ -1,7 +1,8 @@
 # short
 
 - remove local from/to_json imports
-- replace from_json_naive
+- add back last version of from_json and test
+- add tests for individual from_json
 
 # medium
 
