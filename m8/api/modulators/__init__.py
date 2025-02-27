@@ -12,17 +12,21 @@ MODULATOR_TYPES = {
         0x01: "m8.api.modulators.macrosynth.M8MacroSynthADSREnvelope",
         0x03: "m8.api.modulators.macrosynth.M8MacroSynthLFO"
     }
-    # Add other instrument types and their modulators here
+    # Add other instrument types and their modulators here as needed
 }
 
-# Default modulator types: 2 envelopes followed by 2 LFOs
-DEFAULT_MODULATORS = [0x00, 0x00, 0x03, 0x03]
+# Default modulator configurations per instrument type
+DEFAULT_MODULATOR_CONFIGS = {
+    0x01: [0x00, 0x00, 0x03, 0x03]  # MacroSynth: 2 AHD envelopes, 2 LFOs
+    # Add more instrument types as needed
+}
 
-class M8ModulatorsBase(list):
-    """Base class for all modulator collections."""
+class M8Modulators(list):
+    """Generic class for all modulator collections."""
     
-    def __init__(self, items=None):
+    def __init__(self, instrument_type=0x01, items=None):
         super().__init__()
+        self.instrument_type = instrument_type
         items = items or []
         
         # Fill with provided items
@@ -34,21 +38,37 @@ class M8ModulatorsBase(list):
             self.append(M8Block())
     
     @classmethod
-    def read(cls, data):
-        """Base read method, should be overridden by subclasses."""
-        instance = cls.__new__(cls)
-        list.__init__(instance)
+    def read(cls, data, instrument_type=0x01):
+        """Generic read method that handles any instrument type."""
+        instance = cls(instrument_type=instrument_type)
+        instance.clear()  # Clear default items
         
         for i in range(BLOCK_COUNT):
             start = i * BLOCK_SIZE
             block_data = data[start:start + BLOCK_SIZE]
-            instance.append(M8Block.read(block_data))
+            
+            # Only process if we have enough data
+            if len(block_data) < 1:
+                instance.append(M8Block())
+                continue
+                
+            # Check the modulator type/destination byte
+            first_byte = block_data[0]
+            mod_type, _ = split_byte(first_byte)
+            
+            if instrument_type in MODULATOR_TYPES and mod_type in MODULATOR_TYPES[instrument_type]:
+                # Create the specific modulator class
+                ModClass = load_class(MODULATOR_TYPES[instrument_type][mod_type])
+                instance.append(ModClass.read(block_data))
+            else:
+                # Default to M8Block for unknown types
+                instance.append(M8Block.read(block_data))
         
         return instance
     
     def clone(self):
-        instance = self.__class__.__new__(self.__class__)
-        list.__init__(instance)
+        instance = self.__class__(instrument_type=self.instrument_type)
+        instance.clear()  # Clear default items
         
         for mod in self:
             if hasattr(mod, 'clone'):
@@ -75,83 +95,44 @@ class M8ModulatorsBase(list):
     
     def as_dict(self):
         """Convert modulators to dictionary for serialization"""
-        # Only include non-empty modulators
-        items = []
-        for i, mod in enumerate(self):
-            if not (isinstance(mod, M8Block) or (hasattr(mod, 'is_empty') and mod.is_empty())):
-                item_dict = mod.as_dict() if hasattr(mod, 'as_dict') else {"__class__": "m8.M8Block"}
-                items.append(item_dict)
-        
-        return {
-            "items": items
-        }
+        # Include all modulators, even empty ones
+        return [mod.as_dict() if hasattr(mod, "as_dict") else {"data": []} for mod in self]
     
     @classmethod
-    def from_dict(cls, data):
-        """Create modulators from a dictionary - should be overridden by subclasses."""
-        instance = cls()
-        return instance
-
-
-class M8MacroSynthModulators(M8ModulatorsBase):
-    """Modulators collection specific to MacroSynth instruments."""
-    
-    @classmethod
-    def read(cls, data):
-        instance = cls.__new__(cls)
-        list.__init__(instance)
-        
-        for i in range(BLOCK_COUNT):
-            start = i * BLOCK_SIZE
-            block_data = data[start:start + BLOCK_SIZE]
-            
-            # Only process if we have enough data
-            if len(block_data) < 1:
-                instance.append(M8Block())
-                continue
-                
-            # Check the modulator type/destination byte
-            first_byte = block_data[0]
-            mod_type, _ = split_byte(first_byte)
-            
-            if mod_type in MODULATOR_TYPES[0x01]:  # 0x01 is MacroSynth
-                # Create the specific modulator class
-                ModClass = load_class(MODULATOR_TYPES[0x01][mod_type])
-                instance.append(ModClass.read(block_data))
-            else:
-                # Default to M8Block for unknown types
-                instance.append(M8Block.read(block_data))
-        
-        return instance
-    
-    @classmethod
-    def from_dict(cls, data):
-        """Create modulators from a dictionary"""
-        instance = cls()
+    def from_dict(cls, data, instrument_type=0x01):
+        """Create modulators from a dictionary."""
+        instance = cls(instrument_type=instrument_type)
+        instance.clear()  # Clear default items
         
         # Set modulators
-        if "items" in data:
-            for i, mod_data in enumerate(data["items"]):
-                if i < BLOCK_COUNT:
-                    # Default to M8Block if no class info
-                    instance[i] = M8Block()
+        for i, mod_data in enumerate(data):
+            if i < BLOCK_COUNT:
+                if isinstance(mod_data, dict) and "type" in mod_data:
+                    mod_type = mod_data["type"]
+                    if instrument_type in MODULATOR_TYPES and mod_type in MODULATOR_TYPES[instrument_type]:
+                        ModClass = load_class(MODULATOR_TYPES[instrument_type][mod_type])
+                        instance.append(ModClass.from_dict(mod_data))
+                    else:
+                        instance.append(M8Block())
+                else:
+                    instance.append(M8Block())
         
+        # Fill remaining slots with empty blocks
+        while len(instance) < BLOCK_COUNT:
+            instance.append(M8Block())
+            
         return instance
 
 
-# Add more modulator subclasses for other instrument types here
-# Example:
-# class M8WaveSynthModulators(M8ModulatorsBase):
-#     ...
-
-
-def get_default_modulator_set(instrument_type):
-    """Get the list of default modulator classes for an instrument type"""
-    if instrument_type not in MODULATOR_TYPES:
-        raise ValueError(f"Unknown instrument type: {instrument_type}")
-        
+def create_default_modulators(instrument_type):
+    """Create default modulator instances for an instrument type"""
     result = []
-    for mod_type in DEFAULT_MODULATORS:
+    
+    if instrument_type not in MODULATOR_TYPES or instrument_type not in DEFAULT_MODULATOR_CONFIGS:
+        # Return empty modulators if type is unknown
+        return [M8Block() for _ in range(BLOCK_COUNT)]
+    
+    for mod_type in DEFAULT_MODULATOR_CONFIGS[instrument_type]:
         # Get class path from MODULATOR_TYPES and instantiate
         if mod_type in MODULATOR_TYPES[instrument_type]:
             full_path = MODULATOR_TYPES[instrument_type][mod_type]
@@ -159,59 +140,5 @@ def get_default_modulator_set(instrument_type):
             result.append(ModClass())
         else:
             result.append(M8Block())
-        
+    
     return result
-
-
-def create_default_modulators(instrument_type):
-    """Create default modulator instances for an instrument type"""
-    return get_default_modulator_set(instrument_type)
-
-
-def get_modulators_class_for_instrument(instrument_type):
-    """Returns the appropriate modulators class for an instrument type"""
-    if instrument_type == 0x01:  # MacroSynth
-        return M8MacroSynthModulators
-    # Add more instrument types here
-    # elif instrument_type == 0x02:  # WaveSynth
-    #     return M8WaveSynthModulators
-    
-    # Default to base class if no specific class is found
-    return M8ModulatorsBase
-
-
-# Alias for backward compatibility
-create_modulators_class = get_modulators_class_for_instrument
-
-
-def create_modulator_from_dict(data, instrument_type):
-    """Create a modulator instance from a dictionary based on its type"""
-    if not data or "type" not in data or instrument_type not in MODULATOR_TYPES:
-        return None
-    
-    mod_type = data["type"]
-    
-    # If we have explicit class information, use that
-    if "__class__" in data:
-        try:
-            ModClass = load_class(data["__class__"])
-            return ModClass.from_dict(data)
-        except (ImportError, AttributeError):
-            pass
-    
-    # Fall back to type lookup
-    if mod_type in MODULATOR_TYPES[instrument_type]:
-        class_path = MODULATOR_TYPES[instrument_type][mod_type]
-        ModClass = load_class(class_path)
-        return ModClass.from_dict(data)
-    
-    return None
-
-
-def get_modulator_type_from_class(mod_class):
-    """Get the modulator type value from its class"""
-    for instr_type, mod_types in MODULATOR_TYPES.items():
-        for mod_type, class_path in mod_types.items():
-            if class_path == f"{mod_class.__module__}.{mod_class.__name__}":
-                return mod_type
-    return None

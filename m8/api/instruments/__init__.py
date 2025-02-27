@@ -1,7 +1,7 @@
 from m8 import M8Block
 from m8.api import M8IndexError, M8ValidationError, load_class
-# Import the new function from modulators
-from m8.api.modulators import get_modulators_class_for_instrument, create_default_modulators
+# Import the function from modulators
+from m8.api.modulators import M8Modulators, create_default_modulators
 
 INSTRUMENT_TYPES = {
     0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
@@ -20,9 +20,8 @@ class M8InstrumentBase:
         self.synth_params = params_class(**kwargs)
         
         # Create modulators using the type from synth params
-        ModulatorsClass = get_modulators_class_for_instrument(self.synth_params.type)
         default_modulators = create_default_modulators(self.synth_params.type)
-        self.modulators = ModulatorsClass(default_modulators)
+        self.modulators = M8Modulators(instrument_type=self.synth_params.type, items=default_modulators)
 
     @classmethod
     def read(cls, data):
@@ -38,8 +37,8 @@ class M8InstrumentBase:
         instance.synth_params = params_class.read(data[:SYNTH_PARAMS_SIZE])
         
         # Create modulators based on the loaded params
-        ModulatorsClass = get_modulators_class_for_instrument(instance.synth_params.type)
-        instance.modulators = ModulatorsClass.read(data[MODULATORS_OFFSET:])
+        instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:], 
+                                               instrument_type=instance.synth_params.type)
         
         return instance
 
@@ -105,9 +104,8 @@ class M8InstrumentBase:
         
         # Deserialize modulators
         if "modulators" in data:
-            # Create appropriate modulators class
-            ModulatorsClass = get_modulators_class_for_instrument(instance.synth_params.type)
-            instance.modulators = ModulatorsClass()
+            # Create appropriate modulators collection
+            instance.modulators = M8Modulators(instrument_type=instance.synth_params.type)
             
             from m8.api.modulators import MODULATOR_TYPES
             
@@ -120,7 +118,7 @@ class M8InstrumentBase:
                             ModClass = load_class(MODULATOR_TYPES[instance.synth_params.type][mod_type])
                             instance.modulators[i] = ModClass.from_dict(mod_data)
         
-        return instance        
+        return instance
 
 class M8Instruments(list):
     def __init__(self, items=None):
@@ -190,7 +188,7 @@ class M8Instruments(list):
         for i, instr in enumerate(self):
             if not (isinstance(instr, M8Block) or instr.is_empty()):
                 item_dict = instr.as_dict() if hasattr(instr, 'as_dict') else {"__class__": "m8.M8Block"}
-                item_dict["index"] = i
+                # No index field
                 items.append(item_dict)
         
         return {
@@ -202,12 +200,10 @@ class M8Instruments(list):
         """Create instruments from a dictionary"""
         instance = cls()
         
-        # Set instruments
+        # Set instruments - simply append them in the order they appear
         if "items" in data:
-            for instr_data in data["items"]:
-                instr_idx = instr_data.pop("index", 0)
-                if 0 <= instr_idx < BLOCK_COUNT:
-                    # Default to base class if no class info
-                    instance[instr_idx] = M8InstrumentBase.from_dict(instr_data)
+            for i, instr_data in enumerate(data["items"]):
+                # No index field to check, just add them in order
+                instance[i] = M8InstrumentBase.from_dict(instr_data)
         
         return instance
