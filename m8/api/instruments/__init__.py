@@ -2,6 +2,7 @@ from m8 import M8Block
 from m8.api import M8IndexError, load_class
 from m8.api.modulators import create_modulators_class, create_default_modulators
 from m8.core.list import m8_list_class
+from m8.core.serialization import from_json, to_json
 
 INSTRUMENT_TYPES = {
     0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
@@ -115,13 +116,11 @@ class M8InstrumentBase:
         
     def to_json(self, indent=None):
         """Convert instrument to JSON string"""
-        from m8.core.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
 def instrument_row_class(data):

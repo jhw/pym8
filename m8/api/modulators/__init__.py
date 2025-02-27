@@ -77,7 +77,6 @@ def create_modulator_from_dict(data, instrument_type):
     
     # If we have explicit class information, use that
     if "__class__" in data:
-        from m8.core.serialization import _get_class_from_string
         try:
             ModClass = _get_class_from_string(data["__class__"])
             return ModClass.from_dict(data)

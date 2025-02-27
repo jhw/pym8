@@ -1,6 +1,7 @@
 from m8 import M8Block, NULL
 from m8.api import M8IndexError
 from m8.core.object import m8_object_class
+from m8.core.serialization import from_json, to_json
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.phrases import M8Phrases
@@ -261,25 +262,17 @@ class M8Project:
         with open(filename, "r") as f:
             json_str = f.read()
 
-        """
-        from m8.core.serialization import from_json
-        return from_json(json_str, cls)
-        """
         # Use the simplified deserializer
+        # return from_json(json_str, cls)
         return from_json_naive(json_str, cls)
-        
+
     def to_json(self, indent=2):
         """Convert project to JSON string"""
-        from m8.core.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        """
-        from m8.core.serialization import from_json
-        return from_json(json_str, cls)
-        """
         # Use the simplified deserializer
+        # return from_json(json_str, cls)
         return from_json_naive(json_str, cls)
-

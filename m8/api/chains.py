@@ -2,6 +2,7 @@ from m8 import NULL
 from m8.api import M8ValidationError, M8IndexError, BLANK
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
+from m8.core.serialization import from_json, to_json
 
 STEP_BLOCK_SIZE = 2
 STEP_COUNT = 16
@@ -81,13 +82,11 @@ class M8Chain(M8ChainBase):
         
     def to_json(self, indent=None):
         """Convert chain to JSON string"""
-        from m8.core.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
 M8ChainsBase = m8_list_class(

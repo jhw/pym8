@@ -2,6 +2,7 @@ from m8 import M8Block, NULL
 from m8.api import M8ValidationError, M8IndexError, BLANK
 from m8.core.list import m8_list_class
 from m8.core.object import m8_object_class
+from m8.core.serialization import from_json, to_json
 
 FX_BLOCK_SIZE = 2
 FX_BLOCK_COUNT = 3
@@ -112,13 +113,11 @@ class M8PhraseStep(M8PhraseStepBase):
         
     def to_json(self, indent=None):
         """Convert phrase step to JSON string"""
-        from m8.core.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
         return from_json(json_str, cls)
         
 M8PhraseBase = m8_list_class(
@@ -187,13 +186,11 @@ class M8Phrase(M8PhraseBase):
         
     def to_json(self, indent=None):
         """Convert phrase to JSON string"""
-        from m8.core.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
         return from_json(json_str, cls)
         
 M8PhrasesBase = m8_list_class(

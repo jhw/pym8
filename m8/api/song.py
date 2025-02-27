@@ -2,6 +2,7 @@ from m8 import NULL
 from m8.api import M8ValidationError, BLANK
 from m8.core.array import m8_array_class
 from m8.core.list import m8_list_class
+from m8.core.serialization import from_json, to_json
 
 COL_COUNT = 8
 ROW_COUNT = 255
@@ -60,13 +61,11 @@ class M8SongRow(M8SongRowBase):
         
     def to_json(self, indent=None):
         """Convert song row to JSON string"""
-        from m8.core.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
 M8SongMatrixBase = m8_list_class(
@@ -118,11 +117,9 @@ class M8SongMatrix(M8SongMatrixBase):
         
     def to_json(self, indent=None):
         """Convert song matrix to JSON string"""
-        from m8.core.serialization import to_json
         return to_json(self, indent=indent)
 
     @classmethod
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
-        from m8.core.serialization import from_json
         return from_json(json_str, cls)
