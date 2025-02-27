@@ -4,7 +4,6 @@
 - separate version and metadata from project
 - separate modulators into separate classes
 - remove __class__
-- remove api subdir
 - remove is_empty()
 
 # medium
