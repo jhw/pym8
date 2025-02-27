@@ -1,34 +1,153 @@
 from m8 import NULL
 from m8.api import BLANK
 from m8.api.instruments import M8InstrumentBase
-from m8.core.object import m8_object_class
+from m8.core.serialization import from_json, to_json
+from m8.utils.bits import split_byte, join_nibbles
 
-M8MacroSynthParams = m8_object_class(
-    field_map=[
-        ("type", 0x01, 0, 1, "UINT8"),
-        ("name", " ", 1, 13, "STRING"),  
-        ("transpose|eq", 0x41, 13, 14, "UINT4_2"),
-        ("table_tick", 0x01, 14, 15, "UINT8"),
-        ("volume", NULL, 15, 16, "UINT8"), 
-        ("pitch", NULL, 16, 17, "UINT8"), 
-        ("fine_tune", 0x80, 17, 18, "UINT8"),
-        ("shape", NULL, 18, 19, "UINT8"),
-        ("timbre", 0x80, 19, 20, "UINT8"),
-        ("color", 0x80, 20, 21, "UINT8"),
-        ("degrade", NULL, 21, 22, "UINT8"),
-        ("redux", NULL, 22, 23, "UINT8"),
-        ("filter_type", NULL, 23, 24, "UINT8"),
-        ("filter_cutoff", BLANK, 24, 25, "UINT8"),
-        ("filter_resonance", NULL, 25, 26, "UINT8"),
-        ("amp_level", NULL, 26, 27, "UINT8"),
-        ("amp_limit", NULL, 27, 28, "UINT8"),
-        ("mixer_pan", 0x80, 28, 29, "UINT8"),
-        ("mixer_dry", 0xC0, 29, 30, "UINT8"),
-        ("mixer_chorus", NULL, 30, 31, "UINT8"),
-        ("mixer_delay", NULL, 31, 32, "UINT8"),
-        ("mixer_reverb", NULL, 32, 33, "UINT8")
-    ]
-)
+class M8MacroSynthParams:
+    def __init__(self, **kwargs):
+        # Default field values
+        self.type = 0x01
+        self.name = " "
+        self.transpose = 0x4
+        self.eq = 0x1
+        self.table_tick = 0x01
+        self.volume = NULL
+        self.pitch = NULL
+        self.fine_tune = 0x80
+        self.shape = NULL
+        self.timbre = 0x80
+        self.color = 0x80
+        self.degrade = NULL
+        self.redux = NULL
+        self.filter_type = NULL
+        self.filter_cutoff = BLANK
+        self.filter_resonance = NULL
+        self.amp_level = NULL
+        self.amp_limit = NULL
+        self.mixer_pan = 0x80
+        self.mixer_dry = 0xC0
+        self.mixer_chorus = NULL
+        self.mixer_delay = NULL
+        self.mixer_reverb = NULL
+        
+        # Apply any provided kwargs
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+    
+    @classmethod
+    def read(cls, data):
+        instance = cls()
+        
+        # Read fields from data
+        instance.type = data[0]
+        instance.name = data[1:14].decode('utf-8').rstrip('\0')
+        
+        # Split byte into transpose/eq
+        transpose_eq = data[14]
+        instance.transpose, instance.eq = split_byte(transpose_eq)
+        
+        instance.table_tick = data[15]
+        instance.volume = data[16]
+        instance.pitch = data[17]
+        instance.fine_tune = data[18]
+        instance.shape = data[19]
+        instance.timbre = data[20]
+        instance.color = data[21]
+        instance.degrade = data[22]
+        instance.redux = data[23]
+        instance.filter_type = data[24]
+        instance.filter_cutoff = data[25]
+        instance.filter_resonance = data[26]
+        instance.amp_level = data[27]
+        instance.amp_limit = data[28]
+        instance.mixer_pan = data[29]
+        instance.mixer_dry = data[30]
+        instance.mixer_chorus = data[31]
+        instance.mixer_delay = data[32]
+        instance.mixer_reverb = data[33]
+        
+        return instance
+    
+    def write(self):
+        # Create output buffer
+        buffer = bytearray()
+        
+        # Type
+        buffer.append(self.type)
+        
+        # Name (padded to 13 bytes)
+        name_bytes = self.name.encode('utf-8')
+        name_bytes = name_bytes[:13]  # Truncate if too long
+        name_bytes = name_bytes + bytes([0] * (13 - len(name_bytes)))  # Pad with nulls
+        buffer.extend(name_bytes)
+        
+        # Transpose/EQ (combined into one byte)
+        transpose_eq = join_nibbles(self.transpose, self.eq)
+        buffer.append(transpose_eq)
+        
+        # Remaining fields
+        buffer.append(self.table_tick)
+        buffer.append(self.volume)
+        buffer.append(self.pitch)
+        buffer.append(self.fine_tune)
+        buffer.append(self.shape)
+        buffer.append(self.timbre)
+        buffer.append(self.color)
+        buffer.append(self.degrade)
+        buffer.append(self.redux)
+        buffer.append(self.filter_type)
+        buffer.append(self.filter_cutoff)
+        buffer.append(self.filter_resonance)
+        buffer.append(self.amp_level)
+        buffer.append(self.amp_limit)
+        buffer.append(self.mixer_pan)
+        buffer.append(self.mixer_dry)
+        buffer.append(self.mixer_chorus)
+        buffer.append(self.mixer_delay)
+        buffer.append(self.mixer_reverb)
+        
+        return bytes(buffer)
+    
+    def is_empty(self):
+        # Consider params empty if name is blank and key parameters are default
+        return (self.name.strip() == "" and 
+                self.volume == NULL and 
+                self.shape == NULL)
+    
+    def clone(self):
+        instance = self.__class__()
+        for key, value in vars(self).items():
+            setattr(instance, key, value)
+        return instance
+    
+    def as_dict(self):
+        """Convert parameters to dictionary for serialization"""
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            **{k: v for k, v in vars(self).items() if not k.startswith('_')}
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create parameters from a dictionary"""
+        instance = cls()
+        
+        for key, value in data.items():
+            if key != "__class__" and hasattr(instance, key):
+                setattr(instance, key, value)
+        
+        return instance
+    
+    def to_json(self, indent=None):
+        """Convert parameters to JSON string"""
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        return from_json(json_str, cls)
 
 class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):

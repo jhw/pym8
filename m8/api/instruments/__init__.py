@@ -1,7 +1,6 @@
-from m8 import M8Block
-from m8.api import M8IndexError, load_class
+from m8 import M8Block, NULL
+from m8.api import M8IndexError, M8ValidationError, load_class, BLANK
 from m8.api.modulators import create_modulators_class, create_default_modulators
-from m8.core.list import m8_list_class
 from m8.core.serialization import from_json, to_json
 
 INSTRUMENT_TYPES = {
@@ -23,7 +22,7 @@ class M8InstrumentBase:
         # Create modulators using the type from synth params
         M8Modulators = create_modulators_class(self.synth_params.type)
         default_modulators = create_default_modulators(self.synth_params.type)
-        self.modulators = M8Modulators(items=default_modulators)
+        self.modulators = M8Modulators(default_modulators)
 
     @classmethod
     def read(cls, data):
@@ -33,7 +32,7 @@ class M8InstrumentBase:
             raise ValueError(f"Unknown instrument type: {instr_type}")
             
         # Create instance and load its params
-        instance = cls()
+        instance = cls.__new__(cls)
         params_path = f"{INSTRUMENT_TYPES[instr_type]}Params"
         params_class = load_class(params_path)
         instance.synth_params = params_class.read(data[:SYNTH_PARAMS_SIZE])
@@ -42,6 +41,23 @@ class M8InstrumentBase:
         M8Modulators = create_modulators_class(instance.synth_params.type)
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
         
+        return instance
+
+    def write(self):
+        buffer = bytearray()
+        buffer.extend(self.synth_params.write())
+        buffer.extend(bytes([0] * (MODULATORS_OFFSET - SYNTH_PARAMS_SIZE)))
+        buffer.extend(self.modulators.write())
+        return bytes(buffer)
+
+    def is_empty(self):
+        # An instrument is considered empty if its synth params are empty
+        return self.synth_params.is_empty() if hasattr(self.synth_params, 'is_empty') else False
+
+    def clone(self):
+        instance = self.__class__.__new__(self.__class__)
+        instance.synth_params = self.synth_params.clone() if hasattr(self.synth_params, 'clone') else self.synth_params
+        instance.modulators = self.modulators.clone() if hasattr(self.modulators, 'clone') else self.modulators
         return instance
 
     @property
@@ -74,18 +90,11 @@ class M8InstrumentBase:
             "modulators": [mod.as_dict() if hasattr(mod, "as_dict") else None 
                            for mod in self.modulators]
         }
-    
-    def write(self):
-        buffer = bytearray()
-        buffer.extend(self.synth_params.write())
-        buffer.extend(bytes([0] * (MODULATORS_OFFSET - SYNTH_PARAMS_SIZE)))
-        buffer.extend(self.modulators.write())
-        return bytes(buffer)
-        
+            
     @classmethod
     def from_dict(cls, data):
         """Create an instrument from a dictionary"""
-        instance = cls()
+        instance = cls.__new__(cls)
         
         # Get synth params class
         if "type" in data and "synth_params" in data:
@@ -123,14 +132,113 @@ class M8InstrumentBase:
         """Create an instance from a JSON string"""
         return from_json(json_str, cls)
 
-def instrument_row_class(data):
-    """Factory function to create appropriate instrument class based on type byte"""
-    instr_type = data[0]
-    if instr_type in INSTRUMENT_TYPES:
-        return load_class(INSTRUMENT_TYPES[instr_type])
-    return M8Block
 
-M8Instruments = m8_list_class(
-    row_size=BLOCK_SIZE,
-    row_count=BLOCK_COUNT,
-    row_class_resolver=instrument_row_class)
+class M8Instruments(list):
+    def __init__(self, items=None):
+        super().__init__()
+        items = items or []
+        
+        # Fill with provided items
+        for item in items:
+            self.append(item)
+            
+        # Fill remaining slots with M8Block instances
+        while len(self) < BLOCK_COUNT:
+            self.append(M8Block())
+    
+    @classmethod
+    def read(cls, data):
+        instance = cls.__new__(cls)
+        list.__init__(instance)
+        
+        for i in range(BLOCK_COUNT):
+            start = i * BLOCK_SIZE
+            block_data = data[start:start + BLOCK_SIZE]
+            
+            # Check the instrument type byte
+            instr_type = block_data[0]
+            if instr_type in INSTRUMENT_TYPES:
+                # Create the specific instrument class
+                InstrClass = load_class(INSTRUMENT_TYPES[instr_type])
+                instance.append(InstrClass.read(block_data))
+            else:
+                # Default to M8Block for unknown types or empty slots
+                instance.append(M8Block.read(block_data))
+        
+        return instance
+    
+    def clone(self):
+        instance = self.__class__.__new__(self.__class__)
+        list.__init__(instance)
+        
+        for instr in self:
+            if hasattr(instr, 'clone'):
+                instance.append(instr.clone())
+            else:
+                instance.append(instr)
+        
+        return instance
+    
+    def is_empty(self):
+        return all(isinstance(instr, M8Block) or instr.is_empty() for instr in self)
+    
+    def write(self):
+        result = bytearray()
+        for instr in self:
+            instr_data = instr.write() if hasattr(instr, 'write') else bytes([0] * BLOCK_SIZE)
+            # Ensure each instrument occupies exactly BLOCK_SIZE bytes
+            if len(instr_data) < BLOCK_SIZE:
+                instr_data = instr_data + bytes([NULL] * (BLOCK_SIZE - len(instr_data)))
+            elif len(instr_data) > BLOCK_SIZE:
+                instr_data = instr_data[:BLOCK_SIZE]
+            result.extend(instr_data)
+        return bytes(result)
+    
+    def as_dict(self):
+        """Convert instruments to dictionary for serialization"""
+        # Only include non-empty instruments
+        items = []
+        for i, instr in enumerate(self):
+            if not (isinstance(instr, M8Block) or instr.is_empty()):
+                item_dict = instr.as_dict() if hasattr(instr, 'as_dict') else {"__class__": "m8.M8Block"}
+                item_dict["index"] = i
+                items.append(item_dict)
+        
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "items": items
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create instruments from a dictionary"""
+        instance = cls()
+        
+        # Set instruments
+        if "items" in data:
+            for instr_data in data["items"]:
+                instr_idx = instr_data.pop("index", 0)
+                if 0 <= instr_idx < BLOCK_COUNT:
+                    if "__class__" in instr_data:
+                        try:
+                            # Try to get class from the class path
+                            class_path = instr_data["__class__"]
+                            InstrClass = load_class(class_path)
+                            instance[instr_idx] = InstrClass.from_dict(instr_data)
+                        except (ImportError, AttributeError):
+                            # Fall back to base class
+                            instance[instr_idx] = M8InstrumentBase.from_dict(instr_data)
+                    else:
+                        # Default to base class if no class info
+                        instance[instr_idx] = M8InstrumentBase.from_dict(instr_data)
+        
+        return instance
+    
+    def to_json(self, indent=None):
+        """Convert instruments to JSON string"""
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        return from_json(json_str, cls)

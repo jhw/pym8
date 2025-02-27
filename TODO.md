@@ -1,20 +1,22 @@
 # short
 
-- remove m8_xxx_class functions
-
-- complete serialisation/deserialisation
+- complete instruments, modulator refactoring
+- complete project/version/metadata refactoring
+- remove core package
 
 # medium
 
-
 - separate fx from phrases
-- remove is_empty() from serialisation
+- collapse instrument / instrument params distinction
+- serialisation/deserialisation
+- is serialisation only outputting non- empty phrases?
+
+- remove api subdir
 - inspector cli
 - json enum, hex
 - m8i files
 - toml file
-- serialisation tests
-- api tests
+- tests
 
 # thoughts
 
