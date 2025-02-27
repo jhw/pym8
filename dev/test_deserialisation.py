@@ -1,4 +1,6 @@
 from m8.api.project import M8Project
+
+import json
 import sys
 import os
 
@@ -23,7 +25,8 @@ def main():
     project = M8Project.read_from_json_file(file_path)
     
     # dump
-    print(project)
+    print(json.dumps(project.as_dict(),
+                     indent = 2))
 
 if __name__ == "__main__":
     main()

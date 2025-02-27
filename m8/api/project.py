@@ -200,5 +200,5 @@ class M8Project:
         """Read project from a JSON file"""
         with open(filename, "r") as f:
             json_str = f.read()
-        return json.loads(json_str)
+        return M8Project.from_dict(json.loads(json_str))
 

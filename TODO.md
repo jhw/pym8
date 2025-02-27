@@ -1,16 +1,17 @@
 # short
 
-- remove checks for "__class__"
-
 - avoid use of "items" in serialised data
 - refactor serialised song as matrix
 
-- collapse instrument /instrument params distinction
+- collapse instrument/instrument params distinction
+- consider adding back filter/amp/mixer classes
 - consider separating modulators into separate classes
 - consider abstraction into base classes
 - rationalise imports
 
 # medium
+
+- consider role of is_empty()
 
 - inspector cli
 - json enum, hex
@@ -32,6 +33,7 @@
 
 # done
 
+- remove checks for "__class__"
 - liberate M8Modulators
 - instruments not being serialised to json
 - remove __class__
