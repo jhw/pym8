@@ -1,7 +1,5 @@
 # short
 
-- liberate M8Modulators
-
 - remove checks for "__class__"
 
 - avoid use of "items" in serialised data
@@ -34,7 +32,7 @@
 
 # done
 
-
+- liberate M8Modulators
 - instruments not being serialised to json
 - remove __class__
 - remove api/serialisation

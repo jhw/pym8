@@ -207,17 +207,7 @@ class M8Instruments(list):
             for instr_data in data["items"]:
                 instr_idx = instr_data.pop("index", 0)
                 if 0 <= instr_idx < BLOCK_COUNT:
-                    if "__class__" in instr_data:
-                        try:
-                            # Try to get class from the class path
-                            class_path = instr_data["__class__"]
-                            InstrClass = load_class(class_path)
-                            instance[instr_idx] = InstrClass.from_dict(instr_data)
-                        except (ImportError, AttributeError):
-                            # Fall back to base class
-                            instance[instr_idx] = M8InstrumentBase.from_dict(instr_data)
-                    else:
-                        # Default to base class if no class info
-                        instance[instr_idx] = M8InstrumentBase.from_dict(instr_data)
+                    # Default to base class if no class info
+                    instance[instr_idx] = M8InstrumentBase.from_dict(instr_data)
         
         return instance

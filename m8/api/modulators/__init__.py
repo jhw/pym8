@@ -133,18 +133,8 @@ class M8MacroSynthModulators(M8ModulatorsBase):
         if "items" in data:
             for i, mod_data in enumerate(data["items"]):
                 if i < BLOCK_COUNT:
-                    if "__class__" in mod_data:
-                        try:
-                            # Try to get class from the class path
-                            class_path = mod_data["__class__"]
-                            ModClass = load_class(class_path)
-                            instance[i] = ModClass.from_dict(mod_data)
-                        except (ImportError, AttributeError):
-                            # Fall back to M8Block
-                            instance[i] = M8Block()
-                    else:
-                        # Default to M8Block if no class info
-                        instance[i] = M8Block()
+                    # Default to M8Block if no class info
+                    instance[i] = M8Block()
         
         return instance
 
