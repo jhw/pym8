@@ -83,7 +83,6 @@ class M8InstrumentBase:
     def as_dict(self):
         """Convert instrument to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "type": self.synth_params.type,
             "synth_params": self.synth_params.as_dict(),
             "modulators": [mod.as_dict() if hasattr(mod, "as_dict") else None 
@@ -194,7 +193,6 @@ class M8Instruments(list):
                 items.append(item_dict)
         
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "items": items
         }
     

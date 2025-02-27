@@ -65,7 +65,6 @@ class M8SongRow:
                 chains.append({"col": i, "chain": self[i]})
         
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "chains": chains
         }
     
@@ -140,7 +139,6 @@ class M8SongMatrix(list):
                 rows.append(row_dict)
         
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "rows": rows
         }
     

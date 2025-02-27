@@ -63,7 +63,6 @@ class M8MacroSynthAHDEnvelope:
     def as_dict(self):
         """Convert modulator to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             **{k: v for k, v in vars(self).items() if not k.startswith('_')}
         }
     
@@ -141,7 +140,6 @@ class M8MacroSynthADSREnvelope:
     def as_dict(self):
         """Convert modulator to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             **{k: v for k, v in vars(self).items() if not k.startswith('_')}
         }
     
@@ -219,7 +217,6 @@ class M8MacroSynthLFO:
     def as_dict(self):
         """Convert modulator to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             **{k: v for k, v in vars(self).items() if not k.startswith('_')}
         }
     

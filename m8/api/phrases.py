@@ -89,7 +89,6 @@ class M8PhraseStep:
     def as_dict(self):
         """Convert phrase step to dictionary for serialization"""
         result = {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "note": self.note,
             "velocity": self.velocity,
             "instrument": self.instrument,
@@ -196,7 +195,6 @@ class M8Phrase(list):
     def as_dict(self):
         """Convert phrase to dictionary for serialization"""
         result = {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "steps": [step.as_dict() for step in self if not step.is_empty()]
         }
         return result
@@ -266,7 +264,6 @@ class M8Phrases(list):
     def as_dict(self):
         """Convert phrases to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "items": [phrase.as_dict() for phrase in self if not phrase.is_empty()]
         }
     

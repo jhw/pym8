@@ -17,7 +17,6 @@ class M8Block:
     def as_dict(self):
         """Convert block to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "data": list(self.data)
         }
     

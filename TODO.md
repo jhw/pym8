@@ -1,15 +1,19 @@
 # short
 
-- remove __class__
+- instruments not being serialised to json
+
+- remove checks for "__class__"
 - liberate M8Modulators
 
 - collapse instrument /instrument params distinction
 - consider separating modulators into separate classes
 - consider abstraction into base classes
+- rationalise imports
 
 # medium
 
 - remove is_empty()
+
 - inspector cli
 - json enum, hex
 - m8i files
@@ -18,10 +22,7 @@
 
 # thoughts
 
-- are modulator fx instrument specific or generic?
-- inheritance pattern for instruments?
 - refactor macrosynth as macro_synth?
-- NULL vs BLANK?
 - transpose/eq/pitch/fine_tune synth parameters
 
 # rejected
@@ -31,6 +32,7 @@
 
 # done
 
+- remove __class__
 - remove api/serialisation
 - examples and demo to use json.loads/dumps directly
 - remove all json code in classes

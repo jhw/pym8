@@ -39,7 +39,6 @@ class M8FXTuple:
     def as_dict(self):
         """Convert FX tuple to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "key": self.key,
             "value": self.value
         }
@@ -96,7 +95,6 @@ class M8FXTuples(list):
     def as_dict(self):
         """Convert FX tuples to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "tuples": [fx_tuple.as_dict() for fx_tuple in self if not fx_tuple.is_empty()]
         }
     

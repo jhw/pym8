@@ -42,7 +42,6 @@ class M8ChainStep:
     def as_dict(self):
         """Convert chain step to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "phrase": self.phrase,
             "transpose": self.transpose
         }
@@ -132,7 +131,6 @@ class M8Chain(list):
     def as_dict(self):
         """Convert chain to dictionary for serialization"""
         result = {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "steps": [step.as_dict() for step in self if step.phrase != 0xFF]
         }
         return result
@@ -207,7 +205,6 @@ class M8Chains(list):
     def as_dict(self):
         """Convert chains to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "items": [chain.as_dict() for chain in self if not chain.is_empty()]
         }
     

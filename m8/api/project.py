@@ -150,7 +150,6 @@ class M8Project:
     def as_dict(self):
         """Convert project to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "version": self.version.as_dict(),
             "metadata": self.metadata.as_dict(),
             "song": self.song.as_dict(),

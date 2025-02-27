@@ -38,7 +38,6 @@ class M8Version:
     def as_dict(self):
         """Convert version to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "major": self.major,
             "minor": self.minor,
             "patch": self.patch

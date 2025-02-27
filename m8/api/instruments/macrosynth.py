@@ -122,7 +122,6 @@ class M8MacroSynthParams:
     def as_dict(self):
         """Convert parameters to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             **{k: v for k, v in vars(self).items() if not k.startswith('_')}
         }
     

@@ -120,7 +120,6 @@ def create_modulators_class(instrument_type):
                     items.append(item_dict)
             
             return {
-                "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
                 "items": items
             }
         

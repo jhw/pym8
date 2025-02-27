@@ -89,7 +89,6 @@ class M8Metadata:
     def as_dict(self):
         """Convert metadata to dictionary for serialization"""
         return {
-            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
             "directory": self.directory,
             "transpose": self.transpose,
             "tempo": self.tempo,
