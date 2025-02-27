@@ -22,28 +22,3 @@ def auto_name_decorator(func):
     
     return wrapper
 
-def set_caller_module_decorator(factory_func):
-    """
-    Decorator that sets the __module__ attribute of classes created by factory functions
-    to the module where they are being assigned, not where the factory is defined.
-    """
-    @functools.wraps(factory_func)
-    def wrapper(*args, **kwargs):
-        # Call the original factory function to create the class
-        cls = factory_func(*args, **kwargs)
-        
-        # Get caller's frame to determine where this class is being assigned
-        caller_frame = inspect.currentframe().f_back
-        caller_module = inspect.getmodule(caller_frame)
-        caller_module_name = caller_module.__name__
-        
-        # Override __module__ to reflect where the class is being assigned
-        cls.__module__ = caller_module_name
-        
-        # Make sure the class name is preserved from the name parameter
-        if 'name' in kwargs and kwargs['name'] is not None:
-            cls.__name__ = kwargs['name']
-        
-        return cls
-    
-    return wrapper

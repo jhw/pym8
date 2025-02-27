@@ -1,5 +1,5 @@
 from m8 import NULL
-from m8.core import auto_name_decorator, set_caller_module_decorator
+from m8.core import auto_name_decorator
 from m8.core.fields import M8FieldMap
 
 import struct
@@ -133,8 +133,8 @@ class M8Object:
         from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
-@set_caller_module_decorator
 @auto_name_decorator
+# m8/core/object.py
 def m8_object_class(field_map, name=None, block_sz=None, default_byte=NULL, block_head_byte=NULL):
     # Create field map directly from the client-provided field definitions
     field_map_obj = M8FieldMap(field_map)
@@ -153,8 +153,30 @@ def m8_object_class(field_map, name=None, block_sz=None, default_byte=NULL, bloc
         if field_default is not None:
             default_data[i] = field_default
 
+    # Determine appropriate name if not provided
+    if name is None:
+        # Try to determine the name from the calling context
+        import inspect
+        frame = inspect.currentframe().f_back
+        call_line = inspect.getframeinfo(frame).code_context[0].strip()
+        
+        # Extract the variable name from an assignment
+        if "=" in call_line:
+            var_name = call_line.split("=")[0].strip()
+            name = var_name
+        else:
+            name = "M8Object"  # Default name
+    
     # Create the class
-    return type(name, (M8Object,), {
+    cls = type(name, (M8Object,), {
         "FIELD_MAP": field_map_obj,
         "DEFAULT_DATA": bytes(default_data),
     })
+    
+    # Set the module to be the calling module, not the current one
+    import inspect
+    frame = inspect.currentframe().f_back
+    caller_module = inspect.getmodule(frame)
+    cls.__module__ = caller_module.__name__
+    
+    return cls

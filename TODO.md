@@ -1,11 +1,14 @@
 # short
 
-- set_caller_module_decorator class resolution issues
+- remove m8_xxx_class functions
+
+- complete serialisation/deserialisation
 
 # medium
 
-- remove is_empty()
+
 - separate fx from phrases
+- remove is_empty() from serialisation
 - inspector cli
 - json enum, hex
 - m8i files
@@ -28,6 +31,7 @@
 
 # done
 
+- remove set_caller_module
 - remove local from/to_json imports
 - add back last version of from_json and test
 - run_profile.py doesn't need to save profile, or save it to tmp
