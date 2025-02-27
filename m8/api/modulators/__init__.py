@@ -1,6 +1,6 @@
 from m8 import M8Block
 from m8.api import load_class
-from m8.utils.bits import split_byte
+from m8.utils.bits import split_byte, join_nibbles
 
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4
@@ -20,6 +20,75 @@ DEFAULT_MODULATOR_CONFIGS = {
     0x01: [0x00, 0x00, 0x03, 0x03]  # MacroSynth: 2 AHD envelopes, 2 LFOs
     # Add more instrument types as needed
 }
+
+class M8ModulatorBase:
+    """Base class for all M8 modulators across instrument types."""
+    
+    def __init__(self, **kwargs):
+        # All modulators need type and destination
+        self.type = 0x0
+        self.destination = 0x0
+        self.amount = 0xFF
+        
+        # Apply any provided kwargs
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+    
+    @classmethod
+    def read(cls, data):
+        """Generic read method to be overridden by subclasses."""
+        instance = cls()
+        
+        # Common for all modulators: first byte contains type and destination
+        if len(data) > 0:
+            type_dest = data[0]
+            instance.type, instance.destination = split_byte(type_dest)
+            
+            # Amount is also common to all modulators
+            if len(data) > 1:
+                instance.amount = data[1]
+        
+        return instance
+    
+    def write(self):
+        """Generic write method to be overridden by subclasses."""
+        buffer = bytearray()
+        
+        # Type/destination (combined into one byte)
+        type_dest = join_nibbles(self.type, self.destination)
+        buffer.append(type_dest)
+        
+        # Amount is common to all modulators
+        buffer.append(self.amount)
+        
+        return bytes(buffer)
+    
+    def is_empty(self):
+        """A modulator is considered empty if its destination is 0."""
+        return self.destination == 0
+    
+    def clone(self):
+        """Create a copy of this modulator."""
+        instance = self.__class__()
+        for key, value in vars(self).items():
+            setattr(instance, key, value)
+        return instance
+    
+    def as_dict(self):
+        """Convert modulator to dictionary for serialization."""
+        return {k: v for k, v in vars(self).items() if not k.startswith('_')}
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create a modulator from a dictionary."""
+        instance = cls()
+        
+        for key, value in data.items():
+            if hasattr(instance, key):
+                setattr(instance, key, value)
+        
+        return instance
 
 class M8Modulators(list):
     """Generic class for all modulator collections."""

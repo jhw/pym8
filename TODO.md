@@ -1,18 +1,15 @@
 # short
 
+- remove song row serialisation temporarily
 - avoid use of "items" in serialised data
 - refactor serialised song as matrix
-
 - collapse utils/bits into api
 - collapse instrument/instrument params distinction
-- consider adding back filter/amp/mixer classes
-- consider separating modulators into separate classes
-- consider abstraction into base classes
 - rationalise imports
 
 # medium
 
-- consider role of is_empty()
+- is_empty() + indexation (row, index)
 
 - json enum, hex
 - m8i files
@@ -26,6 +23,8 @@
 
 # done
 
+- consider adding back filter/amp/mixer classes
+- modulator abstraction into base classes
 - remove __class__ checks in instruments and modulators
 - remove checks for "__class__"
 - liberate M8Modulators
