@@ -1,7 +1,7 @@
 # short
 
-- separate fx from phrases
-- separate version and metadata from project
+- separate version from project
+- separate metadata from project
 - separate modulators into separate classes
 - remove __class__
 - remove is_empty()
@@ -32,6 +32,7 @@
 
 # done
 
+- separate fx from phrases
 - remove NULL and BLANK
 - remove core package
 - remove all tests
