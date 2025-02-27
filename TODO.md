@@ -1,17 +1,16 @@
 # short
 
-- complete project/version/metadata refactoring
+- simplify serialisation
+- remove all tests
+- move serialisation to api
 - remove core package
-
-# medium
-
 - separate fx from phrases
 - collapse instrument / instrument params distinction
 - is serialisation only outputting non- empty phrases?
 - remove api subdir
-- opportunities for base class consolidation?
+- abstraction into base classes
 
-- serialisation/deserialisation
+# medium
 
 - inspector cli
 - json enum, hex
@@ -34,6 +33,7 @@
 
 # done
 
+- complete project/version/metadata refactoring
 - complete instruments, modulator refactoring
 - remove set_caller_module
 - remove local from/to_json imports

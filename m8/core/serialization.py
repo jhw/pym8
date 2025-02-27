@@ -1,58 +1,43 @@
-# In m8/core/serialization.py
 import json
-import importlib
-
-def _get_class_from_string(class_path):
-    """Load a class from its string representation"""
-    module_name, class_name = class_path.rsplit('.', 1)
-    module = importlib.import_module(module_name)
-    return getattr(module, class_name)
+from m8.api import load_class
 
 def to_json(obj, indent=None):
-    """Convert any M8 object to JSON string"""
-    return json.dumps(obj, indent=indent, default=_json_serializer)
+    """Simple serialization to JSON for M8 objects"""
+    if hasattr(obj, 'as_dict'):
+        return json.dumps(obj.as_dict(), indent=indent)
+    elif isinstance(obj, list):
+        # Handle list serialization
+        return json.dumps([item.as_dict() if hasattr(item, 'as_dict') else item for item in obj], indent=indent)
+    else:
+        # For primitive types
+        return json.dumps(obj, indent=indent)
 
-def _json_serializer(obj):
-    """Default serializer for custom M8 types"""
-    # If the object has an as_dict method, use it
-    if hasattr(obj, "as_dict"):
-        return obj.as_dict()
+def from_json(json_str, cls=None):
+    """Simple deserialization from JSON for M8 objects"""
+    data = json.loads(json_str)
     
-    # If the object is a list or has as_list method
-    if hasattr(obj, "as_list"):
-        data = {"__list__": obj.as_list()}
-        data["__class__"] = f"{obj.__class__.__module__}.{obj.__class__.__name__}"
+    # If no class specified, just return the data
+    if cls is None:
         return data
     
-    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
-
-"""
-THIS PROBABLY DOESN'T WORK!
-"""
-
-def from_json(json_str, target_class=None):
-    """Deserialize JSON string to an object
+    # Handle direct class instantiation if we have class info
+    if isinstance(data, dict) and "__class__" in data:
+        class_path = data["__class__"]
+        # If the target class is already provided, use it
+        if cls.__module__ + '.' + cls.__name__ == class_path:
+            return cls.from_dict(data)
+        
+        # Otherwise, try to load the class from the path
+        try:
+            target_cls = load_class(class_path)
+            return target_cls.from_dict(data)
+        except (ImportError, AttributeError):
+            # Fall back to the provided class if loading fails
+            return cls.from_dict(data)
     
-    If target_class is provided, the JSON is deserialized to that class.
-    Otherwise, the class is determined from the JSON data if possible.
-    """
-    return json.loads(json_str, object_hook=lambda d: _json_deserializer(d, target_class))
-
-def _json_deserializer(obj, target_class=None):
-    """Custom JSON object hook for deserializing M8 objects"""
-    # Handle object with explicit class
-    if isinstance(obj, dict) and "__class__" in obj:
-        cls_path = obj.pop("__class__")
-        
-        # If target_class is specified, use it instead of the stored class
-        cls = target_class if target_class else _get_class_from_string(cls_path)
-        
-        # Handle list types
-        if "__list__" in obj:
-            items = obj.pop("__list__")
-            return cls.from_list(items) if hasattr(cls, "from_list") else cls(items=items)
-            
-        # Handle regular objects
-        return cls.from_dict(obj) if hasattr(cls, "from_dict") else cls(**obj)
-        
-    return obj
+    # For lists or other types, use the class's from_dict if available
+    if hasattr(cls, 'from_dict'):
+        return cls.from_dict(data)
+    
+    # Just return the data as is if we can't deserialize
+    return data
