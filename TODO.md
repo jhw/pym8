@@ -1,6 +1,6 @@
 # short
 
-- test set_caller_module_decorator
+- set_caller_module_decorator class resolution issues
 
 # medium
 

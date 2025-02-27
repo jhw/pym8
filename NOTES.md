@@ -1,3 +1,57 @@
+### class names 27/02/25
+
+If def set_caller_module_decorator is not enabled we get the fllowing -
+
+```
+  "phrases": {
+    "__class__": "m8.api.phrases.M8Phrases",
+    "items": [
+      {
+        "__class__": "m8.api.phrases.M8Phrase",
+        "steps": [
+          {
+            "__class__": "m8.api.phrases.M8PhraseStep",
+            "note": 36,
+            "velocity": 111,
+            "instrument": 0,
+            "fx": [
+              {
+                "__class__": "m8.core.object.M8FXTuple",
+                "key": 144,
+                "value": 64
+              }
+            ]
+          },
+```
+
+Paths for objects nested at leaf level are incorrect
+
+If it is enabled, we get the following -
+
+```
+  "phrases": {
+    "__class__": "m8.api.phrases.M8Phrases",
+    "items": [
+      {
+        "__class__": "m8.api.phrases.M8Phrase",
+        "steps": [
+          {
+            "__class__": "m8.api.phrases.M8PhraseStep",
+            "note": 36,
+            "velocity": 111,
+            "instrument": 0,
+            "fx": [
+              {
+                "__class__": "m8.api.phrases.cls",
+                "key": 144,
+                "value": 192
+              }
+            ]
+          },
+```
+
+So now the leaf paths are correct but the class name is listed as cls!
+
 ### m8i files and JSON serialisation 25/02/25
 
 - you might want to load trash80's synth drums and create patterns with thos
