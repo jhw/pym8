@@ -1,6 +1,5 @@
 # short
 
-- remove all tests
 - remove core package
 - separate fx from phrases
 - collapse instrument / instrument params distinction
@@ -31,6 +30,7 @@
 
 # done
 
+- remove all tests
 - move serialisation to api
 - simplify serialisation
 - complete project/version/metadata refactoring
