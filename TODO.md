@@ -1,6 +1,10 @@
 # short
 
+- remove all json code in classes
 - remove __class__
+- examples and demo to use json.loads/dumps directly
+- remove api/serialisation
+
 - remove is_empty()
 
 - collapse instrument /instrument params distinction
