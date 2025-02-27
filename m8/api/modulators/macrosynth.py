@@ -1,4 +1,3 @@
-from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte, join_nibbles
 
 class M8MacroSynthAHDEnvelope:
@@ -79,15 +78,6 @@ class M8MacroSynthAHDEnvelope:
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert modulator to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
 class M8MacroSynthADSREnvelope:
     def __init__(self, **kwargs):
         # Default field values
@@ -166,15 +156,6 @@ class M8MacroSynthADSREnvelope:
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert modulator to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
 class M8MacroSynthLFO:
     def __init__(self, **kwargs):
         # Default field values
@@ -253,11 +234,3 @@ class M8MacroSynthLFO:
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert modulator to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)

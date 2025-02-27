@@ -1,19 +1,15 @@
 # short
 
-- remove all json code in classes
 - remove __class__
-- examples and demo to use json.loads/dumps directly
-- remove api/serialisation
-
-- remove is_empty()
+- liberate M8Modulators
 
 - collapse instrument /instrument params distinction
-- separate modulators into separate classes
-- abstract into base classes
+- consider separating modulators into separate classes
+- consider abstraction into base classes
 
 # medium
 
-
+- remove is_empty()
 - inspector cli
 - json enum, hex
 - m8i files
@@ -35,6 +31,9 @@
 
 # done
 
+- remove api/serialisation
+- examples and demo to use json.loads/dumps directly
+- remove all json code in classes
 - separate version from project
 - separate metadata from project
 - separate fx from phrases

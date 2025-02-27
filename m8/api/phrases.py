@@ -1,7 +1,6 @@
 from m8 import M8Block
 from m8.api import M8ValidationError, M8IndexError
 from m8.api.fx import M8FXTuples, M8FXTuple 
-from m8.api.serialization import from_json, to_json
 
 import struct
 
@@ -113,17 +112,7 @@ class M8PhraseStep:
                 if i < FX_BLOCK_COUNT:
                     instance.fx[i] = M8FXTuple.from_dict(fx_data)
         
-        return instance
-        
-    def to_json(self, indent=None):
-        """Convert phrase step to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
+        return instance        
 
 class M8Phrase(list):
     def __init__(self):
@@ -222,17 +211,7 @@ class M8Phrase(list):
                 if i < STEP_COUNT:
                     instance[i] = M8PhraseStep.from_dict(step_data)
         
-        return instance
-        
-    def to_json(self, indent=None):
-        """Convert phrase to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
+        return instance        
 
 class M8Phrases(list):
     def __init__(self):
@@ -308,11 +287,3 @@ class M8Phrases(list):
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert phrases to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)

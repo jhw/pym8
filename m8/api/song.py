@@ -1,5 +1,4 @@
 from m8.api import M8ValidationError
-from m8.api.serialization import from_json, to_json
 
 import struct
 
@@ -85,16 +84,6 @@ class M8SongRow:
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert song row to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
-
 class M8SongMatrix(list):
     def __init__(self):
         super().__init__()
@@ -169,11 +158,3 @@ class M8SongMatrix(list):
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert song matrix to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)

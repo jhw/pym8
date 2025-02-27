@@ -1,5 +1,4 @@
 from m8.api import M8ValidationError, M8IndexError
-from m8.api.serialization import from_json, to_json
 
 STEP_BLOCK_SIZE = 2
 STEP_COUNT = 16
@@ -56,15 +55,6 @@ class M8ChainStep:
             transpose=data.get("transpose", 0x0)
         )
     
-    def to_json(self, indent=None):
-        """Convert chain step to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
 class M8Chain(list):
     def __init__(self):
         super().__init__()
@@ -169,15 +159,6 @@ class M8Chain(list):
         
         return instance
         
-    def to_json(self, indent=None):
-        """Convert chain to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
 class M8Chains(list):
     def __init__(self):
         super().__init__()
@@ -252,11 +233,3 @@ class M8Chains(list):
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert chains to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)

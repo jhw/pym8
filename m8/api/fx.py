@@ -1,6 +1,5 @@
 from m8 import M8Block
 from m8.api import M8ValidationError, M8IndexError
-from m8.api.serialization import from_json, to_json
 
 FX_BLOCK_SIZE = 2
 FX_BLOCK_COUNT = 3
@@ -51,17 +50,7 @@ class M8FXTuple:
         return cls(
             key=data.get("key", 0xFF),
             value=data.get("value", 0x0)
-        )
-    
-    def to_json(self, indent=None):
-        """Convert FX tuple to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
+        )    
 
 class M8FXTuples(list):
     def __init__(self):
@@ -123,13 +112,4 @@ class M8FXTuples(list):
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert FX tuples to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
 

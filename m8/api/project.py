@@ -1,6 +1,5 @@
 from m8 import M8Block
 from m8.api import M8IndexError
-from m8.api.serialization import from_json, to_json
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.metadata import M8Metadata
@@ -194,20 +193,13 @@ class M8Project:
     def write_to_json_file(self, filename):
         """Write project to a JSON file"""
         with open(filename, "w") as f:
-            f.write(self.to_json(indent=2))
+            f.write(json.dumps(self.as_dict(),
+                               indent = 2))
             
     @classmethod
     def read_from_json_file(cls, filename):
         """Read project from a JSON file"""
         with open(filename, "r") as f:
             json_str = f.read()
-        return from_json(json_str, cls)
+        return json.loads(json_str)
 
-    def to_json(self, indent=2):
-        """Convert project to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)

@@ -1,6 +1,5 @@
 from m8 import M8Block
 from m8.api import load_class
-from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte
 
 BLOCK_SIZE = 6
@@ -148,16 +147,7 @@ def create_modulators_class(instrument_type):
                             instance[i] = M8Block()
             
             return instance
-        
-        def to_json(self, indent=None):
-            """Convert modulators to JSON string"""
-            return to_json(self, indent=indent)
-
-        @classmethod
-        def from_json(cls, json_str):
-            """Create an instance from a JSON string"""
-            return from_json(json_str, cls)
-    
+            
     return M8Modulators
 
 def create_modulator_from_dict(data, instrument_type):

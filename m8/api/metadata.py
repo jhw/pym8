@@ -110,11 +110,3 @@ class M8Metadata:
             key=data.get("key", 0)
         )
     
-    def to_json(self, indent=None):
-        """Convert metadata to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)

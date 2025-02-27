@@ -1,5 +1,4 @@
 from m8.api.instruments import M8InstrumentBase
-from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte, join_nibbles
 
 class M8MacroSynthParams:
@@ -138,15 +137,6 @@ class M8MacroSynthParams:
         
         return instance
     
-    def to_json(self, indent=None):
-        """Convert parameters to JSON string"""
-        return to_json(self, indent=indent)
-
-    @classmethod
-    def from_json(cls, json_str):
-        """Create an instance from a JSON string"""
-        return from_json(json_str, cls)
-
 class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
