@@ -1,10 +1,11 @@
 # short
 
-- remove song row serialisation temporarily
 - avoid use of "items" in serialised data
+- collapse instrument/instrument params distinction
+
+- remove song row serialisation temporarily
 - refactor serialised song as matrix
 - collapse utils/bits into api
-- collapse instrument/instrument params distinction
 - rationalise imports
 
 # medium
