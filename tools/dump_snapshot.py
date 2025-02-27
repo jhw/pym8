@@ -42,10 +42,9 @@ def process_directory(root_dir, selected_files):
 def collect_files():
    """Collect files based on user input"""
    root_directories = [
-       "m8",
-       "tests",
-       "examples",
-       "tools",
+      "m8",
+      "examples",
+      "tools",
       "dev"
    ]
    

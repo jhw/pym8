@@ -72,7 +72,7 @@ class M8MacroSynthAHDEnvelope:
         instance = cls()
         
         for key, value in data.items():
-            if key != "__class__" and hasattr(instance, key):
+            if hasattr(instance, key):
                 setattr(instance, key, value)
         
         return instance
@@ -149,7 +149,7 @@ class M8MacroSynthADSREnvelope:
         instance = cls()
         
         for key, value in data.items():
-            if key != "__class__" and hasattr(instance, key):
+            if hasattr(instance, key):
                 setattr(instance, key, value)
         
         return instance
@@ -226,8 +226,7 @@ class M8MacroSynthLFO:
         instance = cls()
         
         for key, value in data.items():
-            if key != "__class__" and hasattr(instance, key):
+            if hasattr(instance, key):
                 setattr(instance, key, value)
         
         return instance
-    

@@ -131,7 +131,7 @@ class M8MacroSynthParams:
         instance = cls()
         
         for key, value in data.items():
-            if key != "__class__" and hasattr(instance, key):
+            if hasattr(instance, key):
                 setattr(instance, key, value)
         
         return instance

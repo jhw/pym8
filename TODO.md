@@ -1,7 +1,5 @@
 # short
 
-- remove __class__ checks in instruments and modulators
-
 - avoid use of "items" in serialised data
 - refactor serialised song as matrix
 
@@ -28,6 +26,7 @@
 
 # done
 
+- remove __class__ checks in instruments and modulators
 - remove checks for "__class__"
 - liberate M8Modulators
 - instruments not being serialised to json
