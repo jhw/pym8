@@ -1,8 +1,6 @@
 # short
 
-- remove local from/to_json imports
-- add back last version of from_json and test
-- add tests for individual from_json
+- test set_caller_module_decorator
 
 # medium
 
@@ -30,6 +28,8 @@
 
 # done
 
+- remove local from/to_json imports
+- add back last version of from_json and test
 - run_profile.py doesn't need to save profile, or save it to tmp
 
 ```

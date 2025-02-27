@@ -1,5 +1,5 @@
 from m8 import M8Block, NULL
-from m8.core import auto_name_decorator
+from m8.core import auto_name_decorator, set_caller_module_decorator
 
 import struct
 
@@ -137,6 +137,7 @@ class M8List(list):
         from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
+@set_caller_module_decorator
 @auto_name_decorator
 def m8_list_class(row_size, row_count, name=None, row_class=M8Block, row_class_resolver=None, default_byte=NULL):
     attributes = {

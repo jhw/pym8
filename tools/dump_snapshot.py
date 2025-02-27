@@ -45,7 +45,8 @@ def collect_files():
        "m8",
        "tests",
        "examples",
-       "tools"
+       "tools",
+      "dev"
    ]
    
    selected_files = []

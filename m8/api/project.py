@@ -263,8 +263,9 @@ class M8Project:
             json_str = f.read()
 
         # Use the simplified deserializer
-        # return from_json(json_str, cls)
-        return from_json_naive(json_str, cls)
+        # return from_json_naive(json_str, cls)
+        return from_json(json_str, cls)
+
 
     def to_json(self, indent=2):
         """Convert project to JSON string"""
@@ -274,5 +275,6 @@ class M8Project:
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
         # Use the simplified deserializer
-        # return from_json(json_str, cls)
-        return from_json_naive(json_str, cls)
+        # return from_json_naive(json_str, cls)
+        return from_json(json_str, cls)
+            

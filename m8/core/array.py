@@ -1,5 +1,5 @@
 from m8 import NULL
-from m8.core import auto_name_decorator
+from m8.core import auto_name_decorator, set_caller_module_decorator
 
 import struct
 
@@ -75,6 +75,7 @@ class M8Array:
         from m8.core.serialization import from_json
         return from_json(json_str, cls)
 
+@set_caller_module_decorator
 @auto_name_decorator
 def m8_array_class(length, fmt, name=None, default_byte=NULL):
     block_sz = length * struct.calcsize(fmt)
