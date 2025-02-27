@@ -1,8 +1,7 @@
 # short
 
-- instruments not being serialised to json
-
 - remove checks for "__class__"
+
 - liberate M8Modulators
 
 - collapse instrument /instrument params distinction
@@ -12,8 +11,6 @@
 
 # medium
 
-- remove is_empty()
-
 - inspector cli
 - json enum, hex
 - m8i files
@@ -22,6 +19,8 @@
 
 # thoughts
 
+- remove is_empty()
+  - no is useful!
 - refactor macrosynth as macro_synth?
 - transpose/eq/pitch/fine_tune synth parameters
 
@@ -32,6 +31,8 @@
 
 # done
 
+
+- instruments not being serialised to json
 - remove __class__
 - remove api/serialisation
 - examples and demo to use json.loads/dumps directly
