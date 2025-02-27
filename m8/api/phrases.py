@@ -1,5 +1,5 @@
-from m8 import M8Block, NULL
-from m8.api import M8ValidationError, M8IndexError, BLANK
+from m8 import M8Block
+from m8.api import M8ValidationError, M8IndexError
 from m8.api.serialization import from_json, to_json
 
 import struct
@@ -12,7 +12,7 @@ PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
 PHRASE_COUNT = 255
 
 class M8FXTuple:
-    def __init__(self, key=BLANK, value=NULL):
+    def __init__(self, key=0xFF, value=0x0):
         self._data = bytearray([key, value])
     
     @classmethod
@@ -25,7 +25,7 @@ class M8FXTuple:
         return bytes(self._data)
     
     def is_empty(self):
-        return self.key == BLANK
+        return self.key == 0xFF
     
     @property
     def key(self):
@@ -55,8 +55,8 @@ class M8FXTuple:
     def from_dict(cls, data):
         """Create an FX tuple from a dictionary"""
         return cls(
-            key=data.get("key", BLANK),
-            value=data.get("value", NULL)
+            key=data.get("key", 0xFF),
+            value=data.get("value", 0x0)
         )
     
     def to_json(self, indent=None):
@@ -140,7 +140,7 @@ class M8FXTuples(list):
 
 
 class M8PhraseStep:
-    def __init__(self, note=BLANK, velocity=BLANK, instrument=BLANK):
+    def __init__(self, note=0xFF, velocity=0xFF, instrument=0xFF):
         # Initialize base data
         self._data = bytearray([note, velocity, instrument])
         self.fx = M8FXTuples()
@@ -159,9 +159,9 @@ class M8PhraseStep:
         return instance
 
     def is_empty(self):
-        return (self.note == BLANK and
-                self.velocity == BLANK and
-                self.instrument == BLANK and
+        return (self.note == 0xFF and
+                self.velocity == 0xFF and
+                self.instrument == 0xFF and
                 self.fx.is_empty())
 
     def write(self):
@@ -196,7 +196,7 @@ class M8PhraseStep:
     @property
     def available_slot(self):
         for slot_idx, fx in enumerate(self.fx):
-            if fx.is_empty() or (fx.key == BLANK):
+            if fx.is_empty() or (fx.key == 0xFF):
                 return slot_idx
         return None
     
@@ -229,9 +229,9 @@ class M8PhraseStep:
     def from_dict(cls, data):
         """Create a phrase step from a dictionary"""
         instance = cls(
-            note=data.get("note", BLANK),
-            velocity=data.get("velocity", BLANK),
-            instrument=data.get("instrument", BLANK)
+            note=data.get("note", 0xFF),
+            velocity=data.get("velocity", 0xFF),
+            instrument=data.get("instrument", 0xFF)
         )
         
         # Add FX
@@ -292,7 +292,7 @@ class M8Phrase(list):
             step_data = step.write()
             # Ensure each step occupies exactly STEP_BLOCK_SIZE bytes
             if len(step_data) < STEP_BLOCK_SIZE:
-                step_data = step_data + bytes([NULL] * (STEP_BLOCK_SIZE - len(step_data)))
+                step_data = step_data + bytes([0x0] * (STEP_BLOCK_SIZE - len(step_data)))
             elif len(step_data) > STEP_BLOCK_SIZE:
                 step_data = step_data[:STEP_BLOCK_SIZE]
             result.extend(step_data)
@@ -301,7 +301,7 @@ class M8Phrase(list):
     def validate_instruments(self, instruments):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
-                if step.instrument != BLANK and (
+                if step.instrument != 0xFF and (
                     step.instrument >= len(instruments) or
                     isinstance(instruments[step.instrument], M8Block)
                 ):
@@ -398,7 +398,7 @@ class M8Phrases(list):
             phrase_data = phrase.write()
             # Ensure each phrase occupies exactly PHRASE_BLOCK_SIZE bytes
             if len(phrase_data) < PHRASE_BLOCK_SIZE:
-                phrase_data = phrase_data + bytes([NULL] * (PHRASE_BLOCK_SIZE - len(phrase_data)))
+                phrase_data = phrase_data + bytes([0x0] * (PHRASE_BLOCK_SIZE - len(phrase_data)))
             elif len(phrase_data) > PHRASE_BLOCK_SIZE:
                 phrase_data = phrase_data[:PHRASE_BLOCK_SIZE]
             result.extend(phrase_data)

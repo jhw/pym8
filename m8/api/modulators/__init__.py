@@ -1,4 +1,4 @@
-from m8 import M8Block, NULL
+from m8 import M8Block
 from m8.api import load_class
 from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte
@@ -105,7 +105,7 @@ def create_modulators_class(instrument_type):
                 mod_data = mod.write() if hasattr(mod, 'write') else bytes([0] * BLOCK_SIZE)
                 # Ensure each modulator occupies exactly BLOCK_SIZE bytes
                 if len(mod_data) < BLOCK_SIZE:
-                    mod_data = mod_data + bytes([NULL] * (BLOCK_SIZE - len(mod_data)))
+                    mod_data = mod_data + bytes([0x0] * (BLOCK_SIZE - len(mod_data)))
                 elif len(mod_data) > BLOCK_SIZE:
                     mod_data = mod_data[:BLOCK_SIZE]
                 result.extend(mod_data)

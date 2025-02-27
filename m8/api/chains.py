@@ -1,5 +1,4 @@
-from m8 import NULL
-from m8.api import M8ValidationError, M8IndexError, BLANK
+from m8.api import M8ValidationError, M8IndexError
 from m8.api.serialization import from_json, to_json
 
 STEP_BLOCK_SIZE = 2
@@ -8,7 +7,7 @@ CHAIN_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
 CHAIN_COUNT = 255
 
 class M8ChainStep:
-    def __init__(self, phrase=BLANK, transpose=NULL):
+    def __init__(self, phrase=0xFF, transpose=0x0):
         # Initialize _data first
         self._data = bytearray([phrase, transpose])
         # No need to set properties, data is already initialized
@@ -23,7 +22,7 @@ class M8ChainStep:
         return bytes(self._data)
     
     def is_empty(self):
-        return self.phrase == BLANK
+        return self.phrase == 0xFF
     
     @property
     def phrase(self):
@@ -53,8 +52,8 @@ class M8ChainStep:
     def from_dict(cls, data):
         """Create a chain step from a dictionary"""
         return cls(
-            phrase=data.get("phrase", BLANK),
-            transpose=data.get("transpose", NULL)
+            phrase=data.get("phrase", 0xFF),
+            transpose=data.get("transpose", 0x0)
         )
     
     def to_json(self, indent=None):
@@ -110,7 +109,7 @@ class M8Chain(list):
     def validate_phrases(self, phrases):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
-                if step.phrase != BLANK and (
+                if step.phrase != 0xFF and (
                     step.phrase >= len(phrases) or 
                     phrases[step.phrase].is_empty()
                 ):
@@ -122,7 +121,7 @@ class M8Chain(list):
     @property
     def available_step_slot(self):
         for slot_idx, step in enumerate(self):
-            if step.phrase == BLANK:  # Empty step has BLANK phrase
+            if step.phrase == 0xFF:  # Empty step has 0xFF phrase
                 return slot_idx
         return None
         
@@ -144,7 +143,7 @@ class M8Chain(list):
         """Convert chain to dictionary for serialization"""
         result = {
             "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
-            "steps": [step.as_dict() for step in self if step.phrase != BLANK]
+            "steps": [step.as_dict() for step in self if step.phrase != 0xFF]
         }
         return result
         

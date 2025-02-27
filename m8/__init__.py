@@ -1,5 +1,3 @@
-NULL = 0x00
-
 class M8Block:
     def __init__(self):
         self.data = bytearray()
@@ -11,7 +9,7 @@ class M8Block:
         return instance
 
     def is_empty(self):
-        return all(b == NULL for b in self.data)
+        return all(b == 0x0 for b in self.data)
     
     def write(self):
         return self.data

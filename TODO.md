@@ -1,6 +1,5 @@
 # short
 
-- remove NULL and BLANK
 - separate fx from phrases
 - separate version and metadata from project
 - separate modulators into separate classes
@@ -34,6 +33,7 @@
 
 # done
 
+- remove NULL and BLANK
 - remove core package
 - remove all tests
 - move serialisation to api

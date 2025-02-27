@@ -1,5 +1,3 @@
-from m8 import NULL
-from m8.api import BLANK
 from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte, join_nibbles
 
@@ -8,9 +6,9 @@ class M8MacroSynthAHDEnvelope:
         # Default field values
         self.type = 0x0
         self.destination = 0x0
-        self.amount = BLANK
-        self.attack = NULL
-        self.hold = NULL
+        self.amount = 0xFF
+        self.attack = 0x0
+        self.hold = 0x0
         self.decay = 0x80
         
         # Apply any provided kwargs
@@ -49,7 +47,7 @@ class M8MacroSynthAHDEnvelope:
         buffer.append(self.decay)
         
         # Pad to ensure proper size
-        buffer.extend([NULL])
+        buffer.extend([0x0])
         
         return bytes(buffer)
     
@@ -95,8 +93,8 @@ class M8MacroSynthADSREnvelope:
         # Default field values
         self.type = 0x1
         self.destination = 0x0
-        self.amount = BLANK
-        self.attack = NULL
+        self.amount = 0xFF
+        self.attack = 0x0
         self.decay = 0x80
         self.sustain = 0x80
         self.release = 0x80
@@ -182,11 +180,11 @@ class M8MacroSynthLFO:
         # Default field values
         self.type = 0x3
         self.destination = 0x0
-        self.amount = BLANK
-        self.shape = NULL
-        self.trigger = NULL
+        self.amount = 0xFF
+        self.shape = 0x0
+        self.trigger = 0x0
         self.freq = 0x10
-        self.retrigger = NULL
+        self.retrigger = 0x0
         
         # Apply any provided kwargs
         for key, value in kwargs.items():

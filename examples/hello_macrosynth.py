@@ -1,4 +1,3 @@
-from m8 import NULL
 from m8.api import M8ValidationError, M8IndexError
 from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.instruments.macrosynth import M8MacroSynth
@@ -81,7 +80,7 @@ try:
     chain = M8Chain()
     chain_step = M8ChainStep(
         phrase=phrase_idx,
-        transpose=NULL
+        transpose=0x0
     )
     chain.add_step(chain_step)
     

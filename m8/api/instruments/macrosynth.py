@@ -1,5 +1,3 @@
-from m8 import NULL
-from m8.api import BLANK
 from m8.api.instruments import M8InstrumentBase
 from m8.api.serialization import from_json, to_json
 from m8.utils.bits import split_byte, join_nibbles
@@ -12,24 +10,24 @@ class M8MacroSynthParams:
         self.transpose = 0x4
         self.eq = 0x1
         self.table_tick = 0x01
-        self.volume = NULL
-        self.pitch = NULL
+        self.volume = 0x0
+        self.pitch = 0x0
         self.fine_tune = 0x80
-        self.shape = NULL
+        self.shape = 0x0
         self.timbre = 0x80
         self.color = 0x80
-        self.degrade = NULL
-        self.redux = NULL
-        self.filter_type = NULL
-        self.filter_cutoff = BLANK
-        self.filter_resonance = NULL
-        self.amp_level = NULL
-        self.amp_limit = NULL
+        self.degrade = 0x0
+        self.redux = 0x0
+        self.filter_type = 0x0
+        self.filter_cutoff = 0xFF
+        self.filter_resonance = 0x0
+        self.amp_level = 0x0
+        self.amp_limit = 0x0
         self.mixer_pan = 0x80
         self.mixer_dry = 0xC0
-        self.mixer_chorus = NULL
-        self.mixer_delay = NULL
-        self.mixer_reverb = NULL
+        self.mixer_chorus = 0x0
+        self.mixer_delay = 0x0
+        self.mixer_reverb = 0x0
         
         # Apply any provided kwargs
         for key, value in kwargs.items():
@@ -113,8 +111,8 @@ class M8MacroSynthParams:
     def is_empty(self):
         # Consider params empty if name is blank and key parameters are default
         return (self.name.strip() == "" and 
-                self.volume == NULL and 
-                self.shape == NULL)
+                self.volume == 0x0 and 
+                self.shape == 0x0)
     
     def clone(self):
         instance = self.__class__()

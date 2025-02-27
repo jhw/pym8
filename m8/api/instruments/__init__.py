@@ -1,5 +1,5 @@
-from m8 import M8Block, NULL
-from m8.api import M8IndexError, M8ValidationError, load_class, BLANK
+from m8 import M8Block
+from m8.api import M8IndexError, M8ValidationError, load_class
 from m8.api.modulators import create_modulators_class, create_default_modulators
 from m8.api.serialization import from_json, to_json
 
@@ -188,7 +188,7 @@ class M8Instruments(list):
             instr_data = instr.write() if hasattr(instr, 'write') else bytes([0] * BLOCK_SIZE)
             # Ensure each instrument occupies exactly BLOCK_SIZE bytes
             if len(instr_data) < BLOCK_SIZE:
-                instr_data = instr_data + bytes([NULL] * (BLOCK_SIZE - len(instr_data)))
+                instr_data = instr_data + bytes([0x0] * (BLOCK_SIZE - len(instr_data)))
             elif len(instr_data) > BLOCK_SIZE:
                 instr_data = instr_data[:BLOCK_SIZE]
             result.extend(instr_data)

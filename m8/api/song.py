@@ -1,5 +1,4 @@
-from m8 import NULL
-from m8.api import M8ValidationError, BLANK
+from m8.api import M8ValidationError
 from m8.api.serialization import from_json, to_json
 
 import struct
@@ -9,7 +8,7 @@ ROW_COUNT = 255
 
 class M8SongRow:
     def __init__(self, **kwargs):
-        self._data = bytearray([BLANK] * COL_COUNT)
+        self._data = bytearray([0xFF] * COL_COUNT)
         
         # Set any values provided in kwargs
         for col, chain in kwargs.items():
@@ -30,7 +29,7 @@ class M8SongRow:
         return instance
     
     def is_empty(self):
-        return all(chain == BLANK for chain in self._data)
+        return all(chain == 0xFF for chain in self._data)
     
     def __getitem__(self, index):
         if not (0 <= index < COL_COUNT):
@@ -49,7 +48,7 @@ class M8SongRow:
         if not self.is_empty():
             for col_idx in range(COL_COUNT):
                 chain_idx = self[col_idx]
-                if chain_idx != BLANK and (
+                if chain_idx != 0xFF and (
                     chain_idx >= len(chains) or 
                     chains[chain_idx].is_empty()
                 ):
@@ -63,7 +62,7 @@ class M8SongRow:
         # Only include non-blank chain references
         chains = []
         for i in range(COL_COUNT):
-            if self[i] != BLANK:
+            if self[i] != 0xFF:
                 chains.append({"col": i, "chain": self[i]})
         
         return {
@@ -80,7 +79,7 @@ class M8SongRow:
         if "chains" in data:
             for chain_ref in data["chains"]:
                 col = chain_ref.get("col", 0)
-                chain = chain_ref.get("chain", BLANK)
+                chain = chain_ref.get("chain", 0xFF)
                 if 0 <= col < COL_COUNT:
                     instance[col] = chain
         
