@@ -1,8 +1,8 @@
 from m8 import M8Block, NULL
 from m8.api import M8ValidationError, M8IndexError, BLANK
-from m8.core.list import m8_list_class
-from m8.core.object import m8_object_class
 from m8.core.serialization import from_json, to_json
+
+import struct
 
 FX_BLOCK_SIZE = 2
 FX_BLOCK_COUNT = 3
@@ -11,31 +11,138 @@ STEP_COUNT = 16
 PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
 PHRASE_COUNT = 255
 
-M8FXTuple = m8_object_class(
-    field_map=[
-        ("key", BLANK, 0, 1, "UINT8"),
-        ("value", NULL, 1, 2, "UINT8")
-    ]
-)
+class M8FXTuple:
+    def __init__(self, key=BLANK, value=NULL):
+        self._data = bytearray([key, value])
+    
+    @classmethod
+    def read(cls, data):
+        instance = cls.__new__(cls)  # Create instance without calling __init__
+        instance._data = bytearray(data[:FX_BLOCK_SIZE])
+        return instance
+    
+    def write(self):
+        return bytes(self._data)
+    
+    def is_empty(self):
+        return self.key == BLANK
+    
+    @property
+    def key(self):
+        return self._data[0]
+    
+    @key.setter
+    def key(self, value):
+        self._data[0] = value
+    
+    @property
+    def value(self):
+        return self._data[1]
+    
+    @value.setter
+    def value(self, value):
+        self._data[1] = value
+    
+    def as_dict(self):
+        """Convert FX tuple to dictionary for serialization"""
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "key": self.key,
+            "value": self.value
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create an FX tuple from a dictionary"""
+        return cls(
+            key=data.get("key", BLANK),
+            value=data.get("value", NULL)
+        )
+    
+    def to_json(self, indent=None):
+        """Convert FX tuple to JSON string"""
+        return to_json(self, indent=indent)
 
-M8FXTuples = m8_list_class(
-    row_class=M8FXTuple,
-    row_size=FX_BLOCK_SIZE,
-    row_count=FX_BLOCK_COUNT
-)
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        return from_json(json_str, cls)
 
-M8PhraseStepBase = m8_object_class(
-    field_map=[
-        ("note", BLANK, 0, 1, "UINT8"),
-        ("velocity", BLANK, 1, 2, "UINT8"),
-        ("instrument", BLANK, 2, 3, "UINT8")
-    ]
-)
 
-class M8PhraseStep(M8PhraseStepBase):
+class M8FXTuples(list):
+    def __init__(self):
+        super().__init__()
+        # Initialize with empty FX tuples
+        for _ in range(FX_BLOCK_COUNT):
+            self.append(M8FXTuple())
+    
+    @classmethod
+    def read(cls, data):
+        instance = cls.__new__(cls)  # Create instance without calling __init__
+        list.__init__(instance)  # Initialize the list properly
+        
+        for i in range(FX_BLOCK_COUNT):
+            start = i * FX_BLOCK_SIZE
+            tuple_data = data[start:start + FX_BLOCK_SIZE]
+            instance.append(M8FXTuple.read(tuple_data))
+        
+        return instance
+    
+    def clone(self):
+        instance = self.__class__()
+        instance.clear()  # Remove default items
+        
+        for fx_tuple in self:
+            if hasattr(fx_tuple, 'clone'):
+                instance.append(fx_tuple.clone())
+            else:
+                instance.append(M8FXTuple.read(fx_tuple.write()))
+        
+        return instance
+    
+    def is_empty(self):
+        return all(fx_tuple.is_empty() for fx_tuple in self)
+    
+    def write(self):
+        result = bytearray()
+        for fx_tuple in self:
+            tuple_data = fx_tuple.write()
+            result.extend(tuple_data)
+        return bytes(result)
+    
+    def as_dict(self):
+        """Convert FX tuples to dictionary for serialization"""
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "tuples": [fx_tuple.as_dict() for fx_tuple in self if not fx_tuple.is_empty()]
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create FX tuples from a dictionary"""
+        instance = cls()
+        
+        if "tuples" in data:
+            for i, tuple_data in enumerate(data["tuples"]):
+                if i < FX_BLOCK_COUNT:
+                    instance[i] = M8FXTuple.from_dict(tuple_data)
+        
+        return instance
+    
+    def to_json(self, indent=None):
+        """Convert FX tuples to JSON string"""
+        return to_json(self, indent=indent)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        return from_json(json_str, cls)
+
+
+class M8PhraseStep:
+    def __init__(self, note=BLANK, velocity=BLANK, instrument=BLANK):
+        # Initialize base data
+        self._data = bytearray([note, velocity, instrument])
         self.fx = M8FXTuples()
 
     @classmethod
@@ -56,6 +163,35 @@ class M8PhraseStep(M8PhraseStepBase):
                 self.velocity == BLANK and
                 self.instrument == BLANK and
                 self.fx.is_empty())
+
+    def write(self):
+        buffer = bytearray(self._data)
+        buffer.extend(self.fx.write())
+        return bytes(buffer)
+
+    @property
+    def note(self):
+        return self._data[0]
+    
+    @note.setter
+    def note(self, value):
+        self._data[0] = value
+    
+    @property
+    def velocity(self):
+        return self._data[1]
+    
+    @velocity.setter
+    def velocity(self, value):
+        self._data[1] = value
+    
+    @property
+    def instrument(self):
+        return self._data[2]
+    
+    @instrument.setter
+    def instrument(self, value):
+        self._data[2] = value
 
     @property
     def available_slot(self):
@@ -88,11 +224,6 @@ class M8PhraseStep(M8PhraseStepBase):
             "fx": [fx.as_dict() for fx in self.fx if not fx.is_empty()]
         }
         return result
-    
-    def write(self):
-        buffer = bytearray(super().write())
-        buffer.extend(self.fx.write())
-        return bytes(buffer)
         
     @classmethod
     def from_dict(cls, data):
@@ -106,7 +237,7 @@ class M8PhraseStep(M8PhraseStepBase):
         # Add FX
         if "fx" in data:
             for i, fx_data in enumerate(data["fx"]):
-                if i < len(instance.fx):
+                if i < FX_BLOCK_COUNT:
                     instance.fx[i] = M8FXTuple.from_dict(fx_data)
         
         return instance
@@ -119,17 +250,53 @@ class M8PhraseStep(M8PhraseStepBase):
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
         return from_json(json_str, cls)
+
+
+class M8Phrase(list):
+    def __init__(self):
+        super().__init__()
+        # Initialize with empty steps
+        for _ in range(STEP_COUNT):
+            self.append(M8PhraseStep())
+    
+    @classmethod
+    def read(cls, data):
+        instance = cls.__new__(cls)  # Create instance without calling __init__
+        list.__init__(instance)  # Initialize the list properly
         
-M8PhraseBase = m8_list_class(
-    row_class=M8PhraseStep,
-    row_size=STEP_BLOCK_SIZE,
-    row_count=STEP_COUNT
-)
-
-class M8Phrase(M8PhraseBase):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        for i in range(STEP_COUNT):
+            start = i * STEP_BLOCK_SIZE
+            step_data = data[start:start + STEP_BLOCK_SIZE]
+            instance.append(M8PhraseStep.read(step_data))
+        
+        return instance
+    
+    def clone(self):
+        instance = self.__class__()
+        instance.clear()  # Remove default items
+        
+        for step in self:
+            if hasattr(step, 'clone'):
+                instance.append(step.clone())
+            else:
+                instance.append(M8PhraseStep.read(step.write()))
+        
+        return instance
+    
+    def is_empty(self):
+        return all(step.is_empty() for step in self)
+    
+    def write(self):
+        result = bytearray()
+        for step in self:
+            step_data = step.write()
+            # Ensure each step occupies exactly STEP_BLOCK_SIZE bytes
+            if len(step_data) < STEP_BLOCK_SIZE:
+                step_data = step_data + bytes([NULL] * (STEP_BLOCK_SIZE - len(step_data)))
+            elif len(step_data) > STEP_BLOCK_SIZE:
+                step_data = step_data[:STEP_BLOCK_SIZE]
+            result.extend(step_data)
+        return bytes(result)
 
     def validate_instruments(self, instruments):
         if not self.is_empty():
@@ -179,7 +346,7 @@ class M8Phrase(M8PhraseBase):
         
         if "steps" in data:
             for i, step_data in enumerate(data["steps"]):
-                if i < len(instance):
+                if i < STEP_COUNT:
                     instance[i] = M8PhraseStep.from_dict(step_data)
         
         return instance
@@ -192,17 +359,50 @@ class M8Phrase(M8PhraseBase):
     def from_json(cls, json_str):
         """Create an instance from a JSON string"""
         return from_json(json_str, cls)
+
+
+class M8Phrases(list):
+    def __init__(self):
+        super().__init__()
+        # Initialize with empty phrases
+        for _ in range(PHRASE_COUNT):
+            self.append(M8Phrase())
+    
+    @classmethod
+    def read(cls, data):
+        instance = cls.__new__(cls)  # Create instance without calling __init__
+        list.__init__(instance)  # Initialize the list properly
         
-M8PhrasesBase = m8_list_class(
-    row_class=M8Phrase,
-    row_size=PHRASE_BLOCK_SIZE,
-    row_count=PHRASE_COUNT
-)
-
-class M8Phrases(M8PhrasesBase):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        for i in range(PHRASE_COUNT):
+            start = i * PHRASE_BLOCK_SIZE
+            phrase_data = data[start:start + PHRASE_BLOCK_SIZE]
+            instance.append(M8Phrase.read(phrase_data))
+        
+        return instance
+    
+    def clone(self):
+        instance = self.__class__()
+        instance.clear()  # Remove default items
+        
+        for phrase in self:
+            instance.append(phrase.clone())
+        
+        return instance
+    
+    def is_empty(self):
+        return all(phrase.is_empty() for phrase in self)
+    
+    def write(self):
+        result = bytearray()
+        for phrase in self:
+            phrase_data = phrase.write()
+            # Ensure each phrase occupies exactly PHRASE_BLOCK_SIZE bytes
+            if len(phrase_data) < PHRASE_BLOCK_SIZE:
+                phrase_data = phrase_data + bytes([NULL] * (PHRASE_BLOCK_SIZE - len(phrase_data)))
+            elif len(phrase_data) > PHRASE_BLOCK_SIZE:
+                phrase_data = phrase_data[:PHRASE_BLOCK_SIZE]
+            result.extend(phrase_data)
+        return bytes(result)
 
     def validate_instruments(self, instruments):
         for phrase_idx, phrase in enumerate(self):
@@ -210,3 +410,36 @@ class M8Phrases(M8PhrasesBase):
                 phrase.validate_instruments(instruments)
             except M8ValidationError as e:
                 raise M8ValidationError(f"Phrase {phrase_idx}: {str(e)}") from e
+    
+    def as_dict(self):
+        """Convert phrases to dictionary for serialization"""
+        return {
+            "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+            "items": [phrase.as_dict() for phrase in self if not phrase.is_empty()]
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create phrases from a dictionary"""
+        instance = cls()
+        
+        # Create a dictionary to track which indices have been filled
+        filled_indices = set()
+        
+        # Add phrases from dict
+        if "items" in data:
+            for i, phrase_data in enumerate(data["items"]):
+                if i < PHRASE_COUNT:
+                    instance[i] = M8Phrase.from_dict(phrase_data)
+                    filled_indices.add(i)
+        
+        return instance
+    
+    def to_json(self, indent=None):
+        """Convert phrases to JSON string"""
+        return to_json(self, indent=indent)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Create an instance from a JSON string"""
+        return from_json(json_str, cls)
