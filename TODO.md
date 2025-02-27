@@ -1,13 +1,16 @@
 # short
 
-- remove core package
+- remove NULL and BLANK
 - separate fx from phrases
-- collapse instrument / instrument params distinction
-- is serialisation only outputting non- empty phrases?
+- separate version and metadata from project
+- separate modulators into separate classes
+- remove is_empty()
 - remove api subdir
-- abstraction into base classes
 
 # medium
+
+- collapse instrument /instrument params distinction
+- abstract into base classes
 
 - inspector cli
 - json enum, hex
@@ -30,6 +33,7 @@
 
 # done
 
+- remove core package
 - remove all tests
 - move serialisation to api
 - simplify serialisation
