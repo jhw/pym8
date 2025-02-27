@@ -1,6 +1,5 @@
 # short
 
-- complete instruments, modulator refactoring
 - complete project/version/metadata refactoring
 - remove core package
 
@@ -8,10 +7,12 @@
 
 - separate fx from phrases
 - collapse instrument / instrument params distinction
-- serialisation/deserialisation
 - is serialisation only outputting non- empty phrases?
-
 - remove api subdir
+- opportunities for base class consolidation?
+
+- serialisation/deserialisation
+
 - inspector cli
 - json enum, hex
 - m8i files
@@ -33,6 +34,7 @@
 
 # done
 
+- complete instruments, modulator refactoring
 - remove set_caller_module
 - remove local from/to_json imports
 - add back last version of from_json and test

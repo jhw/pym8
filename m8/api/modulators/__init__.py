@@ -1,9 +1,7 @@
-from m8 import M8Block
+from m8 import M8Block, NULL
 from m8.api import load_class
-from m8.core.list import m8_list_class
+from m8.core.serialization import from_json, to_json
 from m8.utils.bits import split_byte
-
-import struct
 
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4
@@ -29,9 +27,12 @@ def get_default_modulator_set(instrument_type):
     result = []
     for mod_type in DEFAULT_MODULATORS:
         # Get class path from MODULATOR_TYPES and instantiate
-        full_path = MODULATOR_TYPES[instrument_type][mod_type]
-        ModClass = load_class(full_path)
-        result.append(ModClass())
+        if mod_type in MODULATOR_TYPES[instrument_type]:
+            full_path = MODULATOR_TYPES[instrument_type][mod_type]
+            ModClass = load_class(full_path)
+            result.append(ModClass())
+        else:
+            result.append(M8Block())
         
     return result
 
@@ -39,32 +40,123 @@ def create_default_modulators(instrument_type):
     """Create default modulator instances for an instrument type"""
     return get_default_modulator_set(instrument_type)
 
-def create_modulator_row_class_resolver(instrument_type):
-    """Factory function to create a row class resolver based on instrument type"""
-    if instrument_type not in MODULATOR_TYPES:
-        raise ValueError(f"Unknown instrument type: {instrument_type}")
-        
-    def resolver(data):
-        first_byte = struct.unpack("B", data[:1])[0]
-        mod_type, _ = split_byte(first_byte)
-        
-        if mod_type in MODULATOR_TYPES[instrument_type]:
-            class_path = MODULATOR_TYPES[instrument_type][mod_type]
-            return load_class(class_path)
-        else:
-            return M8Block
-
-    return resolver
-
 def create_modulators_class(instrument_type):
-    """Factory function to create an M8Modulators class based on instrument type"""
-    row_class_resolver = create_modulator_row_class_resolver(instrument_type)
+    """Factory function to create an M8Modulators class for an instrument type"""
     
-    M8Modulators = m8_list_class(
-        row_size=BLOCK_SIZE,
-        row_count=BLOCK_COUNT,
-        row_class_resolver=row_class_resolver
-    )
+    class M8Modulators(list):
+        def __init__(self, items=None):
+            super().__init__()
+            items = items or []
+            
+            # Fill with provided items
+            for item in items:
+                self.append(item)
+                
+            # Fill remaining slots with empty blocks
+            while len(self) < BLOCK_COUNT:
+                self.append(M8Block())
+        
+        @classmethod
+        def read(cls, data):
+            instance = cls.__new__(cls)
+            list.__init__(instance)
+            
+            for i in range(BLOCK_COUNT):
+                start = i * BLOCK_SIZE
+                block_data = data[start:start + BLOCK_SIZE]
+                
+                # Only process if we have enough data
+                if len(block_data) < 1:
+                    instance.append(M8Block())
+                    continue
+                    
+                # Check the modulator type/destination byte
+                first_byte = block_data[0]
+                mod_type, _ = split_byte(first_byte)
+                
+                if mod_type in MODULATOR_TYPES[instrument_type]:
+                    # Create the specific modulator class
+                    ModClass = load_class(MODULATOR_TYPES[instrument_type][mod_type])
+                    instance.append(ModClass.read(block_data))
+                else:
+                    # Default to M8Block for unknown types
+                    instance.append(M8Block.read(block_data))
+            
+            return instance
+        
+        def clone(self):
+            instance = self.__class__.__new__(self.__class__)
+            list.__init__(instance)
+            
+            for mod in self:
+                if hasattr(mod, 'clone'):
+                    instance.append(mod.clone())
+                else:
+                    instance.append(mod)
+            
+            return instance
+        
+        def is_empty(self):
+            return all(isinstance(mod, M8Block) or mod.is_empty() for mod in self)
+        
+        def write(self):
+            result = bytearray()
+            for mod in self:
+                mod_data = mod.write() if hasattr(mod, 'write') else bytes([0] * BLOCK_SIZE)
+                # Ensure each modulator occupies exactly BLOCK_SIZE bytes
+                if len(mod_data) < BLOCK_SIZE:
+                    mod_data = mod_data + bytes([NULL] * (BLOCK_SIZE - len(mod_data)))
+                elif len(mod_data) > BLOCK_SIZE:
+                    mod_data = mod_data[:BLOCK_SIZE]
+                result.extend(mod_data)
+            return bytes(result)
+        
+        def as_dict(self):
+            """Convert modulators to dictionary for serialization"""
+            # Only include non-empty modulators
+            items = []
+            for i, mod in enumerate(self):
+                if not (isinstance(mod, M8Block) or (hasattr(mod, 'is_empty') and mod.is_empty())):
+                    item_dict = mod.as_dict() if hasattr(mod, 'as_dict') else {"__class__": "m8.M8Block"}
+                    items.append(item_dict)
+            
+            return {
+                "__class__": f"{self.__class__.__module__}.{self.__class__.__name__}",
+                "items": items
+            }
+        
+        @classmethod
+        def from_dict(cls, data):
+            """Create modulators from a dictionary"""
+            instance = cls()
+            
+            # Set modulators
+            if "items" in data:
+                for i, mod_data in enumerate(data["items"]):
+                    if i < BLOCK_COUNT:
+                        if "__class__" in mod_data:
+                            try:
+                                # Try to get class from the class path
+                                class_path = mod_data["__class__"]
+                                ModClass = load_class(class_path)
+                                instance[i] = ModClass.from_dict(mod_data)
+                            except (ImportError, AttributeError):
+                                # Fall back to M8Block
+                                instance[i] = M8Block()
+                        else:
+                            # Default to M8Block if no class info
+                            instance[i] = M8Block()
+            
+            return instance
+        
+        def to_json(self, indent=None):
+            """Convert modulators to JSON string"""
+            return to_json(self, indent=indent)
+
+        @classmethod
+        def from_json(cls, json_str):
+            """Create an instance from a JSON string"""
+            return from_json(json_str, cls)
     
     return M8Modulators
 
@@ -78,7 +170,7 @@ def create_modulator_from_dict(data, instrument_type):
     # If we have explicit class information, use that
     if "__class__" in data:
         try:
-            ModClass = _get_class_from_string(data["__class__"])
+            ModClass = load_class(data["__class__"])
             return ModClass.from_dict(data)
         except (ImportError, AttributeError):
             pass
