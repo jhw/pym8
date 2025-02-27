@@ -1,8 +1,11 @@
 # short
 
+- remove __class__ checks in instruments and modulators
+
 - avoid use of "items" in serialised data
 - refactor serialised song as matrix
 
+- collapse utils/bits into api
 - collapse instrument/instrument params distinction
 - consider adding back filter/amp/mixer classes
 - consider separating modulators into separate classes
@@ -13,23 +16,15 @@
 
 - consider role of is_empty()
 
-- inspector cli
 - json enum, hex
 - m8i files
 - toml file
-- tests
+- testing
 
 # thoughts
 
-- remove is_empty()
-  - no is useful!
 - refactor macrosynth as macro_synth?
 - transpose/eq/pitch/fine_tune synth parameters
-
-# rejected
-
-- instrument idx field
-- song/chain/phrase/instrument api which hides idx
 
 # done
 
