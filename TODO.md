@@ -4,8 +4,9 @@
 - separate fx from phrases
 - separate version and metadata from project
 - separate modulators into separate classes
-- remove is_empty()
+- remove __class__
 - remove api subdir
+- remove is_empty()
 
 # medium
 
