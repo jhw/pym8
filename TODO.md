@@ -1,15 +1,14 @@
 # short
 
-- separate version from project
-- separate metadata from project
-- separate modulators into separate classes
 - remove __class__
 - remove is_empty()
 
+- collapse instrument /instrument params distinction
+- separate modulators into separate classes
+- abstract into base classes
+
 # medium
 
-- collapse instrument /instrument params distinction
-- abstract into base classes
 
 - inspector cli
 - json enum, hex
@@ -32,6 +31,8 @@
 
 # done
 
+- separate version from project
+- separate metadata from project
 - separate fx from phrases
 - remove NULL and BLANK
 - remove core package
