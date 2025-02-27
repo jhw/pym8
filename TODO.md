@@ -1,18 +1,18 @@
 # short
 
-- avoid use of "items" in serialised data
+- remove row indexation from song
+- remove filled_indices refs
+- refactor anything using to_dict() + items key as list
 - collapse instrument/instrument params distinction
-
-- remove song row serialisation temporarily
-- refactor serialised song as matrix
-- collapse utils/bits into api
-- rationalise imports
+- add back indexation in conunction with is_empty()
+- add hex formatting via json decoder/encoder
 
 # medium
 
-- is_empty() + indexation (row, index)
-
-- json enum, hex
+- refactor serialised song as matrix
+- move utils/bits into api
+- rationalise imports
+- enum rendering support
 - m8i files
 - toml file
 - testing
