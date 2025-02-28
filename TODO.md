@@ -1,6 +1,5 @@
 # short
 
-- move type/name/transpose/table_tick/volume/pitch to instrument base
 - xxx_params base class
 
 - refactor anything using to_dict() + items key as list
@@ -25,6 +24,7 @@
 
 # done
 
+- move type/name/transpose/table_tick/volume/pitch to instrument base
 - move shape/timbre/color/degrade/redux to (macro) synth params
 - add mixer, amp, filter params
 - collapse instrument/instrument params distinction

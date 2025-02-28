@@ -258,16 +258,24 @@ class M8MixerParams:
                 
         return cls(offset, **params)
 
-
 class M8InstrumentBase:
     def __init__(self, **kwargs):
+        # Common synthesizer parameters
+        self.name = " "
+        self.transpose = 0x4
+        self.eq = 0x1
+        self.table_tick = 0x01
+        self.volume = 0x0
+        self.pitch = 0x0
+        self.fine_tune = 0x80
+        
         # Create modulators using the instrument type
         default_modulators = create_default_modulators(self.type)
         self.modulators = M8Modulators(instrument_type=self.type, items=default_modulators)
         
         # Apply any kwargs - specific to each instrument subclass
         for key, value in kwargs.items():
-            if hasattr(self, key):
+            if hasattr(self, key) and not key.startswith('_') and key != "modulators" and key != "type":
                 setattr(self, key, value)
 
     @classmethod
@@ -419,7 +427,6 @@ class M8InstrumentBase:
     def _init_default_parameters(self):
         # This method should be implemented by subclasses to set default parameter values
         raise NotImplementedError("Subclasses must implement _init_default_parameters")
-
 
 class M8Instruments(list):
     def __init__(self, items=None):

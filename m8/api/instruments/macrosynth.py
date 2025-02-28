@@ -100,37 +100,16 @@ class M8MacroSynth(M8InstrumentBase):
         # Set type before parent class init
         self.type = 0x01
         
-        # MacroSynth specific parameters
-        self.name = " "
-        self.transpose = 0x4
-        self.eq = 0x1
-        self.table_tick = 0x01
-        self.volume = 0x0
-        self.pitch = 0x0
-        self.fine_tune = 0x80
-        
         # Create parameter group objects with default values
         self.synth = M8MacroSynthParams(offset=19)
         self.filter = M8FilterParams(offset=24)
         self.amp = M8AmpParams(offset=27)
         self.mixer = M8MixerParams(offset=29)
         
-        # Apply any non-prefixed kwargs directly to matching properties
-        for key, value in kwargs.items():
-            if hasattr(self, key) and not key.startswith('_') and not key in ['type', 'synth', 'filter', 'amp', 'mixer']:
-                setattr(self, key, value)
-            
-            # Handle shape, timbre, color, degrade, redux directly
-            elif key == 'shape':
-                self.synth.shape = value
-            elif key == 'timbre':
-                self.synth.timbre = value
-            elif key == 'color':
-                self.synth.color = value
-            elif key == 'degrade':
-                self.synth.degrade = value
-            elif key == 'redux':
-                self.synth.redux = value
+        # Handle synth-specific parameters directly
+        for key in ['shape', 'timbre', 'color', 'degrade', 'redux']:
+            if key in kwargs:
+                setattr(self.synth, key, kwargs[key])
         
         # Now apply prefixed parameters to the appropriate groupings
         filter_params = M8FilterParams.from_prefixed_dict(kwargs, prefix="filter_", offset=24)
@@ -147,16 +126,9 @@ class M8MacroSynth(M8InstrumentBase):
             self.mixer = mixer_params
             
         # Only update synth attributes that weren't directly set
-        if 'shape' not in kwargs and any(k.startswith('synth_') for k in kwargs):
-            self.synth.shape = synth_params.shape
-        if 'timbre' not in kwargs and any(k.startswith('synth_') for k in kwargs):
-            self.synth.timbre = synth_params.timbre
-        if 'color' not in kwargs and any(k.startswith('synth_') for k in kwargs):
-            self.synth.color = synth_params.color
-        if 'degrade' not in kwargs and any(k.startswith('synth_') for k in kwargs):
-            self.synth.degrade = synth_params.degrade
-        if 'redux' not in kwargs and any(k.startswith('synth_') for k in kwargs):
-            self.synth.redux = synth_params.redux
+        for key in ['shape', 'timbre', 'color', 'degrade', 'redux']:
+            if key not in kwargs and any(k.startswith('synth_') for k in kwargs):
+                setattr(self.synth, key, getattr(synth_params, key))
             
         # Call parent constructor to finish setup
         super().__init__(**kwargs)
