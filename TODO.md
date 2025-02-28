@@ -1,13 +1,14 @@
 # short
 
-- xxx_params base class
+- macrosynth to delegate handling of base params to base class via super()
+- better way for macrosynth to override default parameters
+
+# medium
 
 - refactor anything using to_dict() + items key as list
 - refactor song row to render as an array
 
 - add hex formatting via json decoder/encoder
-
-# medium
 
 - json enums rendering
 - m8i files
@@ -24,6 +25,7 @@
 
 # done
 
+- xxx_params base class
 - move type/name/transpose/table_tick/volume/pitch to instrument base
 - move shape/timbre/color/degrade/redux to (macro) synth params
 - add mixer, amp, filter params

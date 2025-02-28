@@ -1,99 +1,19 @@
 from m8.api import split_byte, join_nibbles
-from m8.api.instruments import M8InstrumentBase, M8MixerParams, M8FilterParams, M8AmpParams
+from m8.api.instruments import M8InstrumentBase, M8MixerParams, M8FilterParams, M8AmpParams, M8ParamsBase
 
-class M8MacroSynthParams:
+class M8MacroSynthParams(M8ParamsBase):
     """Class to handle MacroSynth-specific parameters."""
     
+    _param_defs = [
+        ("shape", 0x0),
+        ("timbre", 0x80),
+        ("color", 0x80),
+        ("degrade", 0x0),
+        ("redux", 0x0)
+    ]
+    
     def __init__(self, offset=19, **kwargs):
-        # Default parameter values
-        self.shape = 0x0
-        self.timbre = 0x80
-        self.color = 0x80
-        self.degrade = 0x0
-        self.redux = 0x0
-        
-        # Store the offset where these parameters start in the binary data
-        self.offset = offset
-        
-        # Apply any kwargs
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-    
-    @classmethod
-    def read(cls, data, offset=19):
-        """Read MacroSynth parameters from binary data starting at a specific offset"""
-        instance = cls(offset)
-        
-        # Read values from appropriate offsets
-        instance.shape = data[offset]
-        instance.timbre = data[offset + 1]
-        instance.color = data[offset + 2]
-        instance.degrade = data[offset + 3]
-        instance.redux = data[offset + 4]
-        
-        return instance
-    
-    def write(self):
-        """Write MacroSynth parameters to binary data"""
-        buffer = bytearray()
-        buffer.append(self.shape)
-        buffer.append(self.timbre)
-        buffer.append(self.color)
-        buffer.append(self.degrade)
-        buffer.append(self.redux)
-        return bytes(buffer)
-    
-    def clone(self):
-        """Create a copy of this MacroSynth parameters object"""
-        instance = self.__class__(self.offset)
-        instance.shape = self.shape
-        instance.timbre = self.timbre
-        instance.color = self.color
-        instance.degrade = self.degrade
-        instance.redux = self.redux
-        return instance
-    
-    def as_dict(self):
-        """Convert MacroSynth parameters to dictionary for serialization"""
-        return {
-            "shape": self.shape,
-            "timbre": self.timbre,
-            "color": self.color,
-            "degrade": self.degrade,
-            "redux": self.redux
-        }
-    
-    @classmethod
-    def from_dict(cls, data, offset=19):
-        """Create MacroSynth parameters from a dictionary"""
-        instance = cls(offset)
-        
-        if "shape" in data:
-            instance.shape = data["shape"]
-        if "timbre" in data:
-            instance.timbre = data["timbre"]
-        if "color" in data:
-            instance.color = data["color"]
-        if "degrade" in data:
-            instance.degrade = data["degrade"]
-        if "redux" in data:
-            instance.redux = data["redux"]
-            
-        return instance
-        
-    @classmethod
-    def from_prefixed_dict(cls, data, prefix="synth_", offset=19):
-        """Create MacroSynth parameters from a dict with prefixed keys (e.g., synth_shape)"""
-        # Extract parameters with the prefix
-        params = {}
-        for key, value in data.items():
-            if key.startswith(prefix):
-                # Remove the prefix
-                clean_key = key[len(prefix):]
-                params[clean_key] = value
-                
-        return cls(offset, **params)
+        super().__init__(self._param_defs, offset, **kwargs)
 
 class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
