@@ -53,7 +53,7 @@ class M8ChainStep:
             phrase=data.get("phrase", 0xFF),
             transpose=data.get("transpose", 0x0)
         )
-    
+
 class M8Chain(list):
     def __init__(self):
         super().__init__()
@@ -130,10 +130,17 @@ class M8Chain(list):
             
     def as_dict(self):
         """Convert chain to dictionary for serialization"""
-        result = {
-            "steps": [step.as_dict() for step in self if step.phrase != 0xFF]
+        steps = []
+        for i, step in enumerate(self):
+            if not step.is_empty():
+                step_dict = step.as_dict()
+                # Add index to track position
+                step_dict["index"] = i
+                steps.append(step_dict)
+        
+        return {
+            "steps": steps
         }
-        return result
         
     @classmethod
     def from_dict(cls, data):
@@ -141,19 +148,19 @@ class M8Chain(list):
         instance = cls()
         instance.clear()  # Clear default steps
         
+        # Initialize with empty steps
+        for _ in range(STEP_COUNT):
+            instance.append(M8ChainStep())
+        
         # Add steps from dict
         if "steps" in data:
-            # First add the non-empty steps
             for step_data in data["steps"]:
-                instance.append(M8ChainStep.from_dict(step_data))
-                
-            # Fill remaining slots with empty steps
-            while len(instance) < STEP_COUNT:
-                instance.append(M8ChainStep())
-        else:
-            # Fill with empty steps if no steps in data
-            for _ in range(STEP_COUNT):
-                instance.append(M8ChainStep())
+                # Get index from data or default to 0
+                index = step_data.get("index", 0)
+                if 0 <= index < STEP_COUNT:
+                    # Remove index field before passing to from_dict
+                    step_dict = {k: v for k, v in step_data.items() if k != "index"}
+                    instance[index] = M8ChainStep.from_dict(step_dict)
         
         return instance
         

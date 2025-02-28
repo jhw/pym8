@@ -194,23 +194,40 @@ class M8Phrase(list):
             
     def as_dict(self):
         """Convert phrase to dictionary for serialization"""
-        result = {
-            "steps": [step.as_dict() for step in self if not step.is_empty()]
+        steps = []
+        for i, step in enumerate(self):
+            if not step.is_empty():
+                step_dict = step.as_dict()
+                # Add index to track position
+                step_dict["index"] = i
+                steps.append(step_dict)
+        
+        return {
+            "steps": steps
         }
-        return result
         
     @classmethod
     def from_dict(cls, data):
         """Create a phrase from a dictionary"""
         instance = cls()
+        instance.clear()  # Clear default steps
         
+        # Initialize with empty steps
+        for _ in range(STEP_COUNT):
+            instance.append(M8PhraseStep())
+        
+        # Add steps from dict at their original positions
         if "steps" in data:
-            for i, step_data in enumerate(data["steps"]):
-                if i < STEP_COUNT:
-                    instance[i] = M8PhraseStep.from_dict(step_data)
+            for step_data in data["steps"]:
+                # Get index from data or default to 0
+                index = step_data.get("index", 0)
+                if 0 <= index < STEP_COUNT:
+                    # Remove index field before passing to from_dict
+                    step_dict = {k: v for k, v in step_data.items() if k != "index"}
+                    instance[index] = M8PhraseStep.from_dict(step_dict)
         
-        return instance        
-
+        return instance
+    
 class M8Phrases(list):
     def __init__(self):
         super().__init__()

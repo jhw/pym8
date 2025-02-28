@@ -1,8 +1,5 @@
 # short
 
-- chains multi- list indexation
-- filled_indices refs
-
 - missing modulators, fx indexes
 - 4 fx elements!
 - are lfos being serisalised correctly? (type 0 vs type 3)
@@ -30,6 +27,8 @@
 
 # done
 
+- chains multi- list indexation
+- filled_indices refs
 - fx indexation
 - modulators indexation
 - consider adding back filter/amp/mixer classes
