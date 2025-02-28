@@ -80,17 +80,10 @@ class M8InstrumentBase:
 
     def as_dict(self):
         """Convert instrument to dictionary for serialization"""
-        # Filter out empty modulators
-        modulators_list = []
-        for mod in self.modulators:
-            # Include modulator if it has as_dict and is not empty
-            if hasattr(mod, "as_dict") and not (hasattr(mod, "is_empty") and mod.is_empty()):
-                modulators_list.append(mod.as_dict())
-    
         return {
             "type": self.synth_params.type,
             "synth_params": self.synth_params.as_dict(),
-            "modulators": modulators_list
+            "modulators": self.modulators.as_dict()
         }
                     
     @classmethod
@@ -98,7 +91,6 @@ class M8InstrumentBase:
         """Create an instrument from a dictionary"""
         instance = cls.__new__(cls)
         
-        # Get synth params class
         if "type" in data and "synth_params" in data:
             instr_type = data["type"]
             if instr_type in INSTRUMENT_TYPES:
@@ -106,21 +98,10 @@ class M8InstrumentBase:
                 params_class = load_class(params_path)
                 instance.synth_params = params_class.from_dict(data["synth_params"])
         
-        # Deserialize modulators
         if "modulators" in data:
-            # Create appropriate modulators collection
             instance.modulators = M8Modulators(instrument_type=instance.synth_params.type)
-            
-            from m8.api.modulators import MODULATOR_TYPES
-            
-            for i, mod_data in enumerate(data["modulators"]):
-                if mod_data is not None and i < len(instance.modulators):
-                    # Determine modulator type
-                    if "type" in mod_data and instance.synth_params.type in MODULATOR_TYPES:
-                        mod_type = mod_data["type"]
-                        if mod_type in MODULATOR_TYPES[instance.synth_params.type]:
-                            ModClass = load_class(MODULATOR_TYPES[instance.synth_params.type][mod_type])
-                            instance.modulators[i] = ModClass.from_dict(mod_data)
+            instance.modulators = M8Modulators.from_dict(data["modulators"], 
+                                                       instrument_type=instance.synth_params.type)
         
         return instance
 

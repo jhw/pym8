@@ -1,6 +1,5 @@
 # short
 
-- modulators not showing index
 - type parameter being duplicated in instrument base and synth params
 - add hex formatting via json decoder/encoder
 
@@ -23,6 +22,8 @@
 
 # done
 
+- remove modulator is_empty() code
+- modulators not showing index
 - off modulators not being filtered out
 - type 3 lfo not being shown
 - move utils/bits into api
