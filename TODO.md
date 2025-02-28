@@ -1,6 +1,7 @@
 # short
 
-- add mixer, amp, filter params
+- move shape/timbre/color/degrade/redux to (macro) synth params
+- move type/name/transpose/table_tick/volume/pitch to instrument base
 
 - refactor anything using to_dict() + items key as list
 - refactor song row to render as an array
@@ -24,6 +25,7 @@
 
 # done
 
+- add mixer, amp, filter params
 - collapse instrument/instrument params distinction
 - type parameter being duplicated in instrument base and synth params
 - remove modulator is_empty() code

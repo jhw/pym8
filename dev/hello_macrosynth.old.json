@@ -1,0 +1,169 @@
+{
+  "version": {
+    "major": 4,
+    "minor": 0,
+    "patch": 1
+  },
+  "metadata": {
+    "directory": "/Songs/woldo/",
+    "transpose": 0,
+    "tempo": 120.0,
+    "quantize": 0,
+    "name": "PYMACRO",
+    "key": 0
+  },
+  "song": {
+    "rows": [
+      {
+        "chains": [
+          {
+            "col": 0,
+            "chain": 0
+          }
+        ],
+        "row": 0
+      }
+    ]
+  },
+  "chains": {
+    "items": [
+      {
+        "steps": [
+          {
+            "phrase": 0,
+            "transpose": 0,
+            "index": 0
+          }
+        ],
+        "index": 0
+      }
+    ]
+  },
+  "phrases": {
+    "items": [
+      {
+        "steps": [
+          {
+            "note": 36,
+            "velocity": 111,
+            "instrument": 0,
+            "fx": [
+              {
+                "key": 144,
+                "value": 64,
+                "index": 0
+              }
+            ],
+            "index": 0
+          },
+          {
+            "note": 36,
+            "velocity": 111,
+            "instrument": 0,
+            "fx": [
+              {
+                "key": 144,
+                "value": 0,
+                "index": 0
+              }
+            ],
+            "index": 4
+          },
+          {
+            "note": 36,
+            "velocity": 111,
+            "instrument": 0,
+            "fx": [
+              {
+                "key": 144,
+                "value": 128,
+                "index": 0
+              }
+            ],
+            "index": 8
+          },
+          {
+            "note": 36,
+            "velocity": 111,
+            "instrument": 0,
+            "fx": [
+              {
+                "key": 144,
+                "value": 128,
+                "index": 0
+              }
+            ],
+            "index": 12
+          }
+        ],
+        "index": 0
+      }
+    ]
+  },
+  "instruments": {
+    "items": [
+      {
+        "type": 1,
+        "name": "MY_SYNTH",
+        "transpose": 4,
+        "eq": 1,
+        "table_tick": 1,
+        "volume": 0,
+        "pitch": 0,
+        "fine_tune": 128,
+        "shape": 24,
+        "timbre": 128,
+        "color": 128,
+        "degrade": 0,
+        "redux": 0,
+        "filter_type": 1,
+        "filter_cutoff": 32,
+        "filter_resonance": 192,
+        "amp_level": 64,
+        "amp_limit": 1,
+        "mixer_pan": 128,
+        "mixer_dry": 192,
+        "mixer_chorus": 192,
+        "mixer_delay": 192,
+        "mixer_reverb": 64,
+        "modulators": [
+          {
+            "type": 0,
+            "destination": 1,
+            "amount": 255,
+            "attack": 0,
+            "hold": 0,
+            "decay": 64
+          },
+          {
+            "type": 0,
+            "destination": 7,
+            "amount": 160,
+            "attack": 0,
+            "hold": 0,
+            "decay": 64
+          },
+          {
+            "type": 3,
+            "destination": 0,
+            "amount": 255,
+            "shape": 0,
+            "trigger": 0,
+            "freq": 16,
+            "retrigger": 0
+          },
+          {
+            "type": 3,
+            "destination": 0,
+            "amount": 255,
+            "shape": 0,
+            "trigger": 0,
+            "freq": 16,
+            "retrigger": 0
+          }
+        ],
+        "index": 0
+      }
+    ]
+  }
+}

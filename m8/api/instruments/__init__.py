@@ -9,6 +9,161 @@ BLOCK_SIZE = 215
 BLOCK_COUNT = 128
 MODULATORS_OFFSET = 63
 
+class M8FilterParams:
+    """Class to handle filter parameters shared by multiple instrument types."""
+    
+    def __init__(self, offset=24, **kwargs):
+        # Default parameter values
+        self.type = 0x0
+        self.cutoff = 0xFF
+        self.resonance = 0x0
+        
+        # Store the offset where these parameters start in the binary data
+        self.offset = offset
+        
+        # Apply any kwargs
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+    
+    @classmethod
+    def read(cls, data, offset=24):
+        """Read filter parameters from binary data starting at a specific offset"""
+        instance = cls(offset)
+        
+        # Read values from appropriate offsets
+        instance.type = data[offset]
+        instance.cutoff = data[offset + 1]
+        instance.resonance = data[offset + 2]
+        
+        return instance
+    
+    def write(self):
+        """Write filter parameters to binary data"""
+        buffer = bytearray()
+        buffer.append(self.type)
+        buffer.append(self.cutoff)
+        buffer.append(self.resonance)
+        return bytes(buffer)
+    
+    def clone(self):
+        """Create a copy of this filter parameters object"""
+        instance = self.__class__(self.offset)
+        instance.type = self.type
+        instance.cutoff = self.cutoff
+        instance.resonance = self.resonance
+        return instance
+    
+    def as_dict(self):
+        """Convert filter parameters to dictionary for serialization"""
+        return {
+            "type": self.type,
+            "cutoff": self.cutoff,
+            "resonance": self.resonance
+        }
+    
+    @classmethod
+    def from_dict(cls, data, offset=24):
+        """Create filter parameters from a dictionary"""
+        instance = cls(offset)
+        
+        if "type" in data:
+            instance.type = data["type"]
+        if "cutoff" in data:
+            instance.cutoff = data["cutoff"]
+        if "resonance" in data:
+            instance.resonance = data["resonance"]
+            
+        return instance
+        
+    @classmethod
+    def from_prefixed_dict(cls, data, prefix="filter_", offset=24):
+        """Create filter parameters from a dict with prefixed keys (e.g., filter_type)"""
+        # Extract parameters with the prefix
+        params = {}
+        for key, value in data.items():
+            if key.startswith(prefix):
+                # Remove the prefix
+                clean_key = key[len(prefix):]
+                params[clean_key] = value
+                
+        return cls(offset, **params)
+
+
+class M8AmpParams:
+    """Class to handle amp parameters shared by multiple instrument types."""
+    
+    def __init__(self, offset=27, **kwargs):
+        # Default parameter values
+        self.level = 0x0
+        self.limit = 0x0
+        
+        # Store the offset where these parameters start in the binary data
+        self.offset = offset
+        
+        # Apply any kwargs
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+    
+    @classmethod
+    def read(cls, data, offset=27):
+        """Read amp parameters from binary data starting at a specific offset"""
+        instance = cls(offset)
+        
+        # Read values from appropriate offsets
+        instance.level = data[offset]
+        instance.limit = data[offset + 1]
+        
+        return instance
+    
+    def write(self):
+        """Write amp parameters to binary data"""
+        buffer = bytearray()
+        buffer.append(self.level)
+        buffer.append(self.limit)
+        return bytes(buffer)
+    
+    def clone(self):
+        """Create a copy of this amp parameters object"""
+        instance = self.__class__(self.offset)
+        instance.level = self.level
+        instance.limit = self.limit
+        return instance
+    
+    def as_dict(self):
+        """Convert amp parameters to dictionary for serialization"""
+        return {
+            "level": self.level,
+            "limit": self.limit
+        }
+    
+    @classmethod
+    def from_dict(cls, data, offset=27):
+        """Create amp parameters from a dictionary"""
+        instance = cls(offset)
+        
+        if "level" in data:
+            instance.level = data["level"]
+        if "limit" in data:
+            instance.limit = data["limit"]
+            
+        return instance
+        
+    @classmethod
+    def from_prefixed_dict(cls, data, prefix="amp_", offset=27):
+        """Create amp parameters from a dict with prefixed keys (e.g., amp_level)"""
+        # Extract parameters with the prefix
+        params = {}
+        for key, value in data.items():
+            if key.startswith(prefix):
+                # Remove the prefix
+                clean_key = key[len(prefix):]
+                params[clean_key] = value
+                
+        return cls(offset, **params)
+
+
 class M8MixerParams:
     """Class to handle mixer parameters shared by multiple instrument types."""
     
@@ -102,6 +257,7 @@ class M8MixerParams:
                 params[clean_key] = value
                 
         return cls(offset, **params)
+
 
 class M8InstrumentBase:
     def __init__(self, **kwargs):

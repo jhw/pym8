@@ -1,5 +1,5 @@
 from m8.api import split_byte, join_nibbles
-from m8.api.instruments import M8InstrumentBase, M8MixerParams
+from m8.api.instruments import M8InstrumentBase, M8MixerParams, M8FilterParams, M8AmpParams
 
 class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
@@ -19,17 +19,13 @@ class M8MacroSynth(M8InstrumentBase):
         self.color = 0x80
         self.degrade = 0x0
         self.redux = 0x0
-        self.filter_type = 0x0
-        self.filter_cutoff = 0xFF
-        self.filter_resonance = 0x0
-        self.amp_level = 0x0
-        self.amp_limit = 0x0
         
-        # Create mixer parameters using prefixed parameter extraction
+        # Create parameter group objects
+        self.filter = M8FilterParams.from_prefixed_dict(kwargs, offset=24)
+        self.amp = M8AmpParams.from_prefixed_dict(kwargs, offset=27)
         self.mixer = M8MixerParams.from_prefixed_dict(kwargs, offset=29)
         
-        # Call parent constructor to finish setup with remaining kwargs
-        # (We don't need to modify kwargs as from_prefixed_dict doesn't modify the input)
+        # Call parent constructor to finish setup
         super().__init__(**kwargs)
     
     def _init_default_parameters(self):
@@ -47,13 +43,10 @@ class M8MacroSynth(M8InstrumentBase):
         self.color = 0x80
         self.degrade = 0x0
         self.redux = 0x0
-        self.filter_type = 0x0
-        self.filter_cutoff = 0xFF
-        self.filter_resonance = 0x0
-        self.amp_level = 0x0
-        self.amp_limit = 0x0
         
-        # Create mixer parameters
+        # Create parameter group objects with default values
+        self.filter = M8FilterParams(offset=24)
+        self.amp = M8AmpParams(offset=27)
         self.mixer = M8MixerParams(offset=29)
         
     def _read_parameters(self, data):
@@ -74,12 +67,10 @@ class M8MacroSynth(M8InstrumentBase):
         self.color = data[21]
         self.degrade = data[22]
         self.redux = data[23]
-        self.filter_type = data[24]
-        self.filter_cutoff = data[25]
-        self.filter_resonance = data[26]
-        self.amp_level = data[27]
-        self.amp_limit = data[28]
-        # Read mixer parameters
+        
+        # Read filter, amp, and mixer parameters
+        self.filter = M8FilterParams.read(data, offset=24)
+        self.amp = M8AmpParams.read(data, offset=27)
         self.mixer = M8MixerParams.read(data, offset=29)
     
     def _write_parameters(self):
@@ -110,12 +101,10 @@ class M8MacroSynth(M8InstrumentBase):
         buffer.append(self.color)
         buffer.append(self.degrade)
         buffer.append(self.redux)
-        buffer.append(self.filter_type)
-        buffer.append(self.filter_cutoff)
-        buffer.append(self.filter_resonance)
-        buffer.append(self.amp_level)
-        buffer.append(self.amp_limit)
-        # Add mixer parameters
+        
+        # Add filter, amp, and mixer parameters
+        buffer.extend(self.filter.write())
+        buffer.extend(self.amp.write())
         buffer.extend(self.mixer.write())
         
         return bytes(buffer)
