@@ -2,6 +2,7 @@
 
 - macrosynth to delegate handling of base params to base class via super()
 - better way for macrosynth to override default parameters
+- could modulators be independent of synth?
 
 # medium
 
