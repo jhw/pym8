@@ -1,5 +1,5 @@
 from m8.api import split_byte, join_nibbles
-from m8.api.instruments import M8InstrumentBase
+from m8.api.instruments import M8InstrumentBase, M8MixerParams
 
 class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
@@ -24,13 +24,12 @@ class M8MacroSynth(M8InstrumentBase):
         self.filter_resonance = 0x0
         self.amp_level = 0x0
         self.amp_limit = 0x0
-        self.mixer_pan = 0x80
-        self.mixer_dry = 0xC0
-        self.mixer_chorus = 0x0
-        self.mixer_delay = 0x0
-        self.mixer_reverb = 0x0
         
-        # Call parent constructor to finish setup
+        # Create mixer parameters using prefixed parameter extraction
+        self.mixer = M8MixerParams.from_prefixed_dict(kwargs, offset=29)
+        
+        # Call parent constructor to finish setup with remaining kwargs
+        # (We don't need to modify kwargs as from_prefixed_dict doesn't modify the input)
         super().__init__(**kwargs)
     
     def _init_default_parameters(self):
@@ -53,11 +52,9 @@ class M8MacroSynth(M8InstrumentBase):
         self.filter_resonance = 0x0
         self.amp_level = 0x0
         self.amp_limit = 0x0
-        self.mixer_pan = 0x80
-        self.mixer_dry = 0xC0
-        self.mixer_chorus = 0x0
-        self.mixer_delay = 0x0
-        self.mixer_reverb = 0x0
+        
+        # Create mixer parameters
+        self.mixer = M8MixerParams(offset=29)
         
     def _read_parameters(self, data):
         """Read MacroSynth parameters from binary data"""
@@ -82,11 +79,8 @@ class M8MacroSynth(M8InstrumentBase):
         self.filter_resonance = data[26]
         self.amp_level = data[27]
         self.amp_limit = data[28]
-        self.mixer_pan = data[29]
-        self.mixer_dry = data[30]
-        self.mixer_chorus = data[31]
-        self.mixer_delay = data[32]
-        self.mixer_reverb = data[33]
+        # Read mixer parameters
+        self.mixer = M8MixerParams.read(data, offset=29)
     
     def _write_parameters(self):
         """Write MacroSynth parameters to binary data"""
@@ -121,11 +115,8 @@ class M8MacroSynth(M8InstrumentBase):
         buffer.append(self.filter_resonance)
         buffer.append(self.amp_level)
         buffer.append(self.amp_limit)
-        buffer.append(self.mixer_pan)
-        buffer.append(self.mixer_dry)
-        buffer.append(self.mixer_chorus)
-        buffer.append(self.mixer_delay)
-        buffer.append(self.mixer_reverb)
+        # Add mixer parameters
+        buffer.extend(self.mixer.write())
         
         return bytes(buffer)
     
@@ -137,10 +128,6 @@ class M8MacroSynth(M8InstrumentBase):
 
     def as_dict(self):
         """Convert MacroSynth to dictionary for serialization"""
-        # Start with parent implementation
-        result = super().as_dict()
-        
-        # No need to add any MacroSynth-specific fields since they're
-        # already included in the parent implementation via vars(self)
-        
-        return result
+        # Use parent implementation, which now correctly handles
+        # nested objects with as_dict methods
+        return super().as_dict()

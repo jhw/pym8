@@ -9,6 +9,100 @@ BLOCK_SIZE = 215
 BLOCK_COUNT = 128
 MODULATORS_OFFSET = 63
 
+class M8MixerParams:
+    """Class to handle mixer parameters shared by multiple instrument types."""
+    
+    def __init__(self, offset=29, **kwargs):
+        # Default parameter values
+        self.pan = 0x80
+        self.dry = 0xC0
+        self.chorus = 0x0
+        self.delay = 0x0
+        self.reverb = 0x0
+        
+        # Store the offset where these parameters start in the binary data
+        self.offset = offset
+        
+        # Apply any kwargs
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+    
+    @classmethod
+    def read(cls, data, offset=29):
+        """Read mixer parameters from binary data starting at a specific offset"""
+        instance = cls(offset)
+        
+        # Read values from appropriate offsets
+        instance.pan = data[offset]
+        instance.dry = data[offset + 1]
+        instance.chorus = data[offset + 2]
+        instance.delay = data[offset + 3]
+        instance.reverb = data[offset + 4]
+        
+        return instance
+    
+    def write(self):
+        """Write mixer parameters to binary data"""
+        buffer = bytearray()
+        buffer.append(self.pan)
+        buffer.append(self.dry)
+        buffer.append(self.chorus)
+        buffer.append(self.delay)
+        buffer.append(self.reverb)
+        return bytes(buffer)
+    
+    def clone(self):
+        """Create a copy of this mixer parameters object"""
+        instance = self.__class__(self.offset)
+        instance.pan = self.pan
+        instance.dry = self.dry
+        instance.chorus = self.chorus
+        instance.delay = self.delay
+        instance.reverb = self.reverb
+        return instance
+    
+    def as_dict(self):
+        """Convert mixer parameters to dictionary for serialization"""
+        return {
+            "pan": self.pan,
+            "dry": self.dry,
+            "chorus": self.chorus,
+            "delay": self.delay,
+            "reverb": self.reverb
+        }
+    
+    @classmethod
+    def from_dict(cls, data, offset=29):
+        """Create mixer parameters from a dictionary"""
+        instance = cls(offset)
+        
+        if "pan" in data:
+            instance.pan = data["pan"]
+        if "dry" in data:
+            instance.dry = data["dry"]
+        if "chorus" in data:
+            instance.chorus = data["chorus"]
+        if "delay" in data:
+            instance.delay = data["delay"]
+        if "reverb" in data:
+            instance.reverb = data["reverb"]
+            
+        return instance
+        
+    @classmethod
+    def from_prefixed_dict(cls, data, prefix="mixer_", offset=29):
+        """Create mixer parameters from a dict with prefixed keys (e.g., mixer_pan)"""
+        # Extract parameters with the prefix
+        params = {}
+        for key, value in data.items():
+            if key.startswith(prefix):
+                # Remove the prefix
+                clean_key = key[len(prefix):]
+                params[clean_key] = value
+                
+        return cls(offset, **params)
+
 class M8InstrumentBase:
     def __init__(self, **kwargs):
         # Create modulators using the instrument type
@@ -115,7 +209,11 @@ class M8InstrumentBase:
         # Add all instance variables except those starting with underscore
         for key, value in vars(self).items():
             if not key.startswith('_') and key != "modulators" and key != "type":
-                result[key] = value
+                if hasattr(value, 'as_dict') and callable(getattr(value, 'as_dict')):
+                    # If the attribute has an as_dict method, use it
+                    result[key] = value.as_dict()
+                else:
+                    result[key] = value
                 
         # Add modulators separately
         result["modulators"] = self.modulators.as_dict()
@@ -142,8 +240,14 @@ class M8InstrumentBase:
         
         # Set all parameters from dict
         for key, value in data.items():
-            if key != "modulators" and key != "__class__" and hasattr(instance, key):
-                setattr(instance, key, value)
+            if key != "modulators" and key != "__class__":
+                # Check if this is a nested object with a from_dict method
+                if hasattr(instance, key) and hasattr(getattr(instance, key), 'from_dict'):
+                    # Replace the object with one created from this dict
+                    obj = getattr(instance, key)
+                    setattr(instance, key, obj.__class__.from_dict(value, obj.offset if hasattr(obj, 'offset') else None))
+                elif hasattr(instance, key):
+                    setattr(instance, key, value)
         
         # Set modulators
         if "modulators" in data:
@@ -227,7 +331,12 @@ class M8Instruments(list):
         items = []
         for i, instr in enumerate(self):
             if not (isinstance(instr, M8Block) or instr.is_empty()):
-                item_dict = instr.as_dict() if hasattr(instr, 'as_dict') else {"__class__": "m8.M8Block"}
+                # Make sure we're calling as_dict if it exists
+                if hasattr(instr, 'as_dict') and callable(getattr(instr, 'as_dict')):
+                    item_dict = instr.as_dict()
+                else:
+                    item_dict = {"__class__": "m8.M8Block"}
+                
                 # Add index field to track position
                 item_dict["index"] = i
                 items.append(item_dict)
