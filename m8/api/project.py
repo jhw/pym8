@@ -1,5 +1,4 @@
-from m8 import M8Block
-from m8.api import M8IndexError
+from m8.api import M8IndexError, M8Block
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.metadata import M8Metadata

@@ -1,5 +1,4 @@
-from m8 import M8Block
-from m8.api import M8ValidationError, M8IndexError
+from m8.api import M8ValidationError, M8IndexError, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple 
 
 FX_BLOCK_SIZE = 2
