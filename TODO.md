@@ -1,8 +1,7 @@
 # short
 
-- macrosynth to delegate handling of base params to base class via super()
-- better way for macrosynth to override default parameters
-- could modulators be independent of synth?
+- move instrument _write_parameters
+- see if macrosynth default parameter handling could be moved to instrument base helper function
 
 # medium
 
@@ -10,6 +9,7 @@
 - refactor song row to render as an array
 
 - add hex formatting via json decoder/encoder
+- could modulators be independent of synth?
 
 - json enums rendering
 - m8i files
@@ -26,6 +26,7 @@
 
 # done
 
+- macrosynth to delegate handling of base params to base class via super()
 - xxx_params base class
 - move type/name/transpose/table_tick/volume/pitch to instrument base
 - move shape/timbre/color/degrade/redux to (macro) synth params

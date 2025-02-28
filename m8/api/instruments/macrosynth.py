@@ -53,57 +53,21 @@ class M8MacroSynth(M8InstrumentBase):
         # Call parent constructor to finish setup
         super().__init__(**kwargs)
     
-    def _init_default_parameters(self):
-        """Initialize MacroSynth-specific default parameter values"""
-        # Create parameter group objects with default values
-        self.synth = M8MacroSynthParams(offset=19)
-        self.filter = M8FilterParams(offset=24)
-        self.amp = M8AmpParams(offset=27)
-        self.mixer = M8MixerParams(offset=29)
-    
     def _read_parameters(self, data):
         """Read MacroSynth parameters from binary data"""
-        self.type = data[0]
-        self.name = data[1:14].decode('utf-8').rstrip('\0')
-        
-        # Split byte into transpose/eq
-        transpose_eq = data[14]
-        self.transpose, self.eq = split_byte(transpose_eq)
-        
-        self.table_tick = data[15]
-        self.volume = data[16]
-        self.pitch = data[17]
-        self.fine_tune = data[18]
+        # Read common parameters first
+        next_offset = self._read_common_parameters(data)
         
         # Read synth, filter, amp, and mixer parameters
-        self.synth = M8MacroSynthParams.read(data, offset=19)
+        self.synth = M8MacroSynthParams.read(data, offset=next_offset)  # next_offset should be 19
         self.filter = M8FilterParams.read(data, offset=24)
         self.amp = M8AmpParams.read(data, offset=27)
         self.mixer = M8MixerParams.read(data, offset=29)
-    
+
     def _write_parameters(self):
         """Write MacroSynth parameters to binary data"""
-        # Create output buffer
-        buffer = bytearray()
-        
-        # Type
-        buffer.append(self.type)
-        
-        # Name (padded to 13 bytes)
-        name_bytes = self.name.encode('utf-8')
-        name_bytes = name_bytes[:13]  # Truncate if too long
-        name_bytes = name_bytes + bytes([0] * (13 - len(name_bytes)))  # Pad with nulls
-        buffer.extend(name_bytes)
-        
-        # Transpose/EQ (combined into one byte)
-        transpose_eq = join_nibbles(self.transpose, self.eq)
-        buffer.append(transpose_eq)
-        
-        # Remaining fields
-        buffer.append(self.table_tick)
-        buffer.append(self.volume)
-        buffer.append(self.pitch)
-        buffer.append(self.fine_tune)
+        # Write common parameters first
+        buffer = bytearray(self._write_common_parameters())
         
         # Add synth, filter, amp, and mixer parameters
         buffer.extend(self.synth.write())

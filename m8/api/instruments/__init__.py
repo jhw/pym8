@@ -1,4 +1,4 @@
-from m8.api import M8Block, M8IndexError, load_class
+from m8.api import M8Block, M8IndexError, load_class, join_nibbles
 from m8.api.modulators import M8Modulators, create_default_modulators
 
 INSTRUMENT_TYPES = {
@@ -124,6 +124,7 @@ class M8MixerParams(M8ParamsBase):
     def __init__(self, offset=29, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
 
+
 class M8InstrumentBase:
     def __init__(self, **kwargs):
         # Common synthesizer parameters
@@ -163,6 +164,48 @@ class M8InstrumentBase:
                                               instrument_type=instance.type)
         
         return instance
+
+    def _read_common_parameters(self, data):
+        """Read common parameters shared by all instrument types"""
+        self.type = data[0]
+        self.name = data[1:14].decode('utf-8').rstrip('\0')
+        
+        # Split byte into transpose/eq
+        transpose_eq = data[14]
+        self.transpose, self.eq = split_byte(transpose_eq)
+        
+        self.table_tick = data[15]
+        self.volume = data[16]
+        self.pitch = data[17]
+        self.fine_tune = data[18]
+        
+        # Return the next offset for subclass-specific parameters
+        return 19
+
+    def _write_common_parameters(self):
+        """Write common parameters shared by all instrument types"""
+        buffer = bytearray()
+        
+        # Type
+        buffer.append(self.type)
+        
+        # Name (padded to 13 bytes)
+        name_bytes = self.name.encode('utf-8')
+        name_bytes = name_bytes[:13]  # Truncate if too long
+        name_bytes = name_bytes + bytes([0] * (13 - len(name_bytes)))  # Pad with nulls
+        buffer.extend(name_bytes)
+        
+        # Transpose/EQ (combined into one byte)
+        transpose_eq = join_nibbles(self.transpose, self.eq)
+        buffer.append(transpose_eq)
+        
+        # Remaining fields
+        buffer.append(self.table_tick)
+        buffer.append(self.volume)
+        buffer.append(self.pitch)
+        buffer.append(self.fine_tune)
+        
+        return buffer
 
     def _read_parameters(self, data):
         # This method should be implemented by subclasses
