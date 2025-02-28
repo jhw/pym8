@@ -17,7 +17,7 @@ class M8MacroSynthParams(M8ParamsBase):
 
 class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
-        # Set type before parent class init
+        # Set type before calling parent class init
         self.type = 0x01
         
         # Create parameter group objects with default values
@@ -54,22 +54,13 @@ class M8MacroSynth(M8InstrumentBase):
         super().__init__(**kwargs)
     
     def _init_default_parameters(self):
-        """Initialize default parameter values for MacroSynth"""
-        self.type = 0x01
-        self.name = " "
-        self.transpose = 0x4
-        self.eq = 0x1
-        self.table_tick = 0x01
-        self.volume = 0x0
-        self.pitch = 0x0
-        self.fine_tune = 0x80
-        
+        """Initialize MacroSynth-specific default parameter values"""
         # Create parameter group objects with default values
         self.synth = M8MacroSynthParams(offset=19)
         self.filter = M8FilterParams(offset=24)
         self.amp = M8AmpParams(offset=27)
         self.mixer = M8MixerParams(offset=29)
-        
+    
     def _read_parameters(self, data):
         """Read MacroSynth parameters from binary data"""
         self.type = data[0]

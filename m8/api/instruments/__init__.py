@@ -123,7 +123,7 @@ class M8MixerParams(M8ParamsBase):
     
     def __init__(self, offset=29, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
-    
+
 class M8InstrumentBase:
     def __init__(self, **kwargs):
         # Common synthesizer parameters
@@ -262,11 +262,11 @@ class M8InstrumentBase:
         instr_class = load_class(INSTRUMENT_TYPES[instr_type])
         instance = instr_class.__new__(instr_class)
         
-        # Set type explicitly 
+        # Set type explicitly before initialization
         instance.type = instr_type
         
-        # Initialize with default values specific to the instrument type
-        instance._init_default_parameters()
+        # Initialize with default values first
+        instance.__init__()  # This will call the actual constructor with no args
         
         # Set all parameters from dict
         for key, value in data.items():
@@ -283,17 +283,9 @@ class M8InstrumentBase:
         if "modulators" in data:
             instance.modulators = M8Modulators.from_dict(data["modulators"], 
                                                        instrument_type=instance.type)
-        else:
-            # Create default modulators
-            default_modulators = create_default_modulators(instance.type)
-            instance.modulators = M8Modulators(instrument_type=instance.type, items=default_modulators)
         
         return instance
-
-    def _init_default_parameters(self):
-        # This method should be implemented by subclasses to set default parameter values
-        raise NotImplementedError("Subclasses must implement _init_default_parameters")
-
+        
 class M8Instruments(list):
     def __init__(self, items=None):
         super().__init__()
