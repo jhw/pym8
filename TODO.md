@@ -1,11 +1,11 @@
 # short
 
-- missing modulators, fx indexes
-- 4 fx elements!
-- are lfos being serisalised correctly? (type 0 vs type 3)
-
 - rationalise imports
 - move utils/bits into api
+
+- modulators not showing index
+- type 3 lfos not being shown
+- empty modulators not being filtered out
 
 - add hex formatting via json decoder/encoder
 - refactor anything using to_dict() + items key as list

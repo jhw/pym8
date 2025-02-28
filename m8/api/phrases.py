@@ -88,14 +88,22 @@ class M8PhraseStep:
 
     def as_dict(self):
         """Convert phrase step to dictionary for serialization"""
+        # Get FX dictionaries with indexes
+        fx_with_indexes = []
+        for i, fx in enumerate(self.fx):
+            if not fx.is_empty():
+                fx_dict = fx.as_dict()
+                fx_dict["index"] = i
+                fx_with_indexes.append(fx_dict)
+    
         result = {
             "note": self.note,
             "velocity": self.velocity,
             "instrument": self.instrument,
-            "fx": [fx.as_dict() for fx in self.fx if not fx.is_empty()]
+            "fx": fx_with_indexes
         }
         return result
-        
+                
     @classmethod
     def from_dict(cls, data):
         """Create a phrase step from a dictionary"""
