@@ -80,13 +80,19 @@ class M8InstrumentBase:
 
     def as_dict(self):
         """Convert instrument to dictionary for serialization"""
+        # Filter out empty modulators
+        modulators_list = []
+        for mod in self.modulators:
+            # Include modulator if it has as_dict and is not empty
+            if hasattr(mod, "as_dict") and not (hasattr(mod, "is_empty") and mod.is_empty()):
+                modulators_list.append(mod.as_dict())
+    
         return {
             "type": self.synth_params.type,
             "synth_params": self.synth_params.as_dict(),
-            "modulators": [mod.as_dict() if hasattr(mod, "as_dict") else None 
-                           for mod in self.modulators]
+            "modulators": modulators_list
         }
-            
+                    
     @classmethod
     def from_dict(cls, data):
         """Create an instrument from a dictionary"""

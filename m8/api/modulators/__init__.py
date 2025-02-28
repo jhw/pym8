@@ -158,23 +158,20 @@ class M8Modulators(list):
                 mod_data = mod_data[:BLOCK_SIZE]
             result.extend(mod_data)
         return bytes(result)
-    
+
     def as_dict(self):
         """Convert modulators to dictionary for serialization"""
-        # Include all modulators with their indexes
+        # Only include non-empty modulators with their indexes
         items = []
         for i, mod in enumerate(self):
-            if hasattr(mod, "as_dict"):
+            if hasattr(mod, "as_dict") and not (hasattr(mod, "is_empty") and mod.is_empty()):
                 mod_dict = mod.as_dict()
                 # Add index field to track position
                 mod_dict["index"] = i
                 items.append(mod_dict)
-            else:
-                # For M8Block instances
-                items.append({"index": i, "data": []})
-        
+                
         return items
-    
+        
     @classmethod
     def from_dict(cls, data, instrument_type=0x01):
         """Create modulators from a dictionary."""

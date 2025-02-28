@@ -1,18 +1,18 @@
 # short
 
-- off modulators not being filtered out
 - modulators not showing index
+- type parameter being duplicated in instrument base and synth params
+- add hex formatting via json decoder/encoder
 
 # medium
 
-- add hex formatting via json decoder/encoder
 - refactor anything using to_dict() + items key as list
-- collapse instrument/instrument params distinction
+- collapse instrument/instrument params distinction?
 - refactor serialised song as matrix
-- base list class?
 
-- enum rendering support
+- json enums rendering
 - m8i files
+
 - toml file
 - testing
 
@@ -23,6 +23,7 @@
 
 # done
 
+- off modulators not being filtered out
 - type 3 lfo not being shown
 - move utils/bits into api
 - replace IndexError with M8IndexError
