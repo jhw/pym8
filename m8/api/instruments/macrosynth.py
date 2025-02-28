@@ -1,4 +1,3 @@
-from m8.api import split_byte, join_nibbles
 from m8.api.instruments import M8InstrumentBase, M8MixerParams, M8FilterParams, M8AmpParams, M8ParamsBase
 
 class M8MacroSynthParams(M8ParamsBase):
@@ -19,37 +18,24 @@ class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
         # Set type before calling parent class init
         self.type = 0x01
-        
-        # Create parameter group objects with default values
-        self.synth = M8MacroSynthParams(offset=19)
-        self.filter = M8FilterParams(offset=24)
-        self.amp = M8AmpParams(offset=27)
-        self.mixer = M8MixerParams(offset=29)
-        
-        # Handle synth-specific parameters directly
+    
+        # Extract prefixed parameters for each group
+        filter_kwargs = {k[7:]: v for k, v in kwargs.items() if k.startswith('filter_')}
+        amp_kwargs = {k[4:]: v for k, v in kwargs.items() if k.startswith('amp_')}
+        mixer_kwargs = {k[6:]: v for k, v in kwargs.items() if k.startswith('mixer_')}
+        synth_kwargs = {k[6:]: v for k, v in kwargs.items() if k.startswith('synth_')}
+    
+        # Also handle direct synth parameter references (like 'shape' instead of 'synth_shape')
         for key in ['shape', 'timbre', 'color', 'degrade', 'redux']:
             if key in kwargs:
-                setattr(self.synth, key, kwargs[key])
-        
-        # Now apply prefixed parameters to the appropriate groupings
-        filter_params = M8FilterParams.from_prefixed_dict(kwargs, prefix="filter_", offset=24)
-        amp_params = M8AmpParams.from_prefixed_dict(kwargs, prefix="amp_", offset=27)
-        mixer_params = M8MixerParams.from_prefixed_dict(kwargs, prefix="mixer_", offset=29)
-        synth_params = M8MacroSynthParams.from_prefixed_dict(kwargs, prefix="synth_", offset=19)
-        
-        # Assign the parameter groups
-        if any(k.startswith('filter_') for k in kwargs):
-            self.filter = filter_params
-        if any(k.startswith('amp_') for k in kwargs):
-            self.amp = amp_params
-        if any(k.startswith('mixer_') for k in kwargs):
-            self.mixer = mixer_params
-            
-        # Only update synth attributes that weren't directly set
-        for key in ['shape', 'timbre', 'color', 'degrade', 'redux']:
-            if key not in kwargs and any(k.startswith('synth_') for k in kwargs):
-                setattr(self.synth, key, getattr(synth_params, key))
-            
+                synth_kwargs[key] = kwargs[key]
+    
+        # Create parameter group objects with extracted kwargs
+        self.synth = M8MacroSynthParams(offset=19, **synth_kwargs)
+        self.filter = M8FilterParams(offset=24, **filter_kwargs)
+        self.amp = M8AmpParams(offset=27, **amp_kwargs)
+        self.mixer = M8MixerParams(offset=29, **mixer_kwargs)
+    
         # Call parent constructor to finish setup
         super().__init__(**kwargs)
     

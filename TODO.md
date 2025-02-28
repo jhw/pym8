@@ -1,18 +1,18 @@
 # short
 
-- see if macrosynth default parameter handling could be moved to instrument base helper function
+- modulators to be independent of synth
+- add back modulator index
+- add back modulator empty (off)
+- only render non- empty modulators
 
 # medium
 
 - refactor anything using to_dict() + items key as list
 - refactor song row to render as an array
-
 - add hex formatting via json decoder/encoder
-- could modulators be independent of synth?
-
-- json enums rendering
+- render version as string
+- json enum rendering
 - m8i files
-
 - toml file
 - testing
 
@@ -25,6 +25,7 @@
 
 # done
 
+- see if macrosynth default parameter handling could be moved to instrument base helper function
 - move instrument _write_parameters
 - macrosynth to delegate handling of base params to base class via super()
 - xxx_params base class

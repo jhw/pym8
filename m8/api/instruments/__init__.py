@@ -74,19 +74,6 @@ class M8ParamsBase:
             
         return instance
         
-    @classmethod
-    def from_prefixed_dict(cls, data, prefix="", offset=None):
-        """Create parameters from a dict with prefixed keys (e.g., filter_cutoff)"""
-        # Extract parameters with the prefix
-        params = {}
-        for key, value in data.items():
-            if key.startswith(prefix):
-                # Remove the prefix
-                clean_key = key[len(prefix):]
-                params[clean_key] = value
-                
-        return cls(offset=offset, **params)
-
 class M8FilterParams(M8ParamsBase):
     """Class to handle filter parameters shared by multiple instrument types."""
     
