@@ -1,6 +1,7 @@
 # short
 
 - move type/name/transpose/table_tick/volume/pitch to instrument base
+- xxx_params base class
 
 - refactor anything using to_dict() + items key as list
 - refactor song row to render as an array
@@ -8,8 +9,6 @@
 - add hex formatting via json decoder/encoder
 
 # medium
-
-- xxx_params base class
 
 - json enums rendering
 - m8i files
