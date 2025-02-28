@@ -1,16 +1,16 @@
 # short
 
+- type 3 lfo not being shown
+- off modulators not being filtered out
 - modulators not showing index
-- type 3 lfos not being shown
-- empty modulators not being filtered out
+
+# medium
 
 - add hex formatting via json decoder/encoder
 - refactor anything using to_dict() + items key as list
 - collapse instrument/instrument params distinction
-
-# medium
-
 - refactor serialised song as matrix
+- base list class?
 
 - enum rendering support
 - m8i files
