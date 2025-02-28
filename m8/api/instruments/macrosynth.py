@@ -1,9 +1,40 @@
 from m8.api import split_byte, join_nibbles
 from m8.api.instruments import M8InstrumentBase
 
-class M8MacroSynthParams:
+class M8MacroSynth(M8InstrumentBase):
     def __init__(self, **kwargs):
-        # Default field values
+        # Set type before parent class init
+        self.type = 0x01
+        
+        # MacroSynth specific parameters
+        self.name = " "
+        self.transpose = 0x4
+        self.eq = 0x1
+        self.table_tick = 0x01
+        self.volume = 0x0
+        self.pitch = 0x0
+        self.fine_tune = 0x80
+        self.shape = 0x0
+        self.timbre = 0x80
+        self.color = 0x80
+        self.degrade = 0x0
+        self.redux = 0x0
+        self.filter_type = 0x0
+        self.filter_cutoff = 0xFF
+        self.filter_resonance = 0x0
+        self.amp_level = 0x0
+        self.amp_limit = 0x0
+        self.mixer_pan = 0x80
+        self.mixer_dry = 0xC0
+        self.mixer_chorus = 0x0
+        self.mixer_delay = 0x0
+        self.mixer_reverb = 0x0
+        
+        # Call parent constructor to finish setup
+        super().__init__(**kwargs)
+    
+    def _init_default_parameters(self):
+        """Initialize default parameter values for MacroSynth"""
         self.type = 0x01
         self.name = " "
         self.transpose = 0x4
@@ -28,46 +59,37 @@ class M8MacroSynthParams:
         self.mixer_delay = 0x0
         self.mixer_reverb = 0x0
         
-        # Apply any provided kwargs
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-    
-    @classmethod
-    def read(cls, data):
-        instance = cls()
-        
-        # Read fields from data
-        instance.type = data[0]
-        instance.name = data[1:14].decode('utf-8').rstrip('\0')
+    def _read_parameters(self, data):
+        """Read MacroSynth parameters from binary data"""
+        self.type = data[0]
+        self.name = data[1:14].decode('utf-8').rstrip('\0')
         
         # Split byte into transpose/eq
         transpose_eq = data[14]
-        instance.transpose, instance.eq = split_byte(transpose_eq)
+        self.transpose, self.eq = split_byte(transpose_eq)
         
-        instance.table_tick = data[15]
-        instance.volume = data[16]
-        instance.pitch = data[17]
-        instance.fine_tune = data[18]
-        instance.shape = data[19]
-        instance.timbre = data[20]
-        instance.color = data[21]
-        instance.degrade = data[22]
-        instance.redux = data[23]
-        instance.filter_type = data[24]
-        instance.filter_cutoff = data[25]
-        instance.filter_resonance = data[26]
-        instance.amp_level = data[27]
-        instance.amp_limit = data[28]
-        instance.mixer_pan = data[29]
-        instance.mixer_dry = data[30]
-        instance.mixer_chorus = data[31]
-        instance.mixer_delay = data[32]
-        instance.mixer_reverb = data[33]
-        
-        return instance
+        self.table_tick = data[15]
+        self.volume = data[16]
+        self.pitch = data[17]
+        self.fine_tune = data[18]
+        self.shape = data[19]
+        self.timbre = data[20]
+        self.color = data[21]
+        self.degrade = data[22]
+        self.redux = data[23]
+        self.filter_type = data[24]
+        self.filter_cutoff = data[25]
+        self.filter_resonance = data[26]
+        self.amp_level = data[27]
+        self.amp_limit = data[28]
+        self.mixer_pan = data[29]
+        self.mixer_dry = data[30]
+        self.mixer_chorus = data[31]
+        self.mixer_delay = data[32]
+        self.mixer_reverb = data[33]
     
-    def write(self):
+    def _write_parameters(self):
+        """Write MacroSynth parameters to binary data"""
         # Create output buffer
         buffer = bytearray()
         
@@ -108,34 +130,17 @@ class M8MacroSynthParams:
         return bytes(buffer)
     
     def is_empty(self):
-        # Consider params empty if name is blank and key parameters are default
+        """Check if the MacroSynth instrument is empty"""
         return (self.name.strip() == "" and 
                 self.volume == 0x0 and 
                 self.shape == 0x0)
-    
-    def clone(self):
-        instance = self.__class__()
-        for key, value in vars(self).items():
-            setattr(instance, key, value)
-        return instance
-    
+
     def as_dict(self):
-        """Convert parameters to dictionary for serialization"""
-        return {
-            **{k: v for k, v in vars(self).items() if not k.startswith('_')}
-        }
-    
-    @classmethod
-    def from_dict(cls, data):
-        """Create parameters from a dictionary"""
-        instance = cls()
+        """Convert MacroSynth to dictionary for serialization"""
+        # Start with parent implementation
+        result = super().as_dict()
         
-        for key, value in data.items():
-            if hasattr(instance, key):
-                setattr(instance, key, value)
+        # No need to add any MacroSynth-specific fields since they're
+        # already included in the parent implementation via vars(self)
         
-        return instance
-    
-class M8MacroSynth(M8InstrumentBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        return result

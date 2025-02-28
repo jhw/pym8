@@ -7,66 +7,83 @@ INSTRUMENT_TYPES = {
 
 BLOCK_SIZE = 215
 BLOCK_COUNT = 128
-SYNTH_PARAMS_SIZE = 33
-MODULATORS_OFFSET = 63
-
-from m8.api import M8Block, M8IndexError, load_class
-from m8.api.modulators import M8Modulators, create_default_modulators
-
-INSTRUMENT_TYPES = {
-    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
-}
-
-BLOCK_SIZE = 215
-BLOCK_COUNT = 128
-SYNTH_PARAMS_SIZE = 33
 MODULATORS_OFFSET = 63
 
 class M8InstrumentBase:
     def __init__(self, **kwargs):
-        # Get params class path from instrument path (defaulting to MacroSynth)
-        params_path = f"{INSTRUMENT_TYPES[0x01]}Params"
-        params_class = load_class(params_path)
-        self.synth_params = params_class(**kwargs)
+        # Create modulators using the instrument type
+        default_modulators = create_default_modulators(self.type)
+        self.modulators = M8Modulators(instrument_type=self.type, items=default_modulators)
         
-        # Create modulators using the type from synth params
-        default_modulators = create_default_modulators(self.synth_params.type)
-        self.modulators = M8Modulators(instrument_type=self.synth_params.type, items=default_modulators)
+        # Apply any kwargs - specific to each instrument subclass
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
 
     @classmethod
     def read(cls, data):
-        # Get the type from the first byte and validate
+        # Get the instrument type and create the appropriate class
         instr_type = data[0]
         if instr_type not in INSTRUMENT_TYPES:
             raise ValueError(f"Unknown instrument type: {instr_type}")
             
-        # Create instance and load its params
-        instance = cls.__new__(cls)
-        params_path = f"{INSTRUMENT_TYPES[instr_type]}Params"
-        params_class = load_class(params_path)
-        instance.synth_params = params_class.read(data[:SYNTH_PARAMS_SIZE])
+        # Create the specific instrument class
+        instr_class = load_class(INSTRUMENT_TYPES[instr_type])
+        instance = instr_class.__new__(instr_class)
         
-        # Create modulators based on the loaded params
+        # Initialize instrument specific parameters
+        instance._read_parameters(data)
+        
+        # Read modulators
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:], 
-                                               instrument_type=instance.synth_params.type)
+                                              instrument_type=instance.type)
         
         return instance
 
+    def _read_parameters(self, data):
+        # This method should be implemented by subclasses
+        raise NotImplementedError("Subclasses must implement _read_parameters")
+    
+    def _write_parameters(self):
+        # This method should be implemented by subclasses
+        raise NotImplementedError("Subclasses must implement _write_parameters")
+
     def write(self):
+        # Write parameters specific to this instrument type
         buffer = bytearray()
-        buffer.extend(self.synth_params.write())
-        buffer.extend(bytes([0] * (MODULATORS_OFFSET - SYNTH_PARAMS_SIZE)))
+        buffer.extend(self._write_parameters())
+        
+        # Pad between parameters and modulators
+        padding_size = MODULATORS_OFFSET - len(buffer)
+        if padding_size > 0:
+            buffer.extend(bytes([0] * padding_size))
+            
+        # Write modulators
         buffer.extend(self.modulators.write())
+        
+        # Ensure the buffer is the correct size
+        if len(buffer) < BLOCK_SIZE:
+            buffer.extend(bytes([0] * (BLOCK_SIZE - len(buffer))))
+            
         return bytes(buffer)
 
     def is_empty(self):
-        # An instrument is considered empty if its synth params are empty
-        return self.synth_params.is_empty() if hasattr(self.synth_params, 'is_empty') else False
+        # This is a basic implementation that should be overridden by subclasses
+        # with instrument-specific logic
+        return self.name.strip() == ""
 
     def clone(self):
+        # Create a new instance of the same class
         instance = self.__class__.__new__(self.__class__)
-        instance.synth_params = self.synth_params.clone() if hasattr(self.synth_params, 'clone') else self.synth_params
-        instance.modulators = self.modulators.clone() if hasattr(self.modulators, 'clone') else self.modulators
+        
+        # Copy all attributes
+        for key, value in vars(self).items():
+            if key == "modulators":
+                # Clone modulators if they have a clone method
+                instance.modulators = self.modulators.clone() if hasattr(self.modulators, 'clone') else self.modulators
+            else:
+                setattr(instance, key, value)
+                
         return instance
 
     @property
@@ -92,32 +109,57 @@ class M8InstrumentBase:
 
     def as_dict(self):
         """Convert instrument to dictionary for serialization"""
-        return {
-            "synth_params": self.synth_params.as_dict(),
-            "modulators": self.modulators.as_dict()
-        }
+        # This is a base implementation that should be extended by subclasses
+        result = {"type": self.type}
+        
+        # Add all instance variables except those starting with underscore
+        for key, value in vars(self).items():
+            if not key.startswith('_') and key != "modulators" and key != "type":
+                result[key] = value
+                
+        # Add modulators separately
+        result["modulators"] = self.modulators.as_dict()
+        
+        return result
                     
     @classmethod
     def from_dict(cls, data):
         """Create an instrument from a dictionary"""
-        instance = cls.__new__(cls)
+        # Get the instrument type and create the appropriate class
+        instr_type = data.get("type", 0x01)  # Default to MacroSynth if missing
+        if instr_type not in INSTRUMENT_TYPES:
+            raise ValueError(f"Unknown instrument type: {instr_type}")
+            
+        # Create the specific instrument class
+        instr_class = load_class(INSTRUMENT_TYPES[instr_type])
+        instance = instr_class.__new__(instr_class)
         
-        if "synth_params" in data:
-            # Get type from synth_params dictionary
-            synth_params_dict = data["synth_params"]
-            instr_type = synth_params_dict.get("type", 0x01)  # Default to MacroSynth if missing
-            if instr_type in INSTRUMENT_TYPES:
-                params_path = f"{INSTRUMENT_TYPES[instr_type]}Params"
-                params_class = load_class(params_path)
-                instance.synth_params = params_class.from_dict(synth_params_dict)
-            else:
-                raise ValueError(f"Unknown instrument type: {instr_type}")
+        # Set type explicitly 
+        instance.type = instr_type
         
+        # Initialize with default values specific to the instrument type
+        instance._init_default_parameters()
+        
+        # Set all parameters from dict
+        for key, value in data.items():
+            if key != "modulators" and key != "__class__" and hasattr(instance, key):
+                setattr(instance, key, value)
+        
+        # Set modulators
         if "modulators" in data:
             instance.modulators = M8Modulators.from_dict(data["modulators"], 
-                                                       instrument_type=instance.synth_params.type)
+                                                       instrument_type=instance.type)
+        else:
+            # Create default modulators
+            default_modulators = create_default_modulators(instance.type)
+            instance.modulators = M8Modulators(instrument_type=instance.type, items=default_modulators)
         
         return instance
+
+    def _init_default_parameters(self):
+        # This method should be implemented by subclasses to set default parameter values
+        raise NotImplementedError("Subclasses must implement _init_default_parameters")
+
 
 class M8Instruments(list):
     def __init__(self, items=None):
@@ -144,9 +186,8 @@ class M8Instruments(list):
             # Check the instrument type byte
             instr_type = block_data[0]
             if instr_type in INSTRUMENT_TYPES:
-                # Create the specific instrument class
-                InstrClass = load_class(INSTRUMENT_TYPES[instr_type])
-                instance.append(InstrClass.read(block_data))
+                # Read using the base class read method which will dispatch to the right subclass
+                instance.append(M8InstrumentBase.read(block_data))
             else:
                 # Default to M8Block for unknown types or empty slots
                 instance.append(M8Block.read(block_data))

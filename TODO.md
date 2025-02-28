@@ -1,11 +1,13 @@
 # short
 
-- collapse instrument/instrument params distinction
-- refactor anything using to_dict() + items key as list
+- add mixer, amp, filter params
 
-# medium
+- refactor anything using to_dict() + items key as list
+- refactor song row to render as an array
 
 - add hex formatting via json decoder/encoder
+
+# medium
 
 - json enums rendering
 - m8i files
@@ -22,6 +24,7 @@
 
 # done
 
+- collapse instrument/instrument params distinction
 - type parameter being duplicated in instrument base and synth params
 - remove modulator is_empty() code
 - modulators not showing index
