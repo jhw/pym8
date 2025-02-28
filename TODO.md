@@ -1,6 +1,5 @@
 # short
 
-- replace IndexError with M8IndexError
 - move utils/bits into api
 
 - modulators not showing index
@@ -27,6 +26,7 @@
 
 # done
 
+- replace IndexError with M8IndexError
 - move M8Block into m8/api/__init__.py
 - rationalise imports
 - chains multi- list indexation
