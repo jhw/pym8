@@ -9,6 +9,8 @@
 
 # medium
 
+- xxx_params base class
+
 - json enums rendering
 - m8i files
 
