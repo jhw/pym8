@@ -2,8 +2,6 @@ from m8 import M8Block
 from m8.api import M8ValidationError, M8IndexError
 from m8.api.fx import M8FXTuples, M8FXTuple 
 
-import struct
-
 FX_BLOCK_SIZE = 2
 FX_BLOCK_COUNT = 3
 STEP_BLOCK_SIZE = 9

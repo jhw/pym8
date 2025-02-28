@@ -1,6 +1,5 @@
 # short
 
-- rationalise imports
 - move utils/bits into api
 
 - modulators not showing index
@@ -27,6 +26,7 @@
 
 # done
 
+- rationalise imports
 - chains multi- list indexation
 - filled_indices refs
 - fx indexation

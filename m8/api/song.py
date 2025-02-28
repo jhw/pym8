@@ -1,7 +1,5 @@
 from m8.api import M8ValidationError
 
-import struct
-
 COL_COUNT = 8
 ROW_COUNT = 255
 

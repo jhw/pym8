@@ -8,7 +8,6 @@ from m8.api.song import M8SongMatrix
 from m8.api.version import M8Version
 
 import json
-import struct
 
 # https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
 

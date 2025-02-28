@@ -1,6 +1,5 @@
 from m8 import M8Block
-from m8.api import M8IndexError, M8ValidationError, load_class
-# Import the function from modulators
+from m8.api import M8IndexError, load_class
 from m8.api.modulators import M8Modulators, create_default_modulators
 
 INSTRUMENT_TYPES = {
