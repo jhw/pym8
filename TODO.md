@@ -1,11 +1,11 @@
 # short
 
+- collapse instrument/instrument params distinction
 - refactor anything using to_dict() + items key as list
-- add hex formatting via json decoder/encoder
 
 # medium
 
-- collapse instrument/instrument params distinction?
+- add hex formatting via json decoder/encoder
 
 - json enums rendering
 - m8i files
