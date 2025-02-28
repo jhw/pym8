@@ -70,8 +70,3 @@ class M8MacroSynth(M8InstrumentBase):
                 self.volume == 0x0 and 
                 self.synth.shape == 0x0)
 
-    def as_dict(self):
-        """Convert MacroSynth to dictionary for serialization"""
-        # Use parent implementation, which now correctly handles
-        # nested objects with as_dict methods
-        return super().as_dict()
