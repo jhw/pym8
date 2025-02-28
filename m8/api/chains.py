@@ -204,8 +204,16 @@ class M8Chains(list):
     
     def as_dict(self):
         """Convert chains to dictionary for serialization"""
+        items = []
+        for i, chain in enumerate(self):
+            if not chain.is_empty():
+                chain_dict = chain.as_dict()
+                # Add index to track position
+                chain_dict["index"] = i
+                items.append(chain_dict)
+        
         return {
-            "items": [chain.as_dict() for chain in self if not chain.is_empty()]
+            "items": items
         }
     
     @classmethod
@@ -214,19 +222,18 @@ class M8Chains(list):
         instance = cls.__new__(cls)  # Create without __init__
         list.__init__(instance)  # Initialize list directly
         
-        # Create a dictionary to track which indices have been filled
-        filled_indices = set()
+        # Initialize full list with empty chains
+        for _ in range(CHAIN_COUNT):
+            instance.append(M8Chain())
         
         # Add chains from dict
         if "items" in data:
-            for i, chain_data in enumerate(data["items"]):
-                if i < CHAIN_COUNT:
-                    instance.append(M8Chain.from_dict(chain_data))
-                    filled_indices.add(i)
-        
-        # Fill remaining slots with empty chains
-        while len(instance) < CHAIN_COUNT:
-            instance.append(M8Chain())
+            for chain_data in data["items"]:
+                # Get index from data or default to 0
+                index = chain_data.get("index", 0)
+                if 0 <= index < CHAIN_COUNT:
+                    # Remove index field before passing to from_dict
+                    chain_dict = {k: v for k, v in chain_data.items() if k != "index"}
+                    instance[index] = M8Chain.from_dict(chain_dict)
         
         return instance
-    

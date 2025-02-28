@@ -263,24 +263,36 @@ class M8Phrases(list):
     
     def as_dict(self):
         """Convert phrases to dictionary for serialization"""
+        items = []
+        for i, phrase in enumerate(self):
+            if not phrase.is_empty():
+                phrase_dict = phrase.as_dict()
+                # Add index to track position
+                phrase_dict["index"] = i
+                items.append(phrase_dict)
+        
         return {
-            "items": [phrase.as_dict() for phrase in self if not phrase.is_empty()]
+            "items": items
         }
     
     @classmethod
     def from_dict(cls, data):
         """Create phrases from a dictionary"""
-        instance = cls()
+        instance = cls.__new__(cls)  # Create without __init__
+        list.__init__(instance)  # Initialize list directly
         
-        # Create a dictionary to track which indices have been filled
-        filled_indices = set()
+        # Initialize full list with empty phrases
+        for _ in range(PHRASE_COUNT):
+            instance.append(M8Phrase())
         
         # Add phrases from dict
         if "items" in data:
-            for i, phrase_data in enumerate(data["items"]):
-                if i < PHRASE_COUNT:
-                    instance[i] = M8Phrase.from_dict(phrase_data)
-                    filled_indices.add(i)
+            for phrase_data in data["items"]:
+                # Get index from data or default to 0
+                index = phrase_data.get("index", 0)
+                if 0 <= index < PHRASE_COUNT:
+                    # Remove index field before passing to from_dict
+                    phrase_dict = {k: v for k, v in phrase_data.items() if k != "index"}
+                    instance[index] = M8Phrase.from_dict(phrase_dict)
         
         return instance
-    

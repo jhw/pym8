@@ -51,6 +51,7 @@ class M8FXTuple:
             value=data.get("value", 0x0)
         )    
 
+
 class M8FXTuples(list):
     def __init__(self):
         super().__init__()
@@ -94,20 +95,37 @@ class M8FXTuples(list):
     
     def as_dict(self):
         """Convert FX tuples to dictionary for serialization"""
+        tuples = []
+        for i, fx_tuple in enumerate(self):
+            if not fx_tuple.is_empty():
+                tuple_dict = fx_tuple.as_dict()
+                # Add index to track position
+                tuple_dict["index"] = i
+                tuples.append(tuple_dict)
+        
         return {
-            "tuples": [fx_tuple.as_dict() for fx_tuple in self if not fx_tuple.is_empty()]
+            "tuples": tuples
         }
     
     @classmethod
     def from_dict(cls, data):
         """Create FX tuples from a dictionary"""
         instance = cls()
+        instance.clear()  # Clear default tuples
         
+        # Initialize with empty tuples
+        for _ in range(FX_BLOCK_COUNT):
+            instance.append(M8FXTuple())
+        
+        # Set tuples at their original positions
         if "tuples" in data:
-            for i, tuple_data in enumerate(data["tuples"]):
-                if i < FX_BLOCK_COUNT:
-                    instance[i] = M8FXTuple.from_dict(tuple_data)
+            for tuple_data in data["tuples"]:
+                # Get index from data or default to 0
+                index = tuple_data.get("index", 0)
+                if 0 <= index < FX_BLOCK_COUNT:
+                    # Remove index field before passing to from_dict
+                    tuple_dict = {k: v for k, v in tuple_data.items() if k != "index"}
+                    instance[index] = M8FXTuple.from_dict(tuple_dict)
         
         return instance
-    
 

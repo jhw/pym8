@@ -183,12 +183,13 @@ class M8Instruments(list):
     
     def as_dict(self):
         """Convert instruments to dictionary for serialization"""
-        # Only include non-empty instruments
+        # Only include non-empty instruments with their indexes
         items = []
         for i, instr in enumerate(self):
             if not (isinstance(instr, M8Block) or instr.is_empty()):
                 item_dict = instr.as_dict() if hasattr(instr, 'as_dict') else {"__class__": "m8.M8Block"}
-                # No index field
+                # Add index field to track position
+                item_dict["index"] = i
                 items.append(item_dict)
         
         return {
@@ -198,12 +199,21 @@ class M8Instruments(list):
     @classmethod
     def from_dict(cls, data):
         """Create instruments from a dictionary"""
-        instance = cls()
+        instance = cls.__new__(cls)
+        list.__init__(instance)
         
-        # Set instruments - simply append them in the order they appear
+        # Initialize with empty blocks
+        for _ in range(BLOCK_COUNT):
+            instance.append(M8Block())
+        
+        # Set instruments at their original positions
         if "items" in data:
-            for i, instr_data in enumerate(data["items"]):
-                # No index field to check, just add them in order
-                instance[i] = M8InstrumentBase.from_dict(instr_data)
+            for instr_data in data["items"]:
+                # Get index from data or default to 0
+                index = instr_data.get("index", 0)
+                if 0 <= index < BLOCK_COUNT:
+                    # Remove index field before passing to from_dict
+                    instr_dict = {k: v for k, v in instr_data.items() if k != "index"}
+                    instance[index] = M8InstrumentBase.from_dict(instr_dict)
         
         return instance

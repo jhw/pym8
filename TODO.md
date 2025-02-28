@@ -1,17 +1,23 @@
 # short
 
-- remove row indexation from song
-- remove filled_indices refs
+- chains multi- list indexation
+- filled_indices refs
+
+- missing modulators, fx indexes
+- 4 fx elements!
+- are lfos being serisalised correctly? (type 0 vs type 3)
+
+- rationalise imports
+- move utils/bits into api
+
+- add hex formatting via json decoder/encoder
 - refactor anything using to_dict() + items key as list
 - collapse instrument/instrument params distinction
-- add back indexation in conunction with is_empty()
-- add hex formatting via json decoder/encoder
 
 # medium
 
 - refactor serialised song as matrix
-- move utils/bits into api
-- rationalise imports
+
 - enum rendering support
 - m8i files
 - toml file
@@ -24,6 +30,8 @@
 
 # done
 
+- fx indexation
+- modulators indexation
 - consider adding back filter/amp/mixer classes
 - modulator abstraction into base classes
 - remove __class__ checks in instruments and modulators
