@@ -1,3 +1,5 @@
+# default class
+
 class M8Block:
     def __init__(self):
         self.data = bytearray()
@@ -28,13 +30,35 @@ class M8Block:
             instance.data = bytearray(data["data"])
         return instance
 
+# errors
+    
 class M8ValidationError(Exception):
     pass
 
 class M8IndexError(IndexError):
     pass
 
+# dynamic classes
+
 def load_class(class_path):
     module_name, class_name = class_path.rsplit('.', 1)
     module = __import__(module_name, fromlist=[class_name])
     return getattr(module, class_name)
+
+# bit twiddling
+
+def split_byte(byte):
+    upper = (byte >> 4) & 0x0F
+    lower = byte & 0x0F
+    return upper, lower
+
+def join_nibbles(upper, lower):
+    return ((upper & 0x0F) << 4) | (lower & 0x0F)
+
+def get_bits(value, start, length=1):
+    mask = (1 << length) - 1
+    return (value >> start) & mask
+
+def set_bits(value, bits, start, length=1):
+    mask = ((1 << length) - 1) << start
+    return (value & ~mask) | ((bits & ((1 << length) - 1)) << start)

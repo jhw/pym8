@@ -1,7 +1,5 @@
 # short
 
-- move utils/bits into api
-
 - modulators not showing index
 - type 3 lfos not being shown
 - empty modulators not being filtered out
@@ -26,6 +24,7 @@
 
 # done
 
+- move utils/bits into api
 - replace IndexError with M8IndexError
 - move M8Block into m8/api/__init__.py
 - rationalise imports

@@ -1,5 +1,4 @@
-from m8.api import M8Block, load_class
-from m8.utils.bits import split_byte, join_nibbles
+from m8.api import M8Block, load_class, split_byte, join_nibbles
 
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4

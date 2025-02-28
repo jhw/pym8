@@ -1,5 +1,5 @@
+from m8.api import split_byte, join_nibbles
 from m8.api.instruments import M8InstrumentBase
-from m8.utils.bits import split_byte, join_nibbles
 
 class M8MacroSynthParams:
     def __init__(self, **kwargs):

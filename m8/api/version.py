@@ -1,4 +1,4 @@
-from m8.utils.bits import split_byte, join_nibbles
+from m8.api import split_byte, join_nibbles
 
 class M8Version:
     def __init__(self, major=0, minor=0, patch=0):
