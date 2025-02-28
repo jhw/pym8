@@ -1,13 +1,11 @@
 # short
 
-- type parameter being duplicated in instrument base and synth params
+- refactor anything using to_dict() + items key as list
 - add hex formatting via json decoder/encoder
 
 # medium
 
-- refactor anything using to_dict() + items key as list
 - collapse instrument/instrument params distinction?
-- refactor serialised song as matrix
 
 - json enums rendering
 - m8i files
@@ -17,11 +15,14 @@
 
 # thoughts
 
+- refactor serialised song as matrix?
+  - no because there is no python matrix
 - refactor macrosynth as macro_synth?
 - transpose/eq/pitch/fine_tune synth parameters
 
 # done
 
+- type parameter being duplicated in instrument base and synth params
 - remove modulator is_empty() code
 - modulators not showing index
 - off modulators not being filtered out

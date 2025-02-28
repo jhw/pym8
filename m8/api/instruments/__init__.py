@@ -10,10 +10,22 @@ BLOCK_COUNT = 128
 SYNTH_PARAMS_SIZE = 33
 MODULATORS_OFFSET = 63
 
+from m8.api import M8Block, M8IndexError, load_class
+from m8.api.modulators import M8Modulators, create_default_modulators
+
+INSTRUMENT_TYPES = {
+    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
+}
+
+BLOCK_SIZE = 215
+BLOCK_COUNT = 128
+SYNTH_PARAMS_SIZE = 33
+MODULATORS_OFFSET = 63
+
 class M8InstrumentBase:
     def __init__(self, **kwargs):
-        # Get params class path from instrument path
-        params_path = f"{INSTRUMENT_TYPES[0x01]}Params"  # For now hardcoded to MacroSynth
+        # Get params class path from instrument path (defaulting to MacroSynth)
+        params_path = f"{INSTRUMENT_TYPES[0x01]}Params"
         params_class = load_class(params_path)
         self.synth_params = params_class(**kwargs)
         
@@ -81,7 +93,6 @@ class M8InstrumentBase:
     def as_dict(self):
         """Convert instrument to dictionary for serialization"""
         return {
-            "type": self.synth_params.type,
             "synth_params": self.synth_params.as_dict(),
             "modulators": self.modulators.as_dict()
         }
@@ -91,17 +102,118 @@ class M8InstrumentBase:
         """Create an instrument from a dictionary"""
         instance = cls.__new__(cls)
         
-        if "type" in data and "synth_params" in data:
-            instr_type = data["type"]
+        if "synth_params" in data:
+            # Get type from synth_params dictionary
+            synth_params_dict = data["synth_params"]
+            instr_type = synth_params_dict.get("type", 0x01)  # Default to MacroSynth if missing
             if instr_type in INSTRUMENT_TYPES:
                 params_path = f"{INSTRUMENT_TYPES[instr_type]}Params"
                 params_class = load_class(params_path)
-                instance.synth_params = params_class.from_dict(data["synth_params"])
+                instance.synth_params = params_class.from_dict(synth_params_dict)
+            else:
+                raise ValueError(f"Unknown instrument type: {instr_type}")
         
         if "modulators" in data:
-            instance.modulators = M8Modulators(instrument_type=instance.synth_params.type)
             instance.modulators = M8Modulators.from_dict(data["modulators"], 
                                                        instrument_type=instance.synth_params.type)
+        
+        return instance
+
+class M8Instruments(list):
+    def __init__(self, items=None):
+        super().__init__()
+        items = items or []
+        
+        # Fill with provided items
+        for item in items:
+            self.append(item)
+            
+        # Fill remaining slots with M8Block instances
+        while len(self) < BLOCK_COUNT:
+            self.append(M8Block())
+    
+    @classmethod
+    def read(cls, data):
+        instance = cls.__new__(cls)
+        list.__init__(instance)
+        
+        for i in range(BLOCK_COUNT):
+            start = i * BLOCK_SIZE
+            block_data = data[start:start + BLOCK_SIZE]
+            
+            # Check the instrument type byte
+            instr_type = block_data[0]
+            if instr_type in INSTRUMENT_TYPES:
+                # Create the specific instrument class
+                InstrClass = load_class(INSTRUMENT_TYPES[instr_type])
+                instance.append(InstrClass.read(block_data))
+            else:
+                # Default to M8Block for unknown types or empty slots
+                instance.append(M8Block.read(block_data))
+        
+        return instance
+    
+    def clone(self):
+        instance = self.__class__.__new__(self.__class__)
+        list.__init__(instance)
+        
+        for instr in self:
+            if hasattr(instr, 'clone'):
+                instance.append(instr.clone())
+            else:
+                instance.append(instr)
+        
+        return instance
+    
+    def is_empty(self):
+        return all(isinstance(instr, M8Block) or instr.is_empty() for instr in self)
+    
+    def write(self):
+        result = bytearray()
+        for instr in self:
+            instr_data = instr.write() if hasattr(instr, 'write') else bytes([0] * BLOCK_SIZE)
+            # Ensure each instrument occupies exactly BLOCK_SIZE bytes
+            if len(instr_data) < BLOCK_SIZE:
+                instr_data = instr_data + bytes([0x0] * (BLOCK_SIZE - len(instr_data)))
+            elif len(instr_data) > BLOCK_SIZE:
+                instr_data = instr_data[:BLOCK_SIZE]
+            result.extend(instr_data)
+        return bytes(result)
+    
+    def as_dict(self):
+        """Convert instruments to dictionary for serialization"""
+        # Only include non-empty instruments with their indexes
+        items = []
+        for i, instr in enumerate(self):
+            if not (isinstance(instr, M8Block) or instr.is_empty()):
+                item_dict = instr.as_dict() if hasattr(instr, 'as_dict') else {"__class__": "m8.M8Block"}
+                # Add index field to track position
+                item_dict["index"] = i
+                items.append(item_dict)
+        
+        return {
+            "items": items
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Create instruments from a dictionary"""
+        instance = cls.__new__(cls)
+        list.__init__(instance)
+        
+        # Initialize with empty blocks
+        for _ in range(BLOCK_COUNT):
+            instance.append(M8Block())
+        
+        # Set instruments at their original positions
+        if "items" in data:
+            for instr_data in data["items"]:
+                # Get index from data or default to 0
+                index = instr_data.get("index", 0)
+                if 0 <= index < BLOCK_COUNT:
+                    # Remove index field before passing to from_dict
+                    instr_dict = {k: v for k, v in instr_data.items() if k != "index"}
+                    instance[index] = M8InstrumentBase.from_dict(instr_dict)
         
         return instance
 
