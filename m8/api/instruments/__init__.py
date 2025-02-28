@@ -210,10 +210,19 @@ class M8InstrumentBase:
     def _read_parameters(self, data):
         # This method should be implemented by subclasses
         raise NotImplementedError("Subclasses must implement _read_parameters")
-    
+
     def _write_parameters(self):
-        # This method should be implemented by subclasses
-        raise NotImplementedError("Subclasses must implement _write_parameters")
+        """Write MacroSynth parameters to binary data"""
+        # Write common parameters first
+        buffer = bytearray(self._write_common_parameters())
+        
+        # Add synth, filter, amp, and mixer parameters
+        buffer.extend(self.synth.write())
+        buffer.extend(self.filter.write())
+        buffer.extend(self.amp.write())
+        buffer.extend(self.mixer.write())
+        
+        return bytes(buffer)
 
     def write(self):
         # Write parameters specific to this instrument type

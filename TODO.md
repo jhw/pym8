@@ -1,6 +1,5 @@
 # short
 
-- move instrument _write_parameters
 - see if macrosynth default parameter handling could be moved to instrument base helper function
 
 # medium
@@ -26,6 +25,7 @@
 
 # done
 
+- move instrument _write_parameters
 - macrosynth to delegate handling of base params to base class via super()
 - xxx_params base class
 - move type/name/transpose/table_tick/volume/pitch to instrument base

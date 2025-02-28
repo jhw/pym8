@@ -63,19 +63,6 @@ class M8MacroSynth(M8InstrumentBase):
         self.filter = M8FilterParams.read(data, offset=24)
         self.amp = M8AmpParams.read(data, offset=27)
         self.mixer = M8MixerParams.read(data, offset=29)
-
-    def _write_parameters(self):
-        """Write MacroSynth parameters to binary data"""
-        # Write common parameters first
-        buffer = bytearray(self._write_common_parameters())
-        
-        # Add synth, filter, amp, and mixer parameters
-        buffer.extend(self.synth.write())
-        buffer.extend(self.filter.write())
-        buffer.extend(self.amp.write())
-        buffer.extend(self.mixer.write())
-        
-        return bytes(buffer)
     
     def is_empty(self):
         """Check if the MacroSynth instrument is empty"""
