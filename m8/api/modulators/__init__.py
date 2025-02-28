@@ -23,8 +23,7 @@ class M8ModulatorBase:
     """Base class for all M8 modulators across instrument types."""
     
     def __init__(self, **kwargs):
-        # All modulators need type and destination
-        self.type = 0x0
+        # All modulators need destination and amount
         self.destination = 0x0
         self.amount = 0xFF
         

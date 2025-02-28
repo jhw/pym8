@@ -1,6 +1,5 @@
 # short
 
-- type 3 lfo not being shown
 - off modulators not being filtered out
 - modulators not showing index
 
@@ -24,6 +23,7 @@
 
 # done
 
+- type 3 lfo not being shown
 - move utils/bits into api
 - replace IndexError with M8IndexError
 - move M8Block into m8/api/__init__.py
