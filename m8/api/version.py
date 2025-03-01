@@ -6,6 +6,10 @@ class M8Version:
         self.minor = minor
         self.patch = patch
     
+    def __repr__(self):
+        """Return string representation of version"""
+        return f"{self.major}.{self.minor}.{self.patch}"
+    
     @classmethod
     def read(cls, data):
         instance = cls()
@@ -35,20 +39,20 @@ class M8Version:
     def clone(self):
         return M8Version(self.major, self.minor, self.patch)
     
-    def as_dict(self):
-        """Convert version to dictionary for serialization"""
-        return {
-            "major": self.major,
-            "minor": self.minor,
-            "patch": self.patch
-        }
-    
     @classmethod
-    def from_dict(cls, data):
-        """Create version from a dictionary"""
-        return cls(
-            major=data.get("major", 0),
-            minor=data.get("minor", 0),
-            patch=data.get("patch", 0)
-        )
-    
+    def from_str(cls, version_str):
+        """Create version from a string"""
+        if isinstance(version_str, str):
+            # Parse from string like "1.2.3"
+            parts = version_str.split('.')
+            try:
+                major = int(parts[0]) if len(parts) > 0 else 0
+                minor = int(parts[1]) if len(parts) > 1 else 0
+                patch = int(parts[2]) if len(parts) > 2 else 0
+                return cls(major=major, minor=minor, patch=patch)
+            except (ValueError, IndexError):
+                # If parsing fails, return default version
+                return cls()
+        else:
+            # Default for any other input
+            return cls()

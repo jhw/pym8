@@ -1,18 +1,18 @@
 # short
 
-- add hex formatting via json decoder/encoder
-- render version as string
-
 # medium
 
 - chains as list
 - phrases as list
 - instruments as list
 - modulators as list
+
 - song row as list
 
 - why isn't fx "tuples" key showing in serialisation?
 - fx (tuples) as list
+
+- add hex formatting via json decoder/encoder
 
 - refactor modulator enums
 - json enum rendering
@@ -30,6 +30,7 @@
 
 # done
 
+- render version as string
 - modulators to be independent of synth
 - add back modulator index
 - add back modulator empty (off)

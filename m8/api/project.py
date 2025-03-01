@@ -25,8 +25,6 @@ OFFSETS = {
     "eq": 0x1AD5A + 4
 }
 
-
-
 class M8Project:
     def __init__(self):
         self.version = M8Version()
@@ -148,7 +146,7 @@ class M8Project:
     def as_dict(self):
         """Convert project to dictionary for serialization"""
         return {
-            "version": self.version.as_dict(),
+            "version": str(self.version),
             "metadata": self.metadata.as_dict(),
             "song": self.song.as_dict(),
             "chains": self.chains.as_dict(),
@@ -163,7 +161,7 @@ class M8Project:
         
         # Deserialize version
         if "version" in data:
-            instance.version = M8Version.from_dict(data["version"])
+            instance.version = M8Version.from_str(data["version"])
             
         # Deserialize metadata
         if "metadata" in data:
