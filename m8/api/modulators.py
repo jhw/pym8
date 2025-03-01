@@ -248,8 +248,8 @@ class M8Modulators(list):
             result.extend(mod_data)
         return bytes(result)
 
-    def as_dict(self):
-        """Convert modulators to dictionary for serialization"""
+    def as_list(self):
+        """Convert modulators to list for serialization"""
         items = []
         for i, mod in enumerate(self):
             # Only include non-empty modulators
@@ -264,11 +264,11 @@ class M8Modulators(list):
                     "index": i
                 })
         
-        return {"items": items}
-        
+        return items
+            
     @classmethod
-    def from_dict(cls, data):
-        """Create modulators from a dictionary"""
+    def from_list(cls, items):
+        """Create modulators from a list"""
         instance = cls()
         instance.clear()
         
@@ -277,8 +277,8 @@ class M8Modulators(list):
             instance.append(M8Block())
         
         # Set items at their specified indexes
-        if "items" in data:
-            for mod_data in data["items"]:
+        if items:
+            for mod_data in items:
                 # Get index from data or default to 0
                 index = mod_data.get("index", 0)
                 if 0 <= index < BLOCK_COUNT:
@@ -293,7 +293,7 @@ class M8Modulators(list):
                         instance[index] = M8Block.from_dict(mod_dict)
         
         return instance
-
+    
 def create_default_modulators():
     """Create a list of default modulators"""
     result = []

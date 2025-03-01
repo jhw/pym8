@@ -1,14 +1,12 @@
 # short
 
-- modulators as list
-
-# medium
-
 - why isn't fx "tuples" key showing in serialisation?
 - fx (tuples) as list
 
-- refactor song row as index
+# medium
+
 - add hex formatting via json decoder/encoder
+
 - refactor modulator enums
 - json enum rendering
 
@@ -18,13 +16,12 @@
 
 # thoughts
 
-- refactor serialised song as matrix?
-  - no because there is no python matrix
-- refactor macrosynth as macro_synth?
-- transpose/eq/pitch/fine_tune synth parameters
+- transpose/eq/pitch/fine_tune synth parameters?
 
 # done
 
+- refactor song row as index
+- modulators as list
 - song row as list
 - instruments as list
 - chains as list

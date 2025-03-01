@@ -283,7 +283,7 @@ class M8InstrumentBase:
                     result[key] = value
                 
         # Add modulators separately
-        result["modulators"] = self.modulators.as_dict()
+        result["modulators"] = self.modulators.as_list()
         
         return result
 
@@ -318,7 +318,7 @@ class M8InstrumentBase:
     
         # Set modulators - no longer passing instrument_type
         if "modulators" in data:
-            instance.modulators = M8Modulators.from_dict(data["modulators"])
+            instance.modulators = M8Modulators.from_list(data["modulators"])
     
         return instance
 

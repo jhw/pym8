@@ -133,7 +133,7 @@ class M8SongMatrix(list):
         for i, row in enumerate(self):
             if not row.is_empty():
                 row_dict = row.as_dict()
-                row_dict["row"] = i
+                row_dict["index"] = i
                 result.append(row_dict)
         
         return result
@@ -146,7 +146,7 @@ class M8SongMatrix(list):
         # Set rows
         if items:
             for row_data in items:
-                row_idx = row_data.get("row", 0)
+                row_idx = row_data.get("index", 0)
                 if 0 <= row_idx < ROW_COUNT:
                     instance[row_idx] = M8SongRow.from_dict(row_data)
         
