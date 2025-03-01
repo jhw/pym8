@@ -51,6 +51,10 @@ class M8ModulatorBase:
             setattr(instance, key, value)
         return instance
     
+    def is_empty(self):
+        """Check if this modulator is empty (destination is 0)"""
+        return self.destination == 0x0
+    
     def as_dict(self):
         return {k: v for k, v in vars(self).items() if not k.startswith('_')}
     
@@ -123,8 +127,21 @@ class M8Modulators(list):
 
     def as_dict(self):
         """Convert modulators to dictionary for serialization"""
-        return [mod.as_dict() if hasattr(mod, "as_dict") else {"data": list(mod.data)} 
-                for mod in self]
+        items = []
+        for i, mod in enumerate(self):
+            # Only include non-empty modulators
+            if hasattr(mod, "is_empty") and not mod.is_empty():
+                mod_dict = mod.as_dict()
+                # Add index to track position
+                mod_dict["index"] = i
+                items.append(mod_dict)
+            elif isinstance(mod, M8Block) and not mod.is_empty():
+                items.append({
+                    "data": list(mod.data),
+                    "index": i
+                })
+        
+        return {"items": items}
         
     @classmethod
     def from_dict(cls, data, instrument_type=0x01):
@@ -132,25 +149,33 @@ class M8Modulators(list):
         instance = cls(instrument_type=instrument_type)
         instance.clear()
         
-        # Always expect exactly 4 modulators worth of data
-        for i in range(BLOCK_COUNT):
-            if i < len(data) and data[i]:
-                mod_data = data[i]
-                if "type" in mod_data and instrument_type in MODULATOR_TYPES:
-                    mod_type = mod_data["type"]
-                    if mod_type in MODULATOR_TYPES[instrument_type]:
-                        ModClass = load_class(MODULATOR_TYPES[instrument_type][mod_type])
-                        instance.append(ModClass.from_dict(mod_data))
-                    else:
-                        instance.append(M8Block.from_dict(mod_data))
-                else:
-                    instance.append(M8Block.from_dict(mod_data))
-            else:
-                instance.append(M8Block())
+        # Initialize with empty blocks
+        for _ in range(BLOCK_COUNT):
+            instance.append(M8Block())
+        
+        # Set items at their specified indexes
+        if "items" in data:
+            for mod_data in data["items"]:
+                # Get index from data or default to 0
+                index = mod_data.get("index", 0)
+                if 0 <= index < BLOCK_COUNT:
+                    # Remove index field before passing to from_dict
+                    mod_dict = {k: v for k, v in mod_data.items() if k != "index"}
+                    
+                    if "type" in mod_dict and instrument_type in MODULATOR_TYPES:
+                        mod_type = mod_dict["type"]
+                        if mod_type in MODULATOR_TYPES[instrument_type]:
+                            ModClass = load_class(MODULATOR_TYPES[instrument_type][mod_type])
+                            instance[index] = ModClass.from_dict(mod_dict)
+                        else:
+                            instance[index] = M8Block.from_dict(mod_dict)
+                    elif "data" in mod_dict:
+                        instance[index] = M8Block.from_dict(mod_dict)
         
         return instance
 
 def create_default_modulators(instrument_type):
+    """Create a list of default modulators for a given instrument type"""
     result = []
     if instrument_type not in MODULATOR_TYPES or instrument_type not in DEFAULT_MODULATOR_CONFIGS:
         return [M8Block() for _ in range(BLOCK_COUNT)]

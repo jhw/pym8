@@ -1,9 +1,6 @@
 # short
 
 - modulators to be independent of synth
-- add back modulator index
-- add back modulator empty (off)
-- only render non- empty modulators
 
 # medium
 
@@ -25,6 +22,9 @@
 
 # done
 
+- add back modulator index
+- add back modulator empty (off)
+- only render non- empty modulators
 - see if macrosynth default parameter handling could be moved to instrument base helper function
 - move instrument _write_parameters
 - macrosynth to delegate handling of base params to base class via super()
