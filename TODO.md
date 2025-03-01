@@ -8,17 +8,18 @@
 - chains as list
 - phrases as list
 - instruments as list
+- modulators as list
 - song row as list
 
-- check modulators as list
-- check fx as list
+- why isn't fx "tuples" key showing in serialisation?
+- fx (tuples) as list
 
 - refactor modulator enums
 - json enum rendering
 
 - m8i files
 - toml file
-- testing
+- tests
 
 # thoughts
 
