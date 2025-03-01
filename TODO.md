@@ -1,5 +1,8 @@
-# short
+# short [delegation]
 
+- M8Chain.as_dict() - directly iterates through its steps
+- M8ModulatorBase.as_dict() - directly accesses its attributes
+- M8InstrumentBase.as_dict() - mixed approach, directly accesses some attributes
 
 # medium
 
