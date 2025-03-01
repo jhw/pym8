@@ -163,7 +163,7 @@ class M8Chain(list):
                     instance[index] = M8ChainStep.from_dict(step_dict)
         
         return instance
-        
+
 class M8Chains(list):
     def __init__(self):
         super().__init__()
@@ -209,8 +209,8 @@ class M8Chains(list):
             except M8ValidationError as e:
                 raise M8ValidationError(f"Chain {chain_idx}: {str(e)}") from e
     
-    def as_dict(self):
-        """Convert chains to dictionary for serialization"""
+    def as_list(self):
+        """Convert chains to list for serialization"""
         items = []
         for i, chain in enumerate(self):
             if not chain.is_empty():
@@ -219,13 +219,11 @@ class M8Chains(list):
                 chain_dict["index"] = i
                 items.append(chain_dict)
         
-        return {
-            "items": items
-        }
+        return items
     
     @classmethod
-    def from_dict(cls, data):
-        """Create chains from a dictionary"""
+    def from_list(cls, items):
+        """Create chains from a list"""
         instance = cls.__new__(cls)  # Create without __init__
         list.__init__(instance)  # Initialize list directly
         
@@ -233,9 +231,9 @@ class M8Chains(list):
         for _ in range(CHAIN_COUNT):
             instance.append(M8Chain())
         
-        # Add chains from dict
-        if "items" in data:
-            for chain_data in data["items"]:
+        # Add chains from list
+        if items:
+            for chain_data in items:
                 # Get index from data or default to 0
                 index = chain_data.get("index", 0)
                 if 0 <= index < CHAIN_COUNT:

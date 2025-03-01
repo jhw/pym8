@@ -1,11 +1,11 @@
 # short
 
-# medium
-
 - chains as list
 - phrases as list
 - instruments as list
 - modulators as list
+
+# medium
 
 - song row as list
 
