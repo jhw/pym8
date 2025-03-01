@@ -1,7 +1,5 @@
 # short
 
-- chains as list
-- phrases as list
 - instruments as list
 - modulators as list
 
@@ -30,6 +28,8 @@
 
 # done
 
+- chains as list
+- phrases as list
 - render version as string
 - modulators to be independent of synth
 - add back modulator index

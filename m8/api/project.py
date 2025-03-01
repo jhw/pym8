@@ -150,7 +150,7 @@ class M8Project:
             "metadata": self.metadata.as_dict(),
             "song": self.song.as_dict(),
             "chains": self.chains.as_list(),
-            "phrases": self.phrases.as_dict(),
+            "phrases": self.phrases.as_list(),
             "instruments": self.instruments.as_dict()
         }
     
@@ -177,7 +177,7 @@ class M8Project:
             
         # Deserialize phrases
         if "phrases" in data:
-            instance.phrases = M8Phrases.from_dict(data["phrases"])
+            instance.phrases = M8Phrases.from_list(data["phrases"])
             
         # Deserialize instruments
         if "instruments" in data:
