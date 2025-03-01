@@ -85,22 +85,14 @@ class M8PhraseStep:
 
     def as_dict(self):
         """Convert phrase step to dictionary for serialization"""
-        # Get FX dictionaries with indexes
-        fx_with_indexes = []
-        for i, fx in enumerate(self.fx):
-            if not fx.is_empty():
-                fx_dict = fx.as_dict()
-                fx_dict["index"] = i
-                fx_with_indexes.append(fx_dict)
-    
         result = {
             "note": self.note,
             "velocity": self.velocity,
             "instrument": self.instrument,
-            "fx": fx_with_indexes
+            "fx": self.fx.as_list()  # Use the new as_list() method
         }
         return result
-                
+
     @classmethod
     def from_dict(cls, data):
         """Create a phrase step from a dictionary"""
@@ -109,14 +101,12 @@ class M8PhraseStep:
             velocity=data.get("velocity", 0xFF),
             instrument=data.get("instrument", 0xFF)
         )
-        
-        # Add FX
+    
+        # Deserialize FX using the FXTuples' from_list method
         if "fx" in data:
-            for i, fx_data in enumerate(data["fx"]):
-                if i < FX_BLOCK_COUNT:
-                    instance.fx[i] = M8FXTuple.from_dict(fx_data)
-        
-        return instance        
+            instance.fx = M8FXTuples.from_list(data["fx"])
+    
+        return instance
 
 class M8Phrase(list):
     def __init__(self):

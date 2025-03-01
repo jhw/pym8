@@ -1,7 +1,5 @@
 # short
 
-- why isn't fx "tuples" key showing in serialisation?
-- fx (tuples) as list
 
 # medium
 
@@ -20,6 +18,8 @@
 
 # done
 
+- why isn't fx "tuples" key showing in serialisation?
+- fx (tuples) as list
 - refactor song row as index
 - modulators as list
 - song row as list
