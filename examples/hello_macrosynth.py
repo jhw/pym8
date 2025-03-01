@@ -1,12 +1,13 @@
 from m8.api import M8ValidationError, M8IndexError
 from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.instruments.macrosynth import M8MacroSynth
-from m8.api.modulators.macrosynth import M8MacroSynthAHDEnvelope
+from m8.api.modulators import M8AHDEnvelope  # Updated import
 from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
 from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
-from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
+from m8.enums.instruments.macrosynth import M8MacroSynthShapes
+from m8.enums.modulators import M8ModDestinations  # Updated to generic enum
 from m8.enums.phrases import M8Notes
 from m8.enums.phrases.macrosynth import M8MacroSynthFX
 import os
@@ -22,7 +23,7 @@ try:
     
     # Create and configure macro synth instrument
     macro_synth = M8MacroSynth(
-        name="MY_SYNTH",  # Add
+        name="MY_SYNTH",
         mixer_delay=0xC0,
         mixer_chorus=0xC0,
         mixer_reverb=0x40,
@@ -38,15 +39,15 @@ try:
     instrument_idx = project.add_instrument(macro_synth)
     
     # Create and configure first AHD envelope modulator
-    ahd_mod1 = M8MacroSynthAHDEnvelope(
-        destination=M8MacroSynthModDestinations.VOLUME,
+    ahd_mod1 = M8AHDEnvelope(  # Using generic class
+        destination=M8ModDestinations.VOLUME,  # Using generic enum
         decay=0x40
     )
     macro_synth.set_modulator(ahd_mod1, slot=0)
     
     # Create and configure second AHD envelope modulator
-    ahd_mod2 = M8MacroSynthAHDEnvelope(
-        destination=M8MacroSynthModDestinations.FILTER_CUTOFF,
+    ahd_mod2 = M8AHDEnvelope(  # Using generic class
+        destination=M8ModDestinations.FILTER_CUTOFF,  # Using generic enum
         amount=0xA0,
         decay=0x40  # Same decay as first modulator
     )

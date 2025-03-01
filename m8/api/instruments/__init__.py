@@ -111,7 +111,6 @@ class M8MixerParams(M8ParamsBase):
     def __init__(self, offset=29, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
 
-
 class M8InstrumentBase:
     def __init__(self, **kwargs):
         # Common synthesizer parameters
@@ -123,9 +122,8 @@ class M8InstrumentBase:
         self.pitch = 0x0
         self.fine_tune = 0x80
         
-        # Create modulators using the instrument type
-        default_modulators = create_default_modulators(self.type)
-        self.modulators = M8Modulators(instrument_type=self.type, items=default_modulators)
+        # Create modulators
+        self.modulators = M8Modulators(items=create_default_modulators())
         
         # Apply any kwargs - specific to each instrument subclass
         for key, value in kwargs.items():
@@ -288,7 +286,7 @@ class M8InstrumentBase:
         result["modulators"] = self.modulators.as_dict()
         
         return result
-                    
+
     @classmethod
     def from_dict(cls, data):
         """Create an instrument from a dictionary"""
@@ -296,17 +294,17 @@ class M8InstrumentBase:
         instr_type = data.get("type", 0x01)  # Default to MacroSynth if missing
         if instr_type not in INSTRUMENT_TYPES:
             raise ValueError(f"Unknown instrument type: {instr_type}")
-            
+        
         # Create the specific instrument class
         instr_class = load_class(INSTRUMENT_TYPES[instr_type])
         instance = instr_class.__new__(instr_class)
-        
+    
         # Set type explicitly before initialization
         instance.type = instr_type
-        
+    
         # Initialize with default values first
         instance.__init__()  # This will call the actual constructor with no args
-        
+    
         # Set all parameters from dict
         for key, value in data.items():
             if key != "modulators" and key != "__class__":
@@ -317,14 +315,13 @@ class M8InstrumentBase:
                     setattr(instance, key, obj.__class__.from_dict(value, obj.offset if hasattr(obj, 'offset') else None))
                 elif hasattr(instance, key):
                     setattr(instance, key, value)
-        
-        # Set modulators
+    
+        # Set modulators - no longer passing instrument_type
         if "modulators" in data:
-            instance.modulators = M8Modulators.from_dict(data["modulators"], 
-                                                       instrument_type=instance.type)
-        
+            instance.modulators = M8Modulators.from_dict(data["modulators"])
+    
         return instance
-        
+    
 class M8Instruments(list):
     def __init__(self, items=None):
         super().__init__()

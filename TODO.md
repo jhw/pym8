@@ -1,11 +1,11 @@
 # short
 
-- modulators to be independent of synth
+- refactor modulator enums
+- refactor anything using to_dict() + items key as list
+- refactor song row to render as an array
 
 # medium
 
-- refactor anything using to_dict() + items key as list
-- refactor song row to render as an array
 - add hex formatting via json decoder/encoder
 - render version as string
 - json enum rendering
@@ -22,6 +22,7 @@
 
 # done
 
+- modulators to be independent of synth
 - add back modulator index
 - add back modulator empty (off)
 - only render non- empty modulators
