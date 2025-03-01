@@ -1,11 +1,10 @@
 # short
 
-- instruments as list
+- song row as list
+
 - modulators as list
 
 # medium
-
-- song row as list
 
 - why isn't fx "tuples" key showing in serialisation?
 - fx (tuples) as list
@@ -28,6 +27,7 @@
 
 # done
 
+- instruments as list
 - chains as list
 - phrases as list
 - render version as string

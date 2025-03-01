@@ -321,7 +321,7 @@ class M8InstrumentBase:
             instance.modulators = M8Modulators.from_dict(data["modulators"])
     
         return instance
-    
+
 class M8Instruments(list):
     def __init__(self, items=None):
         super().__init__()
@@ -382,8 +382,8 @@ class M8Instruments(list):
             result.extend(instr_data)
         return bytes(result)
     
-    def as_dict(self):
-        """Convert instruments to dictionary for serialization"""
+    def as_list(self):
+        """Convert instruments to list for serialization"""
         # Only include non-empty instruments with their indexes
         items = []
         for i, instr in enumerate(self):
@@ -398,13 +398,18 @@ class M8Instruments(list):
                 item_dict["index"] = i
                 items.append(item_dict)
         
+        return items
+    
+    # For backwards compatibility
+    def as_dict(self):
+        """Convert instruments to dictionary for serialization (legacy)"""
         return {
-            "items": items
+            "items": self.as_list()
         }
     
     @classmethod
-    def from_dict(cls, data):
-        """Create instruments from a dictionary"""
+    def from_list(cls, items):
+        """Create instruments from a list"""
         instance = cls.__new__(cls)
         list.__init__(instance)
         
@@ -413,8 +418,8 @@ class M8Instruments(list):
             instance.append(M8Block())
         
         # Set instruments at their original positions
-        if "items" in data:
-            for instr_data in data["items"]:
+        if items:
+            for instr_data in items:
                 # Get index from data or default to 0
                 index = instr_data.get("index", 0)
                 if 0 <= index < BLOCK_COUNT:
@@ -423,3 +428,4 @@ class M8Instruments(list):
                     instance[index] = M8InstrumentBase.from_dict(instr_dict)
         
         return instance
+    

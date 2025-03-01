@@ -151,7 +151,7 @@ class M8Project:
             "song": self.song.as_dict(),
             "chains": self.chains.as_list(),
             "phrases": self.phrases.as_list(),
-            "instruments": self.instruments.as_dict()
+            "instruments": self.instruments.as_list()
         }
     
     @classmethod
@@ -181,7 +181,7 @@ class M8Project:
             
         # Deserialize instruments
         if "instruments" in data:
-            instance.instruments = M8Instruments.from_dict(data["instruments"])
+            instance.instruments = M8Instruments.from_list(data["instruments"])
         
         return instance
         
