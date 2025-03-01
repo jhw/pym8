@@ -1,14 +1,21 @@
 # short
 
-- refactor modulator enums
-- refactor anything using to_dict() + items key as list
-- refactor song row to render as an array
+- add hex formatting via json decoder/encoder
+- render version as string
 
 # medium
 
-- add hex formatting via json decoder/encoder
-- render version as string
+- chains as list
+- phrases as list
+- instruments as list
+- song row as list
+
+- check modulators as list
+- check fx as list
+
+- refactor modulator enums
 - json enum rendering
+
 - m8i files
 - toml file
 - testing
