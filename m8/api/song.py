@@ -80,7 +80,7 @@ class M8SongRow:
                     instance[col] = chain
         
         return instance
-    
+
 class M8SongMatrix(list):
     def __init__(self):
         super().__init__()
@@ -126,28 +126,26 @@ class M8SongMatrix(list):
             except M8ValidationError as e:
                 raise M8ValidationError(f"Row {row_idx}: {str(e)}") from e
     
-    def as_dict(self):
-        """Convert song matrix to dictionary for serialization"""
+    def as_list(self):
+        """Convert song matrix to list for serialization"""
         # Only include non-empty rows
-        rows = []
+        result = []
         for i, row in enumerate(self):
             if not row.is_empty():
                 row_dict = row.as_dict()
                 row_dict["row"] = i
-                rows.append(row_dict)
+                result.append(row_dict)
         
-        return {
-            "rows": rows
-        }
+        return result
     
     @classmethod
-    def from_dict(cls, data):
-        """Create a song matrix from a dictionary"""
+    def from_list(cls, items):
+        """Create a song matrix from a list"""
         instance = cls()
         
         # Set rows
-        if "rows" in data:
-            for row_data in data["rows"]:
+        if items:
+            for row_data in items:
                 row_idx = row_data.get("row", 0)
                 if 0 <= row_idx < ROW_COUNT:
                     instance[row_idx] = M8SongRow.from_dict(row_data)

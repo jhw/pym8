@@ -400,13 +400,6 @@ class M8Instruments(list):
         
         return items
     
-    # For backwards compatibility
-    def as_dict(self):
-        """Convert instruments to dictionary for serialization (legacy)"""
-        return {
-            "items": self.as_list()
-        }
-    
     @classmethod
     def from_list(cls, items):
         """Create instruments from a list"""

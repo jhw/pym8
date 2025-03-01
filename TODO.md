@@ -1,7 +1,5 @@
 # short
 
-- song row as list
-
 - modulators as list
 
 # medium
@@ -9,8 +7,8 @@
 - why isn't fx "tuples" key showing in serialisation?
 - fx (tuples) as list
 
+- refactor song row as index
 - add hex formatting via json decoder/encoder
-
 - refactor modulator enums
 - json enum rendering
 
@@ -27,6 +25,7 @@
 
 # done
 
+- song row as list
 - instruments as list
 - chains as list
 - phrases as list

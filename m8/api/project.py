@@ -148,7 +148,7 @@ class M8Project:
         return {
             "version": str(self.version),
             "metadata": self.metadata.as_dict(),
-            "song": self.song.as_dict(),
+            "song": self.song.as_list(),
             "chains": self.chains.as_list(),
             "phrases": self.phrases.as_list(),
             "instruments": self.instruments.as_list()
@@ -169,7 +169,7 @@ class M8Project:
             
         # Deserialize song
         if "song" in data:
-            instance.song = M8SongMatrix.from_dict(data["song"])
+            instance.song = M8SongMatrix.from_list(data["song"])
             
         # Deserialize chains
         if "chains" in data:

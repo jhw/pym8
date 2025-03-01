@@ -294,14 +294,7 @@ class M8Phrases(list):
                 items.append(phrase_dict)
         
         return items
-    
-    # For backwards compatibility
-    def as_dict(self):
-        """Convert phrases to dictionary for serialization (legacy)"""
-        return {
-            "items": self.as_list()
-        }
-    
+        
     @classmethod
     def from_list(cls, items):
         """Create phrases from a list"""
