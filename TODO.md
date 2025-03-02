@@ -1,12 +1,10 @@
 # short
 
-- json helpers in m8/api/__init__.py
+- add hex formatting via json decoder/encoder
 
 # medium
 
 - default instrument names
-
-- add hex formatting via json decoder/encoder
 - consider json enum rendering
 
 - review exceptions thrown
@@ -22,6 +20,7 @@
 
 # done
 
+- json helpers in m8/api/__init__.py
 - modulators could be rationalised with structure similar to _param_defs in params
 - remove FX_ prefix from fx global variables
 - rationalise modulator enums

@@ -1,3 +1,13 @@
+import json
+
+# exceptions
+    
+class M8ValidationError(Exception):
+    pass
+
+class M8IndexError(IndexError):
+    pass
+
 # default class
 
 class M8Block:
@@ -30,14 +40,6 @@ class M8Block:
             instance.data = bytearray(data["data"])
         return instance
 
-# errors
-    
-class M8ValidationError(Exception):
-    pass
-
-class M8IndexError(IndexError):
-    pass
-
 # dynamic classes
 
 def load_class(class_path):
@@ -62,3 +64,11 @@ def get_bits(value, start, length=1):
 def set_bits(value, bits, start, length=1):
     mask = ((1 << length) - 1) << start
     return (value & ~mask) | ((bits & ((1 << length) - 1)) << start)
+
+# serialisation
+
+def json_dumps(obj, indent = 2):
+    return json.dumps(obj, indent = indent)
+
+def json_loads(json_str):
+    return json.loads(json_str)
