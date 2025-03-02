@@ -1,16 +1,8 @@
-# instruments
-
-- wavsynth
-- sampler
-- fmsynth
-- hypersynth
-
-# modulators
-
-- [remaining modulators]
-
-# features
+# aspects
 
 - tables
 - eq
-- midi mapping
+- midi
+
+- grooves
+- scales

@@ -1,25 +1,29 @@
 # short
 
-- add hex formatting via json decoder/encoder
+- remaining modulators
 
 # medium
 
-- default instrument names
-- consider json enum rendering
+- wavsynth
+- sampler
+- fmsynth
+- hypersynth
 
-- review exceptions thrown
-- ask for overall review
+- check exceptions thrown
+- default instrument names
 
 - m8i files
 - toml file
 
 # thoughts
 
+- json enum rendering?
 - tests?
 - transpose/eq/pitch/fine_tune synth parameters?
 
 # done
 
+- add hex formatting via json decoder/encoder
 - json helpers in m8/api/__init__.py
 - modulators could be rationalised with structure similar to _param_defs in params
 - remove FX_ prefix from fx global variables
