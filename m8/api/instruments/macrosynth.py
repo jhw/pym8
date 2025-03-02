@@ -1,5 +1,6 @@
 # m8/api/instruments/macrosynth.py
-from m8.api.instruments import M8InstrumentBase, M8ParamsBase
+from m8.api.instruments import M8InstrumentBase
+from m8.api.instruments.params import M8ParamsBase
 
 class M8MacroSynthParams(M8ParamsBase):
     """Class to handle MacroSynth-specific parameters."""

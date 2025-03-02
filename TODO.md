@@ -1,14 +1,14 @@
 # short
 
-- move params into params.py
+- hardcoded offsets
+
+- rationalise modulator enums
+- add hex formatting via json decoder/encoder
+- consider json enum rendering
 
 # medium
 
-- refactor modulator enums
-
-- add hex formatting via json decoder/encoder
 - why does second modulator have destination 3?
-- json enum rendering
 
 - m8i files
 - toml file
@@ -20,6 +20,7 @@
 
 # done
 
+- move params into params.py
 - abstract filter/amp/mixer params into instrument base
 - why isn't fx "tuples" key showing in serialisation?
 - fx (tuples) as list
