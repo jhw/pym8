@@ -2,8 +2,6 @@
 
 - json helpers in m8/api/__init__.py
 
-- modulators could be rationalised with structure similar to _param_defs in params
-
 # medium
 
 - default instrument names
@@ -24,6 +22,7 @@
 
 # done
 
+- modulators could be rationalised with structure similar to _param_defs in params
 - remove FX_ prefix from fx global variables
 - rationalise modulator enums
 - why does second modulator have destination 3?

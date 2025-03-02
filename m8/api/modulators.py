@@ -3,48 +3,90 @@ from m8.api import M8Block, load_class, split_byte, join_nibbles
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4
 
-# Map modulator types to their class paths - no longer instrument-specific
+# Map modulator types to their class paths
 MODULATOR_TYPES = {
     0x00: "m8.api.modulators.M8AHDEnvelope",
     0x01: "m8.api.modulators.M8ADSREnvelope",
     0x03: "m8.api.modulators.M8LFO"
 }
 
-# Default modulator configurations - no longer instrument-specific
+# Default modulator configurations
 DEFAULT_MODULATOR_CONFIGS = [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs
 
 class M8ModulatorBase:
-    """Base class for all M8 modulators."""
+    """Base class for all M8 modulators with param_defs support."""
+    
+    # Common fields shared by all modulator types
+    _common_defs = [
+        ("destination", 0x0),  # Common parameter: modulation destination
+        ("amount", 0xFF)       # Common parameter: modulation amount
+    ]
+    
+    # Specific fields to be defined in subclasses
+    _param_defs = []
     
     def __init__(self, **kwargs):
-        self.destination = 0x0
-        self.amount = 0xFF
+        # Set type for each modulator
+        self.type = self._get_type()
         
+        # Initialize parameters with defaults from _common_defs and subclass _param_defs
+        for name, default in self._common_defs + self._param_defs:
+            setattr(self, name, default)
+        
+        # Apply any provided kwargs
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
     
+    def _get_type(self):
+        """Get the modulator type. To be implemented by subclasses."""
+        raise NotImplementedError("Subclasses must implement _get_type()")
+    
     @classmethod
     def read(cls, data):
         instance = cls()
+        
         if len(data) > 0:
             type_dest = data[0]
             instance.type, instance.destination = split_byte(type_dest)
+            
+            # Read amount field
             if len(data) > 1:
                 instance.amount = data[1]
+            
+            # Read specific parameters for this modulator type
+            for i, (name, _) in enumerate(instance._param_defs, 2):  # Start at offset 2
+                if i < len(data):
+                    setattr(instance, name, data[i])
+        
         return instance
     
     def write(self):
         buffer = bytearray()
+        
+        # Write type/destination as combined byte
         type_dest = join_nibbles(self.type, self.destination)
         buffer.append(type_dest)
+        
+        # Write amount
         buffer.append(self.amount)
+        
+        # Write specific parameters
+        for name, _ in self._param_defs:
+            buffer.append(getattr(self, name))
+        
+        # Pad to ensure proper size if needed
+        while len(buffer) < BLOCK_SIZE:
+            buffer.append(0x0)
+        
         return bytes(buffer)
     
     def clone(self):
         instance = self.__class__()
-        for key, value in vars(self).items():
-            setattr(instance, key, value)
+        for name, _ in self._common_defs + self._param_defs:
+            setattr(instance, name, getattr(self, name))
+        # Also copy type explicitly
+        instance.type = self.type
         return instance
     
     def is_empty(self):
@@ -52,143 +94,57 @@ class M8ModulatorBase:
         return self.destination == 0x0
     
     def as_dict(self):
-        return {k: v for k, v in vars(self).items() if not k.startswith('_')}
+        result = {}
+        for name, _ in self._common_defs + self._param_defs:
+            result[name] = getattr(self, name)
+        # Also include type explicitly
+        result["type"] = self.type
+        return result
     
     @classmethod
     def from_dict(cls, data):
         instance = cls()
-        for key, value in data.items():
-            if hasattr(instance, key):
-                setattr(instance, key, value)
+        for name, _ in instance._common_defs + instance._param_defs:
+            if name in data:
+                setattr(instance, name, data[name])
+        # Also set type explicitly
+        if "type" in data:
+            instance.type = data["type"]
         return instance
 
 # Specific modulator implementations
 
 class M8AHDEnvelope(M8ModulatorBase):
-    def __init__(self, **kwargs):
-        # Default field values
-        self.type = 0x0
-        self.destination = 0x0
-        self.amount = 0xFF
-        self.attack = 0x0
-        self.hold = 0x0
-        self.decay = 0x80
-        
-        # Apply any provided kwargs
-        super().__init__(**kwargs)
+    _param_defs = [
+        ("attack", 0x0),
+        ("hold", 0x0),
+        ("decay", 0x80)
+    ]
     
-    @classmethod
-    def read(cls, data):
-        instance = super().read(data)
-        
-        # Read specific fields for AHD envelope
-        if len(data) > 2:
-            instance.attack = data[2]
-        if len(data) > 3:
-            instance.hold = data[3]
-        if len(data) > 4:
-            instance.decay = data[4]
-        
-        return instance
-    
-    def write(self):
-        # Get the common header (type/dest and amount)
-        buffer = bytearray(super().write())
-        
-        # Add AHD-specific fields
-        buffer.append(self.attack)
-        buffer.append(self.hold)
-        buffer.append(self.decay)
-        
-        # Pad to ensure proper size
-        while len(buffer) < 6:
-            buffer.append(0x0)
-        
-        return bytes(buffer)
+    def _get_type(self):
+        return 0x0  # AHD envelope type
 
 class M8ADSREnvelope(M8ModulatorBase):
-    def __init__(self, **kwargs):
-        # Default field values
-        self.type = 0x1
-        self.destination = 0x0
-        self.amount = 0xFF
-        self.attack = 0x0
-        self.decay = 0x80
-        self.sustain = 0x80
-        self.release = 0x80
-        
-        # Apply any provided kwargs
-        super().__init__(**kwargs)
+    _param_defs = [
+        ("attack", 0x0),
+        ("decay", 0x80),
+        ("sustain", 0x80),
+        ("release", 0x80)
+    ]
     
-    @classmethod
-    def read(cls, data):
-        instance = super().read(data)
-        
-        # Read specific fields for ADSR envelope
-        if len(data) > 2:
-            instance.attack = data[2]
-        if len(data) > 3:
-            instance.decay = data[3]
-        if len(data) > 4:
-            instance.sustain = data[4]
-        if len(data) > 5:
-            instance.release = data[5]
-        
-        return instance
-    
-    def write(self):
-        # Get the common header (type/dest and amount)
-        buffer = bytearray(super().write())
-        
-        # Add ADSR-specific fields
-        buffer.append(self.attack)
-        buffer.append(self.decay)
-        buffer.append(self.sustain)
-        buffer.append(self.release)
-        
-        return bytes(buffer)
+    def _get_type(self):
+        return 0x1  # ADSR envelope type
 
 class M8LFO(M8ModulatorBase):
-    def __init__(self, **kwargs):
-        # Default field values
-        self.type = 0x3
-        self.destination = 0x0
-        self.amount = 0xFF
-        self.shape = 0x0
-        self.trigger = 0x0
-        self.freq = 0x10
-        self.retrigger = 0x0
-        
-        # Apply any provided kwargs
-        super().__init__(**kwargs)
+    _param_defs = [
+        ("shape", 0x0),
+        ("trigger", 0x0),
+        ("freq", 0x10),
+        ("retrigger", 0x0)
+    ]
     
-    @classmethod
-    def read(cls, data):
-        instance = super().read(data)
-        
-        # Read specific fields for LFO
-        if len(data) > 2:
-            instance.shape = data[2]
-        if len(data) > 3:
-            instance.trigger = data[3]
-        if len(data) > 4:
-            instance.freq = data[4]
-        if len(data) > 5:
-            instance.retrigger = data[5]
-        
-        return instance
-    
-    def write(self):
-        # Get the common header (type/dest and amount)
-        buffer = bytearray(super().write())
-        
-        # Add LFO-specific fields
-        buffer.append(self.shape)
-        buffer.append(self.trigger)
-        buffer.append(self.freq)
-        buffer.append(self.retrigger)
-        
-        return bytes(buffer)
+    def _get_type(self):
+        return 0x3  # LFO type
 
 class M8Modulators(list):
     def __init__(self, items=None):
