@@ -1,4 +1,5 @@
-from m8.api import M8Block, M8IndexError, load_class, join_nibbles
+# m8/api/instruments/__init__.py
+from m8.api import M8Block, M8IndexError, load_class, join_nibbles, split_byte
 from m8.api.modulators import M8Modulators, create_default_modulators
 
 INSTRUMENT_TYPES = {
@@ -112,6 +113,11 @@ class M8MixerParams(M8ParamsBase):
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8InstrumentBase:
+    # Define offsets as class variables
+    FILTER_OFFSET = 24
+    AMP_OFFSET = 27
+    MIXER_OFFSET = 29
+    
     def __init__(self, **kwargs):
         # Common synthesizer parameters
         self.name = " "
@@ -122,10 +128,33 @@ class M8InstrumentBase:
         self.pitch = 0x0
         self.fine_tune = 0x80
         
+        # Initialize common parameter objects using class offsets
+        self.filter = M8FilterParams(offset=self.FILTER_OFFSET)
+        self.amp = M8AmpParams(offset=self.AMP_OFFSET)
+        self.mixer = M8MixerParams(offset=self.MIXER_OFFSET)
+        
         # Create modulators
         self.modulators = M8Modulators(items=create_default_modulators())
         
-        # Apply any kwargs - specific to each instrument subclass
+        # Extract prefixed parameters for each common group
+        filter_kwargs = {k[7:]: v for k, v in kwargs.items() if k.startswith('filter_')}
+        amp_kwargs = {k[4:]: v for k, v in kwargs.items() if k.startswith('amp_')}
+        mixer_kwargs = {k[6:]: v for k, v in kwargs.items() if k.startswith('mixer_')}
+        
+        # Apply extracted parameters to common objects
+        for key, value in filter_kwargs.items():
+            if hasattr(self.filter, key):
+                setattr(self.filter, key, value)
+        
+        for key, value in amp_kwargs.items():
+            if hasattr(self.amp, key):
+                setattr(self.amp, key, value)
+                
+        for key, value in mixer_kwargs.items():
+            if hasattr(self.mixer, key):
+                setattr(self.mixer, key, value)
+        
+        # Apply any remaining kwargs to base class attributes
         for key, value in kwargs.items():
             if hasattr(self, key) and not key.startswith('_') and key != "modulators" and key != "type":
                 setattr(self, key, value)
@@ -167,6 +196,23 @@ class M8InstrumentBase:
         # Return the next offset for subclass-specific parameters
         return 19
 
+    def _read_parameters(self, data):
+        """Read instrument parameters from binary data"""
+        # Read common parameters first
+        next_offset = self._read_common_parameters(data)
+        
+        # Read synth-specific parameters in subclass
+        self._read_specific_parameters(data, next_offset)
+        
+        # Read common filter, amp, mixer parameters
+        self.filter = M8FilterParams.read(data, offset=self.FILTER_OFFSET)
+        self.amp = M8AmpParams.read(data, offset=self.AMP_OFFSET)
+        self.mixer = M8MixerParams.read(data, offset=self.MIXER_OFFSET)
+    
+    def _read_specific_parameters(self, data, offset):
+        """To be implemented by subclasses to read instrument-specific parameters"""
+        pass
+
     def _write_common_parameters(self):
         """Write common parameters shared by all instrument types"""
         buffer = bytearray()
@@ -192,27 +238,20 @@ class M8InstrumentBase:
         
         return buffer
 
-    def _read_parameters(self, data):
-        # This method should be implemented by subclasses
-        raise NotImplementedError("Subclasses must implement _read_parameters")
-
-    def _write_parameters(self):
-        """Write MacroSynth parameters to binary data"""
-        # Write common parameters first
-        buffer = bytearray(self._write_common_parameters())
-        
-        # Add synth, filter, amp, and mixer parameters
-        buffer.extend(self.synth.write())
-        buffer.extend(self.filter.write())
-        buffer.extend(self.amp.write())
-        buffer.extend(self.mixer.write())
-        
-        return bytes(buffer)
-
     def write(self):
         # Write parameters specific to this instrument type
         buffer = bytearray()
-        buffer.extend(self._write_parameters())
+        
+        # Write common parameters
+        buffer.extend(self._write_common_parameters())
+        
+        # Write instrument-specific parameters
+        buffer.extend(self._write_specific_parameters())
+        
+        # Write common parameters
+        buffer.extend(self.filter.write())
+        buffer.extend(self.amp.write())
+        buffer.extend(self.mixer.write())
         
         # Pad between parameters and modulators
         padding_size = MODULATORS_OFFSET - len(buffer)
@@ -227,6 +266,10 @@ class M8InstrumentBase:
             buffer.extend(bytes([0] * (BLOCK_SIZE - len(buffer))))
             
         return bytes(buffer)
+    
+    def _write_specific_parameters(self):
+        """To be implemented by subclasses to write instrument-specific parameters"""
+        return bytearray()
 
     def is_empty(self):
         # This is a basic implementation that should be overridden by subclasses
@@ -421,4 +464,3 @@ class M8Instruments(list):
                     instance[index] = M8InstrumentBase.from_dict(instr_dict)
         
         return instance
-    

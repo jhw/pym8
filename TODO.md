@@ -1,14 +1,13 @@
-# short [delegation]
+# short
 
-- M8Chain.as_dict() - directly iterates through its steps
-- M8ModulatorBase.as_dict() - directly accesses its attributes
-- M8InstrumentBase.as_dict() - mixed approach, directly accesses some attributes
+- move params into params.py
 
 # medium
 
-- add hex formatting via json decoder/encoder
-
 - refactor modulator enums
+
+- add hex formatting via json decoder/encoder
+- why does second modulator have destination 3?
 - json enum rendering
 
 - m8i files
@@ -21,6 +20,7 @@
 
 # done
 
+- abstract filter/amp/mixer params into instrument base
 - why isn't fx "tuples" key showing in serialisation?
 - fx (tuples) as list
 - refactor song row as index
