@@ -72,7 +72,7 @@ class M8FilterParams(M8ParamsBase):
         ("resonance", 0x0)
     ]
     
-    def __init__(self, offset=24, **kwargs):
+    def __init__(self, offset, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8AmpParams(M8ParamsBase):
@@ -83,7 +83,7 @@ class M8AmpParams(M8ParamsBase):
         ("limit", 0x0)
     ]
     
-    def __init__(self, offset=27, **kwargs):
+    def __init__(self, offset, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8MixerParams(M8ParamsBase):
@@ -97,6 +97,6 @@ class M8MixerParams(M8ParamsBase):
         ("reverb", 0x0)
     ]
     
-    def __init__(self, offset=29, **kwargs):
+    def __init__(self, offset, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
 

@@ -1,8 +1,7 @@
 # short
 
-- hardcoded offsets
-
 - rationalise modulator enums
+
 - add hex formatting via json decoder/encoder
 - consider json enum rendering
 
@@ -20,6 +19,7 @@
 
 # done
 
+- hardcoded offsets
 - move params into params.py
 - abstract filter/amp/mixer params into instrument base
 - why isn't fx "tuples" key showing in serialisation?
