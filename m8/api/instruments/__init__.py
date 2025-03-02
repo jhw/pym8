@@ -9,13 +9,13 @@ INSTRUMENT_TYPES = {
 
 BLOCK_SIZE = 215
 BLOCK_COUNT = 128
-MODULATORS_OFFSET = 63
 
 class M8InstrumentBase:
     # Define offsets as class variables
     FILTER_OFFSET = 24
     AMP_OFFSET = 27
     MIXER_OFFSET = 29
+    MODULATORS_OFFSET = 63
     
     def __init__(self, **kwargs):
         # Common synthesizer parameters
@@ -73,7 +73,7 @@ class M8InstrumentBase:
         instance._read_parameters(data)
         
         # Read modulators
-        instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:], 
+        instance.modulators = M8Modulators.read(data[self.MODULATORS_OFFSET:], 
                                               instrument_type=instance.type)
         
         return instance
@@ -153,7 +153,7 @@ class M8InstrumentBase:
         buffer.extend(self.mixer.write())
         
         # Pad between parameters and modulators
-        padding_size = MODULATORS_OFFSET - len(buffer)
+        padding_size = self.MODULATORS_OFFSET - len(buffer)
         if padding_size > 0:
             buffer.extend(bytes([0] * padding_size))
             
@@ -165,10 +165,10 @@ class M8InstrumentBase:
             buffer.extend(bytes([0] * (BLOCK_SIZE - len(buffer))))
             
         return bytes(buffer)
-    
+
     def _write_specific_parameters(self):
-        """To be implemented by subclasses to write instrument-specific parameters"""
-        return bytearray()
+        """Write MacroSynth-specific parameters"""
+        return self.synth.write()
 
     def is_empty(self):
         # This is a basic implementation that should be overridden by subclasses

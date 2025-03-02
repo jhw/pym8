@@ -40,11 +40,7 @@ class M8MacroSynth(M8InstrumentBase):
     def _read_specific_parameters(self, data, offset):
         """Read MacroSynth-specific parameters"""
         self.synth = M8MacroSynthParams.read(data, offset=offset)
-    
-    def _write_specific_parameters(self):
-        """Write MacroSynth-specific parameters"""
-        return self.synth.write()
-    
+        
     def is_empty(self):
         """Check if the MacroSynth instrument is empty"""
         return (self.name.strip() == "" and 
