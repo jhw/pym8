@@ -6,8 +6,7 @@ from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
 from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
-from m8.enums.instruments.macrosynth import M8MacroSynthShapes
-from m8.enums.modulators import M8ModDestinations  # Updated to generic enum
+from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
 from m8.enums.phrases import M8Notes
 from m8.enums.phrases.macrosynth import M8MacroSynthFX
 import os
@@ -40,14 +39,14 @@ try:
     
     # Create and configure first AHD envelope modulator
     ahd_mod1 = M8AHDEnvelope(  # Using generic class
-        destination=M8ModDestinations.VOLUME,  # Using generic enum
+        destination=M8MacroSynthModDestinations.VOLUME,
         decay=0x40
     )
     macro_synth.set_modulator(ahd_mod1, slot=0)
     
     # Create and configure second AHD envelope modulator
     ahd_mod2 = M8AHDEnvelope(  # Using generic class
-        destination=M8ModDestinations.FILTER_CUTOFF,  # Using generic enum
+        destination=M8MacroSynthModDestinations.FILTER_CUTOFF,
         amount=0xA0,
         decay=0x40  # Same decay as first modulator
     )

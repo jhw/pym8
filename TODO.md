@@ -1,24 +1,22 @@
 # short
 
-- rationalise modulator enums
-
 - add hex formatting via json decoder/encoder
 - consider json enum rendering
 
 # medium
 
-- why does second modulator have destination 3?
-
 - m8i files
 - toml file
-- tests
 
 # thoughts
 
+- tests?
 - transpose/eq/pitch/fine_tune synth parameters?
 
 # done
 
+- rationalise modulator enums
+- why does second modulator have destination 3?
 - hardcoded offsets
 - move params into params.py
 - abstract filter/amp/mixer params into instrument base
