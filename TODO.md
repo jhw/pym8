@@ -1,9 +1,18 @@
 # short
 
+- json helpers in m8/api/__init__.py
+
+- modulators could be rationalised with structure similar to _param_defs in params
+
+# medium
+
+- default instrument names
+
 - add hex formatting via json decoder/encoder
 - consider json enum rendering
 
-# medium
+- review exceptions thrown
+- ask for overall review
 
 - m8i files
 - toml file
@@ -15,6 +24,7 @@
 
 # done
 
+- remove FX_ prefix from fx global variables
 - rationalise modulator enums
 - why does second modulator have destination 3?
 - hardcoded offsets

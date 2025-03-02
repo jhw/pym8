@@ -1,8 +1,8 @@
 import struct
 
 class M8Metadata:
-    def __init__(self, directory="/Songs/woldo/", transpose=0, tempo=120.0, 
-                 quantize=0, name="HELLO_MACRO", key=0):
+    def __init__(self, directory="/Songs/", transpose=0, tempo=120.0, 
+                 quantize=0, name="HELLO_WORLD", key=0):
         self.directory = directory
         self.transpose = transpose
         self.tempo = tempo

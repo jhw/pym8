@@ -9,6 +9,7 @@ from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
 from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
 from m8.enums.phrases import M8Notes
 from m8.enums.phrases.macrosynth import M8MacroSynthFX
+
 import os
 import random
 
