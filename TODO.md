@@ -1,6 +1,10 @@
 # short
 
 - remaining modulators
+- replace M8 index error with simple index error 
+- compare offsets with pre oxp-myb version 
+- test macro on M8
+- test macro on teensy
 
 # medium
 
@@ -23,6 +27,7 @@
 
 # done
 
+- change metadata defaults 
 - add hex formatting via json decoder/encoder
 - json helpers in m8/api/__init__.py
 - modulators could be rationalised with structure similar to _param_defs in params

@@ -2,7 +2,7 @@ import struct
 
 class M8Metadata:
     def __init__(self, directory="/Songs/", transpose=0, tempo=120.0, 
-                 quantize=0, name="HELLO_WORLD", key=0):
+                 quantize=0, name="HELLO", key=0):
         self.directory = directory
         self.transpose = transpose
         self.tempo = tempo
@@ -101,11 +101,11 @@ class M8Metadata:
     def from_dict(cls, data):
         """Create metadata from a dictionary"""
         return cls(
-            directory=data.get("directory", "/Songs/woldo/"),
+            directory=data.get("directory", "/Songs/"),
             transpose=data.get("transpose", 0),
             tempo=data.get("tempo", 120.0),
             quantize=data.get("quantize", 0),
-            name=data.get("name", "HELLO_MACRO"),
+            name=data.get("name", "HELLO"),
             key=data.get("key", 0)
         )
     
