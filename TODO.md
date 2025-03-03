@@ -2,6 +2,8 @@
 
 - fix duplication of synth params offsets
 
+- instruments don't seem to be rendering >> off by one
+
 # medium
 
 - wavsynth

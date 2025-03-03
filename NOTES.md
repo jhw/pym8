@@ -1,3 +1,7 @@
+### working macrosynth 03/03/25
+
+git checkout 76008cc97879424a028a6dd78cfef28326300cdc
+
 ### class names 27/02/25
 
 If def set_caller_module_decorator is not enabled we get the fllowing -
