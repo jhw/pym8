@@ -1,6 +1,17 @@
 from m8.api import split_byte, join_nibbles
 
 class M8Version:
+    # Define byte positions
+    MINOR_PATCH_OFFSET = 0
+    MAJOR_BYTE_OFFSET = 1
+    
+    # Define nibble positions within bytes
+    UPPER_NIBBLE_POS = 0  # Upper 4 bits
+    LOWER_NIBBLE_POS = 1  # Lower 4 bits
+    
+    # Define block size
+    BLOCK_SIZE = 2
+    
     def __init__(self, major=0, minor=0, patch=0):
         self.major = major
         self.minor = minor
@@ -13,13 +24,13 @@ class M8Version:
     @classmethod
     def read(cls, data):
         instance = cls()
-        if len(data) >= 2:
+        if len(data) >= cls.BLOCK_SIZE:
             # First byte contains minor and patch
-            minor_patch = data[0]
+            minor_patch = data[cls.MINOR_PATCH_OFFSET]
             instance.minor, instance.patch = split_byte(minor_patch)
             
             # Second byte contains major (in lower nibble)
-            major_byte = data[1]
+            major_byte = data[cls.MAJOR_BYTE_OFFSET]
             _, instance.major = split_byte(major_byte)
         
         return instance

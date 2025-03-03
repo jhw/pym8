@@ -1,5 +1,6 @@
 from m8.api import M8Block, load_class, split_byte, join_nibbles
 
+# Module-level constants
 BLOCK_SIZE = 6
 BLOCK_COUNT = 4
 
@@ -19,10 +20,24 @@ DEFAULT_MODULATOR_CONFIGS = [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs
 class M8ModulatorBase:
     """Base class for all M8 modulators with param_defs support."""
     
+    # Constants for byte offsets within a modulator block
+    TYPE_DEST_BYTE_OFFSET = 0
+    AMOUNT_OFFSET = 1
+    PARAM_START_OFFSET = 2
+    
+    # Bit positions for type and destination in the first byte
+    TYPE_NIBBLE_POS = 0  # Upper 4 bits
+    DEST_NIBBLE_POS = 1  # Lower 4 bits
+    
+    # Default values
+    DEFAULT_DESTINATION = 0x0
+    DEFAULT_AMOUNT = 0xFF
+    EMPTY_DESTINATION = 0x0
+    
     # Common fields shared by all modulator types
     _common_defs = [
-        ("destination", 0x0),  # Common parameter: modulation destination
-        ("amount", 0xFF)       # Common parameter: modulation amount
+        ("destination", DEFAULT_DESTINATION),  # Common parameter: modulation destination
+        ("amount", DEFAULT_AMOUNT)             # Common parameter: modulation amount
     ]
     
     # Specific fields to be defined in subclasses
@@ -50,15 +65,15 @@ class M8ModulatorBase:
         instance = cls()
         
         if len(data) > 0:
-            type_dest = data[0]
+            type_dest = data[cls.TYPE_DEST_BYTE_OFFSET]
             instance.type, instance.destination = split_byte(type_dest)
             
             # Read amount field
             if len(data) > 1:
-                instance.amount = data[1]
+                instance.amount = data[cls.AMOUNT_OFFSET]
             
             # Read specific parameters for this modulator type
-            for i, (name, _) in enumerate(instance._param_defs, 2):  # Start at offset 2
+            for i, (name, _) in enumerate(instance._param_defs, cls.PARAM_START_OFFSET):
                 if i < len(data):
                     setattr(instance, name, data[i])
         
@@ -94,7 +109,7 @@ class M8ModulatorBase:
     
     def is_empty(self):
         """Check if this modulator is empty (destination is 0)"""
-        return self.destination == 0x0
+        return self.destination == self.EMPTY_DESTINATION
     
     def as_dict(self):
         result = {}
@@ -118,66 +133,116 @@ class M8ModulatorBase:
 # Specific modulator implementations
 
 class M8AHDEnvelope(M8ModulatorBase):
+    # Constants for AHD envelope
+    TYPE_VALUE = 0x0
+    
+    # Default parameter values
+    DEFAULT_ATTACK = 0x0
+    DEFAULT_HOLD = 0x0
+    DEFAULT_DECAY = 0x80
+    
     _param_defs = [
-        ("attack", 0x0),
-        ("hold", 0x0),
-        ("decay", 0x80)
+        ("attack", DEFAULT_ATTACK),
+        ("hold", DEFAULT_HOLD),
+        ("decay", DEFAULT_DECAY)
     ]
     
     def _get_type(self):
-        return 0x0  # AHD envelope type
+        return self.TYPE_VALUE  # AHD envelope type
 
 class M8ADSREnvelope(M8ModulatorBase):
+    # Constants for ADSR envelope
+    TYPE_VALUE = 0x1
+    
+    # Default parameter values
+    DEFAULT_ATTACK = 0x0
+    DEFAULT_DECAY = 0x80
+    DEFAULT_SUSTAIN = 0x80
+    DEFAULT_RELEASE = 0x80
+    
     _param_defs = [
-        ("attack", 0x0),
-        ("decay", 0x80),
-        ("sustain", 0x80),
-        ("release", 0x80)
+        ("attack", DEFAULT_ATTACK),
+        ("decay", DEFAULT_DECAY),
+        ("sustain", DEFAULT_SUSTAIN),
+        ("release", DEFAULT_RELEASE)
     ]
     
     def _get_type(self):
-        return 0x1  # ADSR envelope type
+        return self.TYPE_VALUE  # ADSR envelope type
 
 class M8DrumEnvelope(M8ModulatorBase):
+    # Constants for Drum envelope
+    TYPE_VALUE = 0x2
+    
+    # Default parameter values
+    DEFAULT_PEAK = 0x0
+    DEFAULT_BODY = 0x10
+    DEFAULT_DECAY = 0x80
+    
     _param_defs = [
-        ("peak", 0x0),
-        ("body", 0x10),
-        ("decay", 0x80)
+        ("peak", DEFAULT_PEAK),
+        ("body", DEFAULT_BODY),
+        ("decay", DEFAULT_DECAY)
     ]
     
     def _get_type(self):
-        return 0x2  # Drum envelope type
+        return self.TYPE_VALUE  # Drum envelope type
     
 class M8LFO(M8ModulatorBase):
+    # Constants for LFO
+    TYPE_VALUE = 0x3
+    
+    # Default parameter values
+    DEFAULT_OSCILLATOR = 0x0
+    DEFAULT_TRIGGER = 0x0
+    DEFAULT_FREQUENCY = 0x10
+    
     _param_defs = [
-        ("oscillator", 0x0),
-        ("trigger", 0x0),
-        ("frequency", 0x10)
+        ("oscillator", DEFAULT_OSCILLATOR),
+        ("trigger", DEFAULT_TRIGGER),
+        ("frequency", DEFAULT_FREQUENCY)
     ]
     
     def _get_type(self):
-        return 0x3  # LFO type
+        return self.TYPE_VALUE  # LFO type
 
 class M8TriggerEnvelope(M8ModulatorBase):
+    # Constants for Trigger envelope
+    TYPE_VALUE = 0x4
+    
+    # Default parameter values
+    DEFAULT_ATTACK = 0x0
+    DEFAULT_HOLD = 0x0
+    DEFAULT_DECAY = 0x40
+    DEFAULT_SOURCE = 0x00
+    
     _param_defs = [
-        ("attack", 0x0),
-        ("hold", 0x0),
-        ("decay", 0x40),
-        ("source", 0x00)
+        ("attack", DEFAULT_ATTACK),
+        ("hold", DEFAULT_HOLD),
+        ("decay", DEFAULT_DECAY),
+        ("source", DEFAULT_SOURCE)
     ]
     
     def _get_type(self):
-        return 0x4  # Trigger envelope type
+        return self.TYPE_VALUE  # Trigger envelope type
 
 class M8TrackingEnvelope(M8ModulatorBase):
+    # Constants for Tracking envelope
+    TYPE_VALUE = 0x5
+    
+    # Default parameter values
+    DEFAULT_SOURCE = 0x0
+    DEFAULT_LOW_VALUE = 0x0
+    DEFAULT_HIGH_VALUE = 0x7F
+    
     _param_defs = [
-        ("source", 0x0),
-        ("low_value", 0x0),
-        ("high_value", 0x7F)
+        ("source", DEFAULT_SOURCE),
+        ("low_value", DEFAULT_LOW_VALUE),
+        ("high_value", DEFAULT_HIGH_VALUE)
     ]
     
     def _get_type(self):
-        return 0x5  # Tracking envelope type
+        return self.TYPE_VALUE  # Tracking envelope type
     
 class M8Modulators(list):
     def __init__(self, items=None):
@@ -203,7 +268,7 @@ class M8Modulators(list):
                 instance.append(M8Block())
                 continue
                 
-            first_byte = block_data[0]
+            first_byte = block_data[M8ModulatorBase.TYPE_DEST_BYTE_OFFSET]
             mod_type, _ = split_byte(first_byte)
             
             if mod_type in MODULATOR_TYPES:

@@ -1,6 +1,7 @@
 from m8.api import M8ValidationError, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple 
 
+# Module-level constants
 FX_BLOCK_COUNT = 3
 STEP_BLOCK_SIZE = 9
 STEP_COUNT = 16
@@ -8,7 +9,20 @@ PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
 PHRASE_COUNT = 255
 
 class M8PhraseStep:
-    def __init__(self, note=0xFF, velocity=0xFF, instrument=0xFF):
+    # Class-level constants
+    NOTE_OFFSET = 0
+    VELOCITY_OFFSET = 1
+    INSTRUMENT_OFFSET = 2
+    FX_OFFSET = 3
+    
+    BASE_DATA_SIZE = 3  # Size of the basic step data (note, velocity, instrument)
+    
+    # Values for empty steps
+    EMPTY_NOTE = 0xFF
+    EMPTY_VELOCITY = 0xFF
+    EMPTY_INSTRUMENT = 0xFF
+    
+    def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
         # Initialize base data
         self._data = bytearray([note, velocity, instrument])
         self.fx = M8FXTuples()
@@ -16,8 +30,8 @@ class M8PhraseStep:
     @classmethod
     def read(cls, data):
         instance = cls()
-        instance._data = bytearray(data[:3])
-        instance.fx = M8FXTuples.read(data[3:])
+        instance._data = bytearray(data[:cls.BASE_DATA_SIZE])
+        instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
         return instance
 
     def clone(self):
@@ -27,9 +41,9 @@ class M8PhraseStep:
         return instance
 
     def is_empty(self):
-        return (self.note == 0xFF and
-                self.velocity == 0xFF and
-                self.instrument == 0xFF and
+        return (self.note == self.EMPTY_NOTE and
+                self.velocity == self.EMPTY_VELOCITY and
+                self.instrument == self.EMPTY_INSTRUMENT and
                 self.fx.is_empty())
 
     def write(self):
@@ -39,27 +53,27 @@ class M8PhraseStep:
 
     @property
     def note(self):
-        return self._data[0]
+        return self._data[self.NOTE_OFFSET]
     
     @note.setter
     def note(self, value):
-        self._data[0] = value
+        self._data[self.NOTE_OFFSET] = value
     
     @property
     def velocity(self):
-        return self._data[1]
+        return self._data[self.VELOCITY_OFFSET]
     
     @velocity.setter
     def velocity(self, value):
-        self._data[1] = value
+        self._data[self.VELOCITY_OFFSET] = value
     
     @property
     def instrument(self):
-        return self._data[2]
+        return self._data[self.INSTRUMENT_OFFSET]
     
     @instrument.setter
     def instrument(self, value):
-        self._data[2] = value
+        self._data[self.INSTRUMENT_OFFSET] = value
 
     @property
     def available_slot(self):
@@ -96,9 +110,9 @@ class M8PhraseStep:
     def from_dict(cls, data):
         """Create a phrase step from a dictionary"""
         instance = cls(
-            note=data.get("note", 0xFF),
-            velocity=data.get("velocity", 0xFF),
-            instrument=data.get("instrument", 0xFF)
+            note=data.get("note", cls.EMPTY_NOTE),
+            velocity=data.get("velocity", cls.EMPTY_VELOCITY),
+            instrument=data.get("instrument", cls.EMPTY_INSTRUMENT)
         )
     
         # Deserialize FX using the FXTuples' from_list method
@@ -156,7 +170,7 @@ class M8Phrase(list):
     def validate_instruments(self, instruments):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
-                if step.instrument != 0xFF and (
+                if step.instrument != M8PhraseStep.EMPTY_INSTRUMENT and (
                     step.instrument >= len(instruments) or
                     isinstance(instruments[step.instrument], M8Block)
                 ):
@@ -305,4 +319,3 @@ class M8Phrases(list):
                     instance[index] = M8Phrase.from_dict(phrase_dict)
         
         return instance
-    

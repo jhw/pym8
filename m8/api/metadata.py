@@ -1,6 +1,20 @@
 import struct
 
 class M8Metadata:
+    # Define offsets and lengths as class variables
+    DIRECTORY_OFFSET = 0
+    DIRECTORY_LENGTH = 128
+    TRANSPOSE_OFFSET = 128
+    TEMPO_OFFSET = 129
+    TEMPO_SIZE = 4
+    QUANTIZE_OFFSET = 133
+    NAME_OFFSET = 134
+    NAME_LENGTH = 12
+    KEY_OFFSET = 146
+    
+    # Total size of metadata block
+    BLOCK_SIZE = 147
+
     def __init__(self, directory="/Songs/", transpose=0, tempo=120.0, 
                  quantize=0, name="HELLO", key=0):
         self.directory = directory
@@ -14,42 +28,42 @@ class M8Metadata:
     def read(cls, data):
         instance = cls()
         
-        # Directory (128 bytes, null-terminated string)
-        dir_bytes = data[:128]
+        # Directory (null-terminated string)
+        dir_bytes = data[cls.DIRECTORY_OFFSET:cls.DIRECTORY_OFFSET + cls.DIRECTORY_LENGTH]
         null_term_idx = dir_bytes.find(0)
         if null_term_idx != -1:
             dir_bytes = dir_bytes[:null_term_idx]
         instance.directory = dir_bytes.decode('utf-8', errors='replace')
         
         # Transpose (1 byte)
-        instance.transpose = data[128]
+        instance.transpose = data[cls.TRANSPOSE_OFFSET]
         
         # Tempo (4 bytes, float32)
-        instance.tempo = struct.unpack('<f', data[129:133])[0]
+        instance.tempo = struct.unpack('<f', data[cls.TEMPO_OFFSET:cls.TEMPO_OFFSET + cls.TEMPO_SIZE])[0]
         
         # Quantize (1 byte)
-        instance.quantize = data[133]
+        instance.quantize = data[cls.QUANTIZE_OFFSET]
         
-        # Name (12 bytes, null-terminated string)
-        name_bytes = data[134:146]
+        # Name (null-terminated string)
+        name_bytes = data[cls.NAME_OFFSET:cls.NAME_OFFSET + cls.NAME_LENGTH]
         null_term_idx = name_bytes.find(0)
         if null_term_idx != -1:
             name_bytes = name_bytes[:null_term_idx]
         instance.name = name_bytes.decode('utf-8', errors='replace')
         
         # Key (1 byte)
-        instance.key = data[146]
+        instance.key = data[cls.KEY_OFFSET]
         
         return instance
     
     def write(self):
         buffer = bytearray()
         
-        # Directory (128 bytes, null-terminated)
+        # Directory (null-terminated)
         dir_bytes = self.directory.encode('utf-8')
-        dir_bytes = dir_bytes[:127]  # Ensure it fits
+        dir_bytes = dir_bytes[:self.DIRECTORY_LENGTH - 1]  # Ensure it fits with null terminator
         buffer.extend(dir_bytes)
-        buffer.extend(bytes([0] * (128 - len(dir_bytes))))  # Pad with nulls
+        buffer.extend(bytes([0] * (self.DIRECTORY_LENGTH - len(dir_bytes))))  # Pad with nulls
         
         # Transpose (1 byte)
         buffer.append(self.transpose)
@@ -60,16 +74,17 @@ class M8Metadata:
         # Quantize (1 byte)
         buffer.append(self.quantize)
         
-        # Name (12 bytes, null-terminated)
+        # Name (null-terminated)
         name_bytes = self.name.encode('utf-8')
-        name_bytes = name_bytes[:11]  # Ensure it fits
+        name_bytes = name_bytes[:self.NAME_LENGTH - 1]  # Ensure it fits with null terminator
         buffer.extend(name_bytes)
-        buffer.extend(bytes([0] * (12 - len(name_bytes))))  # Pad with nulls
+        buffer.extend(bytes([0] * (self.NAME_LENGTH - len(name_bytes))))  # Pad with nulls
         
         # Key (1 byte)
         buffer.append(self.key)
         
-        # The total size should be 147 bytes
+        # The total size should be BLOCK_SIZE bytes
+        assert len(buffer) == self.BLOCK_SIZE, f"Buffer size mismatch: {len(buffer)} != {self.BLOCK_SIZE}"
         return bytes(buffer)
     
     def is_empty(self):
@@ -108,4 +123,3 @@ class M8Metadata:
             name=data.get("name", "HELLO"),
             key=data.get("key", 0)
         )
-    

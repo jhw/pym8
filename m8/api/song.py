@@ -1,11 +1,15 @@
 from m8.api import M8ValidationError
 
+# Module-level constants
 COL_COUNT = 8
 ROW_COUNT = 255
 
 class M8SongRow:
+    # Class-level constants
+    EMPTY_CHAIN = 0xFF
+    
     def __init__(self, **kwargs):
-        self._data = bytearray([0xFF] * COL_COUNT)
+        self._data = bytearray([self.EMPTY_CHAIN] * COL_COUNT)
         
         # Set any values provided in kwargs
         for col, chain in kwargs.items():
@@ -26,7 +30,7 @@ class M8SongRow:
         return instance
     
     def is_empty(self):
-        return all(chain == 0xFF for chain in self._data)
+        return all(chain == self.EMPTY_CHAIN for chain in self._data)
     
     def __getitem__(self, index):
         if not (0 <= index < COL_COUNT):
@@ -45,7 +49,7 @@ class M8SongRow:
         if not self.is_empty():
             for col_idx in range(COL_COUNT):
                 chain_idx = self[col_idx]
-                if chain_idx != 0xFF and (
+                if chain_idx != self.EMPTY_CHAIN and (
                     chain_idx >= len(chains) or 
                     chains[chain_idx].is_empty()
                 ):
@@ -59,7 +63,7 @@ class M8SongRow:
         # Only include non-blank chain references
         chains = []
         for i in range(COL_COUNT):
-            if self[i] != 0xFF:
+            if self[i] != self.EMPTY_CHAIN:
                 chains.append({"col": i, "chain": self[i]})
         
         return {
@@ -75,7 +79,7 @@ class M8SongRow:
         if "chains" in data:
             for chain_ref in data["chains"]:
                 col = chain_ref.get("col", 0)
-                chain = chain_ref.get("chain", 0xFF)
+                chain = chain_ref.get("chain", cls.EMPTY_CHAIN)
                 if 0 <= col < COL_COUNT:
                     instance[col] = chain
         
@@ -151,4 +155,3 @@ class M8SongMatrix(list):
                     instance[row_idx] = M8SongRow.from_dict(row_data)
         
         return instance
-    

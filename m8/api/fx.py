@@ -1,10 +1,17 @@
 from m8.api import M8ValidationError
 
+# Module-level constants
 BLOCK_SIZE = 2
 BLOCK_COUNT = 3
 
 class M8FXTuple:
-    def __init__(self, key=0xFF, value=0x0):
+    # Class-level constants
+    KEY_OFFSET = 0
+    VALUE_OFFSET = 1
+    EMPTY_KEY = 0xFF
+    DEFAULT_VALUE = 0x0
+    
+    def __init__(self, key=EMPTY_KEY, value=DEFAULT_VALUE):
         self._data = bytearray([key, value])
     
     @classmethod
@@ -17,23 +24,23 @@ class M8FXTuple:
         return bytes(self._data)
     
     def is_empty(self):
-        return self.key == 0xFF
+        return self.key == self.EMPTY_KEY
     
     @property
     def key(self):
-        return self._data[0]
+        return self._data[self.KEY_OFFSET]
     
     @key.setter
     def key(self, value):
-        self._data[0] = value
+        self._data[self.KEY_OFFSET] = value
     
     @property
     def value(self):
-        return self._data[1]
+        return self._data[self.VALUE_OFFSET]
     
     @value.setter
     def value(self, value):
-        self._data[1] = value
+        self._data[self.VALUE_OFFSET] = value
     
     def as_dict(self):
         """Convert FX tuple to dictionary for serialization"""
@@ -46,8 +53,8 @@ class M8FXTuple:
     def from_dict(cls, data):
         """Create an FX tuple from a dictionary"""
         return cls(
-            key=data.get("key", 0xFF),
-            value=data.get("value", 0x0)
+            key=data.get("key", cls.EMPTY_KEY),
+            value=data.get("value", cls.DEFAULT_VALUE)
         )    
 
 
@@ -125,4 +132,3 @@ class M8FXTuples(list):
                     instance[index] = M8FXTuple.from_dict(tuple_dict)
         
         return instance
-    

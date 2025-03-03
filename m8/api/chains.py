@@ -1,12 +1,19 @@
 from m8.api import M8ValidationError
 
+# Module-level constants for block sizes and counts
 STEP_BLOCK_SIZE = 2
 STEP_COUNT = 16
 CHAIN_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
 CHAIN_COUNT = 255
 
 class M8ChainStep:
-    def __init__(self, phrase=0xFF, transpose=0x0):
+    # Class-level constants for offsets and empty values
+    PHRASE_OFFSET = 0
+    TRANSPOSE_OFFSET = 1
+    EMPTY_PHRASE = 0xFF
+    DEFAULT_TRANSPOSE = 0x0
+    
+    def __init__(self, phrase=EMPTY_PHRASE, transpose=DEFAULT_TRANSPOSE):
         # Initialize _data first
         self._data = bytearray([phrase, transpose])
         # No need to set properties, data is already initialized
@@ -21,23 +28,23 @@ class M8ChainStep:
         return bytes(self._data)
     
     def is_empty(self):
-        return self.phrase == 0xFF
+        return self.phrase == self.EMPTY_PHRASE
     
     @property
     def phrase(self):
-        return self._data[0]
+        return self._data[self.PHRASE_OFFSET]
     
     @phrase.setter
     def phrase(self, value):
-        self._data[0] = value
+        self._data[self.PHRASE_OFFSET] = value
     
     @property
     def transpose(self):
-        return self._data[1]
+        return self._data[self.TRANSPOSE_OFFSET]
     
     @transpose.setter
     def transpose(self, value):
-        self._data[1] = value
+        self._data[self.TRANSPOSE_OFFSET] = value
     
     def as_dict(self):
         """Convert chain step to dictionary for serialization"""
@@ -50,8 +57,8 @@ class M8ChainStep:
     def from_dict(cls, data):
         """Create a chain step from a dictionary"""
         return cls(
-            phrase=data.get("phrase", 0xFF),
-            transpose=data.get("transpose", 0x0)
+            phrase=data.get("phrase", cls.EMPTY_PHRASE),
+            transpose=data.get("transpose", cls.DEFAULT_TRANSPOSE)
         )
 
 class M8Chain(list):
@@ -98,7 +105,7 @@ class M8Chain(list):
     def validate_phrases(self, phrases):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
-                if step.phrase != 0xFF and (
+                if step.phrase != M8ChainStep.EMPTY_PHRASE and (
                     step.phrase >= len(phrases) or 
                     phrases[step.phrase].is_empty()
                 ):
@@ -110,7 +117,7 @@ class M8Chain(list):
     @property
     def available_step_slot(self):
         for slot_idx, step in enumerate(self):
-            if step.phrase == 0xFF:  # Empty step has 0xFF phrase
+            if step.phrase == M8ChainStep.EMPTY_PHRASE:  # Empty step has 0xFF phrase
                 return slot_idx
         return None
         

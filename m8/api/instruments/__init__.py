@@ -3,20 +3,27 @@ from m8.api import M8Block, load_class, join_nibbles, split_byte
 from m8.api.instruments.params import M8FilterParams, M8AmpParams, M8MixerParams
 from m8.api.modulators import M8Modulators, create_default_modulators
 
+# Instrument type definitions
 INSTRUMENT_TYPES = {
     0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
 }
 
+# Block sizes and counts
 BLOCK_SIZE = 215
 BLOCK_COUNT = 128
 
+# Common parameter name prefixes for extraction
+FILTER_PREFIX_LENGTH = 7  # Length of "filter_"
+AMP_PREFIX_LENGTH = 4     # Length of "amp_"
+MIXER_PREFIX_LENGTH = 6   # Length of "mixer_"
+
 class M8InstrumentBase:
     # Define offsets as class variables
-    SYNTH_OFFSET = 18  # Shape starts at 18
-    FILTER_OFFSET = 23  # Filter type starts at 23
-    AMP_OFFSET = 26    # Amp level starts at 26
-    MIXER_OFFSET = 28  # Mixer pan starts at 28
-    MODULATORS_OFFSET = 63  # Keep this unchanged
+    SYNTH_OFFSET = 18     # Shape starts at 18
+    FILTER_OFFSET = 23    # Filter type starts at 23
+    AMP_OFFSET = 26       # Amp level starts at 26
+    MIXER_OFFSET = 28     # Mixer pan starts at 28
+    MODULATORS_OFFSET = 63  # Modulators start offset
     
     # Common parameter offsets
     TYPE_OFFSET = 0
@@ -47,9 +54,9 @@ class M8InstrumentBase:
         self.modulators = M8Modulators(items=create_default_modulators())
         
         # Extract prefixed parameters for each common group
-        filter_kwargs = {k[7:]: v for k, v in kwargs.items() if k.startswith('filter_')}
-        amp_kwargs = {k[4:]: v for k, v in kwargs.items() if k.startswith('amp_')}
-        mixer_kwargs = {k[6:]: v for k, v in kwargs.items() if k.startswith('mixer_')}
+        filter_kwargs = {k[FILTER_PREFIX_LENGTH:]: v for k, v in kwargs.items() if k.startswith('filter_')}
+        amp_kwargs = {k[AMP_PREFIX_LENGTH:]: v for k, v in kwargs.items() if k.startswith('amp_')}
+        mixer_kwargs = {k[MIXER_PREFIX_LENGTH:]: v for k, v in kwargs.items() if k.startswith('mixer_')}
         
         # Apply extracted parameters to common objects
         for key, value in filter_kwargs.items():

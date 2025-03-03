@@ -1,6 +1,6 @@
 # short
 
-- explicit offsets/ranges/indexes/counts/sizes
+- refactor project offsets
 
 # medium
 
@@ -22,6 +22,8 @@
 
 # done
 
+- modulators, song, fx
+- explicit offsets/ranges/indexes/counts/sizes
 - check exceptions thrown
 - fix duplication of synth params offsets ("19") (or "18" now)
 - common params
