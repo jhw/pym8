@@ -1,10 +1,8 @@
 # short
 
-- common params
+- better clarity for offsets? avoid hardcoding?
 
 # medium
-
-- fix duplication of synth params offsets ("19") (or "18" now)
 
 - wavsynth
 - sampler
@@ -25,6 +23,8 @@
 
 # done
 
+- fix duplication of synth params offsets ("19") (or "18" now)
+- common params
 - decrement instrument offsets
 - cleanup
 - capture and test working version

@@ -12,11 +12,21 @@ BLOCK_COUNT = 128
 
 class M8InstrumentBase:
     # Define offsets as class variables
-    SYNTH_OFFSET = 18  # Correct offset for synth parameters
-    FILTER_OFFSET = 23  # Shifted back one byte from 24
-    AMP_OFFSET = 26    # Shifted back one byte from 27
-    MIXER_OFFSET = 28  # Shifted back one byte from 29
+    SYNTH_OFFSET = 18  # Shape starts at 18
+    FILTER_OFFSET = 23  # Filter type starts at 23
+    AMP_OFFSET = 26    # Amp level starts at 26
+    MIXER_OFFSET = 28  # Mixer pan starts at 28
     MODULATORS_OFFSET = 63  # Keep this unchanged
+    
+    # Common parameter offsets
+    TYPE_OFFSET = 0
+    NAME_OFFSET = 1
+    NAME_LENGTH = 12
+    TRANSPOSE_EQ_OFFSET = 13
+    TABLE_TICK_OFFSET = 14
+    VOLUME_OFFSET = 15
+    PITCH_OFFSET = 16
+    FINE_TUNE_OFFSET = 17
     
     def __init__(self, **kwargs):
         # Common synthesizer parameters
@@ -62,7 +72,7 @@ class M8InstrumentBase:
     @classmethod
     def read(cls, data):
         # Get the instrument type and create the appropriate class
-        instr_type = data[0]
+        instr_type = data[cls.TYPE_OFFSET]
         if instr_type not in INSTRUMENT_TYPES:
             raise ValueError(f"Unknown instrument type: {instr_type}")
             
@@ -81,19 +91,19 @@ class M8InstrumentBase:
 
     def _read_common_parameters(self, data):
         """Read common parameters shared by all instrument types"""
-        self.type = data[0]
-        self.name = data[1:14].decode('utf-8').rstrip('\0')
+        self.type = data[self.TYPE_OFFSET]
+        self.name = data[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH].decode('utf-8').rstrip('\0')
         
         # Split byte into transpose/eq
-        transpose_eq = data[14]
+        transpose_eq = data[self.TRANSPOSE_EQ_OFFSET]
         self.transpose, self.eq = split_byte(transpose_eq)
         
-        self.table_tick = data[15]
-        self.volume = data[16]
-        self.pitch = data[17]
-        self.fine_tune = data[18]
+        self.table_tick = data[self.TABLE_TICK_OFFSET]
+        self.volume = data[self.VOLUME_OFFSET]
+        self.pitch = data[self.PITCH_OFFSET]
+        self.fine_tune = data[self.FINE_TUNE_OFFSET]
         
-        # Return the synth offset - this is important!
+        # Return the synth offset for reading specific parameters
         return self.SYNTH_OFFSET
 
     def _read_parameters(self, data):
@@ -113,42 +123,31 @@ class M8InstrumentBase:
         """To be implemented by subclasses to read instrument-specific parameters"""
         pass
 
-    def _write_common_parameters(self):
-        """Write common parameters shared by all instrument types"""
-        buffer = bytearray()
-        
-        # Type
-        buffer.append(self.type)
-        
-        # Name (padded to 13 bytes)
-        name_bytes = self.name.encode('utf-8')
-        name_bytes = name_bytes[:13]  # Truncate if too long
-        name_bytes = name_bytes + bytes([0] * (13 - len(name_bytes)))  # Pad with nulls
-        buffer.extend(name_bytes)
-        
-        # Transpose/EQ (combined into one byte)
-        transpose_eq = join_nibbles(self.transpose, self.eq)
-        buffer.append(transpose_eq)
-        
-        # Remaining fields
-        buffer.append(self.table_tick)
-        buffer.append(self.volume)
-        buffer.append(self.pitch)
-        buffer.append(self.fine_tune)
-        
-        return buffer
-
     def write(self):
         """
-        Write instrument data to binary format with correct offsets.
+        Write instrument data to binary format with precise offset control.
         This method ensures all parameters are written at their exact offsets.
         """
         # Create a buffer of the correct size
         buffer = bytearray([0] * BLOCK_SIZE)
         
-        # Write common parameters (type, name, etc.)
-        common_params = self._write_common_parameters()
-        buffer[0:len(common_params)] = common_params
+        # Write type
+        buffer[self.TYPE_OFFSET] = self.type
+        
+        # Write name (padded to NAME_LENGTH bytes)
+        name_bytes = self.name.encode('utf-8')
+        name_bytes = name_bytes[:self.NAME_LENGTH]  # Truncate if too long
+        name_padded = name_bytes + bytes([0] * (self.NAME_LENGTH - len(name_bytes)))  # Pad with nulls
+        buffer[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH] = name_padded
+        
+        # Write transpose/eq
+        buffer[self.TRANSPOSE_EQ_OFFSET] = join_nibbles(self.transpose, self.eq)
+        
+        # Write remaining common parameters
+        buffer[self.TABLE_TICK_OFFSET] = self.table_tick
+        buffer[self.VOLUME_OFFSET] = self.volume
+        buffer[self.PITCH_OFFSET] = self.pitch
+        buffer[self.FINE_TUNE_OFFSET] = self.fine_tune
         
         # Write synth-specific parameters at SYNTH_OFFSET
         synth_params = self._write_specific_parameters()
