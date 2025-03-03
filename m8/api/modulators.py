@@ -6,8 +6,11 @@ BLOCK_COUNT = 4
 # Map modulator types to their class paths
 MODULATOR_TYPES = {
     0x00: "m8.api.modulators.M8AHDEnvelope",
+    0x02: "m8.api.modulators.M8DrumEnvelope",
     0x01: "m8.api.modulators.M8ADSREnvelope",
-    0x03: "m8.api.modulators.M8LFO"
+    0x03: "m8.api.modulators.M8LFO",
+    0x04: "m8.api.modulators.M8TriggerEnvelope",
+    0x05: "m8.api.modulators.M8TrackingEnvelope"
 }
 
 # Default modulator configurations
@@ -135,17 +138,47 @@ class M8ADSREnvelope(M8ModulatorBase):
     def _get_type(self):
         return 0x1  # ADSR envelope type
 
+class M8DrumEnvelope(M8ModulatorBase):
+    _param_defs = [
+        ("peak", 0x0),
+        ("body", 0x10),
+        ("decay", 0x80)
+    ]
+    
+    def _get_type(self):
+        return 0x2  # Drum envelope type
+    
 class M8LFO(M8ModulatorBase):
     _param_defs = [
-        ("shape", 0x0),
+        ("oscillator", 0x0),
         ("trigger", 0x0),
-        ("freq", 0x10),
-        ("retrigger", 0x0)
+        ("frequency", 0x10)
     ]
     
     def _get_type(self):
         return 0x3  # LFO type
 
+class M8TriggerEnvelope(M8ModulatorBase):
+    _param_defs = [
+        ("attack", 0x0),
+        ("hold", 0x0),
+        ("decay", 0x40),
+        ("source", 0x00)
+    ]
+    
+    def _get_type(self):
+        return 0x4  # Trigger envelope type
+
+class M8TrackingEnvelope(M8ModulatorBase):
+    _param_defs = [
+        ("source", 0x0),
+        ("low_value", 0x0),
+        ("high_value", 0x7F)
+    ]
+    
+    def _get_type(self):
+        return 0x5  # Tracking envelope type
+    
 class M8Modulators(list):
     def __init__(self, items=None):
         super().__init__()

@@ -1,7 +1,7 @@
 from m8.api import M8ValidationError
 from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.instruments.macrosynth import M8MacroSynth
-from m8.api.modulators import M8AHDEnvelope  # Updated import
+from m8.api.modulators import M8AHDEnvelope
 from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
@@ -23,7 +23,7 @@ try:
     
     # Create and configure macro synth instrument
     macro_synth = M8MacroSynth(
-        name="MY_SYNTH",
+        name="MACRO1",
         mixer_delay=0xC0,
         mixer_chorus=0xC0,
         mixer_reverb=0x40,
