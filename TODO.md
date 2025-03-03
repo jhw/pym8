@@ -1,10 +1,14 @@
 # short
 
-- fix duplication of synth params offsets
-
-- instruments don't seem to be rendering >> off by one
+- cleanup
+- capture and test working version
+- create diffs of old (working) and new (broken) versions
+- fix diffs as best you can 
+- re- test
 
 # medium
+
+- fix duplication of synth params offsets
 
 - wavsynth
 - sampler
