@@ -1,4 +1,4 @@
-from m8.api import M8ValidationError, M8IndexError
+from m8.api import M8ValidationError
 from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.instruments.macrosynth import M8MacroSynth
 from m8.api.modulators import M8AHDEnvelope  # Updated import
@@ -97,5 +97,5 @@ try:
     project.write_to_file(f"{filename}.m8s")
     project.write_to_json_file(f"{filename}.json")
     
-except (M8ValidationError, M8IndexError) as e:
+except M8ValidationError as e:
     print(f"Project creation failed: {str(e)}")

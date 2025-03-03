@@ -5,7 +5,7 @@ import json
 class M8ValidationError(Exception):
     pass
 
-class M8IndexError(IndexError):
+class IndexError(IndexError):
     pass
 
 # default class

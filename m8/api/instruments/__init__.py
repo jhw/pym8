@@ -1,5 +1,5 @@
 # m8/api/instruments/__init__.py
-from m8.api import M8Block, M8IndexError, load_class, join_nibbles, split_byte
+from m8.api import M8Block, load_class, join_nibbles, split_byte
 from m8.api.instruments.params import M8FilterParams, M8AmpParams, M8MixerParams
 from m8.api.modulators import M8Modulators, create_default_modulators
 
@@ -199,14 +199,14 @@ class M8InstrumentBase:
     def add_modulator(self, modulator):
         slot = self.available_modulator_slot
         if slot is None:
-            raise M8IndexError("No empty modulator slots available in this instrument")
+            raise IndexError("No empty modulator slots available in this instrument")
             
         self.modulators[slot] = modulator
         return slot
         
     def set_modulator(self, modulator, slot):
         if not (0 <= slot < len(self.modulators)):
-            raise M8IndexError(f"Modulator slot index must be between 0 and {len(self.modulators)-1}")
+            raise IndexError(f"Modulator slot index must be between 0 and {len(self.modulators)-1}")
             
         self.modulators[slot] = modulator
 

@@ -1,4 +1,4 @@
-from m8.api import M8ValidationError, M8IndexError, M8Block
+from m8.api import M8ValidationError, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple 
 
 FX_BLOCK_COUNT = 3
@@ -71,14 +71,14 @@ class M8PhraseStep:
     def add_fx(self, key, value):
         slot = self.available_slot
         if slot is None:
-            raise M8IndexError("No empty FX slots available in this step")
+            raise IndexError("No empty FX slots available in this step")
             
         self.fx[slot] = M8FXTuple(key=key, value=value)
         return slot
         
     def set_fx(self, key, value, slot):
         if not (0 <= slot < FX_BLOCK_COUNT):
-            raise M8IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
+            raise IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
             
         self.fx[slot] = M8FXTuple(key=key, value=value)    
 
@@ -175,14 +175,14 @@ class M8Phrase(list):
     def add_step(self, step):
         slot = self.available_step_slot
         if slot is None:
-            raise M8IndexError("No empty step slots available in this phrase")
+            raise IndexError("No empty step slots available in this phrase")
             
         self[slot] = step
         return slot
         
     def set_step(self, step, slot):
         if not (0 <= slot < len(self)):
-            raise M8IndexError(f"Step slot index must be between 0 and {len(self)-1}")
+            raise IndexError(f"Step slot index must be between 0 and {len(self)-1}")
             
         self[slot] = step
             

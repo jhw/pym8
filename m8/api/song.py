@@ -1,4 +1,4 @@
-from m8.api import M8ValidationError, M8IndexError
+from m8.api import M8ValidationError
 
 COL_COUNT = 8
 ROW_COUNT = 255
@@ -30,12 +30,12 @@ class M8SongRow:
     
     def __getitem__(self, index):
         if not (0 <= index < COL_COUNT):
-            raise M8IndexError("Index out of range")
+            raise IndexError("Index out of range")
         return self._data[index]
     
     def __setitem__(self, index, value):
         if not (0 <= index < COL_COUNT):
-            raise M8IndexError("Index out of range")
+            raise IndexError("Index out of range")
         self._data[index] = value
     
     def write(self):

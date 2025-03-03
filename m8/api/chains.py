@@ -1,4 +1,4 @@
-from m8.api import M8ValidationError, M8IndexError
+from m8.api import M8ValidationError
 
 STEP_BLOCK_SIZE = 2
 STEP_COUNT = 16
@@ -117,14 +117,14 @@ class M8Chain(list):
     def add_step(self, step):
         slot = self.available_step_slot
         if slot is None:
-            raise M8IndexError("No empty step slots available in this chain")
+            raise IndexError("No empty step slots available in this chain")
             
         self[slot] = step
         return slot
         
     def set_step(self, step, slot):
         if not (0 <= slot < len(self)):
-            raise M8IndexError(f"Step slot index must be between 0 and {len(self)-1}")
+            raise IndexError(f"Step slot index must be between 0 and {len(self)-1}")
             
         self[slot] = step
             
