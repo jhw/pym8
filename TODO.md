@@ -9,7 +9,6 @@
 - fmsynth
 - hypersynth
 
-- check exceptions thrown
 - default instrument names
 
 - m8i files
@@ -23,6 +22,7 @@
 
 # done
 
+- check exceptions thrown
 - fix duplication of synth params offsets ("19") (or "18" now)
 - common params
 - decrement instrument offsets
