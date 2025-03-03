@@ -1,15 +1,15 @@
 # short
 
-- better clarity for offsets? avoid hardcoding?
+- explicit offsets/ranges/indexes/counts/sizes
 
 # medium
+
+- default instrument names?
 
 - wavsynth
 - sampler
 - fmsynth
 - hypersynth
-
-- default instrument names
 
 - m8i files
 - toml file
