@@ -1,14 +1,10 @@
 # short
 
-- cleanup
-- capture and test working version
-- create diffs of old (working) and new (broken) versions
-- fix diffs as best you can 
-- re- test
+- decrement instrument offsets
 
 # medium
 
-- fix duplication of synth params offsets
+- fix duplication of synth params offsets ("19") (or "18" now)
 
 - wavsynth
 - sampler
@@ -29,6 +25,11 @@
 
 # done
 
+- cleanup
+- capture and test working version
+- create diffs of old (working) and new (broken) versions
+- fix diffs as best you can 
+- re- test
 - test macro on teensy
 - compare offsets with pre oxp-myb version 
 - test macro on M8
