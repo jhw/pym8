@@ -12,10 +12,11 @@ BLOCK_COUNT = 128
 
 class M8InstrumentBase:
     # Define offsets as class variables
-    FILTER_OFFSET = 24
-    AMP_OFFSET = 27
-    MIXER_OFFSET = 29
-    MODULATORS_OFFSET = 63
+    SYNTH_OFFSET = 18  # Correct offset for synth parameters
+    FILTER_OFFSET = 23  # Shifted back one byte from 24
+    AMP_OFFSET = 26    # Shifted back one byte from 27
+    MIXER_OFFSET = 28  # Shifted back one byte from 29
+    MODULATORS_OFFSET = 63  # Keep this unchanged
     
     def __init__(self, **kwargs):
         # Common synthesizer parameters
@@ -73,7 +74,7 @@ class M8InstrumentBase:
         instance._read_parameters(data)
         
         # Read modulators
-        instance.modulators = M8Modulators.read(data[self.MODULATORS_OFFSET:], 
+        instance.modulators = M8Modulators.read(data[cls.MODULATORS_OFFSET:], 
                                               instrument_type=instance.type)
         
         return instance
@@ -92,8 +93,8 @@ class M8InstrumentBase:
         self.pitch = data[17]
         self.fine_tune = data[18]
         
-        # Return the next offset for subclass-specific parameters
-        return 19
+        # Return the synth offset - this is important!
+        return self.SYNTH_OFFSET
 
     def _read_parameters(self, data):
         """Read instrument parameters from binary data"""
@@ -138,32 +139,37 @@ class M8InstrumentBase:
         return buffer
 
     def write(self):
-        # Write parameters specific to this instrument type
-        buffer = bytearray()
+        """
+        Write instrument data to binary format with correct offsets.
+        This method ensures all parameters are written at their exact offsets.
+        """
+        # Create a buffer of the correct size
+        buffer = bytearray([0] * BLOCK_SIZE)
         
-        # Write common parameters
-        buffer.extend(self._write_common_parameters())
+        # Write common parameters (type, name, etc.)
+        common_params = self._write_common_parameters()
+        buffer[0:len(common_params)] = common_params
         
-        # Write instrument-specific parameters
-        buffer.extend(self._write_specific_parameters())
+        # Write synth-specific parameters at SYNTH_OFFSET
+        synth_params = self._write_specific_parameters()
+        buffer[self.SYNTH_OFFSET:self.SYNTH_OFFSET + len(synth_params)] = synth_params
         
-        # Write common parameters
-        buffer.extend(self.filter.write())
-        buffer.extend(self.amp.write())
-        buffer.extend(self.mixer.write())
+        # Write filter parameters at FILTER_OFFSET
+        filter_params = self.filter.write()
+        buffer[self.FILTER_OFFSET:self.FILTER_OFFSET + len(filter_params)] = filter_params
         
-        # Pad between parameters and modulators
-        padding_size = self.MODULATORS_OFFSET - len(buffer)
-        if padding_size > 0:
-            buffer.extend(bytes([0] * padding_size))
-            
-        # Write modulators
-        buffer.extend(self.modulators.write())
+        # Write amp parameters at AMP_OFFSET
+        amp_params = self.amp.write()
+        buffer[self.AMP_OFFSET:self.AMP_OFFSET + len(amp_params)] = amp_params
         
-        # Ensure the buffer is the correct size
-        if len(buffer) < BLOCK_SIZE:
-            buffer.extend(bytes([0] * (BLOCK_SIZE - len(buffer))))
-            
+        # Write mixer parameters at MIXER_OFFSET
+        mixer_params = self.mixer.write()
+        buffer[self.MIXER_OFFSET:self.MIXER_OFFSET + len(mixer_params)] = mixer_params
+        
+        # Write modulators at MODULATORS_OFFSET
+        modulator_params = self.modulators.write()
+        buffer[self.MODULATORS_OFFSET:self.MODULATORS_OFFSET + len(modulator_params)] = modulator_params
+        
         return bytes(buffer)
 
     def _write_specific_parameters(self):

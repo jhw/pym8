@@ -13,11 +13,14 @@ class M8MacroSynthParams(M8ParamsBase):
         ("redux", 0x0)
     ]
     
-    def __init__(self, offset=19, **kwargs):
+    def __init__(self, offset=None, **kwargs):
+        # If no offset provided, use parent class's SYNTH_OFFSET
+        if offset is None:
+            offset = M8InstrumentBase.SYNTH_OFFSET
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8MacroSynth(M8InstrumentBase):
-    # MacroSynth uses default offsets, so no need to override class variables
+    # No need to override offsets as we're using the parent class offsets
     
     def __init__(self, **kwargs):
         # Set type before calling parent class init
@@ -32,7 +35,8 @@ class M8MacroSynth(M8InstrumentBase):
                 synth_kwargs[key] = kwargs[key]
         
         # Create synth parameter object with extracted kwargs
-        self.synth = M8MacroSynthParams(offset=19, **synth_kwargs)
+        # Use the class constant SYNTH_OFFSET from the parent class
+        self.synth = M8MacroSynthParams(**synth_kwargs)
         
         # Call parent constructor to finish setup (will handle filter/amp/mixer)
         super().__init__(**kwargs)
