@@ -2,9 +2,9 @@
 
 - refactor project offsets
 
-# medium
-
 - default instrument names?
+
+# medium
 
 - wavsynth
 - sampler
