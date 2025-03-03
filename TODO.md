@@ -1,6 +1,6 @@
 # short
 
-- decrement instrument offsets
+- common params
 
 # medium
 
@@ -25,6 +25,7 @@
 
 # done
 
+- decrement instrument offsets
 - cleanup
 - capture and test working version
 - create diffs of old (working) and new (broken) versions
