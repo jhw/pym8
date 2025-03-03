@@ -1,8 +1,6 @@
 # short
 
-- compare offsets with pre oxp-myb version 
-- test macro on M8
-- test macro on teensy
+- fix duplication of synth params offsets
 
 # medium
 
@@ -25,6 +23,9 @@
 
 # done
 
+- test macro on teensy
+- compare offsets with pre oxp-myb version 
+- test macro on M8
 - remaining modulators
 - replace M8 index error with simple index error 
 - change metadata defaults 
