@@ -1,10 +1,10 @@
 # short
 
-- enums
-- wavsynth
+- TEENSY
 
 # medium
 
+- wavsynth
 - sampler
 - fmsynth
 - hypersynth
@@ -21,6 +21,7 @@
 
 # done
 
+- enums
 - macrosynth contains hardcoded offset
 - not sure macrosynth params needs its current constructor
 - refactor project offsets

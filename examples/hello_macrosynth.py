@@ -30,7 +30,7 @@ try:
         filter_type=M8FilterTypes.LOWPASS,
         filter_cutoff=0x20,
         filter_resonance=0xC0,
-        shape=random.choice(list(M8MacroSynthShapes)),
+        shape=0x00,
         amp_limit=M8AmpLimitTypes.SIN,
         amp_level=0x40
     )
@@ -48,7 +48,7 @@ try:
     # Create and configure second AHD envelope modulator
     ahd_mod2 = M8AHDEnvelope(  # Using generic class
         destination=M8MacroSynthModDestinations.FILTER_CUTOFF,
-        amount=0xA0,
+        amount=0x80,
         decay=0x40  # Same decay as first modulator
     )
     macro_synth.set_modulator(ahd_mod2, slot=1)
