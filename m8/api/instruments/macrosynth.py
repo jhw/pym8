@@ -13,10 +13,7 @@ class M8MacroSynthParams(M8ParamsBase):
         ("redux", 0x0)
     ]
     
-    def __init__(self, offset=None, **kwargs):
-        # If no offset provided, use parent class's SYNTH_OFFSET
-        if offset is None:
-            offset = M8InstrumentBase.SYNTH_OFFSET
+    def __init__(self, offset, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8MacroSynth(M8InstrumentBase):
@@ -27,7 +24,7 @@ class M8MacroSynth(M8InstrumentBase):
         self.type = 0x01
         
         # Extract synth-specific parameters
-        synth_kwargs = {k[6:]: v for k, v in kwargs.items() if k.startswith('synth_')}
+        synth_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('synth_')}
         
         # Also handle direct synth parameter references (like 'shape' instead of 'synth_shape')
         for key in ['shape', 'timbre', 'color', 'degrade', 'redux']:
@@ -36,7 +33,7 @@ class M8MacroSynth(M8InstrumentBase):
         
         # Create synth parameter object with extracted kwargs
         # Use the class constant SYNTH_OFFSET from the parent class
-        self.synth = M8MacroSynthParams(**synth_kwargs)
+        self.synth = M8MacroSynthParams(offset=self.SYNTH_OFFSET, **synth_kwargs)
         
         # Call parent constructor to finish setup (will handle filter/amp/mixer)
         super().__init__(**kwargs)

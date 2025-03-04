@@ -12,11 +12,6 @@ INSTRUMENT_TYPES = {
 BLOCK_SIZE = 215
 BLOCK_COUNT = 128
 
-# Common parameter name prefixes for extraction
-FILTER_PREFIX_LENGTH = 7  # Length of "filter_"
-AMP_PREFIX_LENGTH = 4     # Length of "amp_"
-MIXER_PREFIX_LENGTH = 6   # Length of "mixer_"
-
 class M8InstrumentBase:
     # Define offsets as class variables
     SYNTH_OFFSET = 18     # Shape starts at 18
@@ -54,9 +49,9 @@ class M8InstrumentBase:
         self.modulators = M8Modulators(items=create_default_modulators())
         
         # Extract prefixed parameters for each common group
-        filter_kwargs = {k[FILTER_PREFIX_LENGTH:]: v for k, v in kwargs.items() if k.startswith('filter_')}
-        amp_kwargs = {k[AMP_PREFIX_LENGTH:]: v for k, v in kwargs.items() if k.startswith('amp_')}
-        mixer_kwargs = {k[MIXER_PREFIX_LENGTH:]: v for k, v in kwargs.items() if k.startswith('mixer_')}
+        filter_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('filter_')}
+        amp_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('amp_')}
+        mixer_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('mixer_')}
         
         # Apply extracted parameters to common objects
         for key, value in filter_kwargs.items():
@@ -73,7 +68,7 @@ class M8InstrumentBase:
         
         # Apply any remaining kwargs to base class attributes
         for key, value in kwargs.items():
-            if hasattr(self, key) and not key.startswith('_') and key != "modulators" and key != "type":
+            if hasattr(self, key) and not key.startswith('_') and key not in ["modulators", "type", "synth"]:
                 setattr(self, key, value)
 
     @classmethod

@@ -1,12 +1,10 @@
 # short
 
-- refactor project offsets
-
-- default instrument names?
+- enums
+- wavsynth
 
 # medium
 
-- wavsynth
 - sampler
 - fmsynth
 - hypersynth
@@ -16,12 +14,16 @@
 
 # thoughts
 
-- json enum rendering?
+- default instrument names?
+  - not at the root level
 - tests?
 - transpose/eq/pitch/fine_tune synth parameters?
 
 # done
 
+- macrosynth contains hardcoded offset
+- not sure macrosynth params needs its current constructor
+- refactor project offsets
 - modulators, song, fx
 - explicit offsets/ranges/indexes/counts/sizes
 - check exceptions thrown
