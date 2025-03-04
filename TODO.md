@@ -1,10 +1,13 @@
 # short
 
-- TEENSY
+- check offset = None
+- auto instrument naming 
+- test suite
 
 # medium
 
 - wavsynth
+
 - sampler
 - fmsynth
 - hypersynth
@@ -21,6 +24,7 @@
 
 # done
 
+- TEENSY
 - enums
 - macrosynth contains hardcoded offset
 - not sure macrosynth params needs its current constructor
