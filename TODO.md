@@ -1,7 +1,5 @@
 # short
 
-- last commit introduced dual serialisation of filter/amp/mixer params
-
 - filter/amp/mixer/amplifier offsets must be on a per instrument basis
 
 # medium
@@ -24,6 +22,7 @@
 
 # done
 
+- last commit introduced dual serialisation of filter/amp/mixer params
 - auto instrument naming 
 - check offset = None
 - TEENSY
