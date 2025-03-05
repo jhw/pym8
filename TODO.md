@@ -1,9 +1,13 @@
 # short
 
-- m8i files
-- test suite
+- last commit introduced dual serialisation of filter/amp/mixer params
+
+- filter/amp/mixer/amplifier offsets must be on a per instrument basis
 
 # medium
+
+- m8i files
+- test suite
 
 - wavsynth
 - sampler
