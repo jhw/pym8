@@ -23,7 +23,7 @@ class M8ParamsBase:
                 setattr(self, key, value)
     
     @classmethod
-    def read(cls, data, offset=None):
+    def read(cls, data, offset):
         """Read parameters from binary data starting at a specific offset"""
         # Create an instance with default values
         instance = cls(offset=offset)
@@ -53,7 +53,7 @@ class M8ParamsBase:
         return {name: getattr(self, name) for name, _ in self._param_defs}
     
     @classmethod
-    def from_dict(cls, data, offset=None):
+    def from_dict(cls, data, offset):
         """Create parameters from a dictionary"""
         instance = cls(offset=offset)
         

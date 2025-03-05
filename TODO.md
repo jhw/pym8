@@ -1,29 +1,27 @@
 # short
 
-- check offset = None
-- auto instrument naming 
+- m8i files
 - test suite
 
 # medium
 
 - wavsynth
-
 - sampler
 - fmsynth
 - hypersynth
 
-- m8i files
+- sampler slice points
+
 - toml file
 
 # thoughts
 
-- default instrument names?
-  - not at the root level
-- tests?
 - transpose/eq/pitch/fine_tune synth parameters?
 
 # done
 
+- auto instrument naming 
+- check offset = None
 - TEENSY
 - enums
 - macrosynth contains hardcoded offset

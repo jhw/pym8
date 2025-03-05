@@ -23,7 +23,6 @@ try:
     
     # Create and configure macro synth instrument
     macro_synth = M8MacroSynth(
-        name="MACRO1",
         mixer_delay=0xC0,
         mixer_chorus=0xC0,
         mixer_reverb=0x40,

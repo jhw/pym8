@@ -3,10 +3,15 @@ from m8.api import M8Block, load_class, join_nibbles, split_byte
 from m8.api.instruments.params import M8FilterParams, M8AmpParams, M8MixerParams
 from m8.api.modulators import M8Modulators, create_default_modulators
 
+import random
+
 # Instrument type definitions
 INSTRUMENT_TYPES = {
     0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
 }
+
+# Global counter for instrument naming
+_INSTRUMENT_COUNTER = 0
 
 # Block sizes and counts
 BLOCK_SIZE = 215
@@ -31,6 +36,21 @@ class M8InstrumentBase:
     FINE_TUNE_OFFSET = 17
     
     def __init__(self, **kwargs):
+        global _INSTRUMENT_COUNTER
+        
+        # Generate sequential name if not provided
+        if 'name' not in kwargs:
+            # Get class name without the M8 prefix
+            base_name = self.__class__.__name__[2:].upper()
+            # Truncate or pad to 8 characters
+            name_base = (base_name[:8] if len(base_name) > 8 else base_name.ljust(8))
+            # Use global counter for 4-digit hex code
+            counter_hex = f"{_INSTRUMENT_COUNTER & 0xFFFF:04X}"
+            # Combine name components
+            kwargs['name'] = f"{name_base}{counter_hex}"
+            # Increment counter for next instrument
+            _INSTRUMENT_COUNTER += 1
+                    
         # Common synthesizer parameters
         self.name = " "
         self.transpose = 0x4
@@ -53,22 +73,19 @@ class M8InstrumentBase:
         amp_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('amp_')}
         mixer_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('mixer_')}
         
-        # Apply extracted parameters to common objects
+        # Apply extracted parameters to common objects - no conditional checks
         for key, value in filter_kwargs.items():
-            if hasattr(self.filter, key):
-                setattr(self.filter, key, value)
+            setattr(self.filter, key, value)
         
         for key, value in amp_kwargs.items():
-            if hasattr(self.amp, key):
-                setattr(self.amp, key, value)
+            setattr(self.amp, key, value)
                 
         for key, value in mixer_kwargs.items():
-            if hasattr(self.mixer, key):
-                setattr(self.mixer, key, value)
+            setattr(self.mixer, key, value)
         
-        # Apply any remaining kwargs to base class attributes
+        # Apply any remaining kwargs to base class attributes - removed conditional checks
         for key, value in kwargs.items():
-            if hasattr(self, key) and not key.startswith('_') and key not in ["modulators", "type", "synth"]:
+            if not key.startswith('_') and key not in ["modulators", "type", "synth"]:
                 setattr(self, key, value)
 
     @classmethod
@@ -257,17 +274,15 @@ class M8InstrumentBase:
         # Set all parameters from dict
         for key, value in data.items():
             if key != "modulators" and key != "__class__":
-                # Check if this is a nested object with a from_dict method
-                if hasattr(instance, key) and hasattr(getattr(instance, key), 'from_dict'):
-                    # Replace the object with one created from this dict
+                # For nested objects with a from_dict method - no conditional checks
+                if key in ["filter", "amp", "mixer", "synth"]:
                     obj = getattr(instance, key)
-                    setattr(instance, key, obj.__class__.from_dict(value, obj.offset if hasattr(obj, 'offset') else None))
-                elif hasattr(instance, key):
+                    setattr(instance, key, obj.__class__.from_dict(value, obj.offset))
+                else:
                     setattr(instance, key, value)
     
-        # Set modulators - no longer passing instrument_type
-        if "modulators" in data:
-            instance.modulators = M8Modulators.from_list(data["modulators"])
+        # Set modulators - no conditional check
+        instance.modulators = M8Modulators.from_list(data.get("modulators", []))
     
         return instance
 

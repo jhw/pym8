@@ -23,7 +23,7 @@ class M8MacroSynth(M8InstrumentBase):
         # Set type before calling parent class init
         self.type = 0x01
         
-        # Extract synth-specific parameters
+        # Extract synth-specific parameters - no conditional checks
         synth_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('synth_')}
         
         # Also handle direct synth parameter references (like 'shape' instead of 'synth_shape')
@@ -47,3 +47,4 @@ class M8MacroSynth(M8InstrumentBase):
         return (self.name.strip() == "" and 
                 self.volume == 0x0 and 
                 self.synth.shape == 0x0)
+        
