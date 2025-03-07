@@ -1,6 +1,6 @@
 # short
 
-- wavsynth
+- modulator fx are not instrument specific
 
 # medium
 
@@ -8,9 +8,17 @@
 - fmsynth
 - hypersynth
 
+- toml file
+
+# roadmap
+
 - m8i files
 - sampler slice points
-- toml file
+- tables
+- eq
+- midi
+- grooves
+- scales
 
 # thoughts
 
@@ -19,6 +27,7 @@
 
 # done
 
+- wavsynth
 - filter/amp/mixer/amplifier offsets must be on a per instrument basis
 - last commit introduced dual serialisation of filter/amp/mixer params
 - auto instrument naming 
