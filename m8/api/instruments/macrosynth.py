@@ -1,16 +1,16 @@
 # m8/api/instruments/macrosynth.py
 from m8.api.instruments import M8InstrumentBase
-from m8.api.instruments.params import M8ParamsBase
+from m8.api.instruments.params import M8ParamsBase, M8ParamType
 
 class M8MacroSynthParams(M8ParamsBase):
     """Class to handle MacroSynth-specific parameters."""
     
     _param_defs = [
-        ("shape", 0x0),
-        ("timbre", 0x80),
-        ("color", 0x80),
-        ("degrade", 0x0),
-        ("redux", 0x0)
+        ("shape", 0x0, M8ParamType.UINT8),
+        ("timbre", 0x80, M8ParamType.UINT8),
+        ("color", 0x80, M8ParamType.UINT8),
+        ("degrade", 0x0, M8ParamType.UINT8),
+        ("redux", 0x0, M8ParamType.UINT8)
     ]
     
     def __init__(self, offset, **kwargs):

@@ -1,4 +1,3 @@
-# m8/api/instruments/__init__.py
 from m8.api import M8Block, load_class, join_nibbles, split_byte
 from m8.api.instruments.params import M8FilterParams, M8AmpParams, M8MixerParams
 from m8.api.modulators import M8Modulators, create_default_modulators
@@ -17,8 +16,6 @@ _INSTRUMENT_COUNTER = 0
 # Block sizes and counts
 BLOCK_SIZE = 215
 BLOCK_COUNT = 128
-
-# First, modify m8/api/instruments/__init__.py
 
 class M8InstrumentBase:
     
@@ -97,14 +94,17 @@ class M8InstrumentBase:
         for key, value in kwargs.items():
             if hasattr(self, key) and not key.startswith('_') and key not in ["modulators", "type", "synth"]:
                 setattr(self, key, value)
-
-    # The rest of the class remains the same with appropriate adjustments
-    # For methods that use offsets, ensure they access self.FILTER_OFFSET etc.
     
     def _read_common_parameters(self, data):
         """Read common parameters shared by all instrument types"""
         self.type = data[self.TYPE_OFFSET]
-        self.name = data[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH].decode('utf-8').rstrip('\0')
+        
+        # Read name as a string (null-terminated)
+        name_bytes = data[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH]
+        null_term_idx = name_bytes.find(0)
+        if null_term_idx != -1:
+            name_bytes = name_bytes[:null_term_idx]
+        self.name = name_bytes.decode('utf-8', errors='replace')
         
         # Split byte into transpose/eq
         transpose_eq = data[self.TRANSPOSE_EQ_OFFSET]
@@ -136,6 +136,10 @@ class M8InstrumentBase:
         
         if hasattr(self, 'MIXER_OFFSET'):
             self.mixer = M8MixerParams.read(data, offset=self.MIXER_OFFSET)
+        
+        # Read modulators if offset is defined
+        if hasattr(self, 'MODULATORS_OFFSET'):
+            self.modulators = M8Modulators.read(data[self.MODULATORS_OFFSET:])
 
     def write(self):
         """
@@ -191,7 +195,7 @@ class M8InstrumentBase:
         return bytes(buffer)
 
     def _write_specific_parameters(self):
-        """Write MacroSynth-specific parameters"""
+        """Write synth-specific parameters. To be implemented by subclasses."""
         return self.synth.write()
 
     def is_empty(self):
@@ -208,6 +212,9 @@ class M8InstrumentBase:
             if key == "modulators":
                 # Clone modulators if they have a clone method
                 instance.modulators = self.modulators.clone() if hasattr(self.modulators, 'clone') else self.modulators
+            elif hasattr(value, 'clone') and callable(getattr(value, 'clone')):
+                # Clone other objects with clone method (like filter, amp, mixer, synth)
+                setattr(instance, key, value.clone())
             else:
                 setattr(instance, key, value)
                 
@@ -249,7 +256,8 @@ class M8InstrumentBase:
                     result[key] = value
                 
         # Add modulators separately
-        result["modulators"] = self.modulators.as_list()
+        if hasattr(self, 'modulators'):
+            result["modulators"] = self.modulators.as_list()
         
         return result
 
@@ -282,11 +290,33 @@ class M8InstrumentBase:
                 elif hasattr(instance, key):
                     setattr(instance, key, value)
     
-        # Set modulators - no longer passing instrument_type
+        # Set modulators
         if "modulators" in data:
             instance.modulators = M8Modulators.from_list(data["modulators"])
     
         return instance
+
+    @classmethod
+    def read(cls, data):
+        """Read an instrument from binary data"""
+        # Get the instrument type from the data
+        instr_type = data[cls.TYPE_OFFSET]
+        
+        if instr_type in INSTRUMENT_TYPES:
+            # Create the specific instrument class
+            instr_class = load_class(INSTRUMENT_TYPES[instr_type])
+            instance = instr_class.__new__(instr_class)
+            
+            # Initialize the instance with default values
+            instance.__init__()
+            
+            # Read parameters
+            instance._read_parameters(data)
+            
+            return instance
+        else:
+            # Return an M8Block for unknown types
+            return M8Block.read(data)
 
 class M8Instruments(list):
     def __init__(self, items=None):
