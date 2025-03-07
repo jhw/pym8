@@ -1,16 +1,18 @@
 # short
 
-- m8i files
-- sampler
+- offsets need to be stored in on per- param basis
 
 # medium
 
+- m8i files
+- sampler
 - fmsynth
 - hypersynth
 
 # roadmap
 
-- toml file
+- toml to replace setup.py
+
 - sampler slice points
 - tables
 - eq
