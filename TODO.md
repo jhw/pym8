@@ -1,6 +1,7 @@
 # short
 
 - modulator fx are not instrument specific
+- force project constructor to be initialised with a template
 
 # medium
 
