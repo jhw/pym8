@@ -17,15 +17,11 @@ _INSTRUMENT_COUNTER = 0
 BLOCK_SIZE = 215
 BLOCK_COUNT = 128
 
+# First, modify m8/api/instruments/__init__.py
+
 class M8InstrumentBase:
-    # Define offsets as class variables
-    SYNTH_OFFSET = 18     # Shape starts at 18
-    FILTER_OFFSET = 23    # Filter type starts at 23
-    AMP_OFFSET = 26       # Amp level starts at 26
-    MIXER_OFFSET = 28     # Mixer pan starts at 28
-    MODULATORS_OFFSET = 63  # Modulators start offset
     
-    # Common parameter offsets
+    # Keep common parameter offsets
     TYPE_OFFSET = 0
     NAME_OFFSET = 1
     NAME_LENGTH = 12
@@ -50,7 +46,7 @@ class M8InstrumentBase:
             kwargs['name'] = f"{name_base}{counter_hex}"
             # Increment counter for next instrument
             _INSTRUMENT_COUNTER += 1
-                    
+        
         # Common synthesizer parameters
         self.name = " "
         self.transpose = 0x4
@@ -60,13 +56,20 @@ class M8InstrumentBase:
         self.pitch = 0x0
         self.fine_tune = 0x80
         
-        # Initialize common parameter objects using class offsets
-        self.filter = M8FilterParams(offset=self.FILTER_OFFSET)
-        self.amp = M8AmpParams(offset=self.AMP_OFFSET)
-        self.mixer = M8MixerParams(offset=self.MIXER_OFFSET)
+        # Initialize common parameter objects using synth-specific offsets
+        # These offsets must be provided by subclasses
+        if hasattr(self, 'FILTER_OFFSET'):
+            self.filter = M8FilterParams(offset=self.FILTER_OFFSET)
         
-        # Create modulators
-        self.modulators = M8Modulators(items=create_default_modulators())
+        if hasattr(self, 'AMP_OFFSET'):
+            self.amp = M8AmpParams(offset=self.AMP_OFFSET)
+        
+        if hasattr(self, 'MIXER_OFFSET'):
+            self.mixer = M8MixerParams(offset=self.MIXER_OFFSET)
+        
+        # Create modulators if MODULATORS_OFFSET is defined by the subclass
+        if hasattr(self, 'MODULATORS_OFFSET'):
+            self.modulators = M8Modulators(items=create_default_modulators())
         
         # Extract prefixed parameters for each common group
         filter_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('filter_')}
@@ -74,43 +77,29 @@ class M8InstrumentBase:
         mixer_kwargs = {k.split("_")[1]: v for k, v in kwargs.items() if k.startswith('mixer_')}
         
         # Apply extracted parameters to common objects - with hasattr checks
-        for key, value in filter_kwargs.items():
-            if hasattr(self.filter, key):
-                setattr(self.filter, key, value)
+        if hasattr(self, 'filter'):
+            for key, value in filter_kwargs.items():
+                if hasattr(self.filter, key):
+                    setattr(self.filter, key, value)
         
-        for key, value in amp_kwargs.items():
-            if hasattr(self.amp, key):
-                setattr(self.amp, key, value)
-                
-        for key, value in mixer_kwargs.items():
-            if hasattr(self.mixer, key):
-                setattr(self.mixer, key, value)
+        if hasattr(self, 'amp'):
+            for key, value in amp_kwargs.items():
+                if hasattr(self.amp, key):
+                    setattr(self.amp, key, value)
+        
+        if hasattr(self, 'mixer'):
+            for key, value in mixer_kwargs.items():
+                if hasattr(self.mixer, key):
+                    setattr(self.mixer, key, value)
         
         # Apply any remaining kwargs to base class attributes - with hasattr check
         for key, value in kwargs.items():
             if hasattr(self, key) and not key.startswith('_') and key not in ["modulators", "type", "synth"]:
                 setattr(self, key, value)
 
-    @classmethod
-    def read(cls, data):
-        # Get the instrument type and create the appropriate class
-        instr_type = data[cls.TYPE_OFFSET]
-        if instr_type not in INSTRUMENT_TYPES:
-            raise ValueError(f"Unknown instrument type: {instr_type}")
-            
-        # Create the specific instrument class
-        instr_class = load_class(INSTRUMENT_TYPES[instr_type])
-        instance = instr_class.__new__(instr_class)
-        
-        # Initialize instrument specific parameters
-        instance._read_parameters(data)
-        
-        # Read modulators
-        instance.modulators = M8Modulators.read(data[cls.MODULATORS_OFFSET:], 
-                                              instrument_type=instance.type)
-        
-        return instance
-
+    # The rest of the class remains the same with appropriate adjustments
+    # For methods that use offsets, ensure they access self.FILTER_OFFSET etc.
+    
     def _read_common_parameters(self, data):
         """Read common parameters shared by all instrument types"""
         self.type = data[self.TYPE_OFFSET]
@@ -126,7 +115,8 @@ class M8InstrumentBase:
         self.fine_tune = data[self.FINE_TUNE_OFFSET]
         
         # Return the synth offset for reading specific parameters
-        return self.SYNTH_OFFSET
+        # This should be defined by subclasses
+        return self.SYNTH_OFFSET if hasattr(self, 'SYNTH_OFFSET') else 0
 
     def _read_parameters(self, data):
         """Read instrument parameters from binary data"""
@@ -136,14 +126,15 @@ class M8InstrumentBase:
         # Read synth-specific parameters in subclass
         self._read_specific_parameters(data, next_offset)
         
-        # Read common filter, amp, mixer parameters
-        self.filter = M8FilterParams.read(data, offset=self.FILTER_OFFSET)
-        self.amp = M8AmpParams.read(data, offset=self.AMP_OFFSET)
-        self.mixer = M8MixerParams.read(data, offset=self.MIXER_OFFSET)
-    
-    def _read_specific_parameters(self, data, offset):
-        """To be implemented by subclasses to read instrument-specific parameters"""
-        pass
+        # Read common filter, amp, mixer parameters if offsets are defined
+        if hasattr(self, 'FILTER_OFFSET'):
+            self.filter = M8FilterParams.read(data, offset=self.FILTER_OFFSET)
+        
+        if hasattr(self, 'AMP_OFFSET'):
+            self.amp = M8AmpParams.read(data, offset=self.AMP_OFFSET)
+        
+        if hasattr(self, 'MIXER_OFFSET'):
+            self.mixer = M8MixerParams.read(data, offset=self.MIXER_OFFSET)
 
     def write(self):
         """
@@ -171,25 +162,30 @@ class M8InstrumentBase:
         buffer[self.PITCH_OFFSET] = self.pitch
         buffer[self.FINE_TUNE_OFFSET] = self.fine_tune
         
-        # Write synth-specific parameters at SYNTH_OFFSET
-        synth_params = self._write_specific_parameters()
-        buffer[self.SYNTH_OFFSET:self.SYNTH_OFFSET + len(synth_params)] = synth_params
+        # Write synth-specific parameters
+        if hasattr(self, 'SYNTH_OFFSET'):
+            synth_params = self._write_specific_parameters()
+            buffer[self.SYNTH_OFFSET:self.SYNTH_OFFSET + len(synth_params)] = synth_params
         
-        # Write filter parameters at FILTER_OFFSET
-        filter_params = self.filter.write()
-        buffer[self.FILTER_OFFSET:self.FILTER_OFFSET + len(filter_params)] = filter_params
+        # Write filter parameters
+        if hasattr(self, 'FILTER_OFFSET') and hasattr(self, 'filter'):
+            filter_params = self.filter.write()
+            buffer[self.FILTER_OFFSET:self.FILTER_OFFSET + len(filter_params)] = filter_params
         
-        # Write amp parameters at AMP_OFFSET
-        amp_params = self.amp.write()
-        buffer[self.AMP_OFFSET:self.AMP_OFFSET + len(amp_params)] = amp_params
+        # Write amp parameters
+        if hasattr(self, 'AMP_OFFSET') and hasattr(self, 'amp'):
+            amp_params = self.amp.write()
+            buffer[self.AMP_OFFSET:self.AMP_OFFSET + len(amp_params)] = amp_params
         
-        # Write mixer parameters at MIXER_OFFSET
-        mixer_params = self.mixer.write()
-        buffer[self.MIXER_OFFSET:self.MIXER_OFFSET + len(mixer_params)] = mixer_params
+        # Write mixer parameters
+        if hasattr(self, 'MIXER_OFFSET') and hasattr(self, 'mixer'):
+            mixer_params = self.mixer.write()
+            buffer[self.MIXER_OFFSET:self.MIXER_OFFSET + len(mixer_params)] = mixer_params
         
-        # Write modulators at MODULATORS_OFFSET
-        modulator_params = self.modulators.write()
-        buffer[self.MODULATORS_OFFSET:self.MODULATORS_OFFSET + len(modulator_params)] = modulator_params
+        # Write modulators
+        if hasattr(self, 'MODULATORS_OFFSET') and hasattr(self, 'modulators'):
+            modulator_params = self.modulators.write()
+            buffer[self.MODULATORS_OFFSET:self.MODULATORS_OFFSET + len(modulator_params)] = modulator_params
         
         return bytes(buffer)
 

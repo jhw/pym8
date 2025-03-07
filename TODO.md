@@ -1,27 +1,25 @@
 # short
 
-- filter/amp/mixer/amplifier offsets must be on a per instrument basis
+- wavsynth
 
 # medium
 
-- m8i files
-- test suite
-
-- wavsynth
 - sampler
 - fmsynth
 - hypersynth
 
+- m8i files
 - sampler slice points
-
 - toml file
 
 # thoughts
 
+- test suite?
 - transpose/eq/pitch/fine_tune synth parameters?
 
 # done
 
+- filter/amp/mixer/amplifier offsets must be on a per instrument basis
 - last commit introduced dual serialisation of filter/amp/mixer params
 - auto instrument naming 
 - check offset = None
