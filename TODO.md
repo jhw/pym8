@@ -1,17 +1,16 @@
 # short
 
-- modulator fx are not instrument specific
+- m8i files
+- sampler
 
 # medium
 
-- sampler
 - fmsynth
 - hypersynth
 
 # roadmap
 
 - toml file
-- m8i files
 - sampler slice points
 - tables
 - eq
@@ -26,6 +25,7 @@
 
 # done
 
+- modulator fx are not instrument specific
 - force project constructor to be initialised with a template
 - wavsynth
 - filter/amp/mixer/amplifier offsets must be on a per instrument basis

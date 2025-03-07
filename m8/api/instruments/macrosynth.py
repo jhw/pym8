@@ -16,8 +16,6 @@ class M8MacroSynthParams(M8ParamsBase):
     def __init__(self, offset, **kwargs):
         super().__init__(self._param_defs, offset, **kwargs)
 
-# Update m8/api/instruments/macrosynth.py
-
 class M8MacroSynth(M8InstrumentBase):
     # Define synth-specific offsets
     SYNTH_OFFSET = 18

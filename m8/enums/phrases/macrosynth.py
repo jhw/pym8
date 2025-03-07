@@ -21,25 +21,3 @@ class M8MacroSynthFX(IntEnum):
     SDL = 0x90
     SRV = 0x91
 
-class M8MacroSynthModFX(IntEnum):
-    EA1 = 0x92
-    AT1 = 0x93
-    HO1 = 0x94
-    DE1 = 0x95
-    ET1 = 0x96
-    EA2 = 0x97
-    AT2 = 0x98
-    HO2 = 0x99
-    DE2 = 0x9a
-    ET2 = 0x9b
-    LA3 = 0x9c
-    LO3 = 0x9d
-    LS3 = 0x9e
-    LF3 = 0x9f
-    LT3 = 0xa0
-    LA4 = 0xa1
-    LO4 = 0xa2
-    LS4 = 0xa3
-    LF4 = 0xa4
-    LT4 = 0xa5
-
