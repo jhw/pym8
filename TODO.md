@@ -4,8 +4,9 @@
 
 # medium
 
-- m8i files
 - sampler
+- m8i files
+
 - fmsynth
 - hypersynth
 
