@@ -1,7 +1,6 @@
 # short
 
 - modulator fx are not instrument specific
-- force project constructor to be initialised with a template
 
 # medium
 
@@ -9,10 +8,9 @@
 - fmsynth
 - hypersynth
 
-- toml file
-
 # roadmap
 
+- toml file
 - m8i files
 - sampler slice points
 - tables
@@ -28,6 +26,7 @@
 
 # done
 
+- force project constructor to be initialised with a template
 - wavsynth
 - filter/amp/mixer/amplifier offsets must be on a per instrument basis
 - last commit introduced dual serialisation of filter/amp/mixer params

@@ -24,14 +24,6 @@ OFFSETS = {
 }
 
 class M8Project:
-    def __init__(self):
-        self.version = M8Version()
-        self.metadata = M8Metadata()
-        self.song = M8SongMatrix()
-        self.chains = M8Chains()
-        self.phrases = M8Phrases()
-        self.instruments = M8Instruments()
-        self.data = bytearray(sum(OFFSETS.values()))
 
     @classmethod
     def read(cls, data):
