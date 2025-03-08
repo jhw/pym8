@@ -2,6 +2,21 @@ from m8.api import M8Block, load_class, join_nibbles, split_byte
 from m8.api.modulators import M8Modulators, create_default_modulators
 from enum import Enum, auto
 
+import random
+
+# Instrument type definitions
+INSTRUMENT_TYPES = {
+    0x00: "m8.api.instruments.wavsynth.M8WavSynth",
+    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
+}
+
+# Global counter for instrument naming
+_INSTRUMENT_COUNTER = 0
+
+# Block sizes and counts
+BLOCK_SIZE = 215
+BLOCK_COUNT = 128
+
 class M8ParamType(Enum):
     UINT8 = auto()      # Standard 1-byte integer (0-255)
     STRING = auto()     # String type with variable length
@@ -138,21 +153,6 @@ class M8ParamsBase:
                 setattr(instance, name, data[name])
             
         return instance
-
-import random
-
-# Instrument type definitions
-INSTRUMENT_TYPES = {
-    0x00: "m8.api.instruments.wavsynth.M8WavSynth",
-    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
-}
-
-# Global counter for instrument naming
-_INSTRUMENT_COUNTER = 0
-
-# Block sizes and counts
-BLOCK_SIZE = 215
-BLOCK_COUNT = 128
 
 class M8InstrumentBase:
     

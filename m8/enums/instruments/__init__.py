@@ -1,13 +1,5 @@
 from enum import IntEnum
 
-class M8InstrumentTypes(IntEnum):
-    MACROSYNTH = 0x01
-
-class M8ModTypes(IntEnum):
-    AHD = 0x00
-    ADSR = 0x01
-    LFO = 0x03
-    
 class M8FilterTypes(IntEnum):
     OFF = 0x00
     LOWPASS = 0x01
@@ -18,7 +10,7 @@ class M8FilterTypes(IntEnum):
     ZDF_LP = 0x06
     ZDF_HP = 0x07
 
-class M8AmpLimitTypes(IntEnum):
+class M8LimitTypes(IntEnum):
     CLIP = 0x00
     SIN = 0x01
     FOLD = 0x02

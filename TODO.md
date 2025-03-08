@@ -1,10 +1,5 @@
 # short
 
-- re- order instruments __init__.py
-- remove instrument names from example
-- are M8InstrumentTypes, M8ModTypes being used?
-- rename M8AmpLimitTypes
-
 # medium
 
 - sampler
@@ -30,6 +25,10 @@
 
 # done
 
+- rename M8AmpLimitTypes
+- are M8InstrumentTypes, M8ModTypes being used?
+- remove instrument names from example
+- re- order instruments __init__.py
 - offsets need to be stored in on per- param basis
 - modulator fx are not instrument specific
 - force project constructor to be initialised with a template

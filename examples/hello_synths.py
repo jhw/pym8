@@ -6,7 +6,7 @@ from m8.api.modulators import M8AHDEnvelope
 from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
-from m8.enums.instruments import M8FilterTypes, M8AmpLimitTypes
+from m8.enums.instruments import M8FilterTypes, M8LimitTypes
 from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
 from m8.enums.instruments.wavsynth import M8WavSynthModDestinations
 from m8.enums.phrases import M8Notes
@@ -30,7 +30,6 @@ try:
     
     # Create and configure macro synth instrument
     macro_synth = M8MacroSynth(
-        name="MACRO01",
         delay=0xC0,
         chorus=0xC0,
         reverb=0x40,
@@ -38,7 +37,7 @@ try:
         cutoff=0x20,
         res=0xC0,  # renamed from resonance
         shape=M8MacroSynthShapes.BUZZ,
-        limit=M8AmpLimitTypes.SIN,
+        limit=M8LimitTypes.SIN,
         amp=0x40
     )
     
@@ -63,14 +62,13 @@ try:
     
     # Create and configure wavsynth instrument with the same filter/amp/mixer params as macro
     wav_synth = M8WavSynth(
-        name="WAVSYN01",
         delay=0xC0,
         chorus=0xC0,
         reverb=0x40,
         filter=M8FilterTypes.LOWPASS,
         cutoff=0x20,
         res=0xC0,  # renamed from resonance
-        limit=M8AmpLimitTypes.SIN,
+        limit=M8LimitTypes.SIN,
         amp=0x40,
         # WavSynth specific params all at 0x00 except size
         shape=0x00,
