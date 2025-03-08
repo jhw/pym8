@@ -1,16 +1,19 @@
 # short
 
-- sampler
+- re- order instruments __init__.py
+- remove instrument names from example
+- are M8InstrumentTypes, M8ModTypes being used?
+- rename M8AmpLimitTypes
 
 # medium
 
-- m8i files
-
+- sampler
 - fmsynth
 - hypersynth
 
 # roadmap
 
+- m8i files
 - toml to replace setup.py
 
 - sampler slice points
