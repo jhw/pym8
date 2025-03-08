@@ -1,10 +1,9 @@
 # short
 
-- offsets need to be stored in on per- param basis
+- sampler
 
 # medium
 
-- sampler
 - m8i files
 
 - fmsynth
@@ -28,6 +27,7 @@
 
 # done
 
+- offsets need to be stored in on per- param basis
 - modulator fx are not instrument specific
 - force project constructor to be initialised with a template
 - wavsynth
