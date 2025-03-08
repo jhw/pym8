@@ -7,7 +7,8 @@ import random
 # Instrument type definitions
 INSTRUMENT_TYPES = {
     0x00: "m8.api.instruments.wavsynth.M8WavSynth",
-    0x01: "m8.api.instruments.macrosynth.M8MacroSynth"
+    0x01: "m8.api.instruments.macrosynth.M8MacroSynth",
+    0x02: "m8.api.instruments.sampler.M8Sampler"
 }
 
 # Global counter for instrument naming

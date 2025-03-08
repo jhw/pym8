@@ -1,3 +1,17 @@
+### pico waveforms 08/03/25
+
+```
+(env) jhw@Justins-Air pym8 % ls /Volumes/M8/Samples/woldo/waveforms/erica\ pico 
+ERICA PICO 01.wav	ERICA PICO 09.wav	ERICA PICO 17.wav	ERICA PICO 25.wav
+ERICA PICO 02.wav	ERICA PICO 10.wav	ERICA PICO 18.wav	ERICA PICO 26.wav
+ERICA PICO 03.wav	ERICA PICO 11.wav	ERICA PICO 19.wav	ERICA PICO 27.wav
+ERICA PICO 04.wav	ERICA PICO 12.wav	ERICA PICO 20.wav	ERICA PICO 28.wav
+ERICA PICO 05.wav	ERICA PICO 13.wav	ERICA PICO 21.wav	ERICA PICO 29.wav
+ERICA PICO 06.wav	ERICA PICO 14.wav	ERICA PICO 22.wav	ERICA PICO 30.wav
+ERICA PICO 07.wav	ERICA PICO 15.wav	ERICA PICO 23.wav	ERICA PICO 31.wav
+ERICA PICO 08.wav	ERICA PICO 16.wav	ERICA PICO 24.wav	ERICA PICO 32.wav
+```
+
 ### wavsynth 04/03/25
 
 - synth params

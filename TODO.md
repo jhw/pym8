@@ -1,8 +1,14 @@
-# short
+# short [01-sampler]
+
+- mixer params are messed up
+- modulators not showing
+- is default play_mode really 0x02 / fwd loop?
+- example should fill full 16 phrase steps
 
 # medium
 
-- sampler
+- flatten enums
+
 - fmsynth
 - hypersynth
 

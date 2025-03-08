@@ -1,0 +1,23 @@
+from enum import IntEnum
+
+class M8SamplerFX(IntEnum):
+    VOL = 0x80
+    PIT = 0x81
+    FIN = 0x82
+    PLY = 0x83
+    STA = 0x84
+    LOP = 0x85
+    LEN = 0x86
+    DEG = 0x87
+    FIL = 0x88
+    CUT = 0x89
+    RES = 0x8A
+    AMP = 0x8B
+    LIM = 0x8C
+    PAN = 0x8D
+    DRY = 0x8E
+    SCH = 0x8F
+    SDL = 0x90
+    SRV = 0x91
+    SLI = 0x92  # Extra command for slice
+
