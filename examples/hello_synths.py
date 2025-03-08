@@ -20,26 +20,32 @@ try:
     # Load the base project template
     project = M8Project.read_from_file("templates/DEFAULT401.m8s")
     
+    # Create the project from the template
+    
     # Configure project metadata
     project.metadata.directory = "/Songs/woldo/"
     project.metadata.name = "PYSYNTHS"
     
+    # Create instruments for our project
+    
     # Create and configure macro synth instrument
     macro_synth = M8MacroSynth(
         name="MACRO01",
-        mixer_delay=0xC0,
-        mixer_chorus=0xC0,
-        mixer_reverb=0x40,
-        filter_type=M8FilterTypes.LOWPASS,
-        filter_cutoff=0x20,
-        filter_resonance=0xC0,
+        delay=0xC0,
+        chorus=0xC0,
+        reverb=0x40,
+        filter=M8FilterTypes.LOWPASS,
+        cutoff=0x20,
+        res=0xC0,  # renamed from resonance
         shape=M8MacroSynthShapes.BUZZ,
-        amp_limit=M8AmpLimitTypes.SIN,
-        amp_level=0x40
+        limit=M8AmpLimitTypes.SIN,
+        amp=0x40
     )
     
     # Add MacroSynth to project and store the returned index
     macro_idx = project.add_instrument(macro_synth)
+    
+    # Use the returned index for MacroSynth
     
     # Create and configure modulators for MacroSynth
     ahd_mod1 = M8AHDEnvelope(
@@ -49,7 +55,7 @@ try:
     macro_synth.set_modulator(ahd_mod1, slot=0)
     
     ahd_mod2 = M8AHDEnvelope(
-        destination=M8MacroSynthModDestinations.FILTER_CUTOFF,
+        destination=M8MacroSynthModDestinations.CUTOFF,  # Keep original destination (0x07)
         amount=0x80,
         decay=0x40
     )
@@ -58,24 +64,26 @@ try:
     # Create and configure wavsynth instrument with the same filter/amp/mixer params as macro
     wav_synth = M8WavSynth(
         name="WAVSYN01",
-        mixer_delay=0xC0,
-        mixer_chorus=0xC0,
-        mixer_reverb=0x40,
-        filter_type=M8FilterTypes.LOWPASS,
-        filter_cutoff=0x20,
-        filter_resonance=0xC0,
-        amp_limit=M8AmpLimitTypes.SIN,
-        amp_level=0x40,
+        delay=0xC0,
+        chorus=0xC0,
+        reverb=0x40,
+        filter=M8FilterTypes.LOWPASS,
+        cutoff=0x20,
+        res=0xC0,  # renamed from resonance
+        limit=M8AmpLimitTypes.SIN,
+        amp=0x40,
         # WavSynth specific params all at 0x00 except size
-        waveform=0x00,
+        shape=0x00,
         size=0x20,
         mult=0x00,
         warp=0x00,
-        mirror=0x00
+        scan=0x00
     )
     
     # Add WavSynth to project and store the index
     wav_idx = project.add_instrument(wav_synth)
+    
+    # Use the returned index for WavSynth
     
     # Create and configure modulators for WavSynth - identical to MacroSynth
     wav_mod1 = M8AHDEnvelope(
@@ -85,7 +93,7 @@ try:
     wav_synth.set_modulator(wav_mod1, slot=0)
     
     wav_mod2 = M8AHDEnvelope(
-        destination=M8WavSynthModDestinations.FILTER_CUTOFF,
+        destination=M8WavSynthModDestinations.CUTOFF,  # Keep original destination (0x07)
         amount=0x80,
         decay=0x40
     )
@@ -142,12 +150,22 @@ try:
     
     # Validate and save the project
     project.validate()
+    
+    # Write the project to a file
+    
     os.makedirs('tmp', exist_ok=True)
     filename = f"tmp/{project.metadata.name.replace(' ', '')}"
     project.write_to_file(f"{filename}.m8s")
     project.write_to_json_file(f"{filename}.json")
     
+    # Successfully created project
     print(f"Successfully created project: {filename}")
+    
+    # Read the project back and check instrument types
+    reload_project = M8Project.read_from_file(f"{filename}.m8s")
+    
+    # Verify instruments were reloaded with correct types
+    print(f"Reloaded instruments: MacroSynth (type={reload_project.instruments[macro_idx].type}), WavSynth (type={reload_project.instruments[wav_idx].type})")
     
 except M8ValidationError as e:
     print(f"Project creation failed: {str(e)}")

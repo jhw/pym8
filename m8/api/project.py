@@ -121,6 +121,8 @@ class M8Project:
             if hasattr(self, name):
                 block = getattr(self, name)
                 data = block.write()
+                
+                # Write the data to the output buffer
                 output[offset:offset + len(data)] = data
         return bytes(output)
 

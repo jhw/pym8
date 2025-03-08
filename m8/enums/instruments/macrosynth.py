@@ -8,10 +8,10 @@ class M8MacroSynthModDestinations(IntEnum):
     COLOR = 0x04
     DEGRADE = 0x05
     REDUX = 0x06
-    FILTER_CUTOFF = 0x07
-    FILTER_RESONANCE = 0x08
-    AMP_LEVEL = 0x09
-    MIXER_PAN = 0x0A
+    CUTOFF = 0x07        # Renamed from FILTER_CUTOFF
+    RES = 0x08           # Renamed from RESONANCE (previously FILTER_RESONANCE)
+    AMP = 0x09           # Renamed from AMP_LEVEL
+    PAN = 0x0A           # Renamed from MIXER_PAN
     MOD_AMP = 0x0B
     MOD_RATE = 0x0C
     MOD_BOTH = 0x0D
