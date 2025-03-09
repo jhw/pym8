@@ -1,12 +1,9 @@
-# short [01-sampler]
+# short
 
-- remove spaces in names
-- flatten enums
-- example should fill full 16 phrase steps
+- m8i files
 
 # medium
 
-- m8i files
 - fmsynth
 - hypersynth
 
@@ -27,6 +24,9 @@
 
 # done
 
+- flatten enums
+- example should fill full 16 phrase steps
+- remove spaces in names
 - sampler play_mode (0x02) (and maybe slice also) being rendering incorrectly 
 - mixer params are messed up
 - modulators not showing

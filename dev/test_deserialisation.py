@@ -20,6 +20,7 @@ def main():
     # Check file extension
     if not file_path.lower().endswith('.json'):
         print(f"Warning: File does not have .m8s extension: {file_path}")
+        sys.exit(1)
     
     # Read the project
     project = M8Project.read_from_json_file(file_path)

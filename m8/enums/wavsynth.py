@@ -1,6 +1,26 @@
 # m8/enums/instruments/wavsynth.py
 from enum import IntEnum
 
+class M8WavSynthFX(IntEnum):
+    VOL = 0x80
+    PIT = 0x81
+    FIN = 0x82
+    OSC = 0x83
+    SIZ = 0x84
+    MUL = 0x85
+    WRP = 0x86
+    MIR = 0x87
+    FIL = 0x88
+    CUT = 0x89
+    RES = 0x8A
+    AMP = 0x8B
+    LIM = 0x8C
+    PAN = 0x8D
+    DRY = 0x8E
+    SCH = 0x8F
+    SDL = 0x90
+    SRV = 0x91
+
 class M8WavSynthModDestinations(IntEnum):
     OFF = 0x00
     VOLUME = 0x01

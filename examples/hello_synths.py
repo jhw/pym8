@@ -7,14 +7,10 @@ from m8.api.modulators import M8AHDEnvelope
 from m8.api.phrases import M8Phrase, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.song import M8SongRow
-from m8.enums.instruments import M8FilterTypes, M8LimitTypes
-from m8.enums.instruments.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations
-from m8.enums.instruments.wavsynth import M8WavSynthModDestinations
-from m8.enums.instruments.sampler import M8SamplerPlayMode, M8SamplerModDestinations
-from m8.enums.phrases import M8Notes
-from m8.enums.phrases.macrosynth import M8MacroSynthFX
-from m8.enums.phrases.wavsynth import M8WavSynthFX
-from m8.enums.phrases.sampler import M8SamplerFX
+from m8.enums import M8FilterTypes, M8LimitTypes, M8Notes
+from m8.enums.macrosynth import M8MacroSynthShapes, M8MacroSynthModDestinations,  M8MacroSynthFX
+from m8.enums.wavsynth import M8WavSynthModDestinations, M8WavSynthFX
+from m8.enums.sampler import M8SamplerPlayMode, M8SamplerModDestinations, M8SamplerFX
 
 import os
 import random
@@ -146,8 +142,8 @@ try:
     # Possible effect values
     fx_values = [0x40, 0x80, 0xC0]
     
-    # Create 9 steps with rotating instruments (macro, wav, sampler)
-    for i in range(9):
+    # Create 16 steps with rotating instruments (macro, wav, sampler)
+    for i in range(16):
         # Determine which instrument to use (rotate between macro, wav, and sampler)
         if i % 3 == 0:
             instr_idx = macro_idx

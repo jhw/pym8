@@ -1,5 +1,27 @@
 from enum import IntEnum
 
+class M8MacroSynthFX(IntEnum):
+    VOL = 0x80
+    PIT = 0x81
+    FIN = 0x82
+    OSC = 0x83
+    TBR = 0x84
+    COL = 0x85
+    DEG = 0x86
+    RED = 0x87
+    FIL = 0x88
+    CUT = 0x89
+    RES = 0x8a
+    AMP = 0x8b
+    LIM = 0x8c
+    PAD = 0x8d
+    TRG = 0xa6
+    DRY = 0x8e
+    SCH = 0x8f
+    SDL = 0x90
+    SRV = 0x91
+
+
 class M8MacroSynthModDestinations(IntEnum):
     OFF = 0x00
     VOLUME = 0x01
