@@ -38,7 +38,7 @@ class M8SamplerParams(M8ParamsBase):
 
 class M8Sampler(M8InstrumentBase):
     # Different modulator offset from WavSynth and MacroSynth
-    MODULATORS_OFFSET = 29
+    MODULATORS_OFFSET = 63
     
     def __init__(self, **kwargs):
         # Set type before calling parent class init

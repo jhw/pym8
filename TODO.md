@@ -1,22 +1,20 @@
 # short [01-sampler]
 
-- mixer params are messed up
-- modulators not showing
-- is default play_mode really 0x02 / fwd loop?
+- sampler play_mode is rendering incorrectly 
+- sampler slice and play mode appear reversed
+- remove spaces in names
+- flatten enums
 - example should fill full 16 phrase steps
 
 # medium
 
-- flatten enums
-
+- m8i files
 - fmsynth
 - hypersynth
 
 # roadmap
 
-- m8i files
-- toml to replace setup.py
-
+- toml file
 - sampler slice points
 - tables
 - eq
@@ -31,6 +29,8 @@
 
 # done
 
+- mixer params are messed up
+- modulators not showing
 - rename M8AmpLimitTypes
 - are M8InstrumentTypes, M8ModTypes being used?
 - remove instrument names from example
