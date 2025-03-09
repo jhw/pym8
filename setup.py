@@ -58,7 +58,7 @@ def filter_packages(root):
     
 setuptools.setup(
     name="pym8",
-    version="0.1.0",
+    version="0.1.1",
     author="jhw",
     author_email="justin.worrall@gmail.com",
     description="A Python package for the parsing of Dirtywave M8 files",
@@ -71,7 +71,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     # packages=setuptools.find_packages(),
-    packages=filter_packages("pym8"),
+    packages=filter_packages("m8"),
     install_requires=requirements,
     # - https://stackoverflow.com/a/57932258/124179
     setup_requires=['setuptools_scm'],
