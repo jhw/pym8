@@ -1,7 +1,7 @@
 # short [01-sampler]
 
-- sampler play_mode is rendering incorrectly 
-- sampler slice and play mode appear reversed
+
+- sampler play_mode (0x02) (and maybe slice also) being rendering incorrectly 
 - remove spaces in names
 - flatten enums
 - example should fill full 16 phrase steps
