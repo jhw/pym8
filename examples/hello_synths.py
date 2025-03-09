@@ -114,7 +114,7 @@ try:
         limit=M8LimitTypes.SIN,
         amp=0x40,
         # Sampler specific params
-        play_mode=M8SamplerPlayMode.FWDLOOP,
+        play_mode=M8SamplerPlayMode.FWD,
         slice=0x00,
         start=0x00,
         loop_start=0x00,

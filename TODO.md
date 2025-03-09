@@ -1,7 +1,5 @@
 # short [01-sampler]
 
-
-- sampler play_mode (0x02) (and maybe slice also) being rendering incorrectly 
 - remove spaces in names
 - flatten enums
 - example should fill full 16 phrase steps
@@ -29,6 +27,7 @@
 
 # done
 
+- sampler play_mode (0x02) (and maybe slice also) being rendering incorrectly 
 - mixer params are messed up
 - modulators not showing
 - rename M8AmpLimitTypes
