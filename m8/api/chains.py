@@ -106,8 +106,7 @@ class M8Chain(list):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
                 if step.phrase != M8ChainStep.EMPTY_PHRASE and (
-                    step.phrase >= len(phrases) or 
-                    phrases[step.phrase].is_empty()
+                    step.phrase >= len(phrases)
                 ):
                     raise M8ValidationError(
                         f"Chain step {step_idx} references non-existent or empty "

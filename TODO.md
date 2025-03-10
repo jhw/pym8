@@ -1,9 +1,11 @@
 # short
 
-- m8i files
+- remove chain check for empty phrases
+- move templates inline
 
 # medium
 
+- m8i files
 - fmsynth
 - hypersynth
 
