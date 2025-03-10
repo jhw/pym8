@@ -1,6 +1,5 @@
 # short
 
-- toml file
 - initialise template from version
 - m8i files
 
@@ -22,6 +21,7 @@
 
 # done
 
+- toml file
 - remove chain check for empty phrases
 - move templates inline
 - flatten enums
