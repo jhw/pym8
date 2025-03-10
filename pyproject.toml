@@ -22,14 +22,17 @@ requires-python = ">=3.6"
 Homepage = "https://github.com/jhw/pym8"
 
 [tool.setuptools]
-# This specifies where to find the packages
-packages = {find = {where = ["m8"]}}
-# This ensures setuptools treats the "m8" directory as the package root
-package-dir = {"" = "."}
+# This line is critical - it tells setuptools that "m8" is the actual package to install
+py-modules = ["m8"]
 include-package-data = true
 
+[tool.setuptools.packages.find]
+# This tells setuptools where to look for packages
+where = ["."]
+include = ["m8*"]
+
 [tool.setuptools.package-data]
-"*" = ["*.m8s"]
+"m8" = ["*.m8s"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
