@@ -49,7 +49,7 @@ def filter_packages(root):
         for path in os.listdir(root):
             if path=="__pycache__":
                 continue
-            newpath="%s/%s" % (root, path)
+            newpath = f"{root}/{path}"
             if os.path.isdir(newpath):
                 filter_packages(newpath, packages)
     packages=[]
@@ -58,7 +58,6 @@ def filter_packages(root):
     
 setuptools.setup(
     name="pym8",
-    version="0.1.1",
     author="jhw",
     author_email="justin.worrall@gmail.com",
     description="A Python package for the parsing of Dirtywave M8 files",
@@ -72,8 +71,12 @@ setuptools.setup(
     ],
     # packages=setuptools.find_packages(),
     packages=filter_packages("m8"),
+    package_data={
+        "": ["*.m8s"]
+    },
     install_requires=requirements,
     # - https://stackoverflow.com/a/57932258/124179
     setup_requires=['setuptools_scm'],
+    use_scm_version=True,
     include_package_data=True
 )

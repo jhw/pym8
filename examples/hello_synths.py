@@ -17,7 +17,7 @@ import random
 
 try:
     # Load the base project template
-    project = M8Project.read_from_file("templates/DEFAULT401.m8s")
+    project = M8Project.read_from_file("m8/templates/DEFAULT401.m8s")
     
     # Create the project from the template
     

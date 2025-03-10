@@ -1,8 +1,5 @@
 # short
 
-- remove chain check for empty phrases
-- move templates inline
-
 # medium
 
 - m8i files
@@ -26,6 +23,8 @@
 
 # done
 
+- remove chain check for empty phrases
+- move templates inline
 - flatten enums
 - example should fill full 16 phrase steps
 - remove spaces in names
