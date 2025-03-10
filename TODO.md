@@ -1,14 +1,16 @@
 # short
 
+- toml file
+- initialise template from version
+- m8i files
+
 # medium
 
-- m8i files
 - fmsynth
 - hypersynth
 
 # roadmap
 
-- toml file
 - sampler slice points
 - tables
 - eq
@@ -17,9 +19,6 @@
 - scales
 
 # thoughts
-
-- test suite?
-- transpose/eq/pitch/fine_tune synth parameters?
 
 # done
 

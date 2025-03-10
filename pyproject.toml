@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pym8"
+dynamic = ["version", "dependencies"]
+description = "A Python package for the parsing of Dirtywave M8 files"
+readme = "README.md"
+authors = [
+    {name = "jhw", email = "justin.worrall@gmail.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.6"
+
+[project.urls]
+Homepage = "https://github.com/jhw/pym8"
+
+[tool.setuptools]
+# This specifies where to find the packages
+packages = {find = {where = ["m8"]}}
+# This ensures setuptools treats the "m8" directory as the package root
+package-dir = {"" = "."}
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*.m8s"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools_scm]
+# No configuration needed for basic usage
