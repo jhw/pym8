@@ -1,14 +1,17 @@
 # short
 
+- add claude comments
+- consider move add_fx into fx classes
 
 # medium
 
 - m8i files
 - fmsynth
-- hypersynth
+- byte hunter script
 
 # roadmap
 
+- hypersynth
 - sampler slice points
 - tables
 - eq
