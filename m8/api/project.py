@@ -131,6 +131,41 @@ class M8Project:
         with open(filename, "rb") as f:
             return M8Project.read(f.read())
 
+    @classmethod
+    def initialise(cls, template_name: str = "DEFAULT401"):
+        """
+        Create a new M8Project from a template file.
+        
+        Args:
+            template_name: Name of the template file without the .m8s extension (default: DEFAULT401)
+            
+        Returns:
+            A new M8Project instance
+            
+        Raises:
+            FileNotFoundError: If the template file cannot be found
+        """
+        import os
+        import pkg_resources
+        
+        # Try to find the template in the package resources first (when installed via pip)
+        try:
+            template_path = pkg_resources.resource_filename('m8', f'templates/{template_name}.m8s')
+            if os.path.exists(template_path):
+                return cls.read_from_file(template_path)
+        except (ImportError, pkg_resources.DistributionNotFound):
+            # If pkg_resources fails, fall back to relative path
+            pass
+            
+        # Try relative path (for local development)
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(module_path, "..", "templates", f"{template_name}.m8s")
+        
+        if not os.path.exists(template_path):
+            raise FileNotFoundError(f"Template '{template_name}' not found. Check that {template_name}.m8s exists in the m8/templates directory.")
+            
+        return cls.read_from_file(template_path)
+
     def write_to_file(self, filename: str):
         with open(filename, "wb") as f:
             f.write(self.write())

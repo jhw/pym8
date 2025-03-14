@@ -82,7 +82,46 @@ class M8PhraseStep:
                 return slot_idx
         return None
     
+    def find_fx_slot(self, key):
+        """
+        Find an existing FX slot with the given key
+        
+        Args:
+            key: The FX key to find
+            
+        Returns:
+            The slot index if found, None otherwise
+        """
+        for slot_idx, fx in enumerate(self.fx):
+            if not fx.is_empty() and fx.key == key:
+                return slot_idx
+        return None
+    
     def add_fx(self, key, value):
+        """
+        Add or update an FX tuple with the given key and value
+        
+        If an FX tuple with the given key already exists, its value will be updated.
+        Otherwise, a new FX tuple will be added to the first available slot.
+        
+        Args:
+            key: The FX key
+            value: The FX value
+            
+        Returns:
+            The slot index where the FX tuple was added or updated
+            
+        Raises:
+            IndexError: If no empty slots are available and no matching key was found
+        """
+        # First check if we already have this key
+        existing_slot = self.find_fx_slot(key)
+        if existing_slot is not None:
+            # Update the existing FX tuple
+            self.fx[existing_slot].value = value
+            return existing_slot
+        
+        # Otherwise find an empty slot
         slot = self.available_slot
         if slot is None:
             raise IndexError("No empty FX slots available in this step")
@@ -91,6 +130,17 @@ class M8PhraseStep:
         return slot
         
     def set_fx(self, key, value, slot):
+        """
+        Set an FX tuple at a specific slot
+        
+        Args:
+            key: The FX key
+            value: The FX value
+            slot: The slot index to set
+            
+        Raises:
+            IndexError: If the slot index is out of range
+        """
         if not (0 <= slot < FX_BLOCK_COUNT):
             raise IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
             

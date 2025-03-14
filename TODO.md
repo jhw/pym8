@@ -1,10 +1,9 @@
 # short
 
-- initialise template from version
-- m8i files
 
 # medium
 
+- m8i files
 - fmsynth
 - hypersynth
 
@@ -21,6 +20,8 @@
 
 # done
 
+- fx add method
+- initialise template from version
 - toml file
 - remove chain check for empty phrases
 - move templates inline
