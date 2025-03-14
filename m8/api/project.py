@@ -146,18 +146,32 @@ class M8Project:
             FileNotFoundError: If the template file cannot be found
         """
         import os
-        import pkg_resources
+        import sys
         
-        # Try to find the template in the package resources first (when installed via pip)
+        # Try multiple approaches to find the template file
+        
+        # 1. Direct check for site-packages installation
+        for path in sys.path:
+            if 'site-packages' in path:
+                potential_path = os.path.join(path, 'm8', 'templates', f"{template_name}.m8s")
+                if os.path.exists(potential_path):
+                    return cls.read_from_file(potential_path)
+        
+        # 2. Try pkg_resources as a fallback
         try:
-            template_path = pkg_resources.resource_filename('m8', f'templates/{template_name}.m8s')
-            if os.path.exists(template_path):
-                return cls.read_from_file(template_path)
-        except (ImportError, pkg_resources.DistributionNotFound):
-            # If pkg_resources fails, fall back to relative path
+            import pkg_resources
+            try:
+                template_path = pkg_resources.resource_filename('m8', f'templates/{template_name}.m8s')
+                if os.path.exists(template_path):
+                    return cls.read_from_file(template_path)
+            except (ImportError, pkg_resources.DistributionNotFound, TypeError):
+                # If pkg_resources.resource_filename fails, continue to next approach
+                pass
+        except ImportError:
+            # pkg_resources not available
             pass
             
-        # Try relative path (for local development)
+        # 3. Try relative path (for local development)
         module_path = os.path.dirname(os.path.abspath(__file__))
         template_path = os.path.join(module_path, "..", "templates", f"{template_name}.m8s")
         
