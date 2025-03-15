@@ -2,13 +2,20 @@ from m8.api import M8ValidationError, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple 
 
 # Module-level constants
-FX_BLOCK_COUNT = 3
-STEP_BLOCK_SIZE = 9
-STEP_COUNT = 16
-PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE
-PHRASE_COUNT = 255
+FX_BLOCK_COUNT = 3         # Number of FX slots per step
+STEP_BLOCK_SIZE = 9        # Size of each step in bytes
+STEP_COUNT = 16            # Number of steps per phrase
+PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total phrase size in bytes
+PHRASE_COUNT = 255         # Maximum number of phrases
 
 class M8PhraseStep:
+    """Represents a single step in an M8 phrase.
+    
+    Each step can contain a note, velocity, instrument reference, and
+    up to three effect (FX) parameters. Steps are the building blocks
+    of phrases in the M8 tracker.
+    """
+    
     # Class-level constants
     NOTE_OFFSET = 0
     VELOCITY_OFFSET = 1
@@ -23,60 +30,128 @@ class M8PhraseStep:
     EMPTY_INSTRUMENT = 0xFF
     
     def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
+        """Initialize a phrase step with optional note, velocity, and instrument.
+        
+        Args:
+            note: MIDI note number (0-127) or EMPTY_NOTE (255) for no note
+            velocity: Note velocity (0-127) or EMPTY_VELOCITY (255) for default
+            instrument: Instrument index (0-127) or EMPTY_INSTRUMENT (255) for none
+        """
         # Initialize base data
         self._data = bytearray([note, velocity, instrument])
         self.fx = M8FXTuples()
 
     @classmethod
     def read(cls, data):
+        """Create a phrase step from binary data.
+        
+        Args:
+            data: Binary data containing a phrase step
+            
+        Returns:
+            M8PhraseStep: New instance with values from the binary data
+        """
         instance = cls()
         instance._data = bytearray(data[:cls.BASE_DATA_SIZE])
         instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
         return instance
 
     def clone(self):
+        """Create a deep copy of this phrase step.
+        
+        Returns:
+            M8PhraseStep: New instance with the same values
+        """
         instance = self.__class__()
         instance._data = bytearray(self._data)  # Clone base data
         instance.fx = self.fx.clone()  # Clone fx tuples
         return instance
 
     def is_empty(self):
+        """Check if this phrase step is empty.
+        
+        A step is considered empty if it has no note, default velocity,
+        no instrument, and no FX.
+        
+        Returns:
+            bool: True if the step is empty, False otherwise
+        """
         return (self.note == self.EMPTY_NOTE and
                 self.velocity == self.EMPTY_VELOCITY and
                 self.instrument == self.EMPTY_INSTRUMENT and
                 self.fx.is_empty())
 
     def write(self):
+        """Convert the phrase step to binary data.
+        
+        Returns:
+            bytes: Binary representation of the phrase step
+        """
         buffer = bytearray(self._data)
         buffer.extend(self.fx.write())
         return bytes(buffer)
 
     @property
     def note(self):
+        """Get the note value (0-127, 255=empty).
+        
+        Returns:
+            int: MIDI note number or EMPTY_NOTE
+        """
         return self._data[self.NOTE_OFFSET]
     
     @note.setter
     def note(self, value):
+        """Set the note value.
+        
+        Args:
+            value: MIDI note number (0-127) or EMPTY_NOTE (255)
+        """
         self._data[self.NOTE_OFFSET] = value
     
     @property
     def velocity(self):
+        """Get the velocity value (0-127, 255=empty).
+        
+        Returns:
+            int: Note velocity or EMPTY_VELOCITY
+        """
         return self._data[self.VELOCITY_OFFSET]
     
     @velocity.setter
     def velocity(self, value):
+        """Set the velocity value.
+        
+        Args:
+            value: Note velocity (0-127) or EMPTY_VELOCITY (255)
+        """
         self._data[self.VELOCITY_OFFSET] = value
     
     @property
     def instrument(self):
+        """Get the instrument index (0-127, 255=empty).
+        
+        Returns:
+            int: Instrument index or EMPTY_INSTRUMENT
+        """
         return self._data[self.INSTRUMENT_OFFSET]
     
     @instrument.setter
     def instrument(self, value):
+        """Set the instrument index.
+        
+        Args:
+            value: Instrument index (0-127) or EMPTY_INSTRUMENT (255)
+        """
         self._data[self.INSTRUMENT_OFFSET] = value
 
     @property
     def available_slot(self):
+        """Find the first available (empty) FX slot.
+        
+        Returns:
+            int: Index of the first empty slot, or None if all slots are used
+        """
         for slot_idx, fx in enumerate(self.fx):
             if fx.is_empty() or (fx.key == 0xFF):
                 return slot_idx
@@ -181,18 +256,29 @@ class M8PhraseStep:
         return False
 
     def as_dict(self):
-        """Convert phrase step to dictionary for serialization"""
+        """Convert phrase step to dictionary for serialization.
+        
+        Returns:
+            dict: Dictionary representation of the phrase step
+        """
         result = {
             "note": self.note,
             "velocity": self.velocity,
             "instrument": self.instrument,
-            "fx": self.fx.as_list()  # Use the new as_list() method
+            "fx": self.fx.as_list()  # Use the as_list() method for FX tuples
         }
         return result
 
     @classmethod
     def from_dict(cls, data):
-        """Create a phrase step from a dictionary"""
+        """Create a phrase step from a dictionary.
+        
+        Args:
+            data: Dictionary containing phrase step data
+            
+        Returns:
+            M8PhraseStep: New instance with values from the dictionary
+        """
         instance = cls(
             note=data.get("note", cls.EMPTY_NOTE),
             velocity=data.get("velocity", cls.EMPTY_VELOCITY),
@@ -206,7 +292,15 @@ class M8PhraseStep:
         return instance
 
 class M8Phrase(list):
+    """Represents a sequence of steps in the M8 tracker.
+    
+    A phrase is a collection of up to 16 steps that can be placed on tracks
+    in the M8 sequencer. Each phrase contains note, instrument, and FX data.
+    Extends the built-in list type with M8-specific functionality.
+    """
+    
     def __init__(self):
+        """Initialize a phrase with empty steps."""
         super().__init__()
         # Initialize with empty steps
         for _ in range(STEP_COUNT):
@@ -214,6 +308,14 @@ class M8Phrase(list):
     
     @classmethod
     def read(cls, data):
+        """Create a phrase from binary data.
+        
+        Args:
+            data (bytes): Binary data containing phrase information
+            
+        Returns:
+            M8Phrase: New instance with steps initialized from the binary data
+        """
         instance = cls.__new__(cls)  # Create instance without calling __init__
         list.__init__(instance)  # Initialize the list properly
         
@@ -225,6 +327,11 @@ class M8Phrase(list):
         return instance
     
     def clone(self):
+        """Create a deep copy of this phrase.
+        
+        Returns:
+            M8Phrase: New instance with cloned steps
+        """
         instance = self.__class__()
         instance.clear()  # Remove default items
         
@@ -237,9 +344,19 @@ class M8Phrase(list):
         return instance
     
     def is_empty(self):
+        """Check if this phrase is empty (all steps are empty).
+        
+        Returns:
+            bool: True if all steps are empty, False otherwise
+        """
         return all(step.is_empty() for step in self)
     
     def write(self):
+        """Convert the phrase to binary data.
+        
+        Returns:
+            bytes: Binary representation of the phrase
+        """
         result = bytearray()
         for step in self:
             step_data = step.write()
@@ -252,6 +369,14 @@ class M8Phrase(list):
         return bytes(result)
 
     def validate_instruments(self, instruments):
+        """Validate that all steps reference valid instruments.
+        
+        Args:
+            instruments: List of instruments to validate against
+            
+        Raises:
+            M8ValidationError: If any step references a non-existent or empty instrument
+        """
         if not self.is_empty():
             for step_idx, step in enumerate(self):
                 if step.instrument != M8PhraseStep.EMPTY_INSTRUMENT and (
@@ -265,12 +390,28 @@ class M8Phrase(list):
     
     @property
     def available_step_slot(self):
+        """Find the first available (empty) step slot.
+        
+        Returns:
+            int: Index of the first empty slot, or None if all slots are used
+        """
         for slot_idx, step in enumerate(self):
             if step.is_empty():
                 return slot_idx
         return None
         
     def add_step(self, step):
+        """Add a step to the first available slot.
+        
+        Args:
+            step: The phrase step to add
+            
+        Returns:
+            int: The index where the step was added
+            
+        Raises:
+            IndexError: If no empty slots are available
+        """
         slot = self.available_step_slot
         if slot is None:
             raise IndexError("No empty step slots available in this phrase")
@@ -279,13 +420,26 @@ class M8Phrase(list):
         return slot
         
     def set_step(self, step, slot):
+        """Set a step at a specific slot.
+        
+        Args:
+            step: The phrase step to set
+            slot: The slot index to set
+            
+        Raises:
+            IndexError: If the slot index is out of range
+        """
         if not (0 <= slot < len(self)):
             raise IndexError(f"Step slot index must be between 0 and {len(self)-1}")
             
         self[slot] = step
             
     def as_dict(self):
-        """Convert phrase to dictionary for serialization"""
+        """Convert phrase to dictionary for serialization.
+        
+        Returns:
+            dict: Dictionary representation of the phrase, including only non-empty steps
+        """
         steps = []
         for i, step in enumerate(self):
             if not step.is_empty():
@@ -300,7 +454,14 @@ class M8Phrase(list):
         
     @classmethod
     def from_dict(cls, data):
-        """Create a phrase from a dictionary"""
+        """Create a phrase from a dictionary.
+        
+        Args:
+            data: Dictionary containing phrase data
+            
+        Returns:
+            M8Phrase: New instance with steps from the dictionary
+        """
         instance = cls()
         instance.clear()  # Clear default steps
         
@@ -321,7 +482,15 @@ class M8Phrase(list):
         return instance
 
 class M8Phrases(list):
+    """Collection of phrases used in an M8 project.
+    
+    This class manages the full collection of phrases in an M8 project.
+    An M8 project can contain up to 255 phrases, each with up to 16 steps.
+    Extends the built-in list type with M8-specific functionality.
+    """
+    
     def __init__(self):
+        """Initialize a collection of empty phrases."""
         super().__init__()
         # Initialize with empty phrases
         for _ in range(PHRASE_COUNT):
@@ -329,6 +498,14 @@ class M8Phrases(list):
     
     @classmethod
     def read(cls, data):
+        """Create a phrases collection from binary data.
+        
+        Args:
+            data (bytes): Binary data containing phrase information
+            
+        Returns:
+            M8Phrases: New instance with phrases initialized from the binary data
+        """
         instance = cls.__new__(cls)  # Create instance without calling __init__
         list.__init__(instance)  # Initialize the list properly
         
@@ -340,6 +517,11 @@ class M8Phrases(list):
         return instance
     
     def clone(self):
+        """Create a deep copy of this phrases collection.
+        
+        Returns:
+            M8Phrases: New instance with cloned phrases
+        """
         instance = self.__class__()
         instance.clear()  # Remove default items
         
@@ -349,9 +531,19 @@ class M8Phrases(list):
         return instance
     
     def is_empty(self):
+        """Check if this phrases collection is empty (all phrases are empty).
+        
+        Returns:
+            bool: True if all phrases are empty, False otherwise
+        """
         return all(phrase.is_empty() for phrase in self)
     
     def write(self):
+        """Convert the phrases collection to binary data.
+        
+        Returns:
+            bytes: Binary representation of all phrases
+        """
         result = bytearray()
         for phrase in self:
             phrase_data = phrase.write()
@@ -364,6 +556,16 @@ class M8Phrases(list):
         return bytes(result)
 
     def validate_instruments(self, instruments):
+        """Validate that all phrases reference valid instruments.
+        
+        Checks that every instrument referenced in every phrase exists and is valid.
+        
+        Args:
+            instruments: List of instruments to validate against
+            
+        Raises:
+            M8ValidationError: If any phrase references a non-existent or empty instrument
+        """
         for phrase_idx, phrase in enumerate(self):
             try:
                 phrase.validate_instruments(instruments)
@@ -371,7 +573,13 @@ class M8Phrases(list):
                 raise M8ValidationError(f"Phrase {phrase_idx}: {str(e)}") from e
     
     def as_list(self):
-        """Convert phrases to list for serialization"""
+        """Convert phrases to list for serialization.
+        
+        Creates a list containing only non-empty phrases with their indices.
+        
+        Returns:
+            list: List of dictionaries representing non-empty phrases
+        """
         items = []
         for i, phrase in enumerate(self):
             if not phrase.is_empty():
@@ -384,7 +592,14 @@ class M8Phrases(list):
         
     @classmethod
     def from_list(cls, items):
-        """Create phrases from a list"""
+        """Create phrases collection from a list.
+        
+        Args:
+            items: List of dictionaries containing phrase data
+            
+        Returns:
+            M8Phrases: New instance with phrases from the list
+        """
         instance = cls.__new__(cls)  # Create without __init__
         list.__init__(instance)  # Initialize list directly
         
