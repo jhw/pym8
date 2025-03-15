@@ -145,6 +145,40 @@ class M8PhraseStep:
             raise IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
             
         self.fx[slot] = M8FXTuple(key=key, value=value)    
+    
+    def get_fx(self, key):
+        """
+        Get the value for a specific FX key
+        
+        Args:
+            key: The FX key to look for
+            
+        Returns:
+            The value of the FX if found, None otherwise
+        """
+        slot = self.find_fx_slot(key)
+        if slot is not None:
+            return self.fx[slot].value
+        return None
+    
+    def delete_fx(self, key):
+        """
+        Delete an FX with the specified key
+        
+        Replaces the FX tuple with a blank M8FXTuple
+        
+        Args:
+            key: The FX key to delete
+            
+        Returns:
+            True if the FX was found and deleted, False otherwise
+        """
+        slot = self.find_fx_slot(key)
+        if slot is not None:
+            # Replace with empty FX tuple
+            self.fx[slot] = M8FXTuple()
+            return True
+        return False
 
     def as_dict(self):
         """Convert phrase step to dictionary for serialization"""
