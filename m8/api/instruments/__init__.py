@@ -4,30 +4,46 @@ from enum import Enum, auto
 
 import random
 
-# Instrument type definitions
+# Instrument type definitions (mapping of type ID to class path)
 INSTRUMENT_TYPES = {
-    0x00: "m8.api.instruments.wavsynth.M8WavSynth",
-    0x01: "m8.api.instruments.macrosynth.M8MacroSynth",
-    0x02: "m8.api.instruments.sampler.M8Sampler"
+    0x00: "m8.api.instruments.wavsynth.M8WavSynth",    # WavSynth instrument
+    0x01: "m8.api.instruments.macrosynth.M8MacroSynth", # MacroSynth instrument
+    0x02: "m8.api.instruments.sampler.M8Sampler"       # Sampler instrument
 }
 
-# Global counter for instrument naming
+# Global counter for auto-generating instrument names
 _INSTRUMENT_COUNTER = 0
 
-# Block sizes and counts
-BLOCK_SIZE = 215
-BLOCK_COUNT = 128
+# Block sizes and counts for instruments
+BLOCK_SIZE = 215    # Size of each instrument in bytes
+BLOCK_COUNT = 128   # Maximum number of instruments
 
 class M8ParamType(Enum):
+    """Parameter data types for M8 instrument parameters.
+    
+    Defines the supported data types for instrument parameters and determines
+    how they are serialized and deserialized.
+    """
     UINT8 = auto()      # Standard 1-byte integer (0-255)
     STRING = auto()     # String type with variable length
 
 class M8ParamsBase:
-    """Base class for instrument parameter groups with support for different parameter types."""
+    """Base class for instrument parameter groups with support for different parameter types.
+    
+    This class provides common functionality for defining, reading, and writing
+    instrument parameters with different data types and byte offsets.
+    """
     
     @staticmethod
     def calculate_parameter_size(param_defs):
-        """Calculate the total size in bytes of all parameters"""
+        """Calculate the total size in bytes of all parameters.
+        
+        Args:
+            param_defs: List of parameter definition tuples
+            
+        Returns:
+            int: Total size in bytes required for the parameters
+        """
         total_size = 0
         for param_def in param_defs:
             start = param_def[3]
@@ -62,7 +78,15 @@ class M8ParamsBase:
     
     @classmethod
     def read(cls, data, offset=None):
-        """Read parameters from binary data starting at a specific offset"""
+        """Read parameters from binary data starting at a specific offset.
+        
+        Args:
+            data: Binary data containing parameter values
+            offset: Optional offset to apply to parameter positions
+            
+        Returns:
+            M8ParamsBase: New instance with parameters read from the data
+        """
         # Create an instance with default values
         instance = cls(offset=offset)
         
@@ -93,10 +117,13 @@ class M8ParamsBase:
         return instance
     
     def write(self):
-        """
-        Write parameters to binary data
-        Note: This method now returns a tuple of (buffer, largest_end_offset)
-        to help with creating properly sized buffers
+        """Convert parameters to binary data.
+        
+        Creates a buffer sized to fit all parameters and writes each parameter
+        value to its specified position in the buffer.
+        
+        Returns:
+            bytes: Binary representation of all parameters
         """
         # Find the largest end offset to determine buffer size
         max_end = max(param_def[4] for param_def in self._param_defs)
@@ -132,7 +159,11 @@ class M8ParamsBase:
         return bytes(buffer[:max_end])
     
     def clone(self):
-        """Create a copy of this parameter object"""
+        """Create a deep copy of this parameter object.
+        
+        Returns:
+            M8ParamsBase: New instance with the same parameter values
+        """
         instance = self.__class__()
         for param_def in self._param_defs:
             name = param_def[0]
@@ -140,12 +171,24 @@ class M8ParamsBase:
         return instance
     
     def as_dict(self):
-        """Convert parameters to dictionary for serialization"""
+        """Convert parameters to dictionary for serialization.
+        
+        Returns:
+            dict: Dictionary mapping parameter names to their values
+        """
         return {param_def[0]: getattr(self, param_def[0]) for param_def in self._param_defs}
     
     @classmethod
     def from_dict(cls, data, offset=None):
-        """Create parameters from a dictionary"""
+        """Create parameters from a dictionary.
+        
+        Args:
+            data: Dictionary containing parameter values
+            offset: Optional offset to apply to parameter positions
+            
+        Returns:
+            M8ParamsBase: New instance with parameters from the dictionary
+        """
         instance = cls(offset=offset)
         
         for param_def in instance._param_defs:
@@ -156,18 +199,32 @@ class M8ParamsBase:
         return instance
 
 class M8InstrumentBase:
+    """Base class for all M8 instruments.
     
-    # Keep common parameter offsets
-    TYPE_OFFSET = 0
-    NAME_OFFSET = 1
-    NAME_LENGTH = 12
-    TRANSPOSE_EQ_OFFSET = 13
-    TABLE_TICK_OFFSET = 14
-    VOLUME_OFFSET = 15
-    PITCH_OFFSET = 16
-    FINETUNE_OFFSET = 17  # renamed from FINE_TUNE_OFFSET
+    Provides common functionality for all instrument types including parameter 
+    reading/writing, serialization, and modulators. Specific instrument types
+    inherit from this class and add their own specialized parameters.
+    """
+    
+    # Common parameter offsets for all instrument types
+    TYPE_OFFSET = 0        # Instrument type ID
+    NAME_OFFSET = 1        # Start of instrument name
+    NAME_LENGTH = 12       # Maximum name length
+    TRANSPOSE_EQ_OFFSET = 13  # Combined transpose and EQ settings
+    TABLE_TICK_OFFSET = 14    # Table tick rate
+    VOLUME_OFFSET = 15        # Instrument volume
+    PITCH_OFFSET = 16         # Pitch offset
+    FINETUNE_OFFSET = 17      # Fine pitch tuning
     
     def __init__(self, **kwargs):
+        """Initialize a new instrument with default parameters.
+        
+        Generates an automatic name if one is not provided. Sets up common parameters
+        and initializes modulators if supported by the instrument type.
+        
+        Args:
+            **kwargs: Optional parameter values to override defaults
+        """
         global _INSTRUMENT_COUNTER
         
         # Generate sequential name if not provided
@@ -190,7 +247,7 @@ class M8InstrumentBase:
         self.table_tick = 0x01
         self.volume = 0x0
         self.pitch = 0x0
-        self.finetune = 0x80  # renamed from fine_tune
+        self.finetune = 0x80  # Center value for fine tuning
         
         # Create modulators if MODULATORS_OFFSET is defined by the subclass
         # Modulators offset is still needed as it's handled differently
@@ -203,7 +260,17 @@ class M8InstrumentBase:
                 setattr(self, key, value)
     
     def _read_common_parameters(self, data):
-        """Read common parameters shared by all instrument types"""
+        """Read common parameters shared by all instrument types.
+        
+        Extracts the basic parameters that all instrument types have in common
+        from their standard positions in the binary data.
+        
+        Args:
+            data: Binary data containing instrument parameters
+            
+        Returns:
+            int: The offset where instrument-specific parameters begin
+        """
         self.type = data[self.TYPE_OFFSET]
         
         # Read name as a string (null-terminated)
@@ -227,7 +294,14 @@ class M8InstrumentBase:
         return 18  # This was the original SYNTH_OFFSET value
 
     def _read_parameters(self, data):
-        """Read instrument parameters from binary data"""
+        """Read all instrument parameters from binary data.
+        
+        First reads common parameters, then passes control to the instrument-specific
+        parameter reader, and finally reads modulators if supported.
+        
+        Args:
+            data: Binary data containing instrument parameters
+        """
         # Read common parameters first
         next_offset = self._read_common_parameters(data)
         
@@ -240,9 +314,13 @@ class M8InstrumentBase:
             self.modulators = M8Modulators.read(data[self.MODULATORS_OFFSET:])
 
     def write(self):
-        """
-        Write instrument data to binary format with precise offset control.
-        This method ensures all parameters are written at their exact offsets.
+        """Convert the instrument to binary data.
+        
+        Creates a properly sized buffer and writes all parameters at their exact
+        offsets, handling both common parameters and instrument-specific parameters.
+        
+        Returns:
+            bytes: Binary representation of the instrument
         """
         # Create a buffer of the correct size
         buffer = bytearray([0] * BLOCK_SIZE)
@@ -306,15 +384,33 @@ class M8InstrumentBase:
         return bytes(buffer)
 
     def _write_specific_parameters(self):
-        """Write synth-specific parameters. To be implemented by subclasses."""
+        """Write synth-specific parameters. To be implemented by subclasses.
+        
+        Returns:
+            bytes: Binary representation of the instrument-specific parameters
+        """
         return self.synth.write()
 
     def is_empty(self):
-        # This is a basic implementation that should be overridden by subclasses
-        # with instrument-specific logic
+        """Check if this instrument is empty.
+        
+        This is a basic implementation that should be overridden by subclasses
+        with instrument-specific logic.
+        
+        Returns:
+            bool: True if the instrument is considered empty
+        """
         return self.name.strip() == ""
 
     def clone(self):
+        """Create a deep copy of this instrument.
+        
+        Creates a new instance and copies all attributes, handling special cases
+        like modulators and synth parameters that need their own cloning methods.
+        
+        Returns:
+            M8InstrumentBase: New instance with the same values
+        """
         # Create a new instance of the same class
         instance = self.__class__.__new__(self.__class__)
         
@@ -333,12 +429,28 @@ class M8InstrumentBase:
 
     @property
     def available_modulator_slot(self):
+        """Find the first available (empty) modulator slot.
+        
+        Returns:
+            int: Index of the first empty slot, or None if all slots are used
+        """
         for slot_idx, mod in enumerate(self.modulators):
             if isinstance(mod, M8Block) or mod.destination == 0:
                 return slot_idx
         return None
 
     def add_modulator(self, modulator):
+        """Add a modulator to the first available slot.
+        
+        Args:
+            modulator: The modulator to add
+            
+        Returns:
+            int: The index where the modulator was added
+            
+        Raises:
+            IndexError: If no empty slots are available
+        """
         slot = self.available_modulator_slot
         if slot is None:
             raise IndexError("No empty modulator slots available in this instrument")
@@ -347,13 +459,29 @@ class M8InstrumentBase:
         return slot
         
     def set_modulator(self, modulator, slot):
+        """Set a modulator at a specific slot.
+        
+        Args:
+            modulator: The modulator to set
+            slot: The slot index to set
+            
+        Raises:
+            IndexError: If the slot index is out of range
+        """
         if not (0 <= slot < len(self.modulators)):
             raise IndexError(f"Modulator slot index must be between 0 and {len(self.modulators)-1}")
             
         self.modulators[slot] = modulator
 
     def as_dict(self):
-        """Convert instrument to dictionary for serialization"""
+        """Convert instrument to dictionary for serialization.
+        
+        Creates a flat dictionary structure that includes instrument type,
+        common parameters, synth-specific parameters, and modulators.
+        
+        Returns:
+            dict: Dictionary representation of the instrument
+        """
         # This is a base implementation that should be extended by subclasses
         result = {"type": self.type}
         
@@ -376,7 +504,20 @@ class M8InstrumentBase:
 
     @classmethod
     def from_dict(cls, data):
-        """Create an instrument from a dictionary"""
+        """Create an instrument from a dictionary.
+        
+        Creates the appropriate instrument type based on the 'type' field
+        and initializes it with values from the dictionary.
+        
+        Args:
+            data: Dictionary containing instrument parameters
+            
+        Returns:
+            M8InstrumentBase: New instance of the appropriate instrument type
+            
+        Raises:
+            ValueError: If the instrument type is unknown
+        """
         # Get the instrument type and create the appropriate class
         instr_type = data.get("type", 0x01)  # Default to MacroSynth if missing
         if instr_type not in INSTRUMENT_TYPES:
@@ -421,7 +562,18 @@ class M8InstrumentBase:
 
     @classmethod
     def read(cls, data):
-        """Read an instrument from binary data"""
+        """Read an instrument from binary data.
+        
+        Creates the appropriate instrument type based on the type byte in the data
+        and initializes it with values read from the binary data.
+        
+        Args:
+            data: Binary data containing an instrument
+            
+        Returns:
+            M8InstrumentBase: New instance of the appropriate instrument type,
+                              or M8Block if the type is unknown or empty
+        """
         # Get the instrument type from the data
         instr_type = data[cls.TYPE_OFFSET]
         
@@ -443,7 +595,18 @@ class M8InstrumentBase:
             return M8Block.read(data)
 
 class M8Instruments(list):
+    """Collection of M8 instruments.
+    
+    Represents the set of instruments in an M8 project. Extends the built-in
+    list type with M8-specific serialization and deserialization functionality.
+    """
+    
     def __init__(self, items=None):
+        """Initialize a collection with optional instruments.
+        
+        Args:
+            items: Optional list of instruments to initialize with
+        """
         super().__init__()
         items = items or []
         

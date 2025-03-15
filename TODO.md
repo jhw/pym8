@@ -1,18 +1,19 @@
 # short
 
-- add claude comments
-- consider move add_fx into fx classes
+- JSON byte map?
 
 # medium
 
 - m8i files
 - fmsynth
-- byte hunter script
 
 # roadmap
 
 - hypersynth
+
+- byte hunter script
 - sampler slice points
+
 - tables
 - eq
 - midi
@@ -23,6 +24,7 @@
 
 # done
 
+- more comments
 - fx add method
 - initialise template from version
 - toml file

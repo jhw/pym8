@@ -18,7 +18,12 @@ MODULATOR_TYPES = {
 DEFAULT_MODULATOR_CONFIGS = [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs
 
 class M8ModulatorBase:
-    """Base class for all M8 modulators with param_defs support."""
+    """Base class for all M8 modulators with param_defs support.
+    
+    This class provides the foundation for all modulator types in the M8 system,
+    handling common functionality such as serialization, parameter management, 
+    and type identification. Specific modulator types inherit from this base.
+    """
     
     # Constants for byte offsets within a modulator block
     TYPE_DEST_BYTE_OFFSET = 0
@@ -44,6 +49,12 @@ class M8ModulatorBase:
     _param_defs = []
     
     def __init__(self, **kwargs):
+        """Initialize a modulator with default values and optional overrides.
+        
+        Args:
+            **kwargs: Optional parameter overrides for any attributes defined 
+                     in _common_defs or _param_defs
+        """
         # Set type for each modulator
         self.type = self._get_type()
         
@@ -57,11 +68,26 @@ class M8ModulatorBase:
                 setattr(self, key, value)
     
     def _get_type(self):
-        """Get the modulator type. To be implemented by subclasses."""
+        """Get the modulator type. To be implemented by subclasses.
+        
+        Returns:
+            int: The modulator type identifier (0-255)
+            
+        Raises:
+            NotImplementedError: If not implemented by the subclass
+        """
         raise NotImplementedError("Subclasses must implement _get_type()")
     
     @classmethod
     def read(cls, data):
+        """Create a modulator from binary data.
+        
+        Args:
+            data: Binary data containing modulator parameters
+            
+        Returns:
+            M8ModulatorBase: A new instance with values from the binary data
+        """
         instance = cls()
         
         if len(data) > 0:
@@ -80,6 +106,11 @@ class M8ModulatorBase:
         return instance
     
     def write(self):
+        """Convert the modulator to binary data.
+        
+        Returns:
+            bytes: Binary representation of the modulator
+        """
         buffer = bytearray()
         
         # Write type/destination as combined byte
@@ -100,6 +131,11 @@ class M8ModulatorBase:
         return bytes(buffer)
     
     def clone(self):
+        """Create a deep copy of this modulator.
+        
+        Returns:
+            M8ModulatorBase: A new instance with the same values
+        """
         instance = self.__class__()
         for name, _ in self._common_defs + self._param_defs:
             setattr(instance, name, getattr(self, name))
@@ -108,10 +144,19 @@ class M8ModulatorBase:
         return instance
     
     def is_empty(self):
-        """Check if this modulator is empty (destination is 0)"""
+        """Check if this modulator is empty (destination is 0).
+        
+        Returns:
+            bool: True if the modulator has an empty destination, False otherwise
+        """
         return self.destination == self.EMPTY_DESTINATION
     
     def as_dict(self):
+        """Convert modulator to dictionary for serialization.
+        
+        Returns:
+            dict: Dictionary representation of all modulator parameters
+        """
         result = {}
         for name, _ in self._common_defs + self._param_defs:
             result[name] = getattr(self, name)
@@ -121,6 +166,14 @@ class M8ModulatorBase:
     
     @classmethod
     def from_dict(cls, data):
+        """Create a modulator from a dictionary.
+        
+        Args:
+            data: Dictionary containing modulator parameters
+            
+        Returns:
+            M8ModulatorBase: A new instance with values from the dictionary
+        """
         instance = cls()
         for name, _ in instance._common_defs + instance._param_defs:
             if name in data:
@@ -133,6 +186,11 @@ class M8ModulatorBase:
 # Specific modulator implementations
 
 class M8AHDEnvelope(M8ModulatorBase):
+    """Attack-Hold-Decay (AHD) envelope modulator.
+    
+    A simple envelope with attack, hold, and decay stages.
+    Used for controlling amplitude and other parameters over time.
+    """
     # Constants for AHD envelope
     TYPE_VALUE = 0x0
     
@@ -148,9 +206,19 @@ class M8AHDEnvelope(M8ModulatorBase):
     ]
     
     def _get_type(self):
+        """Get the modulator type identifier.
+        
+        Returns:
+            int: The AHD envelope type value (0)
+        """
         return self.TYPE_VALUE  # AHD envelope type
 
 class M8ADSREnvelope(M8ModulatorBase):
+    """Attack-Decay-Sustain-Release (ADSR) envelope modulator.
+    
+    A standard ADSR envelope with attack, decay, sustain, and release stages.
+    Provides more control than the AHD envelope for sustained notes.
+    """
     # Constants for ADSR envelope
     TYPE_VALUE = 0x1
     
@@ -168,9 +236,20 @@ class M8ADSREnvelope(M8ModulatorBase):
     ]
     
     def _get_type(self):
+        """Get the modulator type identifier.
+        
+        Returns:
+            int: The ADSR envelope type value (1)
+        """
         return self.TYPE_VALUE  # ADSR envelope type
 
 class M8DrumEnvelope(M8ModulatorBase):
+    """Drum envelope modulator specialized for percussive sounds.
+    
+    A three-stage envelope optimized for percussive/drum sounds with
+    peak, body, and decay parameters for shaping the attack and body
+    characteristics of drum sounds.
+    """
     # Constants for Drum envelope
     TYPE_VALUE = 0x2
     
@@ -186,9 +265,20 @@ class M8DrumEnvelope(M8ModulatorBase):
     ]
     
     def _get_type(self):
+        """Get the modulator type identifier.
+        
+        Returns:
+            int: The Drum envelope type value (2)
+        """
         return self.TYPE_VALUE  # Drum envelope type
     
 class M8LFO(M8ModulatorBase):
+    """Low Frequency Oscillator (LFO) modulator.
+    
+    A periodic waveform generator for creating cyclic modulation.
+    Can be used to create vibrato, tremolo, filter sweeps, and other
+    time-varying effects.
+    """
     # Constants for LFO
     TYPE_VALUE = 0x3
     
@@ -204,9 +294,20 @@ class M8LFO(M8ModulatorBase):
     ]
     
     def _get_type(self):
+        """Get the modulator type identifier.
+        
+        Returns:
+            int: The LFO type value (3)
+        """
         return self.TYPE_VALUE  # LFO type
 
 class M8TriggerEnvelope(M8ModulatorBase):
+    """Trigger envelope modulator that responds to external triggers.
+    
+    An envelope that can be triggered by various sources within the M8.
+    Includes attack, hold, and decay stages similar to AHD, but with
+    an additional source parameter to specify the trigger source.
+    """
     # Constants for Trigger envelope
     TYPE_VALUE = 0x4
     
@@ -224,9 +325,20 @@ class M8TriggerEnvelope(M8ModulatorBase):
     ]
     
     def _get_type(self):
+        """Get the modulator type identifier.
+        
+        Returns:
+            int: The Trigger envelope type value (4)
+        """
         return self.TYPE_VALUE  # Trigger envelope type
 
 class M8TrackingEnvelope(M8ModulatorBase):
+    """Tracking envelope that maps input values to output modulation.
+    
+    Creates a modulation relationship that tracks an input source,
+    mapping it to an output range defined by low_value and high_value.
+    Useful for keyboard tracking and other parameter mapping tasks.
+    """
     # Constants for Tracking envelope
     TYPE_VALUE = 0x5
     
@@ -242,10 +354,27 @@ class M8TrackingEnvelope(M8ModulatorBase):
     ]
     
     def _get_type(self):
+        """Get the modulator type identifier.
+        
+        Returns:
+            int: The Tracking envelope type value (5)
+        """
         return self.TYPE_VALUE  # Tracking envelope type
     
 class M8Modulators(list):
+    """A collection of modulators for an M8 instrument.
+    
+    Acts as a list of modulators with M8-specific serialization/deserialization
+    and type-aware handling. Each M8 instrument can have multiple modulators
+    to affect various parameters.
+    """
+    
     def __init__(self, items=None):
+        """Initialize a collection of modulators.
+        
+        Args:
+            items: Optional list of modulators to initialize with
+        """
         super().__init__()
         items = items or []
         
@@ -257,6 +386,14 @@ class M8Modulators(list):
     
     @classmethod
     def read(cls, data):
+        """Create a modulators collection from binary data.
+        
+        Args:
+            data: Binary data containing multiple modulator blocks
+            
+        Returns:
+            M8Modulators: New collection with modulators initialized from the data
+        """
         instance = cls()
         instance.clear()
         
@@ -280,6 +417,11 @@ class M8Modulators(list):
         return instance
     
     def clone(self):
+        """Create a deep copy of this modulators collection.
+        
+        Returns:
+            M8Modulators: New collection with cloned modulators
+        """
         instance = self.__class__()
         instance.clear()
         
@@ -292,6 +434,11 @@ class M8Modulators(list):
         return instance
     
     def write(self):
+        """Convert all modulators to binary data.
+        
+        Returns:
+            bytes: Binary representation of all modulators
+        """
         result = bytearray()
         for mod in self:
             mod_data = mod.write() if hasattr(mod, 'write') else bytes([0] * BLOCK_SIZE)
@@ -303,7 +450,13 @@ class M8Modulators(list):
         return bytes(result)
 
     def as_list(self):
-        """Convert modulators to list for serialization"""
+        """Convert modulators to list for serialization.
+        
+        Only includes non-empty modulators with their position indices.
+        
+        Returns:
+            list: List of dictionaries representing modulators
+        """
         items = []
         for i, mod in enumerate(self):
             # Only include non-empty modulators
@@ -322,7 +475,14 @@ class M8Modulators(list):
             
     @classmethod
     def from_list(cls, items):
-        """Create modulators from a list"""
+        """Create modulators from a list of dictionaries.
+        
+        Args:
+            items: List of dictionaries with modulator parameters
+            
+        Returns:
+            M8Modulators: New collection with modulators at their specified positions
+        """
         instance = cls()
         instance.clear()
         
@@ -349,7 +509,14 @@ class M8Modulators(list):
         return instance
     
 def create_default_modulators():
-    """Create a list of default modulators"""
+    """Create a list of default modulators.
+    
+    Creates modulators according to the default configuration
+    (typically 2 AHD envelopes and 2 LFOs).
+    
+    Returns:
+        list: List of default modulator instances
+    """
     result = []
     
     for mod_type in DEFAULT_MODULATOR_CONFIGS:
