@@ -52,8 +52,8 @@ class M8FXTuple:
     @classmethod
     def from_dict(cls, data):
         return cls(
-            key=data.get("key", cls.EMPTY_KEY),
-            value=data.get("value", cls.DEFAULT_VALUE)
+            key=data["key"],
+            value=data["value"]
         )    
 
 
@@ -124,8 +124,8 @@ class M8FXTuples(list):
         # Set tuples at their original positions
         if items:
             for tuple_data in items:
-                # Get index from data or default to 0
-                index = tuple_data.get("index", 0)
+                # Get index from data
+                index = tuple_data["index"]
                 if 0 <= index < BLOCK_COUNT:
                     # Remove index field before passing to from_dict
                     tuple_dict = {k: v for k, v in tuple_data.items() if k != "index"}

@@ -77,8 +77,8 @@ class M8SongRow:
         # Set chain references
         if "chains" in data:
             for chain_ref in data["chains"]:
-                col = chain_ref.get("col", 0)
-                chain = chain_ref.get("chain", cls.EMPTY_CHAIN)
+                col = chain_ref["col"]
+                chain = chain_ref["chain"]
                 if 0 <= col < COL_COUNT:
                     instance[col] = chain
         

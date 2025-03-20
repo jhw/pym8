@@ -54,8 +54,8 @@ class M8ChainStep:
     @classmethod
     def from_dict(cls, data):
         return cls(
-            phrase=data.get("phrase", cls.EMPTY_PHRASE),
-            transpose=data.get("transpose", cls.DEFAULT_TRANSPOSE)
+            phrase=data["phrase"],
+            transpose=data["transpose"]
         )
 
 class M8Chain(list):

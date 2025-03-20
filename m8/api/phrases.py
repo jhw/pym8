@@ -135,9 +135,9 @@ class M8PhraseStep:
     @classmethod
     def from_dict(cls, data):
         instance = cls(
-            note=data.get("note", cls.EMPTY_NOTE),
-            velocity=data.get("velocity", cls.EMPTY_VELOCITY),
-            instrument=data.get("instrument", cls.EMPTY_INSTRUMENT)
+            note=data["note"],
+            velocity=data["velocity"],
+            instrument=data["instrument"]
         )
     
         # Deserialize FX using the FXTuples' from_list method
@@ -253,8 +253,8 @@ class M8Phrase(list):
         # Add steps from dict at their original positions
         if "steps" in data:
             for step_data in data["steps"]:
-                # Get index from data or default to 0
-                index = step_data.get("index", 0)
+                # Get index from data
+                index = step_data["index"]
                 if 0 <= index < STEP_COUNT:
                     # Remove index field before passing to from_dict
                     step_dict = {k: v for k, v in step_data.items() if k != "index"}
@@ -338,8 +338,8 @@ class M8Phrases(list):
         # Add phrases from list
         if items:
             for phrase_data in items:
-                # Get index from data or default to 0
-                index = phrase_data.get("index", 0)
+                # Get index from data
+                index = phrase_data["index"]
                 if 0 <= index < PHRASE_COUNT:
                     # Remove index field before passing to from_dict
                     phrase_dict = {k: v for k, v in phrase_data.items() if k != "index"}

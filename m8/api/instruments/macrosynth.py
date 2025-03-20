@@ -29,9 +29,9 @@ class M8MacroSynthParams(M8ParamsBase):
         ("reverb", 0x0, M8ParamType.UINT8, 32, 33)     # Reverb send level
     ]
     
-    def __init__(self, offset=None, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize MacroSynth parameters."""
-        super().__init__(self._param_defs, offset, **kwargs)
+        super().__init__(self._param_defs, **kwargs)
 
 class M8MacroSynth(M8InstrumentBase):
     """MacroSynth instrument implementation for the M8 tracker."""

@@ -321,8 +321,8 @@ class M8Modulators(list):
         # Set items at their specified indexes
         if items:
             for mod_data in items:
-                # Get index from data or default to 0
-                index = mod_data.get("index", 0)
+                # Get index from data
+                index = mod_data["index"]
                 if 0 <= index < BLOCK_COUNT:
                     # Remove index field before passing to from_dict
                     mod_dict = {k: v for k, v in mod_data.items() if k != "index"}

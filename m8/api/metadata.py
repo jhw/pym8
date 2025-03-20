@@ -113,10 +113,10 @@ class M8Metadata:
     @classmethod
     def from_dict(cls, data):
         return cls(
-            directory=data.get("directory", "/Songs/"),
-            transpose=data.get("transpose", 0),
-            tempo=data.get("tempo", 120.0),
-            quantize=data.get("quantize", 0),
-            name=data.get("name", "HELLO"),
-            key=data.get("key", 0)
+            directory=data["directory"],
+            transpose=data["transpose"],
+            tempo=data["tempo"],
+            quantize=data["quantize"],
+            name=data["name"],
+            key=data["key"]
         )

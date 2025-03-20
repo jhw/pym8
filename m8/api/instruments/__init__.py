@@ -36,14 +36,10 @@ class M8ParamsBase:
             total_size += (end - start)
         return total_size
     
-    def __init__(self, param_defs, offset=None, **kwargs):
+    def __init__(self, param_defs, **kwargs):
         """
         Initialize the parameter group.
         """
-        # Store the offset (for backwards compatibility only)
-        if offset is not None:
-            self.offset = offset
-        
         # Initialize parameters with defaults
         for param_def in param_defs:
             name, default = param_def[0], param_def[1]
@@ -55,10 +51,10 @@ class M8ParamsBase:
                 setattr(self, key, value)
     
     @classmethod
-    def read(cls, data, offset=None):
-        """Read parameters from binary data starting at a specific offset."""
+    def read(cls, data):
+        """Read parameters from binary data."""
         # Create an instance with default values
-        instance = cls(offset=offset)
+        instance = cls()
         
         # Read values from their explicit offsets
         for param_def in instance._param_defs:
@@ -134,9 +130,9 @@ class M8ParamsBase:
         return {param_def[0]: getattr(self, param_def[0]) for param_def in self._param_defs}
     
     @classmethod
-    def from_dict(cls, data, offset=None):
+    def from_dict(cls, data):
         """Create parameters from a dictionary."""
-        instance = cls(offset=offset)
+        instance = cls()
         
         for param_def in instance._param_defs:
             name = param_def[0]
@@ -212,11 +208,10 @@ class M8InstrumentBase:
         self.table_tick = data[self.TABLE_TICK_OFFSET]
         self.volume = data[self.VOLUME_OFFSET]
         self.pitch = data[self.PITCH_OFFSET]
-        self.finetune = data[self.FINETUNE_OFFSET]  # renamed from fine_tune
+        self.finetune = data[self.FINETUNE_OFFSET]
         
-        # Return a fixed synth offset for backward compatibility with subclasses
-        # that may still use it during transition - in the future this can be removed
-        return 18  # This was the original SYNTH_OFFSET value
+        # Standardized position where instrument-specific params begin
+        return 18
 
     def _read_parameters(self, data):
         """Read all instrument parameters from binary data."""
@@ -370,7 +365,7 @@ class M8InstrumentBase:
     def from_dict(cls, data):
         """Create an instrument from a dictionary."""
         # Get the instrument type and create the appropriate class
-        instr_type = data.get("type", 0x01)  # Default to MacroSynth if missing
+        instr_type = data["type"]
         if instr_type not in INSTRUMENT_TYPES:
             raise ValueError(f"Unknown instrument type: {instr_type}")
         
@@ -533,8 +528,8 @@ class M8Instruments(list):
         # Set instruments at their original positions
         if items:
             for instr_data in items:
-                # Get index from data or default to 0
-                index = instr_data.get("index", 0)
+                # Get index from data
+                index = instr_data["index"]
                 if 0 <= index < BLOCK_COUNT:
                     # Remove index field before passing to from_dict
                     instr_dict = {k: v for k, v in instr_data.items() if k != "index"}

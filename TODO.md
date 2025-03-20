@@ -1,11 +1,10 @@
 # short
 
-- defaults and backwards compatability
-- sampler >> chorus_send, reverb_send
 - tests 
 
 # medium
 
+- sampler >> chorus_send, reverb_send
 - sampler slice points
 - m8i files
 - trash80 FM drums
@@ -24,6 +23,7 @@
 
 # done
 
+- remove defaults and backwards compatibility
 - clean up commenting
 - CLAUDE.md
 

@@ -33,9 +33,9 @@ class M8SamplerParams(M8ParamsBase):
         ("sample_path", "", M8ParamType.STRING, 0x57, 0x57 + 128)  # Path to sample file
     ]
     
-    def __init__(self, offset=None, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize Sampler parameters."""
-        super().__init__(self._param_defs, offset, **kwargs)
+        super().__init__(self._param_defs, **kwargs)
 
 class M8Sampler(M8InstrumentBase):
     """Sampler instrument implementation for the M8 tracker."""
