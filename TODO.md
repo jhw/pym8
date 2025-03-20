@@ -1,9 +1,11 @@
 # short
 
-- tests 
+- instrument, modulator tests
+- project tests
 
 # medium
 
+- json bitmap
 - sampler >> chorus_send, reverb_send
 - sampler slice points
 - m8i files
@@ -13,7 +15,6 @@
 
 # roadmap
 
-- tables
 - eq
 - midi
 - grooves

@@ -23,13 +23,10 @@
 
 - Always work in branch claude-code; if this doesn't exist, create it; if you are not on this branch, check it out
 - For substantial changes, stage files incrementally in logical groups
-- Always stage changes first, allowing manual review before commit
-- Wait for confirmation of successful testing before committing
+
 - When suggesting changes that affect multiple files, summarize the changes
-- DO NOT create any tags without asking first
+- Always test before staging; ALWAYS ask before committing
+- DO NOT create any tags unless asked
 - When asked to create a tag, lookup the list of tags and bump the minor version, then push to origin
 
-## Testing
-
-- DO NOT run any tests, I will do it manually
 
