@@ -1,6 +1,6 @@
 # short
 
-- clean up commenting
+- defaults and backwards compatability
 - sampler >> chorus_send, reverb_send
 - tests 
 
@@ -24,5 +24,6 @@
 
 # done
 
+- clean up commenting
 - CLAUDE.md
 

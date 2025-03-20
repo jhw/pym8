@@ -2,19 +2,7 @@
 from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
 
 class M8SamplerParams(M8ParamsBase):
-    """Class to handle Sampler parameters including playback, filtering, amp, and mixer settings.
-    
-    The Sampler is a key instrument in the M8 tracker that allows loading and manipulating 
-    external audio samples. This class manages all parameters related to sample playback,
-    filtering, amplification, and mixing, along with the path to the sample file.
-    
-    The parameters are organized into sections:
-    - Playback section: play_mode, slice, start, loop_start, length, degrade
-    - Filter section: filter type, cutoff, resonance
-    - Amp section: amplitude, limiting
-    - Mixer section: panning, dry level, effect sends (chorus, delay, reverb)
-    - Sample reference: path to the sample file
-    """
+    """Sampler parameters including playback, filtering, amp, and mixer settings."""
     
     _param_defs = [
         # Synth section parameters
@@ -46,37 +34,17 @@ class M8SamplerParams(M8ParamsBase):
     ]
     
     def __init__(self, offset=None, **kwargs):
-        """Initialize Sampler parameters.
-        
-        Args:
-            offset (int, optional): Byte offset for parameter data in the binary structure.
-            **kwargs: Parameter values to set during initialization.
-        """
+        """Initialize Sampler parameters."""
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8Sampler(M8InstrumentBase):
-    """Sampler instrument implementation for the M8 tracker.
-    
-    The Sampler is a sample-based instrument in the M8 tracker with a type ID of 0x02.
-    It allows loading and manipulating external audio samples with controls for playback
-    mode, slicing, start/loop positions, length, filtering, amplification, and mixing.
-    This class manages the Sampler instrument parameters and serialization/deserialization
-    for M8 project files.
-    """
+    """Sampler instrument implementation for the M8 tracker."""
     
     # Offset for modulator data in the binary structure
     MODULATORS_OFFSET = 63
     
     def __init__(self, **kwargs):
-        """Initialize a Sampler instrument.
-        
-        Creates a new Sampler instrument with the specified parameters. Parameters specific to
-        the Sampler are passed to the underlying M8SamplerParams object.
-        
-        Args:
-            **kwargs: Instrument parameters to set during initialization. Can include both
-                     general instrument parameters and sampler-specific parameters.
-        """
+        """Initialize a Sampler instrument."""
         # Set type before calling parent class init
         self.type = 0x02  # Type ID for Sampler instruments
         
@@ -97,31 +65,15 @@ class M8Sampler(M8InstrumentBase):
         super().__init__(**kwargs)
     
     def _read_specific_parameters(self, data, offset):
-        """Read Sampler-specific parameters from binary data.
-        
-        Args:
-            data (bytes): Binary data containing instrument parameters.
-            offset (int): Byte offset where instrument data begins.
-        """
+        """Read Sampler-specific parameters from binary data."""
         self.synth = M8SamplerParams.read(data)
     
     def _write_specific_parameters(self):
-        """Write Sampler-specific parameters to binary format.
-        
-        Returns:
-            bytes: Binary representation of the Sampler parameters.
-        """
+        """Write Sampler-specific parameters to binary format."""
         return self.synth.write()
     
     def is_empty(self):
-        """Check if the Sampler instrument is empty/initialized to defaults.
-        
-        An empty Sampler is defined as having an empty name, zero volume,
-        and no sample path assigned.
-        
-        Returns:
-            bool: True if the instrument is empty, False otherwise.
-        """
+        """Check if the Sampler instrument is empty/initialized to defaults."""
         return (self.name.strip() == "" and 
                 self.volume == 0x0 and 
                 self.synth.sample_path == "")

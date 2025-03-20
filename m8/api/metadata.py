@@ -1,13 +1,8 @@
 import struct
 
 class M8Metadata:
-    """Metadata for M8 songs and projects.
+    """Stores M8 tracker metadata including song name, directory, tempo, key, transpose and quantize."""
     
-    Stores information such as song name, directory path, tempo, key, transpose,
-    and quantize settings that are used by the M8 tracker.
-    """
-    
-    # Define offsets and lengths as class variables
     DIRECTORY_OFFSET = 0
     DIRECTORY_LENGTH = 128
     TRANSPOSE_OFFSET = 128
@@ -17,22 +12,10 @@ class M8Metadata:
     NAME_OFFSET = 134
     NAME_LENGTH = 12
     KEY_OFFSET = 146
-    
-    # Total size of metadata block
     BLOCK_SIZE = 147
 
     def __init__(self, directory="/Songs/", transpose=0, tempo=120.0, 
                  quantize=0, name="HELLO", key=0):
-        """Initialize metadata with default values.
-        
-        Args:
-            directory: Directory path on the M8 filesystem (default: "/Songs/")
-            transpose: Global transpose value (-128 to 127)
-            tempo: Playback tempo in BPM (default: 120.0)
-            quantize: Quantization setting (0-255)
-            name: Song name, up to 11 characters (default: "HELLO")
-            key: Musical key setting (0-255)
-        """
         self.directory = directory
         self.transpose = transpose
         self.tempo = tempo
@@ -42,14 +25,6 @@ class M8Metadata:
     
     @classmethod
     def read(cls, data):
-        """Create metadata from binary data.
-        
-        Args:
-            data: Binary data containing metadata
-            
-        Returns:
-            M8Metadata: New instance with values from the binary data
-        """
         instance = cls()
         
         # Directory (null-terminated string)
@@ -81,14 +56,6 @@ class M8Metadata:
         return instance
     
     def write(self):
-        """Convert metadata to binary data.
-        
-        Returns:
-            bytes: Binary representation of metadata
-            
-        Raises:
-            AssertionError: If the generated data doesn't match the expected size
-        """
         buffer = bytearray()
         
         # Directory (null-terminated)
@@ -120,20 +87,10 @@ class M8Metadata:
         return bytes(buffer)
     
     def is_empty(self):
-        """Check if metadata contains essentially empty values.
-        
-        Returns:
-            bool: True if directory and name are effectively empty
-        """
         return (self.directory.strip('/') == "" and 
                 self.name.strip() == "")
     
     def clone(self):
-        """Create a copy of this metadata.
-        
-        Returns:
-            M8Metadata: New instance with the same values
-        """
         return M8Metadata(
             directory=self.directory,
             transpose=self.transpose,
@@ -144,11 +101,6 @@ class M8Metadata:
         )
     
     def as_dict(self):
-        """Convert metadata to dictionary for serialization.
-        
-        Returns:
-            dict: Dictionary representation of metadata
-        """
         return {
             "directory": self.directory,
             "transpose": self.transpose,
@@ -160,14 +112,6 @@ class M8Metadata:
     
     @classmethod
     def from_dict(cls, data):
-        """Create metadata from a dictionary.
-        
-        Args:
-            data: Dictionary containing metadata fields
-            
-        Returns:
-            M8Metadata: New instance with values from the dictionary
-        """
         return cls(
             directory=data.get("directory", "/Songs/"),
             transpose=data.get("transpose", 0),

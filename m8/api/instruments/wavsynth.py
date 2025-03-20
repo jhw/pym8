@@ -2,18 +2,7 @@
 from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
 
 class M8WavSynthParams(M8ParamsBase):
-    """Class to handle all WavSynth parameters including synth, filter, amp, and mixer settings.
-    
-    The WavSynth is one of the M8's internal synthesizers featuring wavetable synthesis
-    with control over size, multiplier, warp, and scanning parameters. This class manages all parameters
-    related to the WavSynth instrument in the M8 tracker.
-    
-    The parameters are organized into four sections:
-    - Synth section: shape, size, mult, warp, scan
-    - Filter section: filter type, cutoff, resonance
-    - Amp section: amplitude, limiting
-    - Mixer section: panning, dry level, effect sends (chorus, delay, reverb)
-    """
+    """WavSynth parameters including synth, filter, amp, and mixer settings."""
     
     _param_defs = [
         # Synth section parameters
@@ -41,37 +30,17 @@ class M8WavSynthParams(M8ParamsBase):
     ]
     
     def __init__(self, offset=None, **kwargs):
-        """Initialize WavSynth parameters.
-        
-        Args:
-            offset (int, optional): Byte offset for parameter data in the binary structure.
-            **kwargs: Parameter values to set during initialization.
-        """
+        """Initialize WavSynth parameters."""
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8WavSynth(M8InstrumentBase):
-    """WavSynth instrument implementation for the M8 tracker.
-    
-    The WavSynth is a wavetable synthesizer in the M8 tracker with a type ID of 0x00.
-    It provides wavetable synthesis with control over shape, size, frequency multiplication,
-    warp, and scan parameters along with filtering, amplification, and mixing options.
-    This class manages the WavSynth instrument parameters and serialization/deserialization
-    for M8 project files.
-    """
+    """WavSynth instrument implementation for the M8 tracker."""
     
     # Offset for modulator data in the binary structure
     MODULATORS_OFFSET = 63
     
     def __init__(self, **kwargs):
-        """Initialize a WavSynth instrument.
-        
-        Creates a new WavSynth instrument with the specified parameters. Parameters specific to
-        the WavSynth engine are passed to the underlying M8WavSynthParams object.
-        
-        Args:
-            **kwargs: Instrument parameters to set during initialization. Can include both
-                     general instrument parameters and synth-specific parameters.
-        """
+        """Initialize a WavSynth instrument."""
         # Set type before calling parent class init
         # Using hex to ensure it's stored as 0x00, not 0
         self.type = 0x00
@@ -96,31 +65,15 @@ class M8WavSynth(M8InstrumentBase):
         super().__init__(**kwargs)
     
     def _read_specific_parameters(self, data, offset):
-        """Read WavSynth-specific parameters from binary data.
-        
-        Args:
-            data (bytes): Binary data containing instrument parameters.
-            offset (int): Byte offset where instrument data begins.
-        """
+        """Read WavSynth-specific parameters from binary data."""
         self.synth = M8WavSynthParams.read(data)
     
     def _write_specific_parameters(self):
-        """Write WavSynth-specific parameters to binary format.
-        
-        Returns:
-            bytes: Binary representation of the WavSynth parameters.
-        """
+        """Write WavSynth-specific parameters to binary format."""
         return self.synth.write()
         
     def is_empty(self):
-        """Check if the WavSynth instrument is empty/initialized to defaults.
-        
-        An empty WavSynth is defined as having an empty name, zero volume,
-        and default shape value.
-        
-        Returns:
-            bool: True if the instrument is empty, False otherwise.
-        """
+        """Check if the WavSynth instrument is empty/initialized to defaults."""
         return (self.name.strip() == "" and 
                 self.volume == 0x0 and 
                 self.synth.shape == 0x0)

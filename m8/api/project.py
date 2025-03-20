@@ -25,23 +25,9 @@ OFFSETS = {
 }
 
 class M8Project:
-    """Represents a complete M8 project/song file.
-    
-    The M8Project is the top-level container for all M8 data, including
-    metadata, instruments, chains, phrases, and the song arrangement.
-    It provides methods for loading, saving, validating, and modifying M8 projects.
-    """
+    """Top-level container for all M8 data, including metadata, instruments, chains, phrases, and song arrangement."""
     
     def __init__(self):
-        """Initialize an empty M8 project.
-        
-        Creates a new project with default/empty components. This constructor is typically
-        not called directly; instead, use class methods like read(), read_from_file(),
-        or initialise() to create projects from existing data or templates.
-        
-        Note: This initializes an incomplete project. For a fully functional project with
-        proper default settings, use M8Project.initialise() instead.
-        """
         self.data = bytearray()
         self.version = None
         self.metadata = None
@@ -52,14 +38,6 @@ class M8Project:
 
     @classmethod
     def read(cls, data):
-        """Create a project from binary data.
-        
-        Args:
-            data: Binary data containing an M8 project file
-            
-        Returns:
-            M8Project: New instance with components initialized from the binary data
-        """
         instance = cls()
         instance.data = bytearray(data)
 
@@ -75,28 +53,12 @@ class M8Project:
     # Instrument methods
     @property
     def available_instrument_slot(self):
-        """Find the first available (empty) instrument slot.
-        
-        Returns:
-            int: Index of the first empty slot, or None if all slots are used
-        """
         for slot_idx, instrument in enumerate(self.instruments):
             if isinstance(instrument, M8Block):
                 return slot_idx
         return None
 
     def add_instrument(self, instrument):
-        """Add an instrument to the first available slot.
-        
-        Args:
-            instrument: The instrument to add
-            
-        Returns:
-            int: The index where the instrument was added
-            
-        Raises:
-            IndexError: If no empty slots are available
-        """
         slot = self.available_instrument_slot
         if slot is None:
             raise IndexError("No empty instrument slots available in this project")
@@ -105,15 +67,6 @@ class M8Project:
         return slot
         
     def set_instrument(self, instrument, slot):
-        """Set an instrument at a specific slot.
-        
-        Args:
-            instrument: The instrument to set
-            slot: The slot index to set
-            
-        Raises:
-            IndexError: If the slot index is out of range
-        """
         if not (0 <= slot < len(self.instruments)):
             raise IndexError(f"Instrument slot index must be between 0 and {len(self.instruments)-1}")
             
@@ -122,28 +75,12 @@ class M8Project:
     # Phrase methods
     @property
     def available_phrase_slot(self):
-        """Find the first available (empty) phrase slot.
-        
-        Returns:
-            int: Index of the first empty slot, or None if all slots are used
-        """
         for slot_idx, phrase in enumerate(self.phrases):
             if phrase.is_empty():
                 return slot_idx
         return None
 
     def add_phrase(self, phrase):
-        """Add a phrase to the first available slot.
-        
-        Args:
-            phrase: The phrase to add
-            
-        Returns:
-            int: The index where the phrase was added
-            
-        Raises:
-            IndexError: If no empty slots are available
-        """
         slot = self.available_phrase_slot
         if slot is None:
             raise IndexError("No empty phrase slots available in this project")
@@ -152,15 +89,6 @@ class M8Project:
         return slot
         
     def set_phrase(self, phrase, slot):
-        """Set a phrase at a specific slot.
-        
-        Args:
-            phrase: The phrase to set
-            slot: The slot index to set
-            
-        Raises:
-            IndexError: If the slot index is out of range
-        """
         if not (0 <= slot < len(self.phrases)):
             raise IndexError(f"Phrase slot index must be between 0 and {len(self.phrases)-1}")
             
@@ -169,28 +97,12 @@ class M8Project:
     # Chain methods
     @property
     def available_chain_slot(self):
-        """Find the first available (empty) chain slot.
-        
-        Returns:
-            int: Index of the first empty slot, or None if all slots are used
-        """
         for slot_idx, chain in enumerate(self.chains):
             if chain.is_empty():
                 return slot_idx
         return None
 
     def add_chain(self, chain):
-        """Add a chain to the first available slot.
-        
-        Args:
-            chain: The chain to add
-            
-        Returns:
-            int: The index where the chain was added
-            
-        Raises:
-            IndexError: If no empty slots are available
-        """
         slot = self.available_chain_slot
         if slot is None:
             raise IndexError("No empty chain slots available in this project")
@@ -199,31 +111,13 @@ class M8Project:
         return slot
         
     def set_chain(self, chain, slot):
-        """Set a chain at a specific slot.
-        
-        Args:
-            chain: The chain to set
-            slot: The slot index to set
-            
-        Raises:
-            IndexError: If the slot index is out of range
-        """
         if not (0 <= slot < len(self.chains)):
             raise IndexError(f"Chain slot index must be between 0 and {len(self.chains)-1}")
             
         self.chains[slot] = chain
 
     def validate(self):
-        """Validate the entire project for references consistency.
-        
-        Ensures that all references are valid across the project:
-        - Song references valid chains
-        - Chains reference valid phrases
-        - Phrases reference valid instruments
-        
-        Raises:
-            M8ValidationError: If any validation check fails
-        """
+        """Validates references consistency between song, chains, phrases, and instruments."""
         # Song -> Chains validation
         self.song.validate_chains(self.chains)
         
@@ -234,19 +128,6 @@ class M8Project:
         self.phrases.validate_instruments(self.instruments)
     
     def write(self) -> bytes:
-        """Convert the project to binary data.
-        
-        Serializes the entire project to binary format that's compatible with the M8 tracker.
-        This method writes all modified components back to their respective positions
-        in the project data buffer, preserving the M8's binary file structure.
-        
-        The resulting binary data can be written directly to a .m8s file, which
-        can be loaded in the M8 tracker. Note that this method only creates the binary
-        representation; use write_to_file() to save it to disk.
-        
-        Returns:
-            bytes: Binary representation of the entire project, ready for saving to an M8 file
-        """
         output = bytearray(self.data)
         for name, offset in OFFSETS.items():
             if hasattr(self, name):
@@ -259,38 +140,12 @@ class M8Project:
 
     @staticmethod
     def read_from_file(filename: str):
-        """Read a project from a binary file.
-        
-        Args:
-            filename: Path to the M8 project file (.m8s)
-            
-        Returns:
-            M8Project: New instance loaded from the file
-            
-        Raises:
-            FileNotFoundError: If the file doesn't exist
-            IOError: If the file can't be read
-        """
         with open(filename, "rb") as f:
             return M8Project.read(f.read())
 
     @classmethod
     def initialise(cls, template_name: str = "DEFAULT401"):
-        """Create a new M8Project from a template file.
-        
-        Loads a template song file to use as the starting point for a new project.
-        Searches for the template in various locations including installed packages
-        and local development paths.
-        
-        Args:
-            template_name: Name of the template file without the .m8s extension (default: DEFAULT401)
-            
-        Returns:
-            M8Project: New instance initialized from the template
-            
-        Raises:
-            FileNotFoundError: If the template file cannot be found
-        """
+        """Creates a new project from a template file, searching in multiple locations."""
         import os
         import sys
         
@@ -327,35 +182,11 @@ class M8Project:
         return cls.read_from_file(template_path)
 
     def write_to_file(self, filename: str):
-        """Write this project to a binary file.
-        
-        Args:
-            filename: Path where the M8 project file (.m8s) will be written
-            
-        Raises:
-            IOError: If the file can't be written
-        """
         with open(filename, "wb") as f:
             f.write(self.write())
 
     def as_dict(self):
-        """Convert project to dictionary for serialization.
-        
-        Creates a hierarchical dictionary representation of the entire project,
-        suitable for JSON serialization or human-readable export. Uses the
-        individual serialization methods of each component to build a complete
-        representation of the project structure.
-        
-        This is useful for:
-        - Storing projects in formats other than the binary M8 format
-        - Creating human-readable project exports
-        - Programmatically analyzing or modifying project structure
-        
-        Returns:
-            dict: Dictionary representation of the project with all components,
-                structured hierarchically with version, metadata, song, chains,
-                phrases, and instruments
-        """
+        """Converts project to a hierarchical dictionary for serialization."""
         return {
             "version": str(self.version),
             "metadata": self.metadata.as_dict(),
@@ -367,105 +198,38 @@ class M8Project:
     
     @classmethod
     def from_dict(cls, data):
-        """Create a project from a dictionary.
-        
-        Deserializes a project from a dictionary representation, typically
-        created by the as_dict() method or loaded from JSON. Reconstructs
-        all project components from their serialized forms.
-        
-        This is the inverse operation of as_dict() and can be used to:
-        - Load projects stored in JSON format
-        - Create projects programmatically from structured data
-        - Import projects from non-M8 formats that have been converted
-          to the expected dictionary structure
-        
-        Args:
-            data (dict): Dictionary containing serialized project components
-                       with keys for "version", "metadata", "song", "chains",
-                       "phrases", and "instruments"
-            
-        Returns:
-            M8Project: New instance with all components reconstructed from
-                     the dictionary representation
-        """
+        """Creates a project from a dictionary representation."""
         instance = cls()
         
-        # Deserialize version
+        # Deserialize each component
         if "version" in data:
             instance.version = M8Version.from_str(data["version"])
             
-        # Deserialize metadata
         if "metadata" in data:
             instance.metadata = M8Metadata.from_dict(data["metadata"])
             
-        # Deserialize song
         if "song" in data:
             instance.song = M8SongMatrix.from_list(data["song"])
             
-        # Deserialize chains
         if "chains" in data:
             instance.chains = M8Chains.from_list(data["chains"])
             
-        # Deserialize phrases
         if "phrases" in data:
             instance.phrases = M8Phrases.from_list(data["phrases"])
             
-        # Deserialize instruments
         if "instruments" in data:
             instance.instruments = M8Instruments.from_list(data["instruments"])
         
         return instance
         
     def write_to_json_file(self, filename):
-        """Write project to a JSON file.
-        
-        Creates a human-readable JSON representation of the project and saves it to a file.
-        This provides an alternative to the binary .m8s format, making project data
-        accessible for inspection, manual editing, or integration with other tools.
-        
-        The JSON format preserves the full structure of the project but in a format that
-        is easier to read, edit, and process with standard tools. Unlike the binary format,
-        the JSON representation:
-        - Is human-readable and editable in any text editor
-        - Can be parsed by standard JSON libraries in any programming language
-        - Provides a clear view of project structure and relationships
-        - Is suitable for version control systems like Git
-        
-        Args:
-            filename (str): Path where the JSON file will be written
-            
-        Raises:
-            IOError: If the file can't be written due to permission issues,
-                   path not existing, or other I/O errors
-        """
+        """Writes project to a human-readable JSON file."""
         with open(filename, "w") as f:
             f.write(json_dumps(self.as_dict()))
             
     @classmethod
     def read_from_json_file(cls, filename):
-        """Read project from a JSON file.
-        
-        Loads a project that was previously saved in JSON format using
-        the write_to_json_file() method. This is the inverse operation
-        and allows projects to be loaded from human-readable JSON files.
-        
-        This method is useful for:
-        - Loading projects that were stored or exchanged in JSON format
-        - Reading projects that were modified manually or by external tools
-        - Migrating projects between M8 firmware versions (through manual edits)
-        - Developing and testing projects in a more human-friendly format
-        
-        Args:
-            filename (str): Path to the JSON file to read
-            
-        Returns:
-            M8Project: New instance loaded from the JSON data
-            
-        Raises:
-            FileNotFoundError: If the specified file doesn't exist
-            IOError: If the file can't be read due to permission issues
-            JSONDecodeError: If the file contains invalid JSON syntax
-        """
+        """Reads project from a JSON file previously created with write_to_json_file."""
         with open(filename, "r") as f:
             json_str = f.read()
         return M8Project.from_dict(json_loads(json_str))

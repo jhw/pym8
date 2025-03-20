@@ -2,18 +2,7 @@
 from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
 
 class M8MacroSynthParams(M8ParamsBase):
-    """Class to handle all MacroSynth parameters including synth, filter, amp, and mixer settings.
-    
-    The MacroSynth is one of the M8's internal synthesizers featuring shape-based waveforms
-    with timbre and color controls for sound shaping. This class manages all parameters
-    related to the MacroSynth instrument in the M8 tracker.
-    
-    The parameters are organized into four sections:
-    - Synth section: shape, timbre, color, degrade, redux
-    - Filter section: filter type, cutoff, resonance
-    - Amp section: amplitude, limiting
-    - Mixer section: panning, dry level, effect sends (chorus, delay, reverb)
-    """
+    """MacroSynth parameters including synth, filter, amp, and mixer settings."""
     
     _param_defs = [
         # Synth section parameters
@@ -41,36 +30,17 @@ class M8MacroSynthParams(M8ParamsBase):
     ]
     
     def __init__(self, offset=None, **kwargs):
-        """Initialize MacroSynth parameters.
-        
-        Args:
-            offset (int, optional): Byte offset for parameter data in the binary structure.
-            **kwargs: Parameter values to set during initialization.
-        """
+        """Initialize MacroSynth parameters."""
         super().__init__(self._param_defs, offset, **kwargs)
 
 class M8MacroSynth(M8InstrumentBase):
-    """MacroSynth instrument implementation for the M8 tracker.
-    
-    The MacroSynth is a versatile internal synthesizer in the M8 tracker with a type ID of 0x01.
-    It offers various sound shaping parameters including waveform shapes, timbre and color controls,
-    filtering options, and amplitude/mixing settings. This class manages the MacroSynth instrument
-    parameters and serialization/deserialization for M8 project files.
-    """
+    """MacroSynth instrument implementation for the M8 tracker."""
     
     # Offset for modulator data in the binary structure
     MODULATORS_OFFSET = 63
     
     def __init__(self, **kwargs):
-        """Initialize a MacroSynth instrument.
-        
-        Creates a new MacroSynth instrument with the specified parameters. Parameters specific to
-        the MacroSynth synth engine are passed to the underlying M8MacroSynthParams object.
-        
-        Args:
-            **kwargs: Instrument parameters to set during initialization. Can include both
-                     general instrument parameters and synth-specific parameters.
-        """
+        """Initialize a MacroSynth instrument."""
         # Set type before calling parent class init
         # Using hex to ensure it's stored as 0x01, not 1
         self.type = 0x01
@@ -95,31 +65,15 @@ class M8MacroSynth(M8InstrumentBase):
         super().__init__(**kwargs)
     
     def _read_specific_parameters(self, data, offset):
-        """Read MacroSynth-specific parameters from binary data.
-        
-        Args:
-            data (bytes): Binary data containing instrument parameters.
-            offset (int): Byte offset where instrument data begins.
-        """
+        """Read MacroSynth-specific parameters from binary data."""
         self.synth = M8MacroSynthParams.read(data)
     
     def _write_specific_parameters(self):
-        """Write MacroSynth-specific parameters to binary format.
-        
-        Returns:
-            bytes: Binary representation of the MacroSynth parameters.
-        """
+        """Write MacroSynth-specific parameters to binary format."""
         return self.synth.write()
         
     def is_empty(self):
-        """Check if the MacroSynth instrument is empty/initialized to defaults.
-        
-        An empty MacroSynth is defined as having an empty name, zero volume,
-        and default shape value.
-        
-        Returns:
-            bool: True if the instrument is empty, False otherwise.
-        """
+        """Check if the MacroSynth instrument is empty/initialized to defaults."""
         return (self.name.strip() == "" and 
                 self.volume == 0x0 and 
                 self.synth.shape == 0x0)
