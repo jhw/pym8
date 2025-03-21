@@ -26,10 +26,12 @@
 - When suggesting changes that affect multiple files, summarize the changes
 - Always test before staging; ALWAYS ask before committing
 - DO NOT create any tags unless asked
-- When asked to create a tag, lookup the list of tags and bump the minor version, then push to origin
+- When asked to create a tag, lookup the list of tags and bump the minor version
+- Don't push anything to origin; I will do that
 
 ## Testing 
 
 - There is an extensive test suite in /tests and a script which runs all tests called run_tests.py
 - Run this to see if changes you have made pass and reflect on the results when iterating towards solutions
+- Count how many test cycles you go through, and if the percentage of errors is getting better or worse; if you go through more than 3 cycles and the error percentage is worsening, consider stopping and asking for help
 

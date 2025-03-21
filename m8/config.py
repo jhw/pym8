@@ -61,15 +61,18 @@ def get_modulator_data(modulator_type):
     raise ValueError("Modulators section not found in configuration")
 
 def get_modulator_type_id_map():
-    """Provides a mapping of modulator type IDs to their class paths."""
-    return {
-        0x00: "m8.api.modulators.M8AHDEnvelope",
-        0x02: "m8.api.modulators.M8DrumEnvelope",
-        0x01: "m8.api.modulators.M8ADSREnvelope",
-        0x03: "m8.api.modulators.M8LFO",
-        0x04: "m8.api.modulators.M8TriggerEnvelope",
-        0x05: "m8.api.modulators.M8TrackingEnvelope"
-    }
+    """Provides a mapping of modulator type IDs to their class paths from configuration."""
+    config = load_format_config()
+    # Convert string keys to integers to handle hex strings
+    id_map = {}
+    for key_str, value in config["modulators"]["type_id_map"].items():
+        # Convert hex string keys to integers
+        if isinstance(key_str, str) and key_str.startswith("0x"):
+            key = int(key_str, 16)
+        else:
+            key = int(key_str)
+        id_map[key] = value
+    return id_map
 
 def get_instrument_type_id(instrument_type):
     """Retrieves type ID for an instrument from configuration."""

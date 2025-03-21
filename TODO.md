@@ -2,7 +2,6 @@
 
 # medium
 
-- json bitmap
 - sampler >> chorus_send, reverb_send
 - sampler slice points
 - m8i files
@@ -26,6 +25,7 @@
 
 # done
 
+- json bitmap
 - add back wavsynth param hardcoding
 - propose a solution for removing synth param hardcoding
 - abstract offsets, counts, sizes to YAML configuration

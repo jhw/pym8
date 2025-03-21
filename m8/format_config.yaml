@@ -160,6 +160,13 @@ modulators:
   constants:
     empty_destination: 0x00
     default_amount: 0xFF
+  type_id_map:
+    0x00: "m8.api.modulators.M8AHDEnvelope"
+    0x01: "m8.api.modulators.M8ADSREnvelope"
+    0x02: "m8.api.modulators.M8DrumEnvelope"
+    0x03: "m8.api.modulators.M8LFO"
+    0x04: "m8.api.modulators.M8TriggerEnvelope"
+    0x05: "m8.api.modulators.M8TrackingEnvelope"
   types:
     ahd_envelope: 
       id: 0x00
