@@ -8,8 +8,7 @@ from m8.api.metadata import M8Metadata
 from m8.api.song import M8SongMatrix, M8SongRow
 from m8.api.chains import M8Chain, M8Chains
 from m8.api.phrases import M8Phrase, M8Phrases
-from m8.api.instruments import M8Instruments
-from m8.api.instruments.wavsynth import M8WavSynth
+from m8.api.instruments import M8Instruments, M8Instrument
 
 class TestM8Project(unittest.TestCase):
     def setUp(self):
@@ -24,7 +23,7 @@ class TestM8Project(unittest.TestCase):
         
         # Create some data that will be used for testing references
         # Add a simple instrument
-        self.test_instrument = M8WavSynth(name="TestSynth")
+        self.test_instrument = M8Instrument(instrument_type="wavsynth", name="TestSynth")
         self.instrument_slot = self.project.add_instrument(self.test_instrument)
         
         # Add a phrase using this instrument
@@ -42,14 +41,14 @@ class TestM8Project(unittest.TestCase):
     
     def test_add_get_instrument(self):
         # Test adding an instrument
-        instrument = M8WavSynth(name="NewInstrument")
+        instrument = M8Instrument(instrument_type="wavsynth", name="NewInstrument")
         slot = self.project.add_instrument(instrument)
         
         # Check the instrument was added
         self.assertIs(self.project.instruments[slot], instrument)
         
         # Test setting an instrument explicitly
-        instrument2 = M8WavSynth(name="Instrument2")
+        instrument2 = M8Instrument(instrument_type="wavsynth", name="Instrument2")
         self.project.set_instrument(instrument2, 2)
         self.assertIs(self.project.instruments[2], instrument2)
         
@@ -60,14 +59,14 @@ class TestM8Project(unittest.TestCase):
         # Fill all slots and test overflow
         for i in range(len(self.project.instruments)):
             if isinstance(self.project.instruments[i], M8Block):
-                self.project.instruments[i] = M8WavSynth(name=f"Instr{i}")
+                self.project.instruments[i] = M8Instrument(instrument_type="wavsynth", name=f"Instr{i}")
         
         # Should be no available slots now
         self.assertIsNone(self.project.available_instrument_slot)
         
         # Adding another should raise error
         with self.assertRaises(IndexError):
-            self.project.add_instrument(M8WavSynth(name="Overflow"))
+            self.project.add_instrument(M8Instrument(instrument_type="wavsynth", name="Overflow"))
     
     def test_add_get_phrase(self):
         # Test adding a phrase

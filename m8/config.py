@@ -91,3 +91,19 @@ def get_instrument_modulators_offset(instrument_type):
         'modulators_offset' in config['instruments'][instrument_type]):
         return config['instruments'][instrument_type]['modulators_offset']
     raise ValueError(f"Modulators offset for instrument '{instrument_type}' not found in configuration")
+
+def get_instrument_types():
+    """Returns a dictionary of instrument type IDs to type names from configuration."""
+    config = load_format_config()
+    result = {}
+    
+    for instr_type, instr_config in config['instruments'].items():
+        # Skip non-instrument sections
+        if isinstance(instr_config, dict) and 'type_id' in instr_config:
+            type_id = instr_config['type_id']
+            # Convert hex strings to integers
+            if isinstance(type_id, str) and type_id.startswith('0x'):
+                type_id = int(type_id, 16)
+            result[type_id] = instr_type
+            
+    return result

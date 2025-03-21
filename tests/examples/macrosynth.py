@@ -1,5 +1,6 @@
 import unittest
 from m8.api.project import M8Project
+from m8.api.instruments import M8Instrument
 
 
 class TestMacroSynthMapping(unittest.TestCase):
@@ -19,6 +20,8 @@ class TestMacroSynthMapping(unittest.TestCase):
     def test_macrosynth_type(self):
         # Verify instrument type
         self.assertEqual(self.instrument_dict['type'], 1)
+        # Check that the instrument is recognized as a MacroSynth
+        self.assertEqual(self.instrument.instrument_type, "macrosynth")
         
     def test_macrosynth_name(self):
         # Test that the instrument name should be "MYMACRO" after stripping

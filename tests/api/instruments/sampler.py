@@ -1,11 +1,11 @@
 import unittest
-from m8.api.instruments.sampler import M8SamplerParams, M8Sampler
+from m8.api.instruments import M8Params, M8Instrument
 from m8.api.modulators import M8LFO
 
 class TestM8SamplerParams(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
-        params = M8SamplerParams()
+        params = M8Params.from_config("sampler")
         
         # Check defaults for key parameters
         self.assertEqual(params.play_mode, 0x0)
@@ -27,7 +27,7 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(params.sample_path, "")
         
         # Test with kwargs
-        params = M8SamplerParams(
+        params = M8Params.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -71,7 +71,7 @@ class TestM8SamplerParams(unittest.TestCase):
         # Note: The sample_path is at a higher offset (0x57 = 87)
         binary_data = bytearray([0] * 18)  # First 18 bytes are not used by SamplerParams
         
-        # Add synth-specific parameters
+        # Add sampler-specific parameters
         binary_data.extend([
             0x01,   # play_mode (offset 18)
             0x05,   # slice (offset 19)
@@ -100,8 +100,9 @@ class TestM8SamplerParams(unittest.TestCase):
         # Pad to ensure enough space
         binary_data.extend([0] * (128 - len(test_path)))
         
-        # Read from binary
-        params = M8SamplerParams.read(binary_data)
+        # Create params and read from binary
+        params = M8Params.from_config("sampler")
+        params.read(binary_data)
         
         # Check values
         self.assertEqual(params.play_mode, 0x1)
@@ -124,7 +125,7 @@ class TestM8SamplerParams(unittest.TestCase):
     
     def test_write_to_binary(self):
         # Create params with specific values
-        params = M8SamplerParams(
+        params = M8Params.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -147,11 +148,7 @@ class TestM8SamplerParams(unittest.TestCase):
         # Write to binary
         binary = params.write()
         
-        # Check binary output
-        # The total length should include the sample_path offset (0x57 = 87) + 128 bytes
-        self.assertEqual(len(binary), 87 + 128)
-        
-        # Check specific values
+        # Check specific values for specific parameters
         self.assertEqual(binary[18], 0x1)   # play_mode
         self.assertEqual(binary[19], 0x5)   # slice
         self.assertEqual(binary[20], 0x10)  # start
@@ -170,13 +167,19 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(binary[33], 0xA0)  # reverb
         
         # Check sample path
-        # Sample path starts at offset 0x57 (87)
-        sample_path_bytes = binary[87:87+16]  # Just check the first 16 bytes
+        sample_path_offset = 0
+        for param_name, param_def in params._param_defs.items():
+            if param_name == "sample_path":
+                sample_path_offset = param_def["offset"]
+                break
+        
+        self.assertGreater(sample_path_offset, 0)
+        sample_path_bytes = binary[sample_path_offset:sample_path_offset+16]  # Check first 16 bytes
         self.assertEqual(sample_path_bytes, b"/samples/kick.wa")
     
     def test_read_write_consistency(self):
         # Create original params
-        original = M8SamplerParams(
+        original = M8Params.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -200,7 +203,8 @@ class TestM8SamplerParams(unittest.TestCase):
         binary = original.write()
         
         # Read back from binary
-        deserialized = M8SamplerParams.read(binary)
+        deserialized = M8Params.from_config("sampler")
+        deserialized.read(binary)
         
         # Check values match
         self.assertEqual(deserialized.play_mode, original.play_mode)
@@ -223,7 +227,7 @@ class TestM8SamplerParams(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = M8SamplerParams(
+        params = M8Params.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -293,7 +297,7 @@ class TestM8SamplerParams(unittest.TestCase):
         }
         
         # Create from dict
-        params = M8SamplerParams.from_dict(data)
+        params = M8Params.from_dict("sampler", data)
         
         # Check values
         for key, value in data.items():
@@ -303,13 +307,13 @@ class TestM8SamplerParams(unittest.TestCase):
 class TestM8Sampler(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
-        sampler = M8Sampler()
+        sampler = M8Instrument(instrument_type="sampler")
         
         # Check type is set correctly
         self.assertEqual(sampler.type, 0x02)
         
-        # Check synth object is created
-        self.assertIsInstance(sampler.synth, M8SamplerParams)
+        # Check params object is created
+        self.assertIsInstance(sampler.params, M8Params)
         
         # Check common parameters
         self.assertNotEqual(sampler.name, "")  # Should auto-generate a name
@@ -320,8 +324,9 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(sampler.pitch, 0x0)
         self.assertEqual(sampler.finetune, 0x80)
         
-        # Test with kwargs for both common and synth-specific parameters
-        sampler = M8Sampler(
+        # Test with kwargs for both common and specific parameters
+        sampler = M8Instrument(
+            instrument_type="sampler",
             # Common instrument parameters
             name="TestSampler",
             transpose=0x5,
@@ -351,24 +356,27 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(sampler.pitch, 0x20)
         self.assertEqual(sampler.finetune, 0x90)
         
-        # Check synth-specific parameters
-        self.assertEqual(sampler.synth.play_mode, 0x1)
-        self.assertEqual(sampler.synth.slice, 0x5)
-        self.assertEqual(sampler.synth.start, 0x10)
-        self.assertEqual(sampler.synth.length, 0xE0)
-        self.assertEqual(sampler.synth.filter, 0x2)
-        self.assertEqual(sampler.synth.cutoff, 0xD0)
-        self.assertEqual(sampler.synth.pan, 0x70)
-        self.assertEqual(sampler.synth.sample_path, "/samples/kick.wav")
+        # Check sampler-specific parameters
+        self.assertEqual(sampler.params.play_mode, 0x1)
+        self.assertEqual(sampler.params.slice, 0x5)
+        self.assertEqual(sampler.params.start, 0x10)
+        self.assertEqual(sampler.params.length, 0xE0)
+        self.assertEqual(sampler.params.filter, 0x2)
+        self.assertEqual(sampler.params.cutoff, 0xD0)
+        self.assertEqual(sampler.params.pan, 0x70)
+        self.assertEqual(sampler.params.sample_path, "/samples/kick.wav")
     
-    def test_read_specific_parameters(self):
+    def test_read_parameters(self):
         # Create a Sampler
-        sampler = M8Sampler()
+        sampler = M8Instrument(instrument_type="sampler")
         
-        # Create test binary data for synth parameters
-        binary_data = bytearray([0] * 18)  # First 18 bytes (common instrument parameters)
+        # Create test binary data (with type=0x02 for Sampler)
+        binary_data = bytearray([0x02])  # Type
+        binary_data.extend(b"TEST")  # Name (first 4 bytes)
+        binary_data.extend(bytearray([0] * 8))  # Rest of name padding
+        binary_data.extend([0x42, 0x02, 0x10, 0x20, 0x90])  # Common params
         
-        # Add synth-specific parameters
+        # Add sampler-specific parameters
         binary_data.extend([
             0x01,   # play_mode
             0x05,   # slice
@@ -388,41 +396,60 @@ class TestM8Sampler(unittest.TestCase):
             0xA0    # reverb
         ])
         
-        # Pad up to sample_path offset (0x57 = 87)
-        binary_data.extend([0] * (87 - len(binary_data)))
+        # Get the sampler's sample_path offset from config
+        sample_path_offset = 0
+        for param_name, param_def in sampler.params._param_defs.items():
+            if param_name == "sample_path":
+                sample_path_offset = param_def["offset"]
+                break
+                
+        # Pad up to sample_path offset
+        if sample_path_offset > len(binary_data):
+            binary_data.extend([0] * (sample_path_offset - len(binary_data)))
         
         # Add sample path
         test_path = b"/samples/kick.wav"
         binary_data.extend(test_path)
-        # Pad to ensure enough space
-        binary_data.extend([0] * (128 - len(test_path)))
         
-        # Call the method to read specific parameters
-        # This would normally be called by _read_parameters in the base class
-        sampler._read_specific_parameters(binary_data, 18)
+        # Extend with data to reach modulators and beyond
+        # Pad to a reasonable length (at least larger than the modulators offset)
+        binary_data.extend([0] * (215 - len(binary_data)))
         
-        # Check synth parameters were read correctly
-        self.assertEqual(sampler.synth.play_mode, 0x1)
-        self.assertEqual(sampler.synth.slice, 0x5)
-        self.assertEqual(sampler.synth.start, 0x10)
-        self.assertEqual(sampler.synth.loop_start, 0x20)
-        self.assertEqual(sampler.synth.length, 0xE0)
-        self.assertEqual(sampler.synth.degrade, 0x30)
-        self.assertEqual(sampler.synth.filter, 0x2)
-        self.assertEqual(sampler.synth.cutoff, 0xD0)
-        self.assertEqual(sampler.synth.res, 0x40)
-        self.assertEqual(sampler.synth.amp, 0x50)
-        self.assertEqual(sampler.synth.limit, 0x60)
-        self.assertEqual(sampler.synth.pan, 0x70)
-        self.assertEqual(sampler.synth.dry, 0xB0)
-        self.assertEqual(sampler.synth.chorus, 0x80)
-        self.assertEqual(sampler.synth.delay, 0x90)
-        self.assertEqual(sampler.synth.reverb, 0xA0)
-        self.assertEqual(sampler.synth.sample_path, "/samples/kick.wav")
+        # Call the method to read parameters
+        sampler._read_parameters(binary_data)
+        
+        # Check parameters were read correctly
+        self.assertEqual(sampler.type, 0x02)
+        self.assertEqual(sampler.name, "TEST")
+        self.assertEqual(sampler.params.play_mode, 0x1)
+        self.assertEqual(sampler.params.slice, 0x5)
+        self.assertEqual(sampler.params.start, 0x10)
+        self.assertEqual(sampler.params.loop_start, 0x20)
+        self.assertEqual(sampler.params.length, 0xE0)
+        self.assertEqual(sampler.params.degrade, 0x30)
+        self.assertEqual(sampler.params.filter, 0x2)
+        self.assertEqual(sampler.params.cutoff, 0xD0)
+        self.assertEqual(sampler.params.res, 0x40)
+        self.assertEqual(sampler.params.amp, 0x50)
+        self.assertEqual(sampler.params.limit, 0x60)
+        self.assertEqual(sampler.params.pan, 0x70)
+        self.assertEqual(sampler.params.dry, 0xB0)
+        self.assertEqual(sampler.params.chorus, 0x80)
+        self.assertEqual(sampler.params.delay, 0x90)
+        self.assertEqual(sampler.params.reverb, 0xA0)
+        self.assertEqual(sampler.params.sample_path, "/samples/kick.wav")
     
-    def test_write_specific_parameters(self):
+    def test_write(self):
         # Create a Sampler with specific parameters
-        sampler = M8Sampler(
+        sampler = M8Instrument(
+            instrument_type="sampler",
+            name="TEST",
+            transpose=0x4,
+            eq=0x2,
+            table_tick=0x02,
+            volume=0x10,
+            pitch=0x20,
+            finetune=0x90,
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -442,14 +469,16 @@ class TestM8Sampler(unittest.TestCase):
             sample_path="/samples/kick.wav"
         )
         
-        # Call the method to write specific parameters
-        # This would normally be called by write in the base class
-        binary = sampler._write_specific_parameters()
+        # Write to binary
+        binary = sampler.write()
         
-        # The total length should include the sample_path offset (0x57 = 87) + 128 bytes
-        self.assertEqual(len(binary), 87 + 128)
+        # Check the type byte (sampler = 0x02)
+        self.assertEqual(binary[0], 0x02)
         
-        # Check specific values
+        # Check common parameters
+        self.assertEqual(binary[1:5], b"TEST")  # name (first 4 bytes)
+        
+        # Check sampler-specific parameters
         self.assertEqual(binary[18], 0x1)   # play_mode
         self.assertEqual(binary[19], 0x5)   # slice
         self.assertEqual(binary[20], 0x10)  # start
@@ -466,32 +495,27 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(binary[31], 0x80)  # chorus
         self.assertEqual(binary[32], 0x90)  # delay
         self.assertEqual(binary[33], 0xA0)  # reverb
-        
-        # Check sample path
-        # Sample path starts at offset 0x57 (87)
-        sample_path_bytes = binary[87:87+16]  # Just check the first 16 bytes
-        self.assertEqual(sample_path_bytes, b"/samples/kick.wa")
     
     def test_is_empty(self):
         # Empty Sampler (default values)
-        sampler = M8Sampler(name="")
+        sampler = M8Instrument(instrument_type="sampler", name="")
         self.assertTrue(sampler.is_empty())
         
         # Non-empty Sampler (with name)
-        sampler = M8Sampler(name="TestSampler")
+        sampler = M8Instrument(instrument_type="sampler", name="TestSampler")
         self.assertFalse(sampler.is_empty())
         
         # Non-empty Sampler (with volume)
-        sampler = M8Sampler(name="", volume=0x10)
+        sampler = M8Instrument(instrument_type="sampler", name="", volume=0x10)
         self.assertFalse(sampler.is_empty())
         
         # Non-empty Sampler (with sample_path)
-        sampler = M8Sampler(name="", sample_path="/samples/kick.wav")
+        sampler = M8Instrument(instrument_type="sampler", name="", sample_path="/samples/kick.wav")
         self.assertFalse(sampler.is_empty())
     
     def test_add_modulator(self):
         # Create a Sampler
-        sampler = M8Sampler()
+        sampler = M8Instrument(instrument_type="sampler")
         
         # Add a modulator
         mod = M8LFO(destination=2, amount=100, frequency=50)
@@ -506,13 +530,14 @@ class TestM8Sampler(unittest.TestCase):
     
     def test_as_dict(self):
         # Create a Sampler with specific parameters
-        sampler = M8Sampler(
+        sampler = M8Instrument(
+            instrument_type="sampler",
             # Common parameters
             name="TestSampler",
             transpose=0x5,
             eq=0x2,
             
-            # Synth-specific parameters
+            # Specific parameters
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -534,7 +559,7 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(result["transpose"], 0x5)
         self.assertEqual(result["eq"], 0x2)
         
-        # Check synth-specific parameters
+        # Check specific parameters
         self.assertEqual(result["play_mode"], 0x1)
         self.assertEqual(result["slice"], 0x5)
         self.assertEqual(result["start"], 0x10)

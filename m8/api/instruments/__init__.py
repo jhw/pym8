@@ -2,19 +2,34 @@
 from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string
 from m8.api.modulators import M8Modulators, create_default_modulators
 from enum import Enum, auto
-from m8.config import load_format_config, get_instrument_type_id
+from m8.config import load_format_config, get_instrument_type_id, get_instrument_modulators_offset, get_instrument_types
 
 import random
 
 # Load configuration
 config = load_format_config()
 
-# Instrument type definitions (mapping of type ID to class path)
-INSTRUMENT_TYPES = {
-    0x00: "m8.api.instruments.wavsynth.M8WavSynth",    # WavSynth instrument
-    0x01: "m8.api.instruments.macrosynth.M8MacroSynth", # MacroSynth instrument
-    0x02: "m8.api.instruments.sampler.M8Sampler"       # Sampler instrument
-}
+# Instrument type mapping
+INSTRUMENT_TYPES = get_instrument_types()
+
+# Instrument type enum
+class InstrumentType(Enum):
+    WAVSYNTH = "wavsynth"
+    MACROSYNTH = "macrosynth"
+    SAMPLER = "sampler"
+    
+    @classmethod
+    def get_type_id(cls, type_name):
+        """Get the numeric type ID from the type name."""
+        return get_instrument_type_id(type_name)
+    
+    @classmethod
+    def from_id(cls, type_id):
+        """Get the enum value from a numeric type ID."""
+        for type_enum in cls:
+            if get_instrument_type_id(type_enum.value) == type_id:
+                return type_enum
+        return None
 
 # Global counter for auto-generating instrument names
 _INSTRUMENT_COUNTER = 0
@@ -28,8 +43,8 @@ class M8ParamType(Enum):
     UINT8 = auto()      # Standard 1-byte integer (0-255)
     STRING = auto()     # String type with variable length
 
-class M8ParamsBase:
-    """Base class for instrument parameter groups with support for different parameter types."""
+class M8Params:
+    """Dynamic parameter container for instrument parameters with support for different parameter types."""
     
     @staticmethod
     def calculate_parameter_size(param_defs):
@@ -38,13 +53,16 @@ class M8ParamsBase:
         for param_name, param_def in param_defs.items():
             start = param_def["offset"]
             size = param_def["size"]
-            total_size += size
+            end = start + size
+            total_size = max(total_size, end)
         return total_size
     
     def __init__(self, param_defs, **kwargs):
         """
-        Initialize the parameter group.
+        Initialize the parameter group with the given parameter definitions.
         """
+        self._param_defs = param_defs
+        
         # Initialize parameters with defaults
         for param_name, param_def in param_defs.items():
             default = param_def["default"]
@@ -56,13 +74,23 @@ class M8ParamsBase:
                 setattr(self, key, value)
     
     @classmethod
-    def read(cls, data):
-        """Read parameters from binary data."""
-        # Create an instance with default values
-        instance = cls()
+    def from_config(cls, instrument_type, **kwargs):
+        """Create parameters from instrument type config."""
+        config = load_format_config()
         
+        # Load parameter definitions from config
+        param_defs = config["instruments"][instrument_type]["params"].copy()
+        
+        # Special case for sampler: add sample_path from top level
+        if instrument_type == "sampler" and "sample_path" in config["instruments"][instrument_type]:
+            param_defs["sample_path"] = config["instruments"][instrument_type]["sample_path"]
+            
+        return cls(param_defs, **kwargs)
+    
+    def read(self, data):
+        """Read parameters from binary data."""
         # Read values from their explicit offsets
-        for param_name, param_def in instance._param_defs.items():
+        for param_name, param_def in self._param_defs.items():
             offset = param_def["offset"]
             size = param_def["size"]
             end = offset + size
@@ -84,9 +112,7 @@ class M8ParamsBase:
                 # Default to UINT8 for unknown types
                 value = data[offset]
                 
-            setattr(instance, param_name, value)
-        
-        return instance
+            setattr(self, param_name, value)
     
     def write(self):
         """Convert parameters to binary data."""
@@ -131,7 +157,7 @@ class M8ParamsBase:
     
     def clone(self):
         """Create a deep copy of this parameter object."""
-        instance = self.__class__()
+        instance = self.__class__(self._param_defs)
         for param_name in self._param_defs.keys():
             setattr(instance, param_name, getattr(self, param_name))
         return instance
@@ -141,18 +167,18 @@ class M8ParamsBase:
         return {param_name: getattr(self, param_name) for param_name in self._param_defs.keys()}
     
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, instrument_type, data):
         """Create parameters from a dictionary."""
-        instance = cls()
+        params = cls.from_config(instrument_type)
         
-        for param_name in instance._param_defs.keys():
+        for param_name in params._param_defs.keys():
             if param_name in data:
-                setattr(instance, param_name, data[param_name])
+                setattr(params, param_name, data[param_name])
             
-        return instance
+        return params
 
-class M8InstrumentBase:
-    """Base class for all M8 instruments."""
+class M8Instrument:
+    """Unified instrument class for all M8 instrument types."""
     
     # Common parameter offsets for all instrument types
     TYPE_OFFSET = 0        # Instrument type ID
@@ -164,14 +190,33 @@ class M8InstrumentBase:
     PITCH_OFFSET = 16         # Pitch offset
     FINETUNE_OFFSET = 17      # Fine pitch tuning
     
-    def __init__(self, **kwargs):
+    def __init__(self, instrument_type=None, **kwargs):
         """Initialize a new instrument with default parameters."""
         global _INSTRUMENT_COUNTER
         
+        # Process instrument_type
+        if instrument_type is None:
+            # Default to wavsynth if not specified
+            instrument_type = InstrumentType.WAVSYNTH.value
+        elif isinstance(instrument_type, int):
+            # Convert type ID to string name
+            instr_type_enum = InstrumentType.from_id(instrument_type)
+            if instr_type_enum:
+                instrument_type = instr_type_enum.value
+            else:
+                raise ValueError(f"Unknown instrument type ID: {instrument_type}")
+        elif isinstance(instrument_type, InstrumentType):
+            # If it's already an enum, get its value
+            instrument_type = instrument_type.value
+        
+        # Set the instrument type and ID
+        self.instrument_type = instrument_type
+        self.type = InstrumentType.get_type_id(instrument_type)
+        
         # Generate sequential name if not provided
         if 'name' not in kwargs:
-            # Get class name without the M8 prefix
-            base_name = self.__class__.__name__[2:].upper()
+            # Use instrument type for name base
+            base_name = instrument_type.upper()
             # Truncate or pad to 8 characters
             name_base = (base_name[:8] if len(base_name) > 8 else base_name.ljust(8))
             # Use global counter for 4-digit hex code
@@ -190,19 +235,33 @@ class M8InstrumentBase:
         self.pitch = 0x0
         self.finetune = 0x80  # Center value for fine tuning
         
-        # Create modulators if MODULATORS_OFFSET is defined by the subclass
-        # Modulators offset is still needed as it's handled differently
-        if hasattr(self, 'MODULATORS_OFFSET'):
-            self.modulators = M8Modulators(items=create_default_modulators())
+        # Create params object based on instrument type
+        self.params = M8Params.from_config(instrument_type)
         
-        # Apply any remaining kwargs to base class attributes
+        # Set up modulators
+        self.modulators_offset = get_instrument_modulators_offset(instrument_type)
+        self.modulators = M8Modulators(items=create_default_modulators())
+        
+        # Apply common parameters from kwargs
         for key, value in kwargs.items():
-            if hasattr(self, key) and not key.startswith('_') and key not in ["modulators", "type", "synth"]:
+            if hasattr(self, key) and not key.startswith('_') and key not in ["modulators", "type", "params"]:
                 setattr(self, key, value)
+                
+        # Apply instrument-specific parameters from kwargs to params object
+        for key, value in kwargs.items():
+            if hasattr(self.params, key):
+                setattr(self.params, key, value)
     
     def _read_common_parameters(self, data):
         """Read common parameters shared by all instrument types."""
         self.type = data[self.TYPE_OFFSET]
+        
+        # Get the instrument type string from the type ID
+        if self.type in INSTRUMENT_TYPES:
+            self.instrument_type = INSTRUMENT_TYPES[self.type]
+        else:
+            # Default to wavsynth for unknown types
+            self.instrument_type = "wavsynth"
         
         # Read name as a string (null-terminated) using utility function
         self.name = read_fixed_string(data, self.NAME_OFFSET, self.NAME_LENGTH)
@@ -216,7 +275,7 @@ class M8InstrumentBase:
         self.pitch = data[self.PITCH_OFFSET]
         self.finetune = data[self.FINETUNE_OFFSET]
         
-        # Standardized position where instrument-specific params begin
+        # Return the standard offset where instrument-specific params begin
         return 18
 
     def _read_parameters(self, data):
@@ -224,13 +283,15 @@ class M8InstrumentBase:
         # Read common parameters first
         next_offset = self._read_common_parameters(data)
         
-        # Read synth-specific parameters in subclass (includes filter, amp, mixer params)
-        self._read_specific_parameters(data, next_offset)
+        # Create and read the appropriate params object based on instrument type
+        self.params = M8Params.from_config(self.instrument_type)
+        self.params.read(data)
         
-        # Read modulators if offset is defined
-        # Modulators still need an offset as they're handled differently
-        if hasattr(self, 'MODULATORS_OFFSET'):
-            self.modulators = M8Modulators.read(data[self.MODULATORS_OFFSET:])
+        # Set the modulators offset based on instrument type
+        self.modulators_offset = get_instrument_modulators_offset(self.instrument_type)
+        
+        # Read modulators
+        self.modulators = M8Modulators.read(data[self.modulators_offset:])
 
     def write(self):
         """Convert the instrument to binary data."""
@@ -251,72 +312,76 @@ class M8InstrumentBase:
         buffer[self.TABLE_TICK_OFFSET] = self.table_tick
         buffer[self.VOLUME_OFFSET] = self.volume
         buffer[self.PITCH_OFFSET] = self.pitch
-        buffer[self.FINETUNE_OFFSET] = self.finetune  # renamed from fine_tune
+        buffer[self.FINETUNE_OFFSET] = self.finetune
         
-        # Write synth-specific parameters (includes filter, amp, mixer params)
-        if hasattr(self, 'synth'):
-            # The parameters have their positions defined correctly in the param_defs
-            # but are compacted at position 0 in the synth_params buffer
-            # We need to reapply them at their correct positions
+        # Write instrument-specific parameters
+        params_data = self.params.write()
+        for param_name, param_def in self.params._param_defs.items():
+            offset = param_def["offset"]
+            size = param_def["size"]
+            end = offset + size
             
-            for param_name, param_def in self.synth._param_defs.items():
-                offset = param_def["offset"]
-                size = param_def["size"]
-                end = offset + size
-                value = getattr(self.synth, param_name)
-                
-                # Get parameter type (enum value or use UINT8 as default)
-                param_type = M8ParamType.UINT8
-                if "type" in param_def:
-                    type_name = param_def["type"]
-                    if type_name == "STRING":
-                        param_type = M8ParamType.STRING
-                
-                if param_type == M8ParamType.UINT8:
-                    # Write a single byte
-                    buffer[offset] = value & 0xFF
-                elif param_type == M8ParamType.STRING:
-                    # Write a string using utility function
-                    if isinstance(value, str):
-                        buffer[offset:end] = write_fixed_string(value, size)
-                    else:
-                        # Null padding
-                        buffer[offset:end] = bytes([0] * size)
+            # Get the parameter value
+            value = getattr(self.params, param_name)
+            
+            # Get parameter type (enum value or use UINT8 as default)
+            param_type = M8ParamType.UINT8
+            if "type" in param_def:
+                type_name = param_def["type"]
+                if type_name == "STRING":
+                    param_type = M8ParamType.STRING
+            
+            if param_type == M8ParamType.UINT8:
+                # Write a single byte
+                buffer[offset] = value & 0xFF
+            elif param_type == M8ParamType.STRING:
+                # Write a string using utility function
+                if isinstance(value, str):
+                    buffer[offset:end] = write_fixed_string(value, size)
                 else:
-                    # Default to UINT8
-                    buffer[offset] = value & 0xFF
+                    # Null padding
+                    buffer[offset:end] = bytes([0] * size)
+            else:
+                # Default to UINT8
+                buffer[offset] = value & 0xFF
         
         # Write modulators
-        # Modulators still need an offset as they're handled differently
-        if hasattr(self, 'MODULATORS_OFFSET') and hasattr(self, 'modulators'):
-            modulator_params = self.modulators.write()
-            buffer[self.MODULATORS_OFFSET:self.MODULATORS_OFFSET + len(modulator_params)] = modulator_params
+        modulator_params = self.modulators.write()
+        buffer[self.modulators_offset:self.modulators_offset + len(modulator_params)] = modulator_params
         
         # Return the finalized buffer
-        
         return bytes(buffer)
-
-    def _write_specific_parameters(self):
-        """Write synth-specific parameters. To be implemented by subclasses."""
-        return self.synth.write()
 
     def is_empty(self):
         """Check if this instrument is empty."""
-        return self.name.strip() == ""
+        # First check if the name is non-empty
+        if self.name.strip() != "":
+            return False
+            
+        # If name is empty, do additional checks based on instrument type
+        if self.instrument_type == "wavsynth" or self.instrument_type == "macrosynth":
+            # Check if shape or volume is non-zero, which would make it non-empty
+            return self.volume == 0x0 and self.params.shape == 0x0
+        elif self.instrument_type == "sampler":
+            # Check if volume or sample_path is non-empty, which would make it non-empty
+            return self.volume == 0x0 and getattr(self.params, "sample_path", "") == ""
+        else:
+            # Default to just checking name
+            return True
 
     def clone(self):
         """Create a deep copy of this instrument."""
-        # Create a new instance of the same class
-        instance = self.__class__.__new__(self.__class__)
+        # Create a new instance of this class with the same instrument type
+        instance = self.__class__(instrument_type=self.instrument_type)
         
         # Copy all attributes
         for key, value in vars(self).items():
             if key == "modulators":
                 # Clone modulators if they have a clone method
                 instance.modulators = self.modulators.clone() if hasattr(self.modulators, 'clone') else self.modulators
-            elif hasattr(value, 'clone') and callable(getattr(value, 'clone')):
-                # Clone other objects with clone method (like filter, amp, mixer, synth)
-                setattr(instance, key, value.clone())
+            elif key == "params":
+                # Clone params
+                instance.params = self.params.clone() if hasattr(self.params, 'clone') else self.params
             else:
                 setattr(instance, key, value)
                 
@@ -348,70 +413,57 @@ class M8InstrumentBase:
 
     def as_dict(self):
         """Convert instrument to dictionary for serialization."""
-        # This is a base implementation that should be extended by subclasses
-        result = {"type": self.type}
+        # Start with the type and common parameters
+        result = {
+            "type": self.type,
+            "name": self.name,
+            "transpose": self.transpose,
+            "eq": self.eq,
+            "table_tick": self.table_tick,
+            "volume": self.volume,
+            "pitch": self.pitch,
+            "finetune": self.finetune
+        }
         
-        # Add all base instance variables except those starting with underscore
-        for key, value in vars(self).items():
-            if not key.startswith('_') and key != "modulators" and key != "type" and key != "synth":
-                result[key] = value
-        
-        # Add synth parameters with flattened structure
-        if hasattr(self, 'synth'):
-            synth_dict = self.synth.as_dict()
-            for key, value in synth_dict.items():
-                result[key] = value
-                
-        # Add modulators separately
-        if hasattr(self, 'modulators'):
-            result["modulators"] = self.modulators.as_list()
+        # Add instrument-specific parameters
+        params_dict = self.params.as_dict()
+        for key, value in params_dict.items():
+            result[key] = value
+            
+        # Add modulators
+        result["modulators"] = self.modulators.as_list()
         
         return result
 
     @classmethod
     def from_dict(cls, data):
         """Create an instrument from a dictionary."""
-        # Get the instrument type and create the appropriate class
+        # Get the instrument type
         instr_type = data["type"]
-        if instr_type not in INSTRUMENT_TYPES:
-            raise ValueError(f"Unknown instrument type: {instr_type}")
         
-        # Create the specific instrument class
-        instr_class = load_class(INSTRUMENT_TYPES[instr_type])
-        instance = instr_class.__new__(instr_class)
-    
-        # Set type explicitly before initialization
-        instance.type = instr_type
-    
-        # Initialize with default values first
-        instance.__init__()  # This will call the actual constructor with no args
-    
-        # Set all base parameters from dict
-        synth_params = {}
-        base_params = {}
-        
-        for key, value in data.items():
-            if key != "modulators" and key != "__class__":
-                # Check if this is a synth parameter
-                if hasattr(instance.synth, key):
-                    synth_params[key] = value
-                # Otherwise it's a base parameter
-                elif hasattr(instance, key):
-                    base_params[key] = value
-        
-        # Apply base parameters
-        for key, value in base_params.items():
-            setattr(instance, key, value)
+        # Create a new instrument with the appropriate type
+        if instr_type in INSTRUMENT_TYPES:
+            instrument_type = INSTRUMENT_TYPES[instr_type]
+            instrument = cls(instrument_type=instrument_type)
             
-        # Apply synth parameters
-        for key, value in synth_params.items():
-            setattr(instance.synth, key, value)
-    
-        # Set modulators
-        if "modulators" in data:
-            instance.modulators = M8Modulators.from_list(data["modulators"])
-    
-        return instance
+            # Set common parameters
+            for key in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune"]:
+                if key in data:
+                    setattr(instrument, key, data[key])
+            
+            # Create params object and set parameters
+            instrument.params = M8Params.from_config(instrument_type)
+            for key, value in data.items():
+                if key not in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune", "type", "modulators"] and hasattr(instrument.params, key):
+                    setattr(instrument.params, key, value)
+            
+            # Set modulators
+            if "modulators" in data:
+                instrument.modulators = M8Modulators.from_list(data["modulators"])
+            
+            return instrument
+        else:
+            raise ValueError(f"Unknown instrument type: {instr_type}")
 
     @classmethod
     def read(cls, data):
@@ -420,18 +472,13 @@ class M8InstrumentBase:
         instr_type = data[cls.TYPE_OFFSET]
         
         if instr_type in INSTRUMENT_TYPES:
-            # Create the specific instrument class
-            class_name = INSTRUMENT_TYPES[instr_type]
-            instr_class = load_class(class_name)
-            instance = instr_class.__new__(instr_class)
+            # Create a new instrument with the type from the data
+            instrument = cls(instrument_type=instr_type)
             
-            # Initialize the instance with default values
-            instance.__init__()
+            # Read all parameters
+            instrument._read_parameters(data)
             
-            # Read parameters
-            instance._read_parameters(data)
-            
-            return instance
+            return instrument
         else:
             # Return an M8Block for unknown types
             return M8Block.read(data)
@@ -464,8 +511,8 @@ class M8Instruments(list):
             # Check the instrument type byte
             instr_type = block_data[0]
             if instr_type in INSTRUMENT_TYPES:
-                # Read using the base class read method which will dispatch to the right subclass
-                instance.append(M8InstrumentBase.read(block_data))
+                # Read using the base class read method
+                instance.append(M8Instrument.read(block_data))
             else:
                 # Default to M8Block for unknown types or empty slots
                 instance.append(M8Block.read(block_data))
@@ -540,6 +587,8 @@ class M8Instruments(list):
                 if 0 <= index < BLOCK_COUNT:
                     # Remove index field before passing to from_dict
                     instr_dict = {k: v for k, v in instr_data.items() if k != "index"}
-                    instance[index] = M8InstrumentBase.from_dict(instr_dict)
+                    instance[index] = M8Instrument.from_dict(instr_dict)
         
         return instance
+
+# No backward compatibility needed per project preferences

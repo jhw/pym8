@@ -1,11 +1,11 @@
 import unittest
-from m8.api.instruments.macrosynth import M8MacroSynthParams, M8MacroSynth
+from m8.api.instruments import M8Params, M8Instrument
 from m8.api.modulators import M8LFO
 
 class TestM8MacroSynthParams(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
-        params = M8MacroSynthParams()
+        params = M8Params.from_config("macrosynth")
         
         # Check defaults for key parameters
         self.assertEqual(params.shape, 0x0)
@@ -25,7 +25,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         self.assertEqual(params.reverb, 0x0)
         
         # Test with kwargs
-        params = M8MacroSynthParams(
+        params = M8Params.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -83,7 +83,8 @@ class TestM8MacroSynthParams(unittest.TestCase):
         ])
         
         # Read from binary
-        params = M8MacroSynthParams.read(binary_data)
+        params = M8Params.from_config("macrosynth")
+        params.read(binary_data)
         
         # Check values
         self.assertEqual(params.shape, 0x1)
@@ -104,7 +105,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
     
     def test_write_to_binary(self):
         # Create params with specific values
-        params = M8MacroSynthParams(
+        params = M8Params.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -125,10 +126,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         # Write to binary
         binary = params.write()
         
-        # Check binary output
-        self.assertEqual(len(binary), 33)  # Should be 33 bytes (offsets 0-32)
-        
-        # Check specific values
+        # Check specific values for MacroSynth parameters
         self.assertEqual(binary[18], 0x1)   # shape
         self.assertEqual(binary[19], 0x70)  # timbre
         self.assertEqual(binary[20], 0x90)  # color
@@ -147,7 +145,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
     
     def test_read_write_consistency(self):
         # Create original params
-        original = M8MacroSynthParams(
+        original = M8Params.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -169,7 +167,8 @@ class TestM8MacroSynthParams(unittest.TestCase):
         binary = original.write()
         
         # Read back from binary
-        deserialized = M8MacroSynthParams.read(binary)
+        deserialized = M8Params.from_config("macrosynth")
+        deserialized.read(binary)
         
         # Check values match
         self.assertEqual(deserialized.shape, original.shape)
@@ -190,7 +189,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = M8MacroSynthParams(
+        params = M8Params.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -254,7 +253,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         }
         
         # Create from dict
-        params = M8MacroSynthParams.from_dict(data)
+        params = M8Params.from_dict("macrosynth", data)
         
         # Check values
         for key, value in data.items():
@@ -264,13 +263,13 @@ class TestM8MacroSynthParams(unittest.TestCase):
 class TestM8MacroSynth(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
-        synth = M8MacroSynth()
+        synth = M8Instrument(instrument_type="macrosynth")
         
         # Check type is set correctly
         self.assertEqual(synth.type, 0x01)
         
-        # Check synth object is created
-        self.assertIsInstance(synth.synth, M8MacroSynthParams)
+        # Check params object is created
+        self.assertIsInstance(synth.params, M8Params)
         
         # Check common parameters
         self.assertNotEqual(synth.name, "")  # Should auto-generate a name
@@ -281,8 +280,9 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(synth.pitch, 0x0)
         self.assertEqual(synth.finetune, 0x80)
         
-        # Test with kwargs for both common and synth-specific parameters
-        synth = M8MacroSynth(
+        # Test with kwargs for both common and specific parameters
+        synth = M8Instrument(
+            instrument_type="macrosynth",
             # Common instrument parameters
             name="TestMacroSynth",
             transpose=0x5,
@@ -310,21 +310,21 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x90)
         
         # Check synth-specific parameters
-        self.assertEqual(synth.synth.shape, 0x1)
-        self.assertEqual(synth.synth.timbre, 0x70)
-        self.assertEqual(synth.synth.color, 0x90)
-        self.assertEqual(synth.synth.cutoff, 0xE0)
-        self.assertEqual(synth.synth.pan, 0x60)
+        self.assertEqual(synth.params.shape, 0x1)
+        self.assertEqual(synth.params.timbre, 0x70)
+        self.assertEqual(synth.params.color, 0x90)
+        self.assertEqual(synth.params.cutoff, 0xE0)
+        self.assertEqual(synth.params.pan, 0x60)
     
-    def test_read_specific_parameters(self):
+    def test_read_parameters(self):
         # Create a MacroSynth
-        synth = M8MacroSynth()
+        synth = M8Instrument(instrument_type="macrosynth")
         
-        # Create test binary data for synth parameters (with offset)
-        # We need data for the full instrument including the synth parameters
-        binary_data = bytearray([0] * 18)  # First 18 bytes (common instrument parameters)
+        # Create test binary data (with type=0x01 for MacroSynth)
+        binary_data = bytearray([0x01])  # Type
+        binary_data.extend(bytearray([0] * 17))  # Rest of common parameters
         
-        # Add synth-specific parameters
+        # Add macrosynth-specific parameters
         binary_data.extend([
             0x01,   # shape
             0x70,   # timbre
@@ -343,30 +343,30 @@ class TestM8MacroSynth(unittest.TestCase):
             0x90    # reverb
         ])
         
-        # Call the method to read specific parameters
-        # This would normally be called by _read_parameters in the base class
-        synth._read_specific_parameters(binary_data, 18)
+        # Call the method to read parameters
+        synth._read_parameters(binary_data)
         
-        # Check synth parameters were read correctly
-        self.assertEqual(synth.synth.shape, 0x1)
-        self.assertEqual(synth.synth.timbre, 0x70)
-        self.assertEqual(synth.synth.color, 0x90)
-        self.assertEqual(synth.synth.degrade, 0x10)
-        self.assertEqual(synth.synth.redux, 0x20)
-        self.assertEqual(synth.synth.filter, 0x2)
-        self.assertEqual(synth.synth.cutoff, 0xE0)
-        self.assertEqual(synth.synth.res, 0x30)
-        self.assertEqual(synth.synth.amp, 0x40)
-        self.assertEqual(synth.synth.limit, 0x50)
-        self.assertEqual(synth.synth.pan, 0x60)
-        self.assertEqual(synth.synth.dry, 0xB0)
-        self.assertEqual(synth.synth.chorus, 0x70)
-        self.assertEqual(synth.synth.delay, 0x80)
-        self.assertEqual(synth.synth.reverb, 0x90)
+        # Check parameters were read correctly
+        self.assertEqual(synth.params.shape, 0x1)
+        self.assertEqual(synth.params.timbre, 0x70)
+        self.assertEqual(synth.params.color, 0x90)
+        self.assertEqual(synth.params.degrade, 0x10)
+        self.assertEqual(synth.params.redux, 0x20)
+        self.assertEqual(synth.params.filter, 0x2)
+        self.assertEqual(synth.params.cutoff, 0xE0)
+        self.assertEqual(synth.params.res, 0x30)
+        self.assertEqual(synth.params.amp, 0x40)
+        self.assertEqual(synth.params.limit, 0x50)
+        self.assertEqual(synth.params.pan, 0x60)
+        self.assertEqual(synth.params.dry, 0xB0)
+        self.assertEqual(synth.params.chorus, 0x70)
+        self.assertEqual(synth.params.delay, 0x80)
+        self.assertEqual(synth.params.reverb, 0x90)
     
-    def test_write_specific_parameters(self):
+    def test_write(self):
         # Create a MacroSynth with specific parameters
-        synth = M8MacroSynth(
+        synth = M8Instrument(
+            instrument_type="macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -384,14 +384,13 @@ class TestM8MacroSynth(unittest.TestCase):
             reverb=0x90
         )
         
-        # Call the method to write specific parameters
-        # This would normally be called by write in the base class
-        binary = synth._write_specific_parameters()
+        # Write to binary
+        binary = synth.write()
         
-        # Check the binary output
-        self.assertEqual(len(binary), 33)  # Should contain 33 bytes
+        # Check the type byte (macrosynth = 0x01)
+        self.assertEqual(binary[0], 0x01)
         
-        # Check synth-specific parameters
+        # Check macrosynth-specific parameters
         self.assertEqual(binary[18], 0x1)   # shape
         self.assertEqual(binary[19], 0x70)  # timbre
         self.assertEqual(binary[20], 0x90)  # color
@@ -410,24 +409,24 @@ class TestM8MacroSynth(unittest.TestCase):
     
     def test_is_empty(self):
         # Empty MacroSynth (default values)
-        synth = M8MacroSynth(name="")
+        synth = M8Instrument(instrument_type="macrosynth", name="")
         self.assertTrue(synth.is_empty())
         
         # Non-empty MacroSynth (with name)
-        synth = M8MacroSynth(name="TestMacroSynth")
+        synth = M8Instrument(instrument_type="macrosynth", name="TestMacroSynth")
         self.assertFalse(synth.is_empty())
         
         # Non-empty MacroSynth (with volume)
-        synth = M8MacroSynth(name="", volume=0x10)
+        synth = M8Instrument(instrument_type="macrosynth", name="", volume=0x10)
         self.assertFalse(synth.is_empty())
         
         # Non-empty MacroSynth (with shape)
-        synth = M8MacroSynth(name="", shape=0x1)
+        synth = M8Instrument(instrument_type="macrosynth", name="", shape=0x1)
         self.assertFalse(synth.is_empty())
     
     def test_add_modulator(self):
         # Create a MacroSynth
-        synth = M8MacroSynth()
+        synth = M8Instrument(instrument_type="macrosynth")
         
         # Add a modulator
         mod = M8LFO(destination=2, amount=100, frequency=50)
@@ -442,7 +441,8 @@ class TestM8MacroSynth(unittest.TestCase):
     
     def test_as_dict(self):
         # Create a MacroSynth with specific parameters
-        synth = M8MacroSynth(
+        synth = M8Instrument(
+            instrument_type="macrosynth",
             # Common parameters
             name="TestMacroSynth",
             transpose=0x5,

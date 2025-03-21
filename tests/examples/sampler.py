@@ -1,5 +1,6 @@
 import unittest
 from m8.api.project import M8Project
+from m8.api.instruments import M8Instrument
 
 
 class TestSamplerMapping(unittest.TestCase):
@@ -19,6 +20,8 @@ class TestSamplerMapping(unittest.TestCase):
     def test_sampler_type(self):
         # Verify instrument type
         self.assertEqual(self.instrument_dict['type'], 2)
+        # Check that the instrument is recognized as a Sampler
+        self.assertEqual(self.instrument.instrument_type, "sampler")
         
     def test_sampler_name(self):
         # Test that the instrument name should be "MYSAMPLER" after stripping

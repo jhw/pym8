@@ -1,13 +1,13 @@
 # tests/api/instruments/__init__.py
 import unittest
 from m8.api.instruments import (
-    M8ParamType, M8ParamsBase, M8InstrumentBase, M8Instruments,
+    M8ParamType, M8Params, M8Instrument, M8Instruments,
     BLOCK_SIZE, BLOCK_COUNT, INSTRUMENT_TYPES
 )
 from m8.api import M8Block
 from m8.api.modulators import M8ModulatorBase, M8LFO, M8Modulators, create_default_modulators
 
-class TestM8ParamsBase(unittest.TestCase):
+class TestM8Params(unittest.TestCase):
     def setUp(self):
         # Define test parameter definitions
         self.test_param_defs = {
@@ -16,28 +16,22 @@ class TestM8ParamsBase(unittest.TestCase):
             "name": {"offset": 2, "size": 8, "type": "STRING", "default": ""}
         }
         
-        # Create a test params class
-        class TestParams(M8ParamsBase):
-            _param_defs = self.test_param_defs
-            
-            def __init__(self, **kwargs):
-                super().__init__(self._param_defs, **kwargs)
-        
-        self.TestParams = TestParams
+        # Create a test params obj manually
+        self.params = M8Params(self.test_param_defs)
     
     def test_calculate_parameter_size(self):
-        size = M8ParamsBase.calculate_parameter_size(self.test_param_defs)
+        size = M8Params.calculate_parameter_size(self.test_param_defs)
         self.assertEqual(size, 10)  # Total of all param sizes (1+1+8)
     
     def test_constructor_and_defaults(self):
         # Test default constructor
-        params = self.TestParams()
+        params = M8Params(self.test_param_defs)
         self.assertEqual(params.volume, 0)
         self.assertEqual(params.pitch, 0)
         self.assertEqual(params.name, "")
         
         # Test with kwargs
-        params = self.TestParams(volume=10, pitch=20, name="Test")
+        params = M8Params(self.test_param_defs, volume=10, pitch=20, name="Test")
         self.assertEqual(params.volume, 10)
         self.assertEqual(params.pitch, 20)
         self.assertEqual(params.name, "Test")
@@ -50,8 +44,9 @@ class TestM8ParamsBase(unittest.TestCase):
             84, 101, 115, 116, 0, 0, 0, 0        # "Test" + padding
         ])
         
-        # Read params from binary
-        params = self.TestParams.read(binary_data)
+        # Create params and read from binary
+        params = M8Params(self.test_param_defs)
+        params.read(binary_data)
         
         # Check values
         self.assertEqual(params.volume, 50)
@@ -65,12 +60,13 @@ class TestM8ParamsBase(unittest.TestCase):
             84, 101, 115, 116, 0, 65, 66, 67     # "Test" + null + "ABC"
         ])
         
-        params = self.TestParams.read(binary_data)
+        params = M8Params(self.test_param_defs)
+        params.read(binary_data)
         self.assertEqual(params.name, "Test")  # Should stop at null terminator
     
     def test_write_to_binary(self):
         # Create params
-        params = self.TestParams(volume=50, pitch=100, name="Test")
+        params = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Write to binary
         binary = params.write()
@@ -83,24 +79,25 @@ class TestM8ParamsBase(unittest.TestCase):
         self.assertEqual(binary[6:10], b'\x00\x00\x00\x00')  # padding
         
         # Test with string longer than defined size
-        params = self.TestParams(volume=50, pitch=100, name="TestTooLong")
+        params = M8Params(self.test_param_defs, volume=50, pitch=100, name="TestTooLong")
         binary = params.write()
         self.assertEqual(binary[2:10], b'TestTooL')  # Truncated
         
         # Test with non-string value in string field
-        params = self.TestParams(volume=50, pitch=100, name=None)
+        params = M8Params(self.test_param_defs, volume=50, pitch=100, name=None)
         binary = params.write()
         self.assertEqual(binary[2:10], b'\x00\x00\x00\x00\x00\x00\x00\x00')  # All nulls
     
     def test_read_write_consistency(self):
         # Create original params
-        original = self.TestParams(volume=50, pitch=100, name="Test")
+        original = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Write to binary
         binary = original.write()
         
         # Read back from binary
-        deserialized = self.TestParams.read(binary)
+        deserialized = M8Params(self.test_param_defs)
+        deserialized.read(binary)
         
         # Check values match
         self.assertEqual(deserialized.volume, original.volume)
@@ -109,7 +106,7 @@ class TestM8ParamsBase(unittest.TestCase):
     
     def test_clone(self):
         # Create original params
-        original = self.TestParams(volume=50, pitch=100, name="Test")
+        original = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Clone
         clone = original.clone()
@@ -128,7 +125,7 @@ class TestM8ParamsBase(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = self.TestParams(volume=50, pitch=100, name="Test")
+        params = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Convert to dict
         result = params.as_dict()
@@ -149,8 +146,10 @@ class TestM8ParamsBase(unittest.TestCase):
             "name": "Test"
         }
         
-        # Create from dict
-        params = self.TestParams.from_dict(data)
+        # Create from dict (direct call)
+        params = M8Params(self.test_param_defs)
+        for key, value in data.items():
+            setattr(params, key, value)
         
         # Check values
         self.assertEqual(params.volume, 50)
@@ -162,44 +161,37 @@ class TestM8ParamsBase(unittest.TestCase):
             "volume": 75
         }
         
-        params = self.TestParams.from_dict(data)
+        params = M8Params(self.test_param_defs)
+        for key, value in data.items():
+            setattr(params, key, value)
+            
         self.assertEqual(params.volume, 75)
         self.assertEqual(params.pitch, 0)  # Default
         self.assertEqual(params.name, "")  # Default
         
         # Test dict/object round trip
-        original = self.TestParams(volume=50, pitch=100, name="Test")
+        original = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
         dict_data = original.as_dict()
-        roundtrip = self.TestParams.from_dict(dict_data)
+        roundtrip = M8Params(self.test_param_defs)
+        for key, value in dict_data.items():
+            setattr(roundtrip, key, value)
         
         self.assertEqual(roundtrip.volume, original.volume)
         self.assertEqual(roundtrip.pitch, original.pitch)
         self.assertEqual(roundtrip.name, original.name)
 
 
-class TestM8InstrumentBase(unittest.TestCase):
+class TestInstrumentBase(unittest.TestCase):
     def setUp(self):
-        # Create a minimal instrument subclass for testing
-        class TestInstrument(M8InstrumentBase):
-            MODULATORS_OFFSET = 50  # Set a modulators offset
-            
-            def __init__(self, **kwargs):
-                self.type = 0xFF  # Test type ID
-                super().__init__(**kwargs)
-                self.modulators = M8Modulators(items=create_default_modulators())
-            
-            def _read_specific_parameters(self, data, offset):
-                # No specific parameters to read
-                pass
-        
-        self.TestInstrument = TestInstrument
+        # Create a unified instrument for testing
+        self.instrument = M8Instrument(instrument_type="wavsynth")
     
     def test_constructor_and_defaults(self):
         # Test default constructor
-        instr = self.TestInstrument()
+        instr = M8Instrument(instrument_type="wavsynth")
         
         # Check common parameters
-        self.assertEqual(instr.type, 0xFF)
+        self.assertEqual(instr.type, 0x00)  # WavSynth type id
         self.assertNotEqual(instr.name, "")  # Should have auto-generated a name
         self.assertEqual(instr.transpose, 0x4)
         self.assertEqual(instr.eq, 0x1)
@@ -210,10 +202,11 @@ class TestM8InstrumentBase(unittest.TestCase):
         
         # Check modulators initialized
         self.assertIsInstance(instr.modulators, M8Modulators)
-        self.assertEqual(len(instr.modulators), 4)  # Default modulator count (from m8.api.modulators.BLOCK_COUNT)
+        self.assertEqual(len(instr.modulators), 4)  # Default modulator count
         
         # Test with kwargs
-        instr = self.TestInstrument(
+        instr = M8Instrument(
+            instrument_type="wavsynth",
             name="TestInstr",
             transpose=0x5,
             eq=0x2,
@@ -234,7 +227,7 @@ class TestM8InstrumentBase(unittest.TestCase):
     def test_read_common_parameters(self):
         # Create test binary data for common parameters
         binary_data = bytearray([
-            0xFF,                                  # type (index 0)
+            0x00,                                  # type (index 0, wavsynth)
             84, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,  # "Test" + padding (index 1-12)
             0x52,                                  # transpose=5, eq=2 (index 13)
             0x03,                                  # table_tick (index 14)
@@ -244,13 +237,13 @@ class TestM8InstrumentBase(unittest.TestCase):
         ])
         
         # Create instrument
-        instr = self.TestInstrument()
+        instr = M8Instrument(instrument_type="wavsynth")
         
         # Read common parameters
         next_offset = instr._read_common_parameters(binary_data)
         
         # Check values
-        self.assertEqual(instr.type, 0xFF)
+        self.assertEqual(instr.type, 0x00)
         self.assertEqual(instr.name, "Test")
         self.assertEqual(instr.transpose, 0x5)
         self.assertEqual(instr.eq, 0x2)
@@ -264,7 +257,8 @@ class TestM8InstrumentBase(unittest.TestCase):
     
     def test_write(self):
         # Create instrument
-        instr = self.TestInstrument(
+        instr = M8Instrument(
+            instrument_type="wavsynth",
             name="Test",
             transpose=0x5,
             eq=0x2,
@@ -285,7 +279,7 @@ class TestM8InstrumentBase(unittest.TestCase):
         self.assertEqual(len(binary), BLOCK_SIZE)
         
         # Check common parameters
-        self.assertEqual(binary[instr.TYPE_OFFSET], 0xFF)
+        self.assertEqual(binary[instr.TYPE_OFFSET], 0x00)  # WavSynth
         self.assertEqual(binary[instr.NAME_OFFSET:instr.NAME_OFFSET+4], b'Test')
         self.assertEqual(binary[instr.TRANSPOSE_EQ_OFFSET], 0x52)  # 5 << 4 | 2
         self.assertEqual(binary[instr.TABLE_TICK_OFFSET], 0x03)
@@ -293,15 +287,19 @@ class TestM8InstrumentBase(unittest.TestCase):
         self.assertEqual(binary[instr.PITCH_OFFSET], 0x20)
         self.assertEqual(binary[instr.FINETUNE_OFFSET], 0x90)
         
+        # Verify modulators offset was set correctly
+        self.assertGreater(instr.modulators_offset, 0)
+        
         # Check modulators written
-        # Basic check - just verify the modulator data is there
-        # (full modulator tests are in a separate test class)
-        modulator_data = binary[instr.MODULATORS_OFFSET:]
-        self.assertGreater(len(modulator_data), 0)
+        # Basic check - just verify there's non-zero data in the modulator section
+        modulator_data = binary[instr.modulators_offset:]
+        non_zero_data = any(b != 0 for b in modulator_data[0:6])  # First modulator should have data
+        self.assertTrue(non_zero_data)
     
     def test_clone(self):
         # Create original instrument
-        original = self.TestInstrument(
+        original = M8Instrument(
+            instrument_type="wavsynth",
             name="Test",
             transpose=0x5,
             eq=0x2,
@@ -347,20 +345,28 @@ class TestM8InstrumentBase(unittest.TestCase):
     
     def test_is_empty(self):
         # Empty instrument
-        instr = self.TestInstrument(name="")
+        instr = M8Instrument(instrument_type="wavsynth", name="")
         self.assertTrue(instr.is_empty())
         
-        # Non-empty instrument
-        instr = self.TestInstrument(name="Test")
+        # Non-empty instrument with name
+        instr = M8Instrument(instrument_type="wavsynth", name="Test")
+        self.assertFalse(instr.is_empty())
+        
+        # Non-empty instrument with shape parameter
+        instr = M8Instrument(instrument_type="wavsynth", name="", shape=0x01)
+        self.assertFalse(instr.is_empty())
+        
+        # Non-empty instrument with volume
+        instr = M8Instrument(instrument_type="wavsynth", name="", volume=0x10)
         self.assertFalse(instr.is_empty())
         
         # Whitespace-only name
-        instr = self.TestInstrument(name="  ")
+        instr = M8Instrument(instrument_type="wavsynth", name="  ")
         self.assertTrue(instr.is_empty())
     
     def test_available_modulator_slot(self):
         # Create instrument
-        instr = self.TestInstrument()
+        instr = M8Instrument(instrument_type="wavsynth")
         
         # By default, the first slot should be available 
         # (modulators are initialized with empty destinations)
@@ -382,7 +388,7 @@ class TestM8InstrumentBase(unittest.TestCase):
     
     def test_add_modulator(self):
         # Create instrument
-        instr = self.TestInstrument()
+        instr = M8Instrument(instrument_type="wavsynth")
         
         # Add a modulator
         mod = M8LFO(destination=2, amount=100, frequency=50)
@@ -405,7 +411,7 @@ class TestM8InstrumentBase(unittest.TestCase):
     
     def test_set_modulator(self):
         # Create instrument
-        instr = self.TestInstrument()
+        instr = M8Instrument(instrument_type="wavsynth")
         
         # Set a modulator at specific slot
         mod = M8LFO(destination=2, amount=100, frequency=50)
@@ -425,7 +431,8 @@ class TestM8InstrumentBase(unittest.TestCase):
     
     def test_as_dict(self):
         # Create instrument
-        instr = self.TestInstrument(
+        instr = M8Instrument(
+            instrument_type="wavsynth",
             name="Test",
             transpose=0x5,
             eq=0x2,
@@ -443,7 +450,7 @@ class TestM8InstrumentBase(unittest.TestCase):
         result = instr.as_dict()
         
         # Check dict
-        self.assertEqual(result["type"], 0xFF)
+        self.assertEqual(result["type"], 0x00)  # WavSynth type id
         self.assertEqual(result["name"], "Test")
         self.assertEqual(result["transpose"], 0x5)
         self.assertEqual(result["eq"], 0x2)
@@ -464,20 +471,8 @@ class TestM8InstrumentBase(unittest.TestCase):
 
 class TestM8Instruments(unittest.TestCase):
     def setUp(self):
-        # Create a minimal instrument subclass for testing
-        class TestInstrument(M8InstrumentBase):
-            MODULATORS_OFFSET = 50  # Set a modulators offset
-            
-            def __init__(self, **kwargs):
-                self.type = 0x00  # Use a valid type from INSTRUMENT_TYPES
-                super().__init__(**kwargs)
-                self.modulators = M8Modulators(items=create_default_modulators())
-            
-            def _read_specific_parameters(self, data, offset):
-                # No specific parameters to read
-                pass
-        
-        self.TestInstrument = TestInstrument
+        # Initialize empty instruments collection
+        self.instruments = M8Instruments()
     
     def test_constructor(self):
         # Test default constructor
@@ -491,8 +486,8 @@ class TestM8Instruments(unittest.TestCase):
             self.assertIsInstance(instr, M8Block)
         
         # Test with items
-        item1 = self.TestInstrument(name="Instrument1")
-        item2 = self.TestInstrument(name="Instrument2")
+        item1 = M8Instrument(instrument_type="wavsynth", name="Instrument1")
+        item2 = M8Instrument(instrument_type="macrosynth", name="Instrument2")
         
         instruments = M8Instruments(items=[item1, item2])
         
@@ -554,10 +549,10 @@ class TestM8Instruments(unittest.TestCase):
         instruments = M8Instruments()
         
         # Set up instrument 0
-        instruments[0] = self.TestInstrument(name="Test1")
+        instruments[0] = M8Instrument(instrument_type="wavsynth", name="Test1")
         
         # Set up instrument 5
-        instruments[5] = self.TestInstrument(name="Test2")
+        instruments[5] = M8Instrument(instrument_type="macrosynth", name="Test2")
         
         # Write to binary
         binary = instruments.write()
@@ -571,7 +566,7 @@ class TestM8Instruments(unittest.TestCase):
         
         # Basic check of instrument 5
         offset = 5 * BLOCK_SIZE
-        self.assertEqual(binary[offset], 0x00)  # Type
+        self.assertEqual(binary[offset], 0x01)  # Type (MacroSynth)
         self.assertEqual(binary[offset+1:offset+6], b'Test2')  # Name
     
     def test_read_write_consistency(self):
@@ -579,10 +574,10 @@ class TestM8Instruments(unittest.TestCase):
         instruments = M8Instruments()
         
         # Set up instrument 0
-        instruments[0] = self.TestInstrument(name="Test1")
+        instruments[0] = M8Instrument(instrument_type="wavsynth", name="Test1")
         
         # Set up instrument 5
-        instruments[5] = self.TestInstrument(name="Test2")
+        instruments[5] = M8Instrument(instrument_type="macrosynth", name="Test2")
         
         # Write to binary
         binary = instruments.write()
@@ -601,8 +596,8 @@ class TestM8Instruments(unittest.TestCase):
     def test_clone(self):
         # Create original instruments
         original = M8Instruments()
-        original[0] = self.TestInstrument(name="Test1")
-        original[5] = self.TestInstrument(name="Test2")
+        original[0] = M8Instrument(instrument_type="wavsynth", name="Test1")
+        original[5] = M8Instrument(instrument_type="macrosynth", name="Test2")
         
         # Clone
         clone = original.clone()
@@ -624,18 +619,18 @@ class TestM8Instruments(unittest.TestCase):
         self.assertTrue(instruments.is_empty())
         
         # Add one instrument
-        instruments[0] = self.TestInstrument(name="Test")
+        instruments[0] = M8Instrument(instrument_type="wavsynth", name="Test")
         self.assertFalse(instruments.is_empty())
         
         # Set to empty
-        instruments[0] = self.TestInstrument(name="")
+        instruments[0] = M8Instrument(instrument_type="wavsynth", name="")
         self.assertTrue(instruments.is_empty())
     
     def test_as_list(self):
         # Create instruments
         instruments = M8Instruments()
-        instruments[0] = self.TestInstrument(name="Test1")
-        instruments[5] = self.TestInstrument(name="Test2")
+        instruments[0] = M8Instrument(instrument_type="wavsynth", name="Test1")
+        instruments[5] = M8Instrument(instrument_type="macrosynth", name="Test2")
         
         # Convert to list
         result = instruments.as_list()
@@ -649,7 +644,7 @@ class TestM8Instruments(unittest.TestCase):
         self.assertEqual(instr0["name"], "Test1")
         
         instr5 = next(i for i in result if i["index"] == 5)
-        self.assertEqual(instr5["type"], 0x00)
+        self.assertEqual(instr5["type"], 0x01)
         self.assertEqual(instr5["name"], "Test2")
         
         # Test empty instruments
@@ -667,7 +662,7 @@ class TestM8Instruments(unittest.TestCase):
             },
             {
                 "index": 5,
-                "type": 0x00,
+                "type": 0x01,
                 "name": "Test2"
             }
         ]
@@ -682,7 +677,7 @@ class TestM8Instruments(unittest.TestCase):
         self.assertEqual(instruments[0].type, 0x00)
         self.assertEqual(instruments[0].name, "Test1")
         
-        self.assertEqual(instruments[5].type, 0x00)
+        self.assertEqual(instruments[5].type, 0x01)
         self.assertEqual(instruments[5].name, "Test2")
         
         # Rest should be empty

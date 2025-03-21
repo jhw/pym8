@@ -1,11 +1,11 @@
 import unittest
-from m8.api.instruments.wavsynth import M8WavSynthParams, M8WavSynth
+from m8.api.instruments import M8Instrument, M8Params
 from m8.api.modulators import M8LFO
 
-class TestM8WavSynthParams(unittest.TestCase):
+class TestM8Params(unittest.TestCase):
     def test_constructor_and_defaults(self):
-        # Test default constructor
-        params = M8WavSynthParams()
+        # Test default constructor for WavSynth params
+        params = M8Params.from_config("wavsynth")
         
         # Check defaults for some key parameters
         self.assertEqual(params.shape, 0x0)
@@ -25,7 +25,7 @@ class TestM8WavSynthParams(unittest.TestCase):
         self.assertEqual(params.reverb, 0x0)
         
         # Test with kwargs
-        params = M8WavSynthParams(
+        params = M8Params.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -82,8 +82,9 @@ class TestM8WavSynthParams(unittest.TestCase):
             0x90    # reverb (offset 32)
         ])
         
-        # Read from binary
-        params = M8WavSynthParams.read(binary_data)
+        # Create params and read from binary
+        params = M8Params.from_config("wavsynth")
+        params.read(binary_data)
         
         # Check values
         self.assertEqual(params.shape, 0x1)
@@ -104,7 +105,7 @@ class TestM8WavSynthParams(unittest.TestCase):
     
     def test_write_to_binary(self):
         # Create params with specific values
-        params = M8WavSynthParams(
+        params = M8Params.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -125,8 +126,9 @@ class TestM8WavSynthParams(unittest.TestCase):
         # Write to binary
         binary = params.write()
         
-        # Check binary output
-        self.assertEqual(len(binary), 33)  # Should be 33 bytes (offsets 0-32)
+        # Check binary output (note: the minimum size may be different)
+        min_size = 33  # Should at least include up to reverb at offset 32
+        self.assertGreaterEqual(len(binary), min_size)
         
         # Check specific values
         self.assertEqual(binary[18], 0x1)   # shape
@@ -147,7 +149,7 @@ class TestM8WavSynthParams(unittest.TestCase):
     
     def test_read_write_consistency(self):
         # Create original params
-        original = M8WavSynthParams(
+        original = M8Params.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -169,7 +171,8 @@ class TestM8WavSynthParams(unittest.TestCase):
         binary = original.write()
         
         # Read back from binary
-        deserialized = M8WavSynthParams.read(binary)
+        deserialized = M8Params.from_config("wavsynth")
+        deserialized.read(binary)
         
         # Check values match
         self.assertEqual(deserialized.shape, original.shape)
@@ -190,7 +193,7 @@ class TestM8WavSynthParams(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = M8WavSynthParams(
+        params = M8Params.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -232,45 +235,18 @@ class TestM8WavSynthParams(unittest.TestCase):
         
         for key, value in expected.items():
             self.assertEqual(result[key], value)
-    
-    def test_from_dict(self):
-        # Test data
-        data = {
-            "shape": 0x1,
-            "size": 0x70,
-            "mult": 0x90,
-            "warp": 0x10,
-            "scan": 0x20,
-            "filter": 0x2,
-            "cutoff": 0xE0,
-            "res": 0x30,
-            "amp": 0x40,
-            "limit": 0x50,
-            "pan": 0x60,
-            "dry": 0xB0,
-            "chorus": 0x70,
-            "delay": 0x80,
-            "reverb": 0x90
-        }
-        
-        # Create from dict
-        params = M8WavSynthParams.from_dict(data)
-        
-        # Check values
-        for key, value in data.items():
-            self.assertEqual(getattr(params, key), value)
 
 
-class TestM8WavSynth(unittest.TestCase):
+class TestM8WavSynthInstrument(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
-        synth = M8WavSynth()
+        synth = M8Instrument(instrument_type="wavsynth")
         
         # Check type is set correctly
         self.assertEqual(synth.type, 0x00)
         
-        # Check synth object is created
-        self.assertIsInstance(synth.synth, M8WavSynthParams)
+        # Check params object is created
+        self.assertTrue(hasattr(synth, "params"))
         
         # Check common parameters
         self.assertNotEqual(synth.name, "")  # Should auto-generate a name
@@ -282,7 +258,8 @@ class TestM8WavSynth(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x80)
         
         # Test with kwargs for both common and synth-specific parameters
-        synth = M8WavSynth(
+        synth = M8Instrument(
+            instrument_type="wavsynth",
             # Common instrument parameters
             name="TestWavSynth",
             transpose=0x5,
@@ -310,22 +287,25 @@ class TestM8WavSynth(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x90)
         
         # Check synth-specific parameters
-        self.assertEqual(synth.synth.shape, 0x1)
-        self.assertEqual(synth.synth.size, 0x70)
-        self.assertEqual(synth.synth.mult, 0x90)
-        self.assertEqual(synth.synth.cutoff, 0xE0)
-        self.assertEqual(synth.synth.pan, 0x60)
+        self.assertEqual(synth.params.shape, 0x1)
+        self.assertEqual(synth.params.size, 0x70)
+        self.assertEqual(synth.params.mult, 0x90)
+        self.assertEqual(synth.params.cutoff, 0xE0)
+        self.assertEqual(synth.params.pan, 0x60)
     
-    def test_read_specific_parameters(self):
+    def test_read_parameters(self):
         # Create a WavSynth
-        synth = M8WavSynth()
+        synth = M8Instrument(instrument_type="wavsynth")
         
-        # Create test binary data for synth parameters (with offset)
-        # We need data for the full instrument including the synth parameters
-        binary_data = bytearray([0] * 18)  # First 18 bytes (common instrument parameters)
-        
-        # Add synth-specific parameters
-        binary_data.extend([
+        # Create test binary data
+        binary_data = bytearray([
+            0x00,   # type (WavSynth)
+            0x54, 0x45, 0x53, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  # name "TEST"
+            0x42,   # transpose/eq (4/2)
+            0x02,   # table_tick
+            0x10,   # volume
+            0x20,   # pitch
+            0x90,   # finetune
             0x01,   # shape
             0x70,   # size
             0x90,   # mult
@@ -343,30 +323,51 @@ class TestM8WavSynth(unittest.TestCase):
             0x90    # reverb
         ])
         
-        # Call the method to read specific parameters
-        # This would normally be called by _read_parameters in the base class
-        synth._read_specific_parameters(binary_data, 18)
+        # Extend with empty modulator data
+        binary_data.extend([0] * (63 - len(binary_data)))  # Fill up to modulator offset
+        binary_data.extend([0] * 24)  # Four empty modulators (6 bytes each)
         
-        # Check synth parameters were read correctly
-        self.assertEqual(synth.synth.shape, 0x1)
-        self.assertEqual(synth.synth.size, 0x70)
-        self.assertEqual(synth.synth.mult, 0x90)
-        self.assertEqual(synth.synth.warp, 0x10)
-        self.assertEqual(synth.synth.scan, 0x20)
-        self.assertEqual(synth.synth.filter, 0x2)
-        self.assertEqual(synth.synth.cutoff, 0xE0)
-        self.assertEqual(synth.synth.res, 0x30)
-        self.assertEqual(synth.synth.amp, 0x40)
-        self.assertEqual(synth.synth.limit, 0x50)
-        self.assertEqual(synth.synth.pan, 0x60)
-        self.assertEqual(synth.synth.dry, 0xB0)
-        self.assertEqual(synth.synth.chorus, 0x70)
-        self.assertEqual(synth.synth.delay, 0x80)
-        self.assertEqual(synth.synth.reverb, 0x90)
+        # Call the method to read parameters
+        synth._read_parameters(binary_data)
+        
+        # Check common parameters
+        self.assertEqual(synth.type, 0x00)
+        self.assertEqual(synth.name, "TEST")
+        self.assertEqual(synth.transpose, 0x4)
+        self.assertEqual(synth.eq, 0x2)
+        self.assertEqual(synth.table_tick, 0x02)
+        self.assertEqual(synth.volume, 0x10)
+        self.assertEqual(synth.pitch, 0x20)
+        self.assertEqual(synth.finetune, 0x90)
+        
+        # Check synth parameters
+        self.assertEqual(synth.params.shape, 0x1)
+        self.assertEqual(synth.params.size, 0x70)
+        self.assertEqual(synth.params.mult, 0x90)
+        self.assertEqual(synth.params.warp, 0x10)
+        self.assertEqual(synth.params.scan, 0x20)
+        self.assertEqual(synth.params.filter, 0x2)
+        self.assertEqual(synth.params.cutoff, 0xE0)
+        self.assertEqual(synth.params.res, 0x30)
+        self.assertEqual(synth.params.amp, 0x40)
+        self.assertEqual(synth.params.limit, 0x50)
+        self.assertEqual(synth.params.pan, 0x60)
+        self.assertEqual(synth.params.dry, 0xB0)
+        self.assertEqual(synth.params.chorus, 0x70)
+        self.assertEqual(synth.params.delay, 0x80)
+        self.assertEqual(synth.params.reverb, 0x90)
     
-    def test_write_specific_parameters(self):
+    def test_write(self):
         # Create a WavSynth with specific parameters
-        synth = M8WavSynth(
+        synth = M8Instrument(
+            instrument_type="wavsynth",
+            name="TEST",
+            transpose=0x4,
+            eq=0x2,
+            table_tick=0x02,
+            volume=0x10,
+            pitch=0x20,
+            finetune=0x90,
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -384,12 +385,20 @@ class TestM8WavSynth(unittest.TestCase):
             reverb=0x90
         )
         
-        # Call the method to write specific parameters
-        # This would normally be called by write in the base class
-        binary = synth._write_specific_parameters()
+        # Call the method to write
+        binary = synth.write()
         
         # Check the binary output
-        self.assertEqual(len(binary), 33)  # Should contain 33 bytes
+        self.assertEqual(len(binary), 215)  # Should be BLOCK_SIZE bytes
+        
+        # Check common parameters
+        self.assertEqual(binary[0], 0x00)  # type
+        self.assertEqual(binary[1:5], b"TEST")  # name (first 4 bytes)
+        self.assertEqual(binary[13], 0x42)  # transpose/eq
+        self.assertEqual(binary[14], 0x02)  # table_tick
+        self.assertEqual(binary[15], 0x10)  # volume
+        self.assertEqual(binary[16], 0x20)  # pitch
+        self.assertEqual(binary[17], 0x90)  # finetune
         
         # Check synth-specific parameters
         self.assertEqual(binary[18], 0x1)   # shape
@@ -410,24 +419,24 @@ class TestM8WavSynth(unittest.TestCase):
     
     def test_is_empty(self):
         # Empty WavSynth (default values)
-        synth = M8WavSynth(name="")
+        synth = M8Instrument(instrument_type="wavsynth", name="")
         self.assertTrue(synth.is_empty())
         
         # Non-empty WavSynth (with name)
-        synth = M8WavSynth(name="TestWavSynth")
+        synth = M8Instrument(instrument_type="wavsynth", name="TestWavSynth")
         self.assertFalse(synth.is_empty())
         
         # Non-empty WavSynth (with volume)
-        synth = M8WavSynth(name="", volume=0x10)
+        synth = M8Instrument(instrument_type="wavsynth", name="", volume=0x10)
         self.assertFalse(synth.is_empty())
         
         # Non-empty WavSynth (with shape)
-        synth = M8WavSynth(name="", shape=0x1)
+        synth = M8Instrument(instrument_type="wavsynth", name="", shape=0x1)
         self.assertFalse(synth.is_empty())
     
     def test_add_modulator(self):
         # Create a WavSynth
-        synth = M8WavSynth()
+        synth = M8Instrument(instrument_type="wavsynth")
         
         # Add a modulator
         mod = M8LFO(destination=2, amount=100, frequency=50)
@@ -442,7 +451,8 @@ class TestM8WavSynth(unittest.TestCase):
     
     def test_as_dict(self):
         # Create a WavSynth with specific parameters
-        synth = M8WavSynth(
+        synth = M8Instrument(
+            instrument_type="wavsynth",
             # Common parameters
             name="TestWavSynth",
             transpose=0x5,

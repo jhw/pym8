@@ -1,5 +1,6 @@
 import unittest
 from m8.api.project import M8Project
+from m8.api.instruments import M8Instrument
 
 
 class TestWavSynthMapping(unittest.TestCase):
@@ -19,6 +20,8 @@ class TestWavSynthMapping(unittest.TestCase):
     def test_wavsynth_type(self):
         # Verify instrument type
         self.assertEqual(self.instrument_dict['type'], 0)
+        # Check that the instrument is recognized as a WavSynth
+        self.assertEqual(self.instrument.instrument_type, "wavsynth")
         
     def test_wavsynth_name(self):
         # Test that the instrument name should be "MYWAV" after stripping
