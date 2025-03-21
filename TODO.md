@@ -1,9 +1,7 @@
 # short
 
-- add back wavsynth param hardcoding
-- propose a solution for removing synth param hardcoding
+- rename playmode
 - format_config code doesn't seem to observe comment policy
-- avoid reformatting instrument config
 - any more hardcodings?
 
 # medium
@@ -32,6 +30,8 @@
 
 # done
 
+- add back wavsynth param hardcoding
+- propose a solution for removing synth param hardcoding
 - abstract offsets, counts, sizes to YAML configuration
 - instrument, modulator tests
 - project tests

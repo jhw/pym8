@@ -76,22 +76,25 @@ instruments:
   sampler:
     type_id: 0x02
     params:
-      playmode: {offset: 18, size: 1, type: "UINT8", default: 0x00}
-      start: {offset: 19, size: 1, type: "UINT8", default: 0x00}
-      loop_start: {offset: 20, size: 1, type: "UINT8", default: 0x00}
-      length: {offset: 21, size: 1, type: "UINT8", default: 0xFF}
-      degrade: {offset: 22, size: 1, type: "UINT8", default: 0x00}
-      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00}
-      cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
-      res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
-      amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
-      pan: {offset: 27, size: 1, type: "UINT8", default: 0x80}
-      dry: {offset: 28, size: 1, type: "UINT8", default: 0xC0}
-      chorus: {offset: 29, size: 1, type: "UINT8", default: 0x00}
-      delay: {offset: 30, size: 1, type: "UINT8", default: 0x00}
-      reverb: {offset: 31, size: 1, type: "UINT8", default: 0x00}
-    sample_path_offset: 32
-    modulators_offset: 79
+      play_mode: {offset: 18, size: 1, type: "UINT8", default: 0x00}
+      slice: {offset: 19, size: 1, type: "UINT8", default: 0x00}
+      start: {offset: 20, size: 1, type: "UINT8", default: 0x00}
+      loop_start: {offset: 21, size: 1, type: "UINT8", default: 0x00}
+      length: {offset: 22, size: 1, type: "UINT8", default: 0xFF}
+      degrade: {offset: 23, size: 1, type: "UINT8", default: 0x00}
+      filter: {offset: 24, size: 1, type: "UINT8", default: 0x00}
+      cutoff: {offset: 25, size: 1, type: "UINT8", default: 0xFF}
+      res: {offset: 26, size: 1, type: "UINT8", default: 0x00}
+      amp: {offset: 27, size: 1, type: "UINT8", default: 0x00}
+      limit: {offset: 28, size: 1, type: "UINT8", default: 0x00}
+      pan: {offset: 29, size: 1, type: "UINT8", default: 0x80}
+      dry: {offset: 30, size: 1, type: "UINT8", default: 0xC0}
+      chorus: {offset: 31, size: 1, type: "UINT8", default: 0x00}
+      delay: {offset: 32, size: 1, type: "UINT8", default: 0x00}
+      reverb: {offset: 33, size: 1, type: "UINT8", default: 0x00}
+    sample_path_offset: 87
+    sample_path: {offset: 87, size: 128, type: "STRING", default: ""}
+    modulators_offset: 63
     
 effect_settings:
   offset: 0x1A5C1

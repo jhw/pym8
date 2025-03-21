@@ -1,37 +1,14 @@
 # m8/api/instruments/sampler.py
 from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
+from m8.config import load_format_config, get_instrument_modulators_offset, get_instrument_type_id
 
 class M8SamplerParams(M8ParamsBase):
     """Sampler parameters including playback, filtering, amp, and mixer settings."""
     
-    _param_defs = {
-        # Synth section parameters
-        "play_mode": {"offset": 18, "size": 1, "type": "UINT8", "default": 0x00},
-        "slice": {"offset": 19, "size": 1, "type": "UINT8", "default": 0x00},
-        "start": {"offset": 20, "size": 1, "type": "UINT8", "default": 0x00},
-        "loop_start": {"offset": 21, "size": 1, "type": "UINT8", "default": 0x00},
-        "length": {"offset": 22, "size": 1, "type": "UINT8", "default": 0xFF},
-        "degrade": {"offset": 23, "size": 1, "type": "UINT8", "default": 0x00},
-        
-        # Filter section parameters
-        "filter": {"offset": 24, "size": 1, "type": "UINT8", "default": 0x00},
-        "cutoff": {"offset": 25, "size": 1, "type": "UINT8", "default": 0xFF},
-        "res": {"offset": 26, "size": 1, "type": "UINT8", "default": 0x00},
-        
-        # Amp section parameters
-        "amp": {"offset": 27, "size": 1, "type": "UINT8", "default": 0x00},
-        "limit": {"offset": 28, "size": 1, "type": "UINT8", "default": 0x00},
-        
-        # Mixer section parameters
-        "pan": {"offset": 29, "size": 1, "type": "UINT8", "default": 0x80},
-        "dry": {"offset": 30, "size": 1, "type": "UINT8", "default": 0xC0},
-        "chorus": {"offset": 31, "size": 1, "type": "UINT8", "default": 0x00},
-        "delay": {"offset": 32, "size": 1, "type": "UINT8", "default": 0x00},
-        "reverb": {"offset": 33, "size": 1, "type": "UINT8", "default": 0x00},
-        
-        # Sample path at offset 0x57 with length 128
-        "sample_path": {"offset": 0x57, "size": 128, "type": "STRING", "default": ""}
-    }
+    # Load parameter definitions from YAML config
+    _param_defs = load_format_config()["instruments"]["sampler"]["params"]
+    # Add sample_path parameter from top level sampler config
+    _param_defs["sample_path"] = load_format_config()["instruments"]["sampler"]["sample_path"]
     
     def __init__(self, **kwargs):
         """Initialize Sampler parameters."""
@@ -40,13 +17,13 @@ class M8SamplerParams(M8ParamsBase):
 class M8Sampler(M8InstrumentBase):
     """Sampler instrument implementation for the M8 tracker."""
     
-    # Offset for modulator data in the binary structure
-    MODULATORS_OFFSET = 63
+    # Offset for modulator data in the binary structure - from config
+    MODULATORS_OFFSET = get_instrument_modulators_offset("sampler")
     
     def __init__(self, **kwargs):
         """Initialize a Sampler instrument."""
-        # Set type before calling parent class init
-        self.type = 0x02  # Type ID for Sampler instruments
+        # Set type from config before calling parent class init
+        self.type = get_instrument_type_id("sampler")
         
         # Create synth parameter object
         self.synth = M8SamplerParams()

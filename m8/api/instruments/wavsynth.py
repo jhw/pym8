@@ -20,10 +20,9 @@ class M8WavSynth(M8InstrumentBase):
     
     def __init__(self, **kwargs):
         """Initialize a WavSynth instrument."""
-        # Set type before calling parent class init
-        # Using hex to ensure it's stored as 0x00, not 0
-        self.type = 0x00
-        # Type is set to 0x00 for WavSynth
+        # Set type from config before calling parent class init
+        from m8.config import get_instrument_type_id
+        self.type = get_instrument_type_id("wavsynth")
         
         # Extract all parameters that match synth parameters
         synth_kwargs = {}
