@@ -1,7 +1,5 @@
 # short
 
-- sampler example
-
 - song/chain/phrase example
 - fx example
 
@@ -33,6 +31,7 @@
 
 # done
 
+- sampler example
 - macrosynth example
 - string handling code smell
 - add instrument name
