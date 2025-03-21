@@ -1,6 +1,7 @@
 # short
 
-- synth subclasses still contain hardcoding
+- add back wavsynth param hardcoding
+- propose a solution for removing synth param hardcoding
 - format_config code doesn't seem to observe comment policy
 - avoid reformatting instrument config
 - any more hardcodings?
