@@ -1,10 +1,11 @@
 # short
 
 - instrument screenshot textract
-- m8i files
+- m8s >> dict test suite
 
 # medium
 
+- m8i files
 - sampler >> chorus_send, reverb_send
 - sampler slice points
 - trash80 FM drums
