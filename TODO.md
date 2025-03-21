@@ -1,6 +1,5 @@
 # short
 
-- instrument screenshot textract
 - m8s >> dict test suite
 
 # medium
@@ -24,6 +23,9 @@
 - scales
 
 # thoughts
+
+- screenshot >>> textract?
+  - not precise enough and not worth automating
 
 # done
 
