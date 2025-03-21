@@ -3,6 +3,27 @@ version:
   
 metadata:
   offset: 0x0E
+  block_size: 147
+  strings:
+    directory:
+      offset: 0
+      length: 128
+    name:
+      offset: 134
+      length: 12
+  offsets:
+    transpose: 128
+    tempo: 129
+    tempo_size: 4
+    quantize: 133
+    key: 146
+  default_values:
+    directory: "/Songs/"
+    transpose: 0
+    tempo: 120.0
+    quantize: 0
+    name: "HELLO"
+    key: 0
   
 groove:
   offset: 0xEE
@@ -15,13 +36,37 @@ phrases:
   count: 255
   step_count: 16
   step_size: 9
+  constants:
+    base_data_size: 3
+    empty_note: 0xFF
+    empty_velocity: 0xFF
+    empty_instrument: 0xFF
+  offsets:
+    note: 0
+    velocity: 1
+    instrument: 2
+    fx: 3
   
 chains:
   offset: 0x9A5E
   count: 128
+  step_count: 16
+  step_size: 2
+  constants:
+    empty_phrase: 0xFF
+    default_transpose: 0x00
+  offsets:
+    phrase: 0
+    transpose: 1
   
 table:
   offset: 0xBA3E
+  
+fx:
+  block_size: 2
+  block_count: 3
+  default_value: 0x00
+  empty_key: 0xFF
   
 instruments:
   offset: 0x13A3E
@@ -111,6 +156,10 @@ eq:
 modulators:
   block_size: 6
   count: 4
+  default_config: [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs
+  constants:
+    empty_destination: 0x00
+    default_amount: 0xFF
   types:
     ahd_envelope: 
       id: 0x00

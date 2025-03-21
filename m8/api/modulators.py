@@ -12,7 +12,7 @@ BLOCK_COUNT = config["count"]
 MODULATOR_TYPES = get_modulator_type_id_map()
 
 # Default modulator configurations
-DEFAULT_MODULATOR_CONFIGS = [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs
+DEFAULT_MODULATOR_CONFIGS = config["default_config"]  # 2 AHD envelopes, 2 LFOs
 
 class M8ModulatorBase:
     """Base class for all M8 modulators with parameter management and serialization."""
@@ -24,9 +24,9 @@ class M8ModulatorBase:
     TYPE_NIBBLE_POS = 0  # Upper 4 bits
     DEST_NIBBLE_POS = 1  # Lower 4 bits
     
-    DEFAULT_DESTINATION = 0x0
-    DEFAULT_AMOUNT = 0xFF
-    EMPTY_DESTINATION = 0x0
+    DEFAULT_DESTINATION = config["constants"]["empty_destination"]
+    DEFAULT_AMOUNT = config["constants"]["default_amount"]
+    EMPTY_DESTINATION = config["constants"]["empty_destination"]
     
     _common_defs = [
         ("destination", DEFAULT_DESTINATION),  # Common parameter: modulation destination

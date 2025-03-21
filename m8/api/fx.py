@@ -1,16 +1,20 @@
 from m8.api import M8ValidationError
+from m8.config import load_format_config
+
+# Load configuration
+config = load_format_config()["fx"]
 
 # Module-level constants
-BLOCK_SIZE = 2
-BLOCK_COUNT = 3
+BLOCK_SIZE = config["block_size"]
+BLOCK_COUNT = config["block_count"]
 
 class M8FXTuple:
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
     
     KEY_OFFSET = 0
     VALUE_OFFSET = 1
-    EMPTY_KEY = 0xFF
-    DEFAULT_VALUE = 0x0
+    EMPTY_KEY = config["empty_key"]
+    DEFAULT_VALUE = config["default_value"]
     
     def __init__(self, key=EMPTY_KEY, value=DEFAULT_VALUE):
         self._data = bytearray([key, value])

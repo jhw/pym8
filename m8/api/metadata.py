@@ -1,21 +1,29 @@
 import struct
+from m8.config import load_format_config
+
+# Load configuration
+config = load_format_config()["metadata"]
 
 class M8Metadata:
     """Stores M8 tracker metadata including song name, directory, tempo, key, transpose and quantize."""
     
-    DIRECTORY_OFFSET = 0
-    DIRECTORY_LENGTH = 128
-    TRANSPOSE_OFFSET = 128
-    TEMPO_OFFSET = 129
-    TEMPO_SIZE = 4
-    QUANTIZE_OFFSET = 133
-    NAME_OFFSET = 134
-    NAME_LENGTH = 12
-    KEY_OFFSET = 146
-    BLOCK_SIZE = 147
+    DIRECTORY_OFFSET = config["strings"]["directory"]["offset"]
+    DIRECTORY_LENGTH = config["strings"]["directory"]["length"]
+    TRANSPOSE_OFFSET = config["offsets"]["transpose"]
+    TEMPO_OFFSET = config["offsets"]["tempo"]
+    TEMPO_SIZE = config["offsets"]["tempo_size"]
+    QUANTIZE_OFFSET = config["offsets"]["quantize"]
+    NAME_OFFSET = config["strings"]["name"]["offset"]
+    NAME_LENGTH = config["strings"]["name"]["length"]
+    KEY_OFFSET = config["offsets"]["key"]
+    BLOCK_SIZE = config["block_size"]
 
-    def __init__(self, directory="/Songs/", transpose=0, tempo=120.0, 
-                 quantize=0, name="HELLO", key=0):
+    def __init__(self, directory=config["default_values"]["directory"], 
+                 transpose=config["default_values"]["transpose"], 
+                 tempo=config["default_values"]["tempo"], 
+                 quantize=config["default_values"]["quantize"], 
+                 name=config["default_values"]["name"], 
+                 key=config["default_values"]["key"]):
         self.directory = directory
         self.transpose = transpose
         self.tempo = tempo

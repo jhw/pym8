@@ -4,27 +4,28 @@ from m8.config import load_format_config
 
 # Load configuration
 config = load_format_config()["phrases"]
+fx_config = load_format_config()["fx"]
 
 # Module-level constants
-FX_BLOCK_COUNT = 3         # Number of FX slots per step
-STEP_BLOCK_SIZE = config["step_size"]  # Size of each step in bytes
-STEP_COUNT = config["step_count"]      # Number of steps per phrase 
+FX_BLOCK_COUNT = fx_config["block_count"]   # Number of FX slots per step
+STEP_BLOCK_SIZE = config["step_size"]       # Size of each step in bytes
+STEP_COUNT = config["step_count"]           # Number of steps per phrase 
 PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total phrase size in bytes
-PHRASE_COUNT = config["count"]         # Maximum number of phrases
+PHRASE_COUNT = config["count"]              # Maximum number of phrases
 
 class M8PhraseStep:
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""
     
-    NOTE_OFFSET = 0
-    VELOCITY_OFFSET = 1
-    INSTRUMENT_OFFSET = 2
-    FX_OFFSET = 3
+    NOTE_OFFSET = config["offsets"]["note"]
+    VELOCITY_OFFSET = config["offsets"]["velocity"]
+    INSTRUMENT_OFFSET = config["offsets"]["instrument"]
+    FX_OFFSET = config["offsets"]["fx"]
     
-    BASE_DATA_SIZE = 3  # Size of the basic step data (note, velocity, instrument)
+    BASE_DATA_SIZE = config["constants"]["base_data_size"]
     
-    EMPTY_NOTE = 0xFF
-    EMPTY_VELOCITY = 0xFF
-    EMPTY_INSTRUMENT = 0xFF
+    EMPTY_NOTE = config["constants"]["empty_note"]
+    EMPTY_VELOCITY = config["constants"]["empty_velocity"]
+    EMPTY_INSTRUMENT = config["constants"]["empty_instrument"]
     
     def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
         self._data = bytearray([note, velocity, instrument])

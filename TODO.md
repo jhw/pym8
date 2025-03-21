@@ -1,7 +1,5 @@
 # short
 
-- any more hardcodings?
-
 # medium
 
 - json bitmap
@@ -31,6 +29,7 @@
 - add back wavsynth param hardcoding
 - propose a solution for removing synth param hardcoding
 - abstract offsets, counts, sizes to YAML configuration
+- remove hardcoded constants in favor of configuration
 - instrument, modulator tests
 - project tests
 - remove defaults and backwards compatibility

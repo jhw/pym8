@@ -1,18 +1,22 @@
 from m8.api import M8ValidationError
+from m8.config import load_format_config
+
+# Load configuration
+config = load_format_config()["chains"]
 
 # Module-level constants for block sizes and counts
-STEP_BLOCK_SIZE = 2        # Size of each chain step in bytes
-STEP_COUNT = 16            # Number of steps per chain
+STEP_BLOCK_SIZE = config["step_size"]
+STEP_COUNT = config["step_count"]
 CHAIN_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total chain size in bytes
-CHAIN_COUNT = 255          # Maximum number of chains
+CHAIN_COUNT = config["count"]
 
 class M8ChainStep:
     """Represents a single step in an M8 chain that references a phrase with transposition."""
     
-    PHRASE_OFFSET = 0
-    TRANSPOSE_OFFSET = 1
-    EMPTY_PHRASE = 0xFF
-    DEFAULT_TRANSPOSE = 0x0
+    PHRASE_OFFSET = config["offsets"]["phrase"]
+    TRANSPOSE_OFFSET = config["offsets"]["transpose"]
+    EMPTY_PHRASE = config["constants"]["empty_phrase"]
+    DEFAULT_TRANSPOSE = config["constants"]["default_transpose"]
     
     def __init__(self, phrase=EMPTY_PHRASE, transpose=DEFAULT_TRANSPOSE):
         self._data = bytearray([phrase, transpose])
