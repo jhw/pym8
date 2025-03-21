@@ -1,7 +1,6 @@
 # short
 
-- instrument, modulator tests
-- project tests
+- abstract offsets, counts, sizes?
 
 # medium
 
@@ -12,6 +11,11 @@
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
 - bitmap tooling
+- refactor examples
+
+# beats
+
+- you don't need chains model, just phrases
 
 # roadmap
 
@@ -24,6 +28,8 @@
 
 # done
 
+- instrument, modulator tests
+- project tests
 - remove defaults and backwards compatibility
 - clean up commenting
 - CLAUDE.md

@@ -23,10 +23,13 @@
 
 - Always work in branch claude-code; if this doesn't exist, create it; if you are not on this branch, check it out
 - For substantial changes, stage files incrementally in logical groups
-
 - When suggesting changes that affect multiple files, summarize the changes
 - Always test before staging; ALWAYS ask before committing
 - DO NOT create any tags unless asked
 - When asked to create a tag, lookup the list of tags and bump the minor version, then push to origin
 
+## Testing 
+
+- There is an extensive test suite in /tests and a script which runs all tests called run_tests.py
+- Run this to see if changes you have made pass and reflect on the results when iterating towards solutions
 
