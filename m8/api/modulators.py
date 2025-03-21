@@ -1,18 +1,15 @@
 from m8.api import M8Block, load_class, split_byte, join_nibbles
+from m8.config import load_format_config, get_modulator_type_id_map
+
+# Load configuration
+config = load_format_config()["modulators"]
 
 # Module-level constants
-BLOCK_SIZE = 6
-BLOCK_COUNT = 4
+BLOCK_SIZE = config["block_size"]
+BLOCK_COUNT = config["count"]
 
-# Map modulator types to their class paths
-MODULATOR_TYPES = {
-    0x00: "m8.api.modulators.M8AHDEnvelope",
-    0x02: "m8.api.modulators.M8DrumEnvelope",
-    0x01: "m8.api.modulators.M8ADSREnvelope",
-    0x03: "m8.api.modulators.M8LFO",
-    0x04: "m8.api.modulators.M8TriggerEnvelope",
-    0x05: "m8.api.modulators.M8TrackingEnvelope"
-}
+# Map modulator types to their class paths - loaded from config
+MODULATOR_TYPES = get_modulator_type_id_map()
 
 # Default modulator configurations
 DEFAULT_MODULATOR_CONFIGS = [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs

@@ -1,0 +1,166 @@
+version:
+  offset: 0x0A
+  
+metadata:
+  offset: 0x0E
+  
+groove:
+  offset: 0xEE
+  
+song:
+  offset: 0x2EE
+  
+phrases:
+  offset: 0xAEE
+  count: 255
+  step_count: 16
+  step_size: 9
+  
+chains:
+  offset: 0x9A5E
+  count: 128
+  
+table:
+  offset: 0xBA3E
+  
+instruments:
+  offset: 0x13A3E
+  count: 128
+  block_size: 215
+  
+  # Parameter types enum
+  param_types:
+    UINT8: 1
+    STRING: 2
+  
+  wavsynth:
+    type_id: 0x00
+    params:
+      shape: {offset: 18, size: 1, type: "UINT8", default: 0x00}
+      size: {offset: 19, size: 1, type: "UINT8", default: 0x80}
+      mult: {offset: 20, size: 1, type: "UINT8", default: 0x80}
+      warp: {offset: 21, size: 1, type: "UINT8", default: 0x00}
+      scan: {offset: 22, size: 1, type: "UINT8", default: 0x00}
+      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00}
+      cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
+      res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
+      amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
+      limit: {offset: 27, size: 1, type: "UINT8", default: 0x00}
+      pan: {offset: 28, size: 1, type: "UINT8", default: 0x80}
+      dry: {offset: 29, size: 1, type: "UINT8", default: 0xC0}
+      chorus: {offset: 30, size: 1, type: "UINT8", default: 0x00}
+      delay: {offset: 31, size: 1, type: "UINT8", default: 0x00}
+      reverb: {offset: 32, size: 1, type: "UINT8", default: 0x00}
+    modulators_offset: 63
+    
+  macrosynth:
+    type_id: 0x01
+    params:
+      shape: {offset: 18, size: 1, type: "UINT8", default: 0x00}
+      timbre: {offset: 19, size: 1, type: "UINT8", default: 0x80}
+      color: {offset: 20, size: 1, type: "UINT8", default: 0x80}
+      degrade: {offset: 21, size: 1, type: "UINT8", default: 0x00}
+      redux: {offset: 22, size: 1, type: "UINT8", default: 0x00}
+      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00}
+      cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
+      res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
+      amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
+      limit: {offset: 27, size: 1, type: "UINT8", default: 0x00}
+      pan: {offset: 28, size: 1, type: "UINT8", default: 0x80}
+      dry: {offset: 29, size: 1, type: "UINT8", default: 0xC0}
+      chorus: {offset: 30, size: 1, type: "UINT8", default: 0x00}
+      delay: {offset: 31, size: 1, type: "UINT8", default: 0x00}
+      reverb: {offset: 32, size: 1, type: "UINT8", default: 0x00}
+    modulators_offset: 63
+  
+  sampler:
+    type_id: 0x02
+    params:
+      playmode: {offset: 18, size: 1, type: "UINT8", default: 0x00}
+      start: {offset: 19, size: 1, type: "UINT8", default: 0x00}
+      loop_start: {offset: 20, size: 1, type: "UINT8", default: 0x00}
+      length: {offset: 21, size: 1, type: "UINT8", default: 0xFF}
+      degrade: {offset: 22, size: 1, type: "UINT8", default: 0x00}
+      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00}
+      cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
+      res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
+      amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
+      pan: {offset: 27, size: 1, type: "UINT8", default: 0x80}
+      dry: {offset: 28, size: 1, type: "UINT8", default: 0xC0}
+      chorus: {offset: 29, size: 1, type: "UINT8", default: 0x00}
+      delay: {offset: 30, size: 1, type: "UINT8", default: 0x00}
+      reverb: {offset: 31, size: 1, type: "UINT8", default: 0x00}
+    sample_path_offset: 32
+    modulators_offset: 79
+    
+effect_settings:
+  offset: 0x1A5C1
+  
+midi_mapping:
+  offset: 0x1A5FE
+  
+scale:
+  offset: 0x1AA7E
+  
+eq:
+  offset: 0x1AD5E
+
+modulators:
+  block_size: 6
+  count: 4
+  types:
+    ahd_envelope: 
+      id: 0x00
+      params:
+        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+        attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
+        hold: {offset: 3, size: 1, type: "UINT8", default: 0x00}
+        decay: {offset: 4, size: 1, type: "UINT8", default: 0x80}
+    
+    adsr_envelope:
+      id: 0x01
+      params:
+        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+        attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
+        decay: {offset: 3, size: 1, type: "UINT8", default: 0x80}
+        sustain: {offset: 4, size: 1, type: "UINT8", default: 0x80}
+        release: {offset: 5, size: 1, type: "UINT8", default: 0x80}
+    
+    drum_envelope:
+      id: 0x02
+      params:
+        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+        peak: {offset: 2, size: 1, type: "UINT8", default: 0x00}
+        body: {offset: 3, size: 1, type: "UINT8", default: 0x10}
+        decay: {offset: 4, size: 1, type: "UINT8", default: 0x80}
+    
+    lfo:
+      id: 0x03
+      params:
+        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+        oscillator: {offset: 2, size: 1, type: "UINT8", default: 0x00}
+        trigger: {offset: 3, size: 1, type: "UINT8", default: 0x00}
+        frequency: {offset: 4, size: 1, type: "UINT8", default: 0x10}
+    
+    trigger_envelope:
+      id: 0x04
+      params:
+        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+        attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
+        hold: {offset: 3, size: 1, type: "UINT8", default: 0x00}
+        decay: {offset: 4, size: 1, type: "UINT8", default: 0x40}
+        source: {offset: 5, size: 1, type: "UINT8", default: 0x00}
+    
+    tracking_envelope:
+      id: 0x05
+      params:
+        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+        source: {offset: 2, size: 1, type: "UINT8", default: 0x00}
+        low_value: {offset: 3, size: 1, type: "UINT8", default: 0x00}
+        high_value: {offset: 4, size: 1, type: "UINT8", default: 0x7F}

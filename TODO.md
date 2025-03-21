@@ -1,6 +1,9 @@
 # short
 
-- abstract offsets, counts, sizes?
+- synth subclasses still contain hardcoding
+- format_config code doesn't seem to observe comment policy
+- avoid reformatting instrument config
+- any more hardcodings?
 
 # medium
 
@@ -28,6 +31,7 @@
 
 # done
 
+- abstract offsets, counts, sizes to YAML configuration
 - instrument, modulator tests
 - project tests
 - remove defaults and backwards compatibility

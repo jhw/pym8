@@ -1,12 +1,16 @@
 from m8.api import M8ValidationError, M8Block
-from m8.api.fx import M8FXTuples, M8FXTuple 
+from m8.api.fx import M8FXTuples, M8FXTuple
+from m8.config import load_format_config
+
+# Load configuration
+config = load_format_config()["phrases"]
 
 # Module-level constants
 FX_BLOCK_COUNT = 3         # Number of FX slots per step
-STEP_BLOCK_SIZE = 9        # Size of each step in bytes
-STEP_COUNT = 16            # Number of steps per phrase
+STEP_BLOCK_SIZE = config["step_size"]  # Size of each step in bytes
+STEP_COUNT = config["step_count"]      # Number of steps per phrase 
 PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total phrase size in bytes
-PHRASE_COUNT = 255         # Maximum number of phrases
+PHRASE_COUNT = config["count"]         # Maximum number of phrases
 
 class M8PhraseStep:
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""

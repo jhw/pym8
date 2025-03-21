@@ -5,23 +5,24 @@ from m8.api.metadata import M8Metadata
 from m8.api.phrases import M8Phrases
 from m8.api.song import M8SongMatrix
 from m8.api.version import M8Version
+from m8.config import get_offset
 
 # Reference: https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
 
-# Offsets in the M8 project file for different data sections
+# Dictionary to cache offsets loaded from configuration
 OFFSETS = {
-    "version": 0x0A,          # Version information
-    "metadata": 0x0E,         # Song metadata (name, directory, etc.)
-    "groove": 0xEE,           # Groove settings
-    "song": 0x2EE,            # Song matrix
-    "phrases": 0xAEE,         # Phrase data
-    "chains": 0x9A5E,         # Chain data
-    "table": 0xBA3E,          # Table data
-    "instruments": 0x13A3E,   # Instrument data
-    "effect_settings": 0x1A5C1, # Effect settings
-    "midi_mapping": 0x1A5FE,  # MIDI mapping configuration
-    "scale": 0x1AA7E,         # Scale settings
-    "eq": 0x1AD5A + 4         # Equalizer settings
+    "version": get_offset("version"),
+    "metadata": get_offset("metadata"),
+    "groove": get_offset("groove"),
+    "song": get_offset("song"),
+    "phrases": get_offset("phrases"),
+    "chains": get_offset("chains"),
+    "table": get_offset("table"),
+    "instruments": get_offset("instruments"),
+    "effect_settings": get_offset("effect_settings"),
+    "midi_mapping": get_offset("midi_mapping"),
+    "scale": get_offset("scale"),
+    "eq": get_offset("eq")
 }
 
 class M8Project:

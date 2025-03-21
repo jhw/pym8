@@ -1,8 +1,12 @@
 from m8.api import M8Block, load_class, join_nibbles, split_byte
 from m8.api.modulators import M8Modulators, create_default_modulators
 from enum import Enum, auto
+from m8.config import load_format_config, get_instrument_type_id
 
 import random
+
+# Load configuration
+config = load_format_config()
 
 # Instrument type definitions (mapping of type ID to class path)
 INSTRUMENT_TYPES = {
@@ -14,9 +18,9 @@ INSTRUMENT_TYPES = {
 # Global counter for auto-generating instrument names
 _INSTRUMENT_COUNTER = 0
 
-# Block sizes and counts for instruments
-BLOCK_SIZE = 215    # Size of each instrument in bytes
-BLOCK_COUNT = 128   # Maximum number of instruments
+# Block sizes and counts for instruments - from config
+BLOCK_SIZE = config["instruments"]["block_size"]    # Size of each instrument in bytes
+BLOCK_COUNT = config["instruments"]["count"]        # Maximum number of instruments
 
 class M8ParamType(Enum):
     """Parameter data types for M8 instrument parameters."""
