@@ -1,7 +1,9 @@
 # short
 
-- macrosynth example
 - sampler example
+
+- song/chain/phrase example
+- fx example
 
 # medium
 
@@ -31,6 +33,7 @@
 
 # done
 
+- macrosynth example
 - string handling code smell
 - add instrument name
 - m8s >> dict test suite
