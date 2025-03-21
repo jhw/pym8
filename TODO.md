@@ -24,6 +24,8 @@
 
 # thoughts
 
+- get rid of enums?
+  - tempting but they are likely useful
 - screenshot >>> textract?
   - not precise enough and not worth automating
 
