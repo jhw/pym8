@@ -31,6 +31,7 @@
 
 # done
 
+- string handling code smell
 - add instrument name
 - m8s >> dict test suite
 - instrument inspector
