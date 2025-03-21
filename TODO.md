@@ -1,13 +1,11 @@
 # short
 
-- add instrument name
-
 - macrosynth example
 - sampler example
 
 # medium
 
-- chain bake script
+- chain baking script
 - m8i files
 - sampler >> chorus_send, reverb_send
 - sampler slice points
@@ -33,6 +31,7 @@
 
 # done
 
+- add instrument name
 - m8s >> dict test suite
 - instrument inspector
 - json bitmap
