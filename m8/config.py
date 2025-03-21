@@ -140,3 +140,10 @@ def get_instrument_common_offsets():
     if 'instruments' in config and 'common_offsets' in config['instruments']:
         return config['instruments']['common_offsets']
     raise ValueError("Common offsets for instruments not found in configuration")
+
+def get_modulator_common_offsets():
+    """Retrieves common parameter offsets for modulators from configuration."""
+    config = load_format_config()
+    if 'modulators' in config and 'common_offsets' in config['modulators']:
+        return config['modulators']['common_offsets']
+    raise ValueError("Common offsets for modulators not found in configuration")

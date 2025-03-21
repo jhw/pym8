@@ -168,6 +168,12 @@ modulators:
   block_size: 6
   count: 4
   default_config: [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs
+  
+  # Common parameter offsets for all modulator types
+  common_offsets:
+    type_dest_byte: 0  # Combined type and destination
+    amount: 1          # Modulation amount
+    
   constants:
     empty_destination: 0x00
     default_amount: 0xFF

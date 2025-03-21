@@ -1,6 +1,6 @@
 from m8.api import M8Block, load_class, split_byte, join_nibbles
 from enum import Enum
-from m8.config import load_format_config, get_modulator_types, get_modulator_type_id, get_modulator_data
+from m8.config import load_format_config, get_modulator_types, get_modulator_type_id, get_modulator_data, get_modulator_common_offsets
 
 # Load configuration
 config = load_format_config()["modulators"]
@@ -135,9 +135,12 @@ class M8ModulatorParams:
 class M8Modulator:
     """Unified modulator class for all M8 modulator types."""
     
+    # Get common parameter offsets from config
+    common_offsets = get_modulator_common_offsets()
+    
     # Common parameter offsets for all modulator types
-    TYPE_DEST_BYTE_OFFSET = 0  # Combined type and destination
-    AMOUNT_OFFSET = 1         # Modulation amount
+    TYPE_DEST_BYTE_OFFSET = common_offsets["type_dest_byte"]  # Combined type and destination
+    AMOUNT_OFFSET = common_offsets["amount"]                  # Modulation amount
     
     # Common constants
     EMPTY_DESTINATION = config["constants"]["empty_destination"]
