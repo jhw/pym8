@@ -1,6 +1,5 @@
 # short
 
-- song/chain/phrase example
 - fx example
 
 # medium
@@ -31,6 +30,7 @@
 
 # done
 
+- song/chain/phrase example
 - sampler example
 - macrosynth example
 - string handling code smell
