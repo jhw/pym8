@@ -1,33 +1,12 @@
 # m8/api/instruments/macrosynth.py
 from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
+from m8.config import load_format_config, get_instrument_modulators_offset
 
 class M8MacroSynthParams(M8ParamsBase):
     """MacroSynth parameters including synth, filter, amp, and mixer settings."""
     
-    _param_defs = {
-        # Synth section parameters
-        "shape": {"offset": 18, "size": 1, "type": "UINT8", "default": 0x00},
-        "timbre": {"offset": 19, "size": 1, "type": "UINT8", "default": 0x80},
-        "color": {"offset": 20, "size": 1, "type": "UINT8", "default": 0x80},
-        "degrade": {"offset": 21, "size": 1, "type": "UINT8", "default": 0x00},
-        "redux": {"offset": 22, "size": 1, "type": "UINT8", "default": 0x00},
-        
-        # Filter section parameters
-        "filter": {"offset": 23, "size": 1, "type": "UINT8", "default": 0x00},
-        "cutoff": {"offset": 24, "size": 1, "type": "UINT8", "default": 0xFF},
-        "res": {"offset": 25, "size": 1, "type": "UINT8", "default": 0x00},
-        
-        # Amp section parameters
-        "amp": {"offset": 26, "size": 1, "type": "UINT8", "default": 0x00},
-        "limit": {"offset": 27, "size": 1, "type": "UINT8", "default": 0x00},
-        
-        # Mixer section parameters
-        "pan": {"offset": 28, "size": 1, "type": "UINT8", "default": 0x80},
-        "dry": {"offset": 29, "size": 1, "type": "UINT8", "default": 0xC0},
-        "chorus": {"offset": 30, "size": 1, "type": "UINT8", "default": 0x00},
-        "delay": {"offset": 31, "size": 1, "type": "UINT8", "default": 0x00},
-        "reverb": {"offset": 32, "size": 1, "type": "UINT8", "default": 0x00}
-    }
+    # Load parameter definitions from YAML config
+    _param_defs = load_format_config()["instruments"]["macrosynth"]["params"]
     
     def __init__(self, **kwargs):
         """Initialize MacroSynth parameters."""
@@ -36,15 +15,14 @@ class M8MacroSynthParams(M8ParamsBase):
 class M8MacroSynth(M8InstrumentBase):
     """MacroSynth instrument implementation for the M8 tracker."""
     
-    # Offset for modulator data in the binary structure
-    MODULATORS_OFFSET = 63
+    # Offset for modulator data in the binary structure - from config
+    MODULATORS_OFFSET = get_instrument_modulators_offset("macrosynth")
     
     def __init__(self, **kwargs):
         """Initialize a MacroSynth instrument."""
-        # Set type before calling parent class init
-        # Using hex to ensure it's stored as 0x01, not 1
-        self.type = 0x01
-        # Type is set to 0x01 for MacroSynth
+        # Set type from config before calling parent class init
+        from m8.config import get_instrument_type_id
+        self.type = get_instrument_type_id("macrosynth")
         
         # Extract all parameters that match synth parameters
         synth_kwargs = {}
