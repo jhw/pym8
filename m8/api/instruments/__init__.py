@@ -1,5 +1,5 @@
 # m8/api/instruments/__init__.py
-from m8.api import M8Block, load_class, join_nibbles, split_byte
+from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string
 from m8.api.modulators import M8Modulators, create_default_modulators
 from enum import Enum, auto
 from m8.config import load_format_config, get_instrument_type_id
@@ -78,15 +78,8 @@ class M8ParamsBase:
                 # Read a single byte
                 value = data[offset]
             elif param_type == M8ParamType.STRING:
-                # Read a string of specified length
-                string_bytes = data[offset:end]
-                
-                # Convert to string, stopping at null terminator if present
-                null_pos = string_bytes.find(0)
-                if null_pos != -1:
-                    string_bytes = string_bytes[:null_pos]
-                
-                value = string_bytes.decode('utf-8', errors='replace')
+                # Read a string of specified length using utility function
+                value = read_fixed_string(data, offset, size)
             else:
                 # Default to UINT8 for unknown types
                 value = data[offset]
@@ -124,17 +117,9 @@ class M8ParamsBase:
                 # Write a single byte
                 buffer[offset] = value & 0xFF
             elif param_type == M8ParamType.STRING:
-                # Write a string of specified length
-                # Convert to bytes, pad with nulls
+                # Write a string of specified length using utility function
                 if isinstance(value, str):
-                    encoded = value.encode('utf-8')
-                    # Truncate or pad to exactly the right size
-                    if len(encoded) > size:
-                        encoded = encoded[:size]
-                    else:
-                        encoded = encoded + bytes([0] * (size - len(encoded)))
-                    
-                    buffer[offset:end] = encoded
+                    buffer[offset:end] = write_fixed_string(value, size)
                 else:
                     # Handle non-string values by padding with nulls
                     buffer[offset:end] = bytes([0] * size)
@@ -219,12 +204,8 @@ class M8InstrumentBase:
         """Read common parameters shared by all instrument types."""
         self.type = data[self.TYPE_OFFSET]
         
-        # Read name as a string (null-terminated)
-        name_bytes = data[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH]
-        null_term_idx = name_bytes.find(0)
-        if null_term_idx != -1:
-            name_bytes = name_bytes[:null_term_idx]
-        self.name = name_bytes.decode('utf-8', errors='replace')
+        # Read name as a string (null-terminated) using utility function
+        self.name = read_fixed_string(data, self.NAME_OFFSET, self.NAME_LENGTH)
         
         # Split byte into transpose/eq
         transpose_eq = data[self.TRANSPOSE_EQ_OFFSET]
@@ -259,11 +240,9 @@ class M8InstrumentBase:
         # Write type
         buffer[self.TYPE_OFFSET] = self.type
         
-        # Write name (padded to NAME_LENGTH bytes)
-        name_bytes = self.name.encode('utf-8')
-        name_bytes = name_bytes[:self.NAME_LENGTH]  # Truncate if too long
-        name_padded = name_bytes + bytes([0] * (self.NAME_LENGTH - len(name_bytes)))  # Pad with nulls
-        buffer[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH] = name_padded
+        # Write name (padded to NAME_LENGTH bytes) using utility function
+        name_bytes = write_fixed_string(self.name, self.NAME_LENGTH)
+        buffer[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH] = name_bytes
         
         # Write transpose/eq
         buffer[self.TRANSPOSE_EQ_OFFSET] = join_nibbles(self.transpose, self.eq)
@@ -297,15 +276,9 @@ class M8InstrumentBase:
                     # Write a single byte
                     buffer[offset] = value & 0xFF
                 elif param_type == M8ParamType.STRING:
-                    # Write a string (with proper handling)
+                    # Write a string using utility function
                     if isinstance(value, str):
-                        encoded = value.encode('utf-8')
-                        param_size = size
-                        if len(encoded) > param_size:
-                            encoded = encoded[:param_size]
-                        else:
-                            encoded = encoded + bytes([0] * (param_size - len(encoded)))
-                        buffer[offset:end] = encoded
+                        buffer[offset:end] = write_fixed_string(value, size)
                     else:
                         # Null padding
                         buffer[offset:end] = bytes([0] * size)

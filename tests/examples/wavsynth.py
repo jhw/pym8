@@ -1,5 +1,4 @@
 import unittest
-import re
 from m8.api.project import M8Project
 
 
@@ -22,12 +21,11 @@ class TestWavSynthMapping(unittest.TestCase):
         self.assertEqual(self.instrument_dict['type'], 0)
         
     def test_wavsynth_name(self):
-        # Test that the instrument name is "MYWAV" after removing whitespace/null/blank characters
-        raw_name = self.instrument_dict['name']
-        # Only keep alphanumeric characters
-        clean_name = re.sub(r'[^A-Za-z0-9]', '', raw_name)
-        self.assertEqual(clean_name, "MYWAV", 
-                        "Instrument name (after cleaning) should be 'MYWAV'")
+        # Test that the instrument name should be "MYWAV" after stripping
+        # In the binary file, the name field is "MYWAV" followed by 0xFF bytes
+        name = self.instrument_dict['name']
+        self.assertEqual(name, "MYWAV", 
+                        "Instrument name should be 'MYWAV'")
     
     def test_wavsynth_numeric_fields(self):
         # Test all numeric fields except name

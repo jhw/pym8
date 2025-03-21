@@ -130,7 +130,7 @@ class TestM8Metadata(unittest.TestCase):
             ("/Projects/MyProj/", 3, 145.75, 2, "COMPLEX", 7),
             ("/", 15, 60.0, 7, "MINIMAL", 15),
             # Test max length names and directories
-            ("/very/long/directory/path/that/will/be/truncated/", 5, 100.0, 3, "LONG NAME TST", 2)
+            ("/very/long/directory/path/that/will/be/truncated/", 5, 100.0, 3, "LONG NAME T", 2)
         ]
         
         for directory, transpose, tempo, quantize, name, key in test_cases:

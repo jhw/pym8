@@ -1,5 +1,5 @@
 import unittest
-from m8.api import split_byte, join_nibbles, get_bits, set_bits, M8Block
+from m8.api import split_byte, join_nibbles, get_bits, set_bits, M8Block, read_fixed_string, write_fixed_string
 
 class TestM8ApiInit(unittest.TestCase):
     def test_split_byte(self):
@@ -95,6 +95,33 @@ class TestM8ApiInit(unittest.TestCase):
         # Test with empty dict
         empty_block = M8Block.from_dict({})
         self.assertEqual(empty_block.data, bytearray())
+        
+    def test_read_fixed_string(self):
+        # Test reading strings with different padding
+        data = bytearray(b'TEST\x00\x00\x00\x00')
+        self.assertEqual(read_fixed_string(data, 0, 8), 'TEST')
+        
+        # Test with 0xFF padding (common in M8 files)
+        data = bytearray(b'MYWAV\xff\xff\xff\xff\xff')
+        self.assertEqual(read_fixed_string(data, 0, 10), 'MYWAV')
+        
+        # Test with null terminator and trailing data
+        data = bytearray(b'NAME\x00DATA')
+        self.assertEqual(read_fixed_string(data, 0, 8), 'NAME')
+        
+        # Test with mix of padding types
+        data = bytearray(b'MIX\x00\xff\xff')
+        self.assertEqual(read_fixed_string(data, 0, 6), 'MIX')
+    
+    def test_write_fixed_string(self):
+        # Test writing strings with padding
+        self.assertEqual(write_fixed_string('TEST', 8), b'TEST\x00\x00\x00\x00')
+        
+        # Test truncating long strings
+        self.assertEqual(write_fixed_string('TOOLONGSTRING', 8), b'TOOLONGS')
+        
+        # Test writing empty string
+        self.assertEqual(write_fixed_string('', 4), b'\x00\x00\x00\x00')
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,6 @@
 import struct
 from m8.config import load_format_config
+from m8.api import read_fixed_string, write_fixed_string
 
 # Load configuration
 config = load_format_config()["metadata"]
@@ -36,11 +37,7 @@ class M8Metadata:
         instance = cls()
         
         # Directory (null-terminated string)
-        dir_bytes = data[cls.DIRECTORY_OFFSET:cls.DIRECTORY_OFFSET + cls.DIRECTORY_LENGTH]
-        null_term_idx = dir_bytes.find(0)
-        if null_term_idx != -1:
-            dir_bytes = dir_bytes[:null_term_idx]
-        instance.directory = dir_bytes.decode('utf-8', errors='replace')
+        instance.directory = read_fixed_string(data, cls.DIRECTORY_OFFSET, cls.DIRECTORY_LENGTH)
         
         # Transpose (1 byte)
         instance.transpose = data[cls.TRANSPOSE_OFFSET]
@@ -52,11 +49,7 @@ class M8Metadata:
         instance.quantize = data[cls.QUANTIZE_OFFSET]
         
         # Name (null-terminated string)
-        name_bytes = data[cls.NAME_OFFSET:cls.NAME_OFFSET + cls.NAME_LENGTH]
-        null_term_idx = name_bytes.find(0)
-        if null_term_idx != -1:
-            name_bytes = name_bytes[:null_term_idx]
-        instance.name = name_bytes.decode('utf-8', errors='replace')
+        instance.name = read_fixed_string(data, cls.NAME_OFFSET, cls.NAME_LENGTH)
         
         # Key (1 byte)
         instance.key = data[cls.KEY_OFFSET]
@@ -66,11 +59,8 @@ class M8Metadata:
     def write(self):
         buffer = bytearray()
         
-        # Directory (null-terminated)
-        dir_bytes = self.directory.encode('utf-8')
-        dir_bytes = dir_bytes[:self.DIRECTORY_LENGTH - 1]  # Ensure it fits with null terminator
-        buffer.extend(dir_bytes)
-        buffer.extend(bytes([0] * (self.DIRECTORY_LENGTH - len(dir_bytes))))  # Pad with nulls
+        # Directory (null-terminated) using utility function
+        buffer.extend(write_fixed_string(self.directory, self.DIRECTORY_LENGTH))
         
         # Transpose (1 byte)
         buffer.append(self.transpose)
@@ -81,11 +71,8 @@ class M8Metadata:
         # Quantize (1 byte)
         buffer.append(self.quantize)
         
-        # Name (null-terminated)
-        name_bytes = self.name.encode('utf-8')
-        name_bytes = name_bytes[:self.NAME_LENGTH - 1]  # Ensure it fits with null terminator
-        buffer.extend(name_bytes)
-        buffer.extend(bytes([0] * (self.NAME_LENGTH - len(name_bytes))))  # Pad with nulls
+        # Name (null-terminated) using utility function
+        buffer.extend(write_fixed_string(self.name, self.NAME_LENGTH))
         
         # Key (1 byte)
         buffer.append(self.key)
