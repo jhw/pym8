@@ -1,7 +1,5 @@
 # short
 
-- rename playmode
-- format_config code doesn't seem to observe comment policy
 - any more hardcodings?
 
 # medium
