@@ -1,15 +1,19 @@
 # short
 
-- m8s >> dict test suite
+- add instrument name
+
+- macrosynth example
+- sampler example
 
 # medium
 
+- chain bake script
 - m8i files
 - sampler >> chorus_send, reverb_send
 - sampler slice points
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
-- refactor examples
+- examples
 
 # beats
 
@@ -29,6 +33,7 @@
 
 # done
 
+- m8s >> dict test suite
 - instrument inspector
 - json bitmap
 - add back wavsynth param hardcoding
