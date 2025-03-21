@@ -73,6 +73,17 @@ instruments:
   count: 128
   block_size: 215
   
+  # Common parameter offsets for all instrument types
+  common_offsets:
+    type: 0
+    name: 1
+    name_length: 12
+    transpose_eq: 13
+    table_tick: 14
+    volume: 15
+    pitch: 16
+    finetune: 17
+  
   # Parameter types enum
   param_types:
     UINT8: 1

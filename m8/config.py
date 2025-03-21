@@ -133,3 +133,10 @@ def get_instrument_types():
             result[type_id] = instr_type
             
     return result
+
+def get_instrument_common_offsets():
+    """Retrieves common parameter offsets for instruments from configuration."""
+    config = load_format_config()
+    if 'instruments' in config and 'common_offsets' in config['instruments']:
+        return config['instruments']['common_offsets']
+    raise ValueError("Common offsets for instruments not found in configuration")

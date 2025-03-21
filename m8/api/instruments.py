@@ -2,7 +2,7 @@
 from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from enum import Enum, auto
-from m8.config import load_format_config, get_instrument_type_id, get_instrument_modulators_offset, get_instrument_types
+from m8.config import load_format_config, get_instrument_type_id, get_instrument_modulators_offset, get_instrument_types, get_instrument_common_offsets
 
 import random
 
@@ -180,15 +180,18 @@ class M8Params:
 class M8Instrument:
     """Unified instrument class for all M8 instrument types."""
     
+    # Get common parameter offsets from config
+    common_offsets = get_instrument_common_offsets()
+    
     # Common parameter offsets for all instrument types
-    TYPE_OFFSET = 0        # Instrument type ID
-    NAME_OFFSET = 1        # Start of instrument name
-    NAME_LENGTH = 12       # Maximum name length
-    TRANSPOSE_EQ_OFFSET = 13  # Combined transpose and EQ settings
-    TABLE_TICK_OFFSET = 14    # Table tick rate
-    VOLUME_OFFSET = 15        # Instrument volume
-    PITCH_OFFSET = 16         # Pitch offset
-    FINETUNE_OFFSET = 17      # Fine pitch tuning
+    TYPE_OFFSET = common_offsets["type"]
+    NAME_OFFSET = common_offsets["name"]
+    NAME_LENGTH = common_offsets["name_length"]
+    TRANSPOSE_EQ_OFFSET = common_offsets["transpose_eq"]
+    TABLE_TICK_OFFSET = common_offsets["table_tick"]
+    VOLUME_OFFSET = common_offsets["volume"]
+    PITCH_OFFSET = common_offsets["pitch"]
+    FINETUNE_OFFSET = common_offsets["finetune"]
     
     def __init__(self, instrument_type=None, **kwargs):
         """Initialize a new instrument with default parameters."""
