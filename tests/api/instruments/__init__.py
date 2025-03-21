@@ -1,3 +1,4 @@
+# tests/api/instruments/__init__.py
 import unittest
 from m8.api.instruments import (
     M8ParamType, M8ParamsBase, M8InstrumentBase, M8Instruments,
@@ -9,11 +10,11 @@ from m8.api.modulators import M8ModulatorBase, M8LFO, M8Modulators, create_defau
 class TestM8ParamsBase(unittest.TestCase):
     def setUp(self):
         # Define test parameter definitions
-        self.test_param_defs = [
-            ("volume", 0, M8ParamType.UINT8, 0, 1),
-            ("pitch", 0, M8ParamType.UINT8, 1, 2),
-            ("name", "", M8ParamType.STRING, 2, 10),
-        ]
+        self.test_param_defs = {
+            "volume": {"offset": 0, "size": 1, "type": "UINT8", "default": 0},
+            "pitch": {"offset": 1, "size": 1, "type": "UINT8", "default": 0},
+            "name": {"offset": 2, "size": 8, "type": "STRING", "default": ""}
+        }
         
         # Create a test params class
         class TestParams(M8ParamsBase):

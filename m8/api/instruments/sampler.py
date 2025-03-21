@@ -4,34 +4,34 @@ from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
 class M8SamplerParams(M8ParamsBase):
     """Sampler parameters including playback, filtering, amp, and mixer settings."""
     
-    _param_defs = [
+    _param_defs = {
         # Synth section parameters
-        ("play_mode", 0x0, M8ParamType.UINT8, 18, 19),    # Sample playback mode
-        ("slice", 0x0, M8ParamType.UINT8, 19, 20),        # Current slice index if using sliced sample
-        ("start", 0x0, M8ParamType.UINT8, 20, 21),        # Sample start position
-        ("loop_start", 0x0, M8ParamType.UINT8, 21, 22),   # Loop start position
-        ("length", 0xFF, M8ParamType.UINT8, 22, 23),      # Sample playback length - default 0xFF (full)
-        ("degrade", 0x0, M8ParamType.UINT8, 23, 24),      # Bit degradation amount
+        "play_mode": {"offset": 18, "size": 1, "type": "UINT8", "default": 0x00},
+        "slice": {"offset": 19, "size": 1, "type": "UINT8", "default": 0x00},
+        "start": {"offset": 20, "size": 1, "type": "UINT8", "default": 0x00},
+        "loop_start": {"offset": 21, "size": 1, "type": "UINT8", "default": 0x00},
+        "length": {"offset": 22, "size": 1, "type": "UINT8", "default": 0xFF},
+        "degrade": {"offset": 23, "size": 1, "type": "UINT8", "default": 0x00},
         
         # Filter section parameters
-        ("filter", 0x0, M8ParamType.UINT8, 24, 25),       # Filter type selection
-        ("cutoff", 0xFF, M8ParamType.UINT8, 25, 26),      # Filter cutoff frequency - default 0xFF (fully open)
-        ("res", 0x0, M8ParamType.UINT8, 26, 27),          # Filter resonance
+        "filter": {"offset": 24, "size": 1, "type": "UINT8", "default": 0x00},
+        "cutoff": {"offset": 25, "size": 1, "type": "UINT8", "default": 0xFF},
+        "res": {"offset": 26, "size": 1, "type": "UINT8", "default": 0x00},
         
         # Amp section parameters
-        ("amp", 0x0, M8ParamType.UINT8, 27, 28),          # Amplifier drive amount
-        ("limit", 0x0, M8ParamType.UINT8, 28, 29),        # Limiting amount
+        "amp": {"offset": 27, "size": 1, "type": "UINT8", "default": 0x00},
+        "limit": {"offset": 28, "size": 1, "type": "UINT8", "default": 0x00},
         
         # Mixer section parameters
-        ("pan", 0x80, M8ParamType.UINT8, 29, 30),         # Stereo panning - default 0x80 (centered)
-        ("dry", 0xC0, M8ParamType.UINT8, 30, 31),         # Dry signal level - default 0xC0 (75%)
-        ("chorus", 0x0, M8ParamType.UINT8, 31, 32),       # Chorus send level
-        ("delay", 0x0, M8ParamType.UINT8, 32, 33),        # Delay send level
-        ("reverb", 0x0, M8ParamType.UINT8, 33, 34),       # Reverb send level
+        "pan": {"offset": 29, "size": 1, "type": "UINT8", "default": 0x80},
+        "dry": {"offset": 30, "size": 1, "type": "UINT8", "default": 0xC0},
+        "chorus": {"offset": 31, "size": 1, "type": "UINT8", "default": 0x00},
+        "delay": {"offset": 32, "size": 1, "type": "UINT8", "default": 0x00},
+        "reverb": {"offset": 33, "size": 1, "type": "UINT8", "default": 0x00},
         
         # Sample path at offset 0x57 with length 128
-        ("sample_path", "", M8ParamType.STRING, 0x57, 0x57 + 128)  # Path to sample file
-    ]
+        "sample_path": {"offset": 0x57, "size": 128, "type": "STRING", "default": ""}
+    }
     
     def __init__(self, **kwargs):
         """Initialize Sampler parameters."""

@@ -1,3 +1,4 @@
+# m8/api/instruments/__init__.py
 from m8.api import M8Block, load_class, join_nibbles, split_byte
 from m8.api.modulators import M8Modulators, create_default_modulators
 from enum import Enum, auto
@@ -34,10 +35,10 @@ class M8ParamsBase:
     def calculate_parameter_size(param_defs):
         """Calculate the total size in bytes of all parameters."""
         total_size = 0
-        for param_def in param_defs:
-            start = param_def[3]
-            end = param_def[4]
-            total_size += (end - start)
+        for param_name, param_def in param_defs.items():
+            start = param_def["offset"]
+            size = param_def["size"]
+            total_size += size
         return total_size
     
     def __init__(self, param_defs, **kwargs):
@@ -45,9 +46,9 @@ class M8ParamsBase:
         Initialize the parameter group.
         """
         # Initialize parameters with defaults
-        for param_def in param_defs:
-            name, default = param_def[0], param_def[1]
-            setattr(self, name, default)
+        for param_name, param_def in param_defs.items():
+            default = param_def["default"]
+            setattr(self, param_name, default)
         
         # Apply any kwargs
         for key, value in kwargs.items():
@@ -61,16 +62,24 @@ class M8ParamsBase:
         instance = cls()
         
         # Read values from their explicit offsets
-        for param_def in instance._param_defs:
-            name, _, param_type, start, end = param_def
-            param_size = end - start
+        for param_name, param_def in instance._param_defs.items():
+            offset = param_def["offset"]
+            size = param_def["size"]
+            end = offset + size
+            
+            # Get parameter type (enum value or use UINT8 as default)
+            param_type = M8ParamType.UINT8
+            if "type" in param_def:
+                type_name = param_def["type"]
+                if type_name == "STRING":
+                    param_type = M8ParamType.STRING
             
             if param_type == M8ParamType.UINT8:
                 # Read a single byte
-                value = data[start]
+                value = data[offset]
             elif param_type == M8ParamType.STRING:
-                # Read a string of specified length (determined by end - start)
-                string_bytes = data[start:end]
+                # Read a string of specified length
+                string_bytes = data[offset:end]
                 
                 # Convert to string, stopping at null terminator if present
                 null_pos = string_bytes.find(0)
@@ -80,68 +89,80 @@ class M8ParamsBase:
                 value = string_bytes.decode('utf-8', errors='replace')
             else:
                 # Default to UINT8 for unknown types
-                value = data[start]
+                value = data[offset]
                 
-            setattr(instance, name, value)
+            setattr(instance, param_name, value)
         
         return instance
     
     def write(self):
         """Convert parameters to binary data."""
         # Find the largest end offset to determine buffer size
-        max_end = max(param_def[4] for param_def in self._param_defs)
+        max_end = 0
+        for param_name, param_def in self._param_defs.items():
+            offset = param_def["offset"]
+            size = param_def["size"]
+            end = offset + size
+            max_end = max(max_end, end)
+            
         buffer = bytearray([0] * max_end)
         
-        for param_def in self._param_defs:
-            name, _, param_type, start, end = param_def
-            value = getattr(self, name)
-            param_size = end - start
+        for param_name, param_def in self._param_defs.items():
+            offset = param_def["offset"]
+            size = param_def["size"]
+            end = offset + size
+            value = getattr(self, param_name)
+            
+            # Get parameter type (enum value or use UINT8 as default)
+            param_type = M8ParamType.UINT8
+            if "type" in param_def:
+                type_name = param_def["type"]
+                if type_name == "STRING":
+                    param_type = M8ParamType.STRING
             
             if param_type == M8ParamType.UINT8:
                 # Write a single byte
-                buffer[start] = value & 0xFF
+                buffer[offset] = value & 0xFF
             elif param_type == M8ParamType.STRING:
-                # Write a string of specified length (end - start)
+                # Write a string of specified length
                 # Convert to bytes, pad with nulls
                 if isinstance(value, str):
                     encoded = value.encode('utf-8')
                     # Truncate or pad to exactly the right size
-                    if len(encoded) > param_size:
-                        encoded = encoded[:param_size]
+                    if len(encoded) > size:
+                        encoded = encoded[:size]
                     else:
-                        encoded = encoded + bytes([0] * (param_size - len(encoded)))
+                        encoded = encoded + bytes([0] * (size - len(encoded)))
                     
-                    buffer[start:end] = encoded
+                    buffer[offset:end] = encoded
                 else:
                     # Handle non-string values by padding with nulls
-                    buffer[start:end] = bytes([0] * param_size)
+                    buffer[offset:end] = bytes([0] * size)
             else:
                 # Default to UINT8 for unknown types
-                buffer[start] = value & 0xFF
+                buffer[offset] = value & 0xFF
         
         return bytes(buffer[:max_end])
     
     def clone(self):
         """Create a deep copy of this parameter object."""
         instance = self.__class__()
-        for param_def in self._param_defs:
-            name = param_def[0]
-            setattr(instance, name, getattr(self, name))
+        for param_name in self._param_defs.keys():
+            setattr(instance, param_name, getattr(self, param_name))
         return instance
     
     def as_dict(self):
         """Convert parameters to dictionary for serialization."""
-        return {param_def[0]: getattr(self, param_def[0]) for param_def in self._param_defs}
+        return {param_name: getattr(self, param_name) for param_name in self._param_defs.keys()}
     
     @classmethod
     def from_dict(cls, data):
         """Create parameters from a dictionary."""
         instance = cls()
         
-        for param_def in instance._param_defs:
-            name = param_def[0]
-            if name in data:
-                setattr(instance, name, data[name])
+        for param_name in instance._param_defs.keys():
+            if param_name in data:
+                setattr(instance, param_name, data[param_name])
             
         return instance
 
@@ -259,29 +280,38 @@ class M8InstrumentBase:
             # but are compacted at position 0 in the synth_params buffer
             # We need to reapply them at their correct positions
             
-            for param_def in self.synth._param_defs:
-                name, _, param_type, start, end = param_def
-                value = getattr(self.synth, name)
+            for param_name, param_def in self.synth._param_defs.items():
+                offset = param_def["offset"]
+                size = param_def["size"]
+                end = offset + size
+                value = getattr(self.synth, param_name)
+                
+                # Get parameter type (enum value or use UINT8 as default)
+                param_type = M8ParamType.UINT8
+                if "type" in param_def:
+                    type_name = param_def["type"]
+                    if type_name == "STRING":
+                        param_type = M8ParamType.STRING
                 
                 if param_type == M8ParamType.UINT8:
                     # Write a single byte
-                    buffer[start] = value & 0xFF
+                    buffer[offset] = value & 0xFF
                 elif param_type == M8ParamType.STRING:
                     # Write a string (with proper handling)
                     if isinstance(value, str):
                         encoded = value.encode('utf-8')
-                        param_size = end - start
+                        param_size = size
                         if len(encoded) > param_size:
                             encoded = encoded[:param_size]
                         else:
                             encoded = encoded + bytes([0] * (param_size - len(encoded)))
-                        buffer[start:end] = encoded
+                        buffer[offset:end] = encoded
                     else:
                         # Null padding
-                        buffer[start:end] = bytes([0] * (end - start))
+                        buffer[offset:end] = bytes([0] * size)
                 else:
                     # Default to UINT8
-                    buffer[start] = value & 0xFF
+                    buffer[offset] = value & 0xFF
         
         # Write modulators
         # Modulators still need an offset as they're handled differently

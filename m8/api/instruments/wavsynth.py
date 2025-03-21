@@ -1,32 +1,33 @@
 # m8/api/instruments/wavsynth.py
 from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
-from m8.config import load_format_config, get_param_type_enum
-
-# Load wavsynth configuration
-config = load_format_config()["instruments"]["wavsynth"]["params"]
 
 class M8WavSynthParams(M8ParamsBase):
     """WavSynth parameters including synth, filter, amp, and mixer settings."""
     
-    # Build parameter definitions from configuration
-    _param_defs = []
-    
-    # Dynamically build parameter definitions from configuration
-    for param_name, param_data in config.items():
-        # Get parameter type (enum value or use UINT8 as default)
-        param_type = M8ParamType.UINT8
-        if "type" in param_data:
-            type_enum_value = get_param_type_enum(param_data["type"])
-            param_type = M8ParamType(type_enum_value)
-            
-        default_value = param_data.get("default", 0x0)
-        offset = param_data["offset"]
-        size = param_data["size"]
+    _param_defs = {
+        # Synth section parameters
+        "shape": {"offset": 18, "size": 1, "type": "UINT8", "default": 0x00},
+        "size": {"offset": 19, "size": 1, "type": "UINT8", "default": 0x80},
+        "mult": {"offset": 20, "size": 1, "type": "UINT8", "default": 0x80},
+        "warp": {"offset": 21, "size": 1, "type": "UINT8", "default": 0x00},
+        "scan": {"offset": 22, "size": 1, "type": "UINT8", "default": 0x00},
         
-        # Add parameter definition
-        _param_defs.append(
-            (param_name, default_value, param_type, offset, offset + size)
-        )
+        # Filter section parameters
+        "filter": {"offset": 23, "size": 1, "type": "UINT8", "default": 0x00},
+        "cutoff": {"offset": 24, "size": 1, "type": "UINT8", "default": 0xFF},
+        "res": {"offset": 25, "size": 1, "type": "UINT8", "default": 0x00},
+        
+        # Amp section parameters
+        "amp": {"offset": 26, "size": 1, "type": "UINT8", "default": 0x00},
+        "limit": {"offset": 27, "size": 1, "type": "UINT8", "default": 0x00},
+        
+        # Mixer section parameters
+        "pan": {"offset": 28, "size": 1, "type": "UINT8", "default": 0x80},
+        "dry": {"offset": 29, "size": 1, "type": "UINT8", "default": 0xC0},
+        "chorus": {"offset": 30, "size": 1, "type": "UINT8", "default": 0x00},
+        "delay": {"offset": 31, "size": 1, "type": "UINT8", "default": 0x00},
+        "reverb": {"offset": 32, "size": 1, "type": "UINT8", "default": 0x00}
+    }
     
     def __init__(self, **kwargs):
         """Initialize WavSynth parameters."""
@@ -36,7 +37,7 @@ class M8WavSynth(M8InstrumentBase):
     """WavSynth instrument implementation for the M8 tracker."""
     
     # Offset for modulator data in the binary structure - from config
-    MODULATORS_OFFSET = load_format_config()["instruments"]["wavsynth"]["modulators_offset"]
+    MODULATORS_OFFSET = 63
     
     def __init__(self, **kwargs):
         """Initialize a WavSynth instrument."""

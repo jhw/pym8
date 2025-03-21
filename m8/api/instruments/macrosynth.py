@@ -4,30 +4,30 @@ from m8.api.instruments import M8InstrumentBase, M8ParamsBase, M8ParamType
 class M8MacroSynthParams(M8ParamsBase):
     """MacroSynth parameters including synth, filter, amp, and mixer settings."""
     
-    _param_defs = [
+    _param_defs = {
         # Synth section parameters
-        ("shape", 0x0, M8ParamType.UINT8, 18, 19),     # Waveform shape (0-127)
-        ("timbre", 0x80, M8ParamType.UINT8, 19, 20),   # Timbre control - default 0x80 (centered)
-        ("color", 0x80, M8ParamType.UINT8, 20, 21),    # Color control - default 0x80 (centered)
-        ("degrade", 0x0, M8ParamType.UINT8, 21, 22),   # Bit degradation amount
-        ("redux", 0x0, M8ParamType.UINT8, 22, 23),     # Sample rate reduction
+        "shape": {"offset": 18, "size": 1, "type": "UINT8", "default": 0x00},
+        "timbre": {"offset": 19, "size": 1, "type": "UINT8", "default": 0x80},
+        "color": {"offset": 20, "size": 1, "type": "UINT8", "default": 0x80},
+        "degrade": {"offset": 21, "size": 1, "type": "UINT8", "default": 0x00},
+        "redux": {"offset": 22, "size": 1, "type": "UINT8", "default": 0x00},
         
         # Filter section parameters
-        ("filter", 0x0, M8ParamType.UINT8, 23, 24),    # Filter type selection
-        ("cutoff", 0xFF, M8ParamType.UINT8, 24, 25),   # Filter cutoff frequency - default 0xFF (fully open)
-        ("res", 0x0, M8ParamType.UINT8, 25, 26),       # Filter resonance
+        "filter": {"offset": 23, "size": 1, "type": "UINT8", "default": 0x00},
+        "cutoff": {"offset": 24, "size": 1, "type": "UINT8", "default": 0xFF},
+        "res": {"offset": 25, "size": 1, "type": "UINT8", "default": 0x00},
         
         # Amp section parameters
-        ("amp", 0x0, M8ParamType.UINT8, 26, 27),       # Amplifier drive amount
-        ("limit", 0x0, M8ParamType.UINT8, 27, 28),     # Limiting amount
+        "amp": {"offset": 26, "size": 1, "type": "UINT8", "default": 0x00},
+        "limit": {"offset": 27, "size": 1, "type": "UINT8", "default": 0x00},
         
         # Mixer section parameters
-        ("pan", 0x80, M8ParamType.UINT8, 28, 29),      # Stereo panning - default 0x80 (centered)
-        ("dry", 0xC0, M8ParamType.UINT8, 29, 30),      # Dry signal level - default 0xC0 (75%)
-        ("chorus", 0x0, M8ParamType.UINT8, 30, 31),    # Chorus send level
-        ("delay", 0x0, M8ParamType.UINT8, 31, 32),     # Delay send level
-        ("reverb", 0x0, M8ParamType.UINT8, 32, 33)     # Reverb send level
-    ]
+        "pan": {"offset": 28, "size": 1, "type": "UINT8", "default": 0x80},
+        "dry": {"offset": 29, "size": 1, "type": "UINT8", "default": 0xC0},
+        "chorus": {"offset": 30, "size": 1, "type": "UINT8", "default": 0x00},
+        "delay": {"offset": 31, "size": 1, "type": "UINT8", "default": 0x00},
+        "reverb": {"offset": 32, "size": 1, "type": "UINT8", "default": 0x00}
+    }
     
     def __init__(self, **kwargs):
         """Initialize MacroSynth parameters."""
@@ -77,4 +77,3 @@ class M8MacroSynth(M8InstrumentBase):
         return (self.name.strip() == "" and 
                 self.volume == 0x0 and 
                 self.synth.shape == 0x0)
-        
