@@ -5,7 +5,8 @@ import sys
 import yaml
 
 from m8.api.project import M8Project
-from m8.api.instruments import M8InstrumentBase, M8Block
+from m8.api.instruments import M8Instrument
+from m8.api import M8Block
 
 def hex_dump(data, width=16):
     """Prints data in a readable hex dump format."""

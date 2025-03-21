@@ -1,12 +1,12 @@
 # short
 
+- refactor modulators as per instruments
 - fx example
+- chain baking script
+- m8i files
 
 # medium
 
-- chain baking script
-- m8i files
-- sampler >> chorus_send, reverb_send
 - sampler slice points
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
@@ -30,6 +30,7 @@
 
 # done
 
+- move instruments
 - song/chain/phrase example
 - sampler example
 - macrosynth example
