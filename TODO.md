@@ -1,10 +1,12 @@
 # short
 
+- instrument screenshot textract
+- m8i files
+
 # medium
 
 - sampler >> chorus_send, reverb_send
 - sampler slice points
-- m8i files
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
 - bitmap tooling
@@ -25,6 +27,7 @@
 
 # done
 
+- instrument inspector
 - json bitmap
 - add back wavsynth param hardcoding
 - propose a solution for removing synth param hardcoding
