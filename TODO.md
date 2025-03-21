@@ -9,7 +9,6 @@
 - sampler slice points
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
-- bitmap tooling
 - refactor examples
 
 # beats
