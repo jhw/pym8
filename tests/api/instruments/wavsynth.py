@@ -1,6 +1,6 @@
 import unittest
 from m8.api.instruments import M8Instrument, M8Params
-from m8.api.modulators import M8LFO
+from m8.api.modulators import M8Modulator, ModulatorType
 
 class TestM8Params(unittest.TestCase):
     def test_constructor_and_defaults(self):
@@ -439,15 +439,15 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         synth = M8Instrument(instrument_type="wavsynth")
         
         # Add a modulator
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type="lfo", destination=2, amount=100, frequency=50)
         slot = synth.add_modulator(mod)
         
         # Should use first slot
         self.assertEqual(slot, 0)
-        self.assertEqual(synth.modulators[0].type, M8LFO.TYPE_VALUE)
+        self.assertEqual(synth.modulators[0].type, 3)  # LFO type value
         self.assertEqual(synth.modulators[0].destination, 2)
         self.assertEqual(synth.modulators[0].amount, 100)
-        self.assertEqual(synth.modulators[0].frequency, 50)
+        self.assertEqual(synth.modulators[0].params.frequency, 50)
     
     def test_as_dict(self):
         # Create a WavSynth with specific parameters
@@ -467,7 +467,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         )
         
         # Add a modulator
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
         synth.modulators[0] = mod
         
         # Convert to dict
@@ -490,7 +490,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         self.assertIn("modulators", result)
         self.assertIsInstance(result["modulators"], list)
         self.assertGreater(len(result["modulators"]), 0)
-        self.assertEqual(result["modulators"][0]["type"], M8LFO.TYPE_VALUE)
+        self.assertEqual(result["modulators"][0]["type"], 3)  # LFO type ID
         self.assertEqual(result["modulators"][0]["destination"], 2)
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)

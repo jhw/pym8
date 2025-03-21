@@ -74,6 +74,32 @@ def get_modulator_type_id_map():
         id_map[key] = value
     return id_map
 
+def get_modulator_types():
+    """Returns a dictionary of modulator type IDs to type names from configuration."""
+    config = load_format_config()
+    result = {}
+    
+    for mod_type, mod_config in config['modulators']['types'].items():
+        # Skip non-modulator sections
+        if isinstance(mod_config, dict) and 'id' in mod_config:
+            type_id = mod_config['id']
+            # Convert hex strings to integers
+            if isinstance(type_id, str) and type_id.startswith('0x'):
+                type_id = int(type_id, 16)
+            result[type_id] = mod_type
+            
+    return result
+
+def get_modulator_type_id(modulator_type):
+    """Retrieves type ID for a modulator from configuration."""
+    config = load_format_config()
+    if 'modulators' in config and 'types' in config['modulators'] and modulator_type in config['modulators']['types']:
+        type_id = config['modulators']['types'][modulator_type]['id']
+        if isinstance(type_id, str) and type_id.startswith('0x'):
+            return int(type_id, 16)
+        return type_id
+    raise ValueError(f"Type ID for modulator '{modulator_type}' not found in configuration")
+
 def get_instrument_type_id(instrument_type):
     """Retrieves type ID for an instrument from configuration."""
     config = load_format_config()

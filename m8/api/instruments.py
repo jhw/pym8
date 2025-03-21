@@ -1,6 +1,6 @@
 # m8/api/instruments.py
 from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string
-from m8.api.modulators import M8Modulators, create_default_modulators
+from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from enum import Enum, auto
 from m8.config import load_format_config, get_instrument_type_id, get_instrument_modulators_offset, get_instrument_types
 

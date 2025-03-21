@@ -5,7 +5,7 @@ from m8.api.instruments import (
     BLOCK_SIZE, BLOCK_COUNT, INSTRUMENT_TYPES
 )
 from m8.api import M8Block
-from m8.api.modulators import M8ModulatorBase, M8LFO, M8Modulators, create_default_modulators
+from m8.api.modulators import M8Modulator, M8Modulators, ModulatorType, create_default_modulators
 
 class TestM8Params(unittest.TestCase):
     def setUp(self):
@@ -269,7 +269,7 @@ class TestInstrumentBase(unittest.TestCase):
         )
         
         # Add a modulator for testing
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
         instr.modulators[0] = mod
         
         # Write to binary
@@ -310,7 +310,7 @@ class TestInstrumentBase(unittest.TestCase):
         )
         
         # Add a modulator
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
         original.modulators[0] = mod
         
         # Clone
@@ -334,7 +334,7 @@ class TestInstrumentBase(unittest.TestCase):
         self.assertEqual(clone.modulators[0].type, original.modulators[0].type)
         self.assertEqual(clone.modulators[0].destination, original.modulators[0].destination)
         self.assertEqual(clone.modulators[0].amount, original.modulators[0].amount)
-        self.assertEqual(clone.modulators[0].frequency, original.modulators[0].frequency)
+        self.assertEqual(clone.modulators[0].params.frequency, original.modulators[0].params.frequency)
         
         # Modify clone and check original unchanged
         clone.name = "Modified"
@@ -373,7 +373,7 @@ class TestInstrumentBase(unittest.TestCase):
         self.assertEqual(instr.available_modulator_slot, 0)
         
         # Fill first slot
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
         instr.modulators[0] = mod
         
         # Now second slot should be available
@@ -381,7 +381,7 @@ class TestInstrumentBase(unittest.TestCase):
         
         # Fill all slots
         for i in range(len(instr.modulators)):
-            instr.modulators[i] = M8LFO(destination=i+1, amount=100, frequency=50)
+            instr.modulators[i] = M8Modulator(modulator_type=ModulatorType.LFO, destination=i+1, amount=100, frequency=50)
         
         # No slots available
         self.assertIsNone(instr.available_modulator_slot)
@@ -391,19 +391,19 @@ class TestInstrumentBase(unittest.TestCase):
         instr = M8Instrument(instrument_type="wavsynth")
         
         # Add a modulator
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type="lfo", destination=2, amount=100, frequency=50)
         slot = instr.add_modulator(mod)
         
         # Should use first slot
         self.assertEqual(slot, 0)
-        self.assertEqual(instr.modulators[0].type, M8LFO.TYPE_VALUE)
+        self.assertEqual(instr.modulators[0].type, 3)  # LFO type ID
         self.assertEqual(instr.modulators[0].destination, 2)
         self.assertEqual(instr.modulators[0].amount, 100)
-        self.assertEqual(instr.modulators[0].frequency, 50)
+        self.assertEqual(instr.modulators[0].params.frequency, 50)
         
         # Fill all slots
         for i in range(1, len(instr.modulators)):
-            instr.modulators[i] = M8LFO(destination=i+2, amount=100, frequency=50)
+            instr.modulators[i] = M8Modulator(modulator_type="lfo", destination=i+2, amount=100, frequency=50)
         
         # Adding another should raise IndexError
         with self.assertRaises(IndexError):
@@ -414,13 +414,13 @@ class TestInstrumentBase(unittest.TestCase):
         instr = M8Instrument(instrument_type="wavsynth")
         
         # Set a modulator at specific slot
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type="lfo", destination=2, amount=100, frequency=50)
         instr.set_modulator(mod, 2)  # Use slot 2 (valid index within 0-3)
         
-        self.assertEqual(instr.modulators[2].type, M8LFO.TYPE_VALUE)
+        self.assertEqual(instr.modulators[2].type, 3)  # LFO type ID
         self.assertEqual(instr.modulators[2].destination, 2)
         self.assertEqual(instr.modulators[2].amount, 100)
-        self.assertEqual(instr.modulators[2].frequency, 50)
+        self.assertEqual(instr.modulators[2].params.frequency, 50)
         
         # Test invalid slot
         with self.assertRaises(IndexError):
@@ -443,7 +443,7 @@ class TestInstrumentBase(unittest.TestCase):
         )
         
         # Add a modulator
-        mod = M8LFO(destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type="lfo", destination=2, amount=100, frequency=50)
         instr.modulators[0] = mod
         
         # Convert to dict
@@ -463,7 +463,7 @@ class TestInstrumentBase(unittest.TestCase):
         self.assertIn("modulators", result)
         self.assertIsInstance(result["modulators"], list)
         self.assertGreater(len(result["modulators"]), 0)
-        self.assertEqual(result["modulators"][0]["type"], M8LFO.TYPE_VALUE)
+        self.assertEqual(result["modulators"][0]["type"], 3)  # LFO type ID
         self.assertEqual(result["modulators"][0]["destination"], 2)
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)

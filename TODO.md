@@ -1,16 +1,15 @@
 # short
 
-- refactor modulators as per instruments
 - fx example
 - chain baking script
 - m8i files
 
 # medium
 
+- revisit empty() methods
 - sampler slice points
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
-- examples
 
 # beats
 
@@ -30,6 +29,7 @@
 
 # done
 
+- refactor modulators as per instruments
 - move instruments
 - song/chain/phrase example
 - sampler example

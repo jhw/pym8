@@ -1,5 +1,6 @@
 from m8.api import M8Block, load_class, split_byte, join_nibbles
-from m8.config import load_format_config, get_modulator_type_id_map
+from enum import Enum
+from m8.config import load_format_config, get_modulator_types, get_modulator_type_id, get_modulator_data
 
 # Load configuration
 config = load_format_config()["modulators"]
@@ -8,243 +9,317 @@ config = load_format_config()["modulators"]
 BLOCK_SIZE = config["block_size"]
 BLOCK_COUNT = config["count"]
 
-# Map modulator types to their class paths - loaded from config
-MODULATOR_TYPES = get_modulator_type_id_map()
+# Type mapping from IDs to names - loaded from config
+MODULATOR_TYPES = get_modulator_types()
 
 # Default modulator configurations
 DEFAULT_MODULATOR_CONFIGS = config["default_config"]  # 2 AHD envelopes, 2 LFOs
 
-class M8ModulatorBase:
-    """Base class for all M8 modulators with parameter management and serialization."""
+# Modulator type enum
+class ModulatorType(Enum):
+    AHD_ENVELOPE = "ahd_envelope"
+    ADSR_ENVELOPE = "adsr_envelope"
+    DRUM_ENVELOPE = "drum_envelope"
+    LFO = "lfo"
+    TRIGGER_ENVELOPE = "trigger_envelope"
+    TRACKING_ENVELOPE = "tracking_envelope"
     
-    TYPE_DEST_BYTE_OFFSET = 0
-    AMOUNT_OFFSET = 1
-    PARAM_START_OFFSET = 2
+    @classmethod
+    def get_type_id(cls, type_name):
+        """Get the numeric type ID from the type name."""
+        return get_modulator_type_id(type_name)
     
-    TYPE_NIBBLE_POS = 0  # Upper 4 bits
-    DEST_NIBBLE_POS = 1  # Lower 4 bits
+    @classmethod
+    def from_id(cls, type_id):
+        """Get the enum value from a numeric type ID."""
+        for type_enum in cls:
+            if get_modulator_type_id(type_enum.value) == type_id:
+                return type_enum
+        return None
+
+class M8ModulatorParams:
+    """Dynamic parameter container for modulator parameters."""
     
-    DEFAULT_DESTINATION = config["constants"]["empty_destination"]
-    DEFAULT_AMOUNT = config["constants"]["default_amount"]
-    EMPTY_DESTINATION = config["constants"]["empty_destination"]
-    
-    _common_defs = [
-        ("destination", DEFAULT_DESTINATION),  # Common parameter: modulation destination
-        ("amount", DEFAULT_AMOUNT)             # Common parameter: modulation amount
-    ]
-    
-    _param_defs = []
-    
-    def __init__(self, **kwargs):
-        # Set type for each modulator
-        self.type = self._get_type()
+    def __init__(self, param_defs, **kwargs):
+        """Initialize the parameter group with the given parameter definitions."""
+        self._param_defs = param_defs
         
-        # Initialize parameters with defaults from _common_defs and subclass _param_defs
-        for name, default in self._common_defs + self._param_defs:
-            setattr(self, name, default)
+        # Initialize parameters with defaults
+        for param_name, param_def in param_defs.items():
+            default = param_def["default"]
+            setattr(self, param_name, default)
         
-        # Apply any provided kwargs
+        # Apply any kwargs
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
     
-    def _get_type(self):
-        raise NotImplementedError("Subclasses must implement _get_type()")
-    
     @classmethod
-    def read(cls, data):
-        instance = cls()
+    def from_config(cls, modulator_type, **kwargs):
+        """Create parameters from modulator type config."""
+        config = load_format_config()
         
-        if len(data) > 0:
-            type_dest = data[cls.TYPE_DEST_BYTE_OFFSET]
-            instance.type, instance.destination = split_byte(type_dest)
-            
-            # Read amount field
-            if len(data) > 1:
-                instance.amount = data[cls.AMOUNT_OFFSET]
-            
-            # Read specific parameters for this modulator type
-            for i, (name, _) in enumerate(instance._param_defs, cls.PARAM_START_OFFSET):
-                if i < len(data):
-                    setattr(instance, name, data[i])
+        # Load parameter definitions from config
+        param_defs = config["modulators"]["types"][modulator_type]["params"].copy()
         
-        return instance
+        return cls(param_defs, **kwargs)
+    
+    def read(self, data):
+        """Read parameters from binary data."""
+        # Read values from their explicit offsets
+        for param_name, param_def in self._param_defs.items():
+            if 'nibble' in param_def:
+                # This is a special case for destination which is stored in a nibble
+                continue
+                
+            offset = param_def["offset"]
+            if offset < len(data):
+                value = data[offset]
+                setattr(self, param_name, value)
     
     def write(self):
-        buffer = bytearray()
+        """Convert parameters to binary data."""
+        # Find the largest end offset to determine buffer size
+        max_offset = 0
+        for param_name, param_def in self._param_defs.items():
+            if 'nibble' in param_def:
+                # Skip nibble parameters as they're handled separately
+                continue
+                
+            offset = param_def["offset"]
+            if 'size' in param_def:
+                end = offset + param_def["size"]
+            else:
+                end = offset + 1  # Default size is 1 byte
+                
+            max_offset = max(max_offset, end)
+            
+        buffer = bytearray([0] * max_offset)
         
-        # Write type/destination as combined byte
-        type_dest = join_nibbles(self.type, self.destination)
-        buffer.append(type_dest)
-        
-        # Write amount
-        buffer.append(self.amount)
-        
-        # Write specific parameters
-        for name, _ in self._param_defs:
-            buffer.append(getattr(self, name))
-        
-        # Pad to ensure proper size if needed
-        while len(buffer) < BLOCK_SIZE:
-            buffer.append(0x0)
+        for param_name, param_def in self._param_defs.items():
+            if 'nibble' in param_def:
+                # Skip nibble parameters as they're handled separately
+                continue
+                
+            offset = param_def["offset"]
+            value = getattr(self, param_name)
+            
+            # All modulator parameters are UINT8
+            buffer[offset] = value & 0xFF
         
         return bytes(buffer)
     
     def clone(self):
-        instance = self.__class__()
-        for name, _ in self._common_defs + self._param_defs:
-            setattr(instance, name, getattr(self, name))
-        # Also copy type explicitly
-        instance.type = self.type
+        """Create a deep copy of this parameter object."""
+        instance = self.__class__(self._param_defs)
+        for param_name in self._param_defs.keys():
+            setattr(instance, param_name, getattr(self, param_name))
         return instance
     
+    def as_dict(self):
+        """Convert parameters to dictionary for serialization."""
+        return {param_name: getattr(self, param_name) 
+                for param_name in self._param_defs.keys()}
+    
+    @classmethod
+    def from_dict(cls, modulator_type, data):
+        """Create parameters from a dictionary."""
+        params = cls.from_config(modulator_type)
+        
+        for param_name in params._param_defs.keys():
+            if param_name in data:
+                setattr(params, param_name, data[param_name])
+            
+        return params
+
+class M8Modulator:
+    """Unified modulator class for all M8 modulator types."""
+    
+    # Common parameter offsets for all modulator types
+    TYPE_DEST_BYTE_OFFSET = 0  # Combined type and destination
+    AMOUNT_OFFSET = 1         # Modulation amount
+    
+    # Common constants
+    EMPTY_DESTINATION = config["constants"]["empty_destination"]
+    DEFAULT_AMOUNT = config["constants"]["default_amount"]
+    
+    def __init__(self, modulator_type=None, **kwargs):
+        """Initialize a new modulator with default parameters."""
+        # Process modulator_type
+        if modulator_type is None:
+            # Default to AHD envelope if not specified
+            modulator_type = ModulatorType.AHD_ENVELOPE.value
+        elif isinstance(modulator_type, int):
+            # Convert type ID to string name
+            mod_type_enum = ModulatorType.from_id(modulator_type)
+            if mod_type_enum:
+                modulator_type = mod_type_enum.value
+            else:
+                raise ValueError(f"Unknown modulator type ID: {modulator_type}")
+        elif isinstance(modulator_type, ModulatorType):
+            # If it's already an enum, get its value
+            modulator_type = modulator_type.value
+        
+        # Set the modulator type and ID
+        self.modulator_type = modulator_type
+        self.type = ModulatorType.get_type_id(modulator_type)
+        
+        # Common modulator parameters
+        self.destination = self.EMPTY_DESTINATION
+        self.amount = self.DEFAULT_AMOUNT
+        
+        # Create params object based on modulator type
+        self.params = M8ModulatorParams.from_config(modulator_type)
+        
+        # Apply common parameters from kwargs
+        for key, value in kwargs.items():
+            if hasattr(self, key) and not key.startswith('_') and key not in ["type", "params"]:
+                setattr(self, key, value)
+                
+        # Apply modulator-specific parameters from kwargs to params object
+        for key, value in kwargs.items():
+            if hasattr(self.params, key):
+                setattr(self.params, key, value)
+    
+    def read(self, data):
+        """Read all modulator parameters from binary data."""
+        if len(data) < 2:
+            return
+            
+        # Read the combined type/destination byte
+        type_dest = data[self.TYPE_DEST_BYTE_OFFSET]
+        self.type, self.destination = split_byte(type_dest)
+        
+        # Get the modulator type string from the type ID
+        if self.type in MODULATOR_TYPES:
+            self.modulator_type = MODULATOR_TYPES[self.type]
+        else:
+            # Default to ahd_envelope for unknown types
+            self.modulator_type = "ahd_envelope"
+        
+        # Read amount
+        self.amount = data[self.AMOUNT_OFFSET]
+        
+        # Create and read the appropriate params object based on modulator type
+        self.params = M8ModulatorParams.from_config(self.modulator_type)
+        self.params.read(data)
+        
+        return self
+    
+    @classmethod
+    def read_from_data(cls, data):
+        """Create a modulator from binary data."""
+        if len(data) < 1:
+            return M8Block()
+            
+        instance = cls()
+        instance.read(data)
+        return instance
+    
+    def write(self):
+        """Convert the modulator to binary data."""
+        # Create a buffer of the correct size
+        buffer = bytearray([0] * BLOCK_SIZE)
+        
+        # Write combined type/destination
+        buffer[self.TYPE_DEST_BYTE_OFFSET] = join_nibbles(self.type, self.destination)
+        
+        # Write amount
+        buffer[self.AMOUNT_OFFSET] = self.amount
+        
+        # Write modulator-specific parameters
+        params_data = self.params.write()
+        
+        # Copy non-amount parameter bytes to the buffer
+        # Start at offset 2 for modulator-specific params (after type/dest and amount)
+        for i in range(min(len(params_data), BLOCK_SIZE - 2)):
+            buffer[i + 2] = params_data[i]
+        
+        # Return the finalized buffer
+        return bytes(buffer)
+    
     def is_empty(self):
+        """Check if this modulator is empty."""
         return self.destination == self.EMPTY_DESTINATION
     
+    def clone(self):
+        """Create a deep copy of this modulator."""
+        # Create a new instance of this class with the same modulator type
+        instance = self.__class__(modulator_type=self.modulator_type)
+        
+        # Copy common attributes
+        instance.type = self.type
+        instance.destination = self.destination
+        instance.amount = self.amount
+        
+        # Clone params
+        instance.params = self.params.clone() if hasattr(self.params, 'clone') else self.params
+                
+        return instance
+    
     def as_dict(self):
-        result = {}
-        for name, _ in self._common_defs + self._param_defs:
-            result[name] = getattr(self, name)
-        # Also include type explicitly
-        result["type"] = self.type
+        """Convert modulator to dictionary for serialization."""
+        # Start with the type and common parameters
+        result = {
+            "type": self.type,
+            "destination": self.destination,
+            "amount": self.amount
+        }
+        
+        # Add modulator-specific parameters
+        params_dict = self.params.as_dict()
+        for key, value in params_dict.items():
+            # Skip destination if already included in common params
+            if key != "destination" and key != "amount":
+                result[key] = value
+            
         return result
     
     @classmethod
     def from_dict(cls, data):
-        instance = cls()
-        for name, _ in instance._common_defs + instance._param_defs:
-            if name in data:
-                setattr(instance, name, data[name])
-        # Also set type explicitly
-        if "type" in data:
-            instance.type = data["type"]
-        return instance
+        """Create a modulator from a dictionary."""
+        # Get the modulator type
+        mod_type = data["type"]
+        
+        # Create a new modulator with the appropriate type
+        if mod_type in MODULATOR_TYPES:
+            modulator_type = MODULATOR_TYPES[mod_type]
+            modulator = cls(modulator_type=modulator_type)
+            
+            # Set common parameters
+            for key in ["destination", "amount"]:
+                if key in data:
+                    setattr(modulator, key, data[key])
+            
+            # Set modulator-specific parameters
+            for key, value in data.items():
+                if key not in ["type", "destination", "amount"] and hasattr(modulator.params, key):
+                    setattr(modulator.params, key, value)
+            
+            return modulator
+        else:
+            raise ValueError(f"Unknown modulator type: {mod_type}")
 
-# Specific modulator implementations
-
-class M8AHDEnvelope(M8ModulatorBase):
-    """Attack-Hold-Decay envelope for controlling parameters over time."""
-    TYPE_VALUE = 0x0
-    
-    DEFAULT_ATTACK = 0x0
-    DEFAULT_HOLD = 0x0
-    DEFAULT_DECAY = 0x80
-    
-    _param_defs = [
-        ("attack", DEFAULT_ATTACK),
-        ("hold", DEFAULT_HOLD),
-        ("decay", DEFAULT_DECAY)
-    ]
-    
-    def _get_type(self):
-        return self.TYPE_VALUE  # AHD envelope type
-
-class M8ADSREnvelope(M8ModulatorBase):
-    """Attack-Decay-Sustain-Release envelope for sustained notes."""
-    TYPE_VALUE = 0x1
-    
-    DEFAULT_ATTACK = 0x0
-    DEFAULT_DECAY = 0x80
-    DEFAULT_SUSTAIN = 0x80
-    DEFAULT_RELEASE = 0x80
-    
-    _param_defs = [
-        ("attack", DEFAULT_ATTACK),
-        ("decay", DEFAULT_DECAY),
-        ("sustain", DEFAULT_SUSTAIN),
-        ("release", DEFAULT_RELEASE)
-    ]
-    
-    def _get_type(self):
-        return self.TYPE_VALUE  # ADSR envelope type
-
-class M8DrumEnvelope(M8ModulatorBase):
-    """Three-stage envelope optimized for percussive sounds."""
-    TYPE_VALUE = 0x2
-    
-    DEFAULT_PEAK = 0x0
-    DEFAULT_BODY = 0x10
-    DEFAULT_DECAY = 0x80
-    
-    _param_defs = [
-        ("peak", DEFAULT_PEAK),
-        ("body", DEFAULT_BODY),
-        ("decay", DEFAULT_DECAY)
-    ]
-    
-    def _get_type(self):
-        return self.TYPE_VALUE  # Drum envelope type
-    
-class M8LFO(M8ModulatorBase):
-    """Low Frequency Oscillator for cyclic modulation (vibrato, tremolo, etc)."""
-    TYPE_VALUE = 0x3
-    
-    DEFAULT_OSCILLATOR = 0x0
-    DEFAULT_TRIGGER = 0x0
-    DEFAULT_FREQUENCY = 0x10
-    
-    _param_defs = [
-        ("oscillator", DEFAULT_OSCILLATOR),
-        ("trigger", DEFAULT_TRIGGER),
-        ("frequency", DEFAULT_FREQUENCY)
-    ]
-    
-    def _get_type(self):
-        return self.TYPE_VALUE  # LFO type
-
-class M8TriggerEnvelope(M8ModulatorBase):
-    """Envelope triggered by external sources with attack, hold, and decay stages."""
-    TYPE_VALUE = 0x4
-    
-    DEFAULT_ATTACK = 0x0
-    DEFAULT_HOLD = 0x0
-    DEFAULT_DECAY = 0x40
-    DEFAULT_SOURCE = 0x00
-    
-    _param_defs = [
-        ("attack", DEFAULT_ATTACK),
-        ("hold", DEFAULT_HOLD),
-        ("decay", DEFAULT_DECAY),
-        ("source", DEFAULT_SOURCE)
-    ]
-    
-    def _get_type(self):
-        return self.TYPE_VALUE  # Trigger envelope type
-
-class M8TrackingEnvelope(M8ModulatorBase):
-    """Maps input values to output modulation for keyboard tracking and mapping."""
-    TYPE_VALUE = 0x5
-    
-    DEFAULT_SOURCE = 0x0
-    DEFAULT_LOW_VALUE = 0x0
-    DEFAULT_HIGH_VALUE = 0x7F
-    
-    _param_defs = [
-        ("source", DEFAULT_SOURCE),
-        ("low_value", DEFAULT_LOW_VALUE),
-        ("high_value", DEFAULT_HIGH_VALUE)
-    ]
-    
-    def _get_type(self):
-        return self.TYPE_VALUE  # Tracking envelope type
-    
 class M8Modulators(list):
-    """Collection of modulators for an M8 instrument with type-aware handling."""
+    """Collection of M8 modulators."""
     
     def __init__(self, items=None):
+        """Initialize a collection with optional modulators."""
         super().__init__()
         items = items or []
         
+        # Fill with provided items
         for item in items:
             self.append(item)
             
+        # Fill remaining slots with M8Block instances
         while len(self) < BLOCK_COUNT:
             self.append(M8Block())
     
     @classmethod
     def read(cls, data):
-        instance = cls()
-        instance.clear()
+        instance = cls.__new__(cls)
+        list.__init__(instance)
         
         for i in range(BLOCK_COUNT):
             start = i * BLOCK_SIZE
@@ -254,20 +329,23 @@ class M8Modulators(list):
                 instance.append(M8Block())
                 continue
                 
-            first_byte = block_data[M8ModulatorBase.TYPE_DEST_BYTE_OFFSET]
-            mod_type, _ = split_byte(first_byte)
+            first_byte = block_data[0]
+            mod_type, dest = split_byte(first_byte)
             
             if mod_type in MODULATOR_TYPES:
-                ModClass = load_class(MODULATOR_TYPES[mod_type])
-                instance.append(ModClass.read(block_data))
+                # For valid modulator types, create a modulator and read the data
+                modulator = M8Modulator(modulator_type=mod_type)
+                modulator.read(block_data)
+                instance.append(modulator)
             else:
+                # For unknown types, use M8Block
                 instance.append(M8Block.read(block_data))
         
         return instance
     
     def clone(self):
-        instance = self.__class__()
-        instance.clear()
+        instance = self.__class__.__new__(self.__class__)
+        list.__init__(instance)
         
         for mod in self:
             if hasattr(mod, 'clone'):
@@ -281,41 +359,46 @@ class M8Modulators(list):
         result = bytearray()
         for mod in self:
             mod_data = mod.write() if hasattr(mod, 'write') else bytes([0] * BLOCK_SIZE)
+            
+            # Ensure each modulator occupies exactly BLOCK_SIZE bytes
             if len(mod_data) < BLOCK_SIZE:
                 mod_data = mod_data + bytes([0x0] * (BLOCK_SIZE - len(mod_data)))
             elif len(mod_data) > BLOCK_SIZE:
                 mod_data = mod_data[:BLOCK_SIZE]
+            
             result.extend(mod_data)
+        
         return bytes(result)
-
+    
     def as_list(self):
-        # Only include non-empty modulators with their position indices
+        """Convert modulators to list for serialization."""
+        # Only include non-empty modulators with their indexes
         items = []
         for i, mod in enumerate(self):
-            # Only include non-empty modulators
-            if hasattr(mod, "is_empty") and not mod.is_empty():
-                mod_dict = mod.as_dict()
-                # Add index to track position
-                mod_dict["index"] = i
-                items.append(mod_dict)
-            elif isinstance(mod, M8Block) and not mod.is_empty():
-                items.append({
-                    "data": list(mod.data),
-                    "index": i
-                })
+            if not (isinstance(mod, M8Block) or mod.is_empty()):
+                # Make sure we're calling as_dict if it exists
+                if hasattr(mod, 'as_dict') and callable(getattr(mod, 'as_dict')):
+                    item_dict = mod.as_dict()
+                else:
+                    item_dict = {"__class__": "m8.M8Block"}
+                
+                # Add index field to track position
+                item_dict["index"] = i
+                items.append(item_dict)
         
         return items
-            
+    
     @classmethod
     def from_list(cls, items):
-        instance = cls()
-        instance.clear()
+        """Create modulators from a list."""
+        instance = cls.__new__(cls)
+        list.__init__(instance)
         
         # Initialize with empty blocks
         for _ in range(BLOCK_COUNT):
             instance.append(M8Block())
         
-        # Set items at their specified indexes
+        # Set modulators at their original positions
         if items:
             for mod_data in items:
                 # Get index from data
@@ -325,23 +408,20 @@ class M8Modulators(list):
                     mod_dict = {k: v for k, v in mod_data.items() if k != "index"}
                     
                     if "type" in mod_dict and mod_dict["type"] in MODULATOR_TYPES:
-                        mod_type = mod_dict["type"]
-                        ModClass = load_class(MODULATOR_TYPES[mod_type])
-                        instance[index] = ModClass.from_dict(mod_dict)
+                        instance[index] = M8Modulator.from_dict(mod_dict)
                     elif "data" in mod_dict:
                         instance[index] = M8Block.from_dict(mod_dict)
         
         return instance
-    
+
 def create_default_modulators():
     """Create a list of default modulators (2 AHD envelopes and 2 LFOs)."""
     result = []
     
     for mod_type in DEFAULT_MODULATOR_CONFIGS:
         if mod_type in MODULATOR_TYPES:
-            full_path = MODULATOR_TYPES[mod_type]
-            ModClass = load_class(full_path)
-            result.append(ModClass())
+            mod_type_name = MODULATOR_TYPES[mod_type]
+            result.append(M8Modulator(modulator_type=mod_type_name))
         else:
             result.append(M8Block())
     return result
