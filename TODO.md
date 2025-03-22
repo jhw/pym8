@@ -1,9 +1,9 @@
 # short
 
-# medium
-
 - fx example
 - revisit empty() methods
+
+# medium
 
 - sampler slice points
 - trash80 FM drums

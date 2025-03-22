@@ -30,6 +30,8 @@
 - DO NOT create any tags unless asked
 - When asked to create a tag, lookup the list of tags and bump the minor version
 - Don't push anything to origin; I will do that
+- Check TODO.md to see what tasks are prioritized and should be worked on next
+- When completing a task, move it from its section to the "done" section in TODO.md
 
 ## Testing 
 
