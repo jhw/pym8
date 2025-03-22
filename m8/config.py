@@ -110,13 +110,12 @@ def get_instrument_type_id(instrument_type):
         return type_id
     raise ValueError(f"Type ID for instrument '{instrument_type}' not found in configuration")
 
-def get_instrument_modulators_offset(instrument_type):
-    """Retrieves modulators offset for an instrument from configuration."""
+def get_instrument_modulators_offset(instrument_type=None):
+    """Retrieves modulators offset for instruments from configuration."""
     config = load_format_config()
-    if ('instruments' in config and instrument_type in config['instruments'] and 
-        'modulators_offset' in config['instruments'][instrument_type]):
-        return config['instruments'][instrument_type]['modulators_offset']
-    raise ValueError(f"Modulators offset for instrument '{instrument_type}' not found in configuration")
+    if 'instruments' in config and 'modulators_offset' in config['instruments']:
+        return config['instruments']['modulators_offset']
+    raise ValueError("Modulators offset not found in instruments configuration")
 
 def get_instrument_types():
     """Returns a dictionary of instrument type IDs to type names from configuration."""

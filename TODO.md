@@ -1,6 +1,5 @@
 # short
 
-- harmonise modulators offset
 - instrument read_from_file
 
 # medium
@@ -34,6 +33,8 @@
 
 # done
 
+- harmonise modulators offset
+- remove redundant sample_path_offset in config
 - create dump_sampler_m8i script
 - avoid sample path duplication
 - load m8i and print from project modulator offset

@@ -93,13 +93,13 @@ def dump_m8i(file_path):
         instr_type, type_id = get_instrument_type(data)
         print(f"\nInstrument type: {instr_type} (ID: 0x{type_id:02x})")
         
-        # Get modulators offset for this instrument type
+        # Get modulators offset from config
         try:
-            modulators_offset = get_instrument_modulators_offset(instr_type)
+            modulators_offset = get_instrument_modulators_offset()
             print(f"Modulators offset: 0x{modulators_offset:02x} ({modulators_offset})")
         except ValueError:
-            print(f"Could not determine modulators offset for {instr_type}, defaulting to 63")
-            modulators_offset = 63  # Default offset for many instrument types
+            print(f"Could not determine modulators offset, defaulting to 63")
+            modulators_offset = 63  # Default offset for all instrument types
         
         # Dump only up to the modulators offset within the instrument data
         print(f"\nInstrument data size (up to modulators): {modulators_offset} bytes")
@@ -117,7 +117,7 @@ def dump_m8i(file_path):
             config = yaml.safe_load(config_file)
         
         # Get sample path offset and size from config
-        sample_path_offset = config['instruments']['sampler']['sample_path_offset']
+        sample_path_offset = config['instruments']['sampler']['sample_path']['offset']
         sample_path_size = config['instruments']['sampler']['sample_path']['size']
         
         # Calculate the section end points

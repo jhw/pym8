@@ -69,6 +69,7 @@ instruments:
   offset: 0x13A3E
   count: 128
   block_size: 215
+  modulators_offset: 63
   
   # Common parameter offsets for all instrument types
   common_offsets:
@@ -104,7 +105,6 @@ instruments:
       chorus: {offset: 30, size: 1, type: "UINT8", default: 0x00}
       delay: {offset: 31, size: 1, type: "UINT8", default: 0x00}
       reverb: {offset: 32, size: 1, type: "UINT8", default: 0x00}
-    modulators_offset: 63
     
   macrosynth:
     type_id: 0x01
@@ -124,7 +124,6 @@ instruments:
       chorus: {offset: 30, size: 1, type: "UINT8", default: 0x00}
       delay: {offset: 31, size: 1, type: "UINT8", default: 0x00}
       reverb: {offset: 32, size: 1, type: "UINT8", default: 0x00}
-    modulators_offset: 63
   
   sampler:
     type_id: 0x02
@@ -145,9 +144,7 @@ instruments:
       chorus: {offset: 31, size: 1, type: "UINT8", default: 0x00}
       delay: {offset: 32, size: 1, type: "UINT8", default: 0x00}
       reverb: {offset: 33, size: 1, type: "UINT8", default: 0x00}
-    sample_path_offset: 87
     sample_path: {offset: 87, size: 128, type: "STRING", default: ""}
-    modulators_offset: 63
     
 effect_settings:
   offset: 0x1A5C1
