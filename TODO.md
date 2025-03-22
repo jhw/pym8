@@ -1,8 +1,5 @@
 # short
 
-- config refactoring
-  5. modulators - Complex nested structure
-
 - instrument read_from_file
 
 # medium
@@ -36,6 +33,12 @@
 
 # done
 
+- config refactoring
+  - modulators section (fields, constants)
+  - metadata section (fields)
+  - phrases section (fields)
+  - chains section (fields)
+  - fx section (fields, constants)
 - harmonise modulators offset
 - remove redundant sample_path_offset in config
 - create dump_sampler_m8i script

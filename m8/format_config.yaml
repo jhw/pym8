@@ -154,14 +154,14 @@ modulators:
   count: 4
   default_config: [0x00, 0x00, 0x03, 0x03]  # 2 AHD envelopes, 2 LFOs
   
-  # Common parameter offsets for all modulator types
-  common_offsets:
-    type_dest_byte: 0  # Combined type and destination
-    amount: 1          # Modulation amount
-    
   constants:
     empty_destination: 0x00
     default_amount: 0xFF
+  
+  fields:
+    type_dest_byte: {offset: 0, size: 1, type: "UINT8", default: 0x00}
+    amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+  
   type_id_map:
     0x00: "m8.api.modulators.M8AHDEnvelope"
     0x01: "m8.api.modulators.M8ADSREnvelope"
@@ -169,10 +169,11 @@ modulators:
     0x03: "m8.api.modulators.M8LFO"
     0x04: "m8.api.modulators.M8TriggerEnvelope"
     0x05: "m8.api.modulators.M8TrackingEnvelope"
+  
   types:
     ahd_envelope: 
       id: 0x00
-      params:
+      fields:
         destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
@@ -181,7 +182,7 @@ modulators:
     
     adsr_envelope:
       id: 0x01
-      params:
+      fields:
         destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
@@ -191,7 +192,7 @@ modulators:
     
     drum_envelope:
       id: 0x02
-      params:
+      fields:
         destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         peak: {offset: 2, size: 1, type: "UINT8", default: 0x00}
@@ -200,7 +201,7 @@ modulators:
     
     lfo:
       id: 0x03
-      params:
+      fields:
         destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         oscillator: {offset: 2, size: 1, type: "UINT8", default: 0x00}
@@ -209,7 +210,7 @@ modulators:
     
     trigger_envelope:
       id: 0x04
-      params:
+      fields:
         destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
@@ -219,7 +220,7 @@ modulators:
     
     tracking_envelope:
       id: 0x05
-      params:
+      fields:
         destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         source: {offset: 2, size: 1, type: "UINT8", default: 0x00}

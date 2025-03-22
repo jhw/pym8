@@ -60,7 +60,7 @@ class M8ModulatorParams:
         config = load_format_config()
         
         # Load parameter definitions from config
-        param_defs = config["modulators"]["types"][modulator_type]["params"].copy()
+        param_defs = config["modulators"]["types"][modulator_type]["fields"].copy()
         
         return cls(param_defs, **kwargs)
     
