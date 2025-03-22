@@ -1,10 +1,16 @@
-### m8si files 22/03/25
+### m8i files 22/03/25
 
 - create a project with an imported m8i
 - export this and the m8i itself 
 - ask Claude to create file which creates project from M8s, then outputs concatenated binary data from version plus metadata plus instrument zero, and also m8i, in a way which will allow output to be pasted back here for interpretation
 - instrument needs a read from file method in the same way that project does
 - is project read from file even tested?
+
+---
+
+- seems like there is a 14 byte offset
+- that's the same as M8 version size, noting that metadata starts at 0x0E
+- feels like modulators start at a different point
 
 ### `flat` structures 22/03/25
 

@@ -1,6 +1,6 @@
 # short
 
-- m8i files [notes]
+- m8i files
 
 # medium
 
