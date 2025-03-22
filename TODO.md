@@ -1,7 +1,6 @@
 # short
 
 - bake_chains script
-- concat_phrases script
 
 # medium
 
@@ -35,6 +34,7 @@
 
 # done
 
+- concat_phrases script
 - validation of flat structures [notes]
 - check if project read/write is tested
 - refactor modulators as per instruments
