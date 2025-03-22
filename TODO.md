@@ -19,6 +19,7 @@
 
 - revoke chains model in favour of phrases only
 - replace concat_phrases with m8/tools version
+- check reverb_send, chorus_send refs
 
 # roadmap
 
