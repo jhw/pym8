@@ -1,7 +1,5 @@
 # short
 
-- are instrument type classes really required? This stuff can't be part of config?
-
 # medium
 
 - fx example
