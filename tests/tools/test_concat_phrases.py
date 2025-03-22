@@ -15,8 +15,11 @@ from m8.tools.concat_phrases import get_m8s_files, prompt_for_files, calculate_n
 class TestConcatPhrases(unittest.TestCase):
     def setUp(self):
         """Set up temporary directory and test projects."""
-        # Create temp dir
-        self.temp_dir = tempfile.mkdtemp()
+        # Create temp dir in project root
+        tmp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tmp")
+        os.makedirs(tmp_root, exist_ok=True)
+        self.temp_dir = os.path.join(tmp_root, f"test_concat_phrases_{os.getpid()}")
+        os.makedirs(self.temp_dir, exist_ok=True)
         self.out_file = os.path.join(self.temp_dir, "output.m8s")
         
         # Create test projects directory

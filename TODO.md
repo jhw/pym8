@@ -1,7 +1,5 @@
 # short
 
-- don't write to var
-- bake_chains handling of blanks
 - m8i files [notes]
 
 # medium
@@ -35,6 +33,8 @@
 
 # done
 
+- don't write to var
+- bake_chains handling of blanks
 - bake_chains script
 - remove typing
 - concat_phrases script
