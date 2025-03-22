@@ -1,5 +1,7 @@
 # short
 
+- remove typing
+
 - bake_chains script
 
 # medium
