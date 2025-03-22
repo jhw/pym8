@@ -1,7 +1,7 @@
 # short
 
-- load m8i and print from project modulator offset
-- adapt to print modulators from modulator offse
+- harmonise modulators offset
+- instrument read_from_file
 
 # medium
 
@@ -34,6 +34,10 @@
 
 # done
 
+- create dump_sampler_m8i script
+- avoid sample path duplication
+- load m8i and print from project modulator offset
+- adapt to print modulators from modulator offset
 - remove version
 - don't write to var
 - bake_chains handling of blanks
