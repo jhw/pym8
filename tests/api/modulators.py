@@ -1,7 +1,7 @@
 import unittest
 from m8.api import M8Block
 from m8.api.modulators import (
-    M8Modulator, M8ModulatorParams, ModulatorType, M8Modulators, create_default_modulators,
+    M8Modulator, M8ModulatorParams, M8ModulatorType, M8Modulators, create_default_modulators,
     BLOCK_SIZE, BLOCK_COUNT, MODULATOR_TYPES
 )
 

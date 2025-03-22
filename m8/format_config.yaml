@@ -14,6 +14,10 @@ groove:
   
 song:
   offset: 0x2EE
+  row_count: 255
+  col_count: 8
+  constants:
+    empty_chain: 0xFF
   
 phrases:
   offset: 0xAEE
@@ -72,6 +76,16 @@ instruments:
     volume: 15
     pitch: 16
     finetune: 17
+    
+  # Common parameter defaults for all instrument types
+  common_defaults:
+    name: " "
+    transpose: 0x4
+    eq: 0x1
+    table_tick: 0x01
+    volume: 0x0
+    pitch: 0x0
+    finetune: 0x80
   
   # Parameter types enum
   param_types:

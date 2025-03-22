@@ -1,10 +1,10 @@
 # short
 
-- fx example
-- revisit empty() methods
+- are instrument type classes really required? This stuff can't be part of config?
 
 # medium
 
+- fx example
 - sampler slice points
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
@@ -31,6 +31,10 @@
 
 # done
 
+- instrument type classes should have M8 prefix 
+- song counts should be in config 
+- remove custom IndexError (not needed/used)
+- instrument common synthesiser params should be part of config
 - instrument read_from_file and write_to_file
 - config refactoring
   - modulators section (fields, constants)

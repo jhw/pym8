@@ -7,7 +7,7 @@ from m8.api.instruments import (
     BLOCK_SIZE, BLOCK_COUNT, INSTRUMENT_TYPES
 )
 from m8.api import M8Block
-from m8.api.modulators import M8Modulator, M8Modulators, ModulatorType, create_default_modulators
+from m8.api.modulators import M8Modulator, M8Modulators, M8ModulatorType, create_default_modulators
 
 class TestM8Params(unittest.TestCase):
     def setUp(self):
@@ -271,7 +271,7 @@ class TestInstrumentBase(unittest.TestCase):
         )
         
         # Add a modulator for testing
-        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
         instr.modulators[0] = mod
         
         # Write to binary
@@ -312,7 +312,7 @@ class TestInstrumentBase(unittest.TestCase):
         )
         
         # Add a modulator
-        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
         original.modulators[0] = mod
         
         # Clone
@@ -375,7 +375,7 @@ class TestInstrumentBase(unittest.TestCase):
         self.assertEqual(instr.available_modulator_slot, 0)
         
         # Fill first slot
-        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
         instr.modulators[0] = mod
         
         # Now second slot should be available
@@ -383,7 +383,7 @@ class TestInstrumentBase(unittest.TestCase):
         
         # Fill all slots
         for i in range(len(instr.modulators)):
-            instr.modulators[i] = M8Modulator(modulator_type=ModulatorType.LFO, destination=i+1, amount=100, frequency=50)
+            instr.modulators[i] = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=i+1, amount=100, frequency=50)
         
         # No slots available
         self.assertIsNone(instr.available_modulator_slot)

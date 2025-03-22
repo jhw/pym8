@@ -1,6 +1,6 @@
 import unittest
 from m8.api.instruments import M8Instrument, M8Params
-from m8.api.modulators import M8Modulator, ModulatorType
+from m8.api.modulators import M8Modulator, M8ModulatorType
 
 class TestM8Params(unittest.TestCase):
     def test_constructor_and_defaults(self):
@@ -467,7 +467,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         )
         
         # Add a modulator
-        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
         synth.modulators[0] = mod
         
         # Convert to dict

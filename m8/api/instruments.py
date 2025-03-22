@@ -2,7 +2,7 @@
 from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from enum import Enum, auto
-from m8.config import load_format_config, get_instrument_type_id, get_instrument_modulators_offset, get_instrument_types, get_instrument_common_offsets
+from m8.config import load_format_config, get_instrument_type_id, get_instrument_modulators_offset, get_instrument_types, get_instrument_common_offsets, get_instrument_common_defaults
 
 import random
 
@@ -13,7 +13,7 @@ config = load_format_config()
 INSTRUMENT_TYPES = get_instrument_types()
 
 # Instrument type enum
-class InstrumentType(Enum):
+class M8InstrumentType(Enum):
     WAVSYNTH = "wavsynth"
     MACROSYNTH = "macrosynth"
     SAMPLER = "sampler"
@@ -200,21 +200,21 @@ class M8Instrument:
         # Process instrument_type
         if instrument_type is None:
             # Default to wavsynth if not specified
-            instrument_type = InstrumentType.WAVSYNTH.value
+            instrument_type = M8InstrumentType.WAVSYNTH.value
         elif isinstance(instrument_type, int):
             # Convert type ID to string name
-            instr_type_enum = InstrumentType.from_id(instrument_type)
+            instr_type_enum = M8InstrumentType.from_id(instrument_type)
             if instr_type_enum:
                 instrument_type = instr_type_enum.value
             else:
                 raise ValueError(f"Unknown instrument type ID: {instrument_type}")
-        elif isinstance(instrument_type, InstrumentType):
+        elif isinstance(instrument_type, M8InstrumentType):
             # If it's already an enum, get its value
             instrument_type = instrument_type.value
         
         # Set the instrument type and ID
         self.instrument_type = instrument_type
-        self.type = InstrumentType.get_type_id(instrument_type)
+        self.type = M8InstrumentType.get_type_id(instrument_type)
         
         # Generate sequential name if not provided
         if 'name' not in kwargs:
@@ -229,14 +229,17 @@ class M8Instrument:
             # Increment counter for next instrument
             _INSTRUMENT_COUNTER += 1
         
+        # Get common default parameters from config
+        common_defaults = get_instrument_common_defaults()
+        
         # Common synthesizer parameters
-        self.name = " "
-        self.transpose = 0x4
-        self.eq = 0x1
-        self.table_tick = 0x01
-        self.volume = 0x0
-        self.pitch = 0x0
-        self.finetune = 0x80  # Center value for fine tuning
+        self.name = common_defaults["name"]
+        self.transpose = common_defaults["transpose"]
+        self.eq = common_defaults["eq"]
+        self.table_tick = common_defaults["table_tick"]
+        self.volume = common_defaults["volume"]
+        self.pitch = common_defaults["pitch"]
+        self.finetune = common_defaults["finetune"]  # Center value for fine tuning
         
         # Create params object based on instrument type
         self.params = M8Params.from_config(instrument_type)

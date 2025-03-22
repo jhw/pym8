@@ -1,6 +1,6 @@
 import unittest
 from m8.api.instruments import M8Params, M8Instrument
-from m8.api.modulators import M8Modulator, ModulatorType
+from m8.api.modulators import M8Modulator, M8ModulatorType
 
 class TestM8SamplerParams(unittest.TestCase):
     def test_constructor_and_defaults(self):
@@ -518,7 +518,7 @@ class TestM8Sampler(unittest.TestCase):
         sampler = M8Instrument(instrument_type="sampler")
         
         # Add a modulator
-        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
         slot = sampler.add_modulator(mod)
         
         # Should use first slot
@@ -547,7 +547,7 @@ class TestM8Sampler(unittest.TestCase):
         )
         
         # Add a modulator
-        mod = M8Modulator(modulator_type=ModulatorType.LFO, destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
         sampler.modulators[0] = mod
         
         # Convert to dict

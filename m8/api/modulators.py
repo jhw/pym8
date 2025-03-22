@@ -16,7 +16,7 @@ MODULATOR_TYPES = get_modulator_types()
 DEFAULT_MODULATOR_CONFIGS = config["default_config"]  # 2 AHD envelopes, 2 LFOs
 
 # Modulator type enum
-class ModulatorType(Enum):
+class M8ModulatorType(Enum):
     AHD_ENVELOPE = "ahd_envelope"
     ADSR_ENVELOPE = "adsr_envelope"
     DRUM_ENVELOPE = "drum_envelope"
@@ -151,21 +151,21 @@ class M8Modulator:
         # Process modulator_type
         if modulator_type is None:
             # Default to AHD envelope if not specified
-            modulator_type = ModulatorType.AHD_ENVELOPE.value
+            modulator_type = M8ModulatorType.AHD_ENVELOPE.value
         elif isinstance(modulator_type, int):
             # Convert type ID to string name
-            mod_type_enum = ModulatorType.from_id(modulator_type)
+            mod_type_enum = M8ModulatorType.from_id(modulator_type)
             if mod_type_enum:
                 modulator_type = mod_type_enum.value
             else:
                 raise ValueError(f"Unknown modulator type ID: {modulator_type}")
-        elif isinstance(modulator_type, ModulatorType):
+        elif isinstance(modulator_type, M8ModulatorType):
             # If it's already an enum, get its value
             modulator_type = modulator_type.value
         
         # Set the modulator type and ID
         self.modulator_type = modulator_type
-        self.type = ModulatorType.get_type_id(modulator_type)
+        self.type = M8ModulatorType.get_type_id(modulator_type)
         
         # Common modulator parameters
         self.destination = self.EMPTY_DESTINATION

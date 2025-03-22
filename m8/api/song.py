@@ -1,13 +1,18 @@
 from m8.api import M8ValidationError
+from m8.config import load_format_config
 
-# Module-level constants
-COL_COUNT = 8       # Number of tracks/columns in the song
-ROW_COUNT = 255     # Maximum number of rows in the song
+# Load configuration
+config = load_format_config()
+song_config = config["song"]
+
+# Module-level constants from config
+COL_COUNT = song_config["col_count"]       # Number of tracks/columns in the song
+ROW_COUNT = song_config["row_count"]       # Maximum number of rows in the song
 
 class M8SongRow:
     """Represents a single row in the M8 song grid with 8 columns of chain references."""
     
-    EMPTY_CHAIN = 0xFF  # Value indicating no chain is assigned
+    EMPTY_CHAIN = song_config["constants"]["empty_chain"]  # Value indicating no chain is assigned
     
     def __init__(self, **kwargs):
         self._data = bytearray([self.EMPTY_CHAIN] * COL_COUNT)
