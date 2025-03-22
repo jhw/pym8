@@ -1,7 +1,7 @@
 # short
 
+- don't write to var
 - bake_chains handling of blanks
-
 - m8i files [notes]
 
 # medium
