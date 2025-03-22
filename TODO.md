@@ -1,6 +1,5 @@
 # short
 
-- check if project read/write is tested
 - validation of flat structures [notes]
 - m8i files [notes]
 
@@ -37,6 +36,7 @@
 
 # done
 
+- check if project read/write is tested
 - refactor modulators as per instruments
 - move instruments
 - song/chain/phrase example
