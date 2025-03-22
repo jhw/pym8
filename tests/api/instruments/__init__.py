@@ -1,5 +1,7 @@
 # tests/api/instruments/__init__.py
 import unittest
+import os
+import tempfile
 from m8.api.instruments import (
     M8ParamType, M8Params, M8Instrument, M8Instruments,
     BLOCK_SIZE, BLOCK_COUNT, INSTRUMENT_TYPES
@@ -701,6 +703,64 @@ class TestM8Instruments(unittest.TestCase):
         # Test with empty list
         instruments = M8Instruments.from_list([])
         self.assertTrue(instruments.is_empty())
+
+
+class TestInstrumentFileIO(unittest.TestCase):
+    def setUp(self):
+        self.fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures', '303.m8i')
+        self.temp_dir = tempfile.mkdtemp()
+        self.temp_path = os.path.join(self.temp_dir, 'test_instrument.m8i')
+        
+    def tearDown(self):
+        if os.path.exists(self.temp_path):
+            os.remove(self.temp_path)
+        os.rmdir(self.temp_dir)
+        
+    def test_read_from_file(self):
+        instrument = M8Instrument.read_from_file(self.fixture_path)
+        
+        # Should be a sampler since 303.m8i is a sampler instrument
+        self.assertEqual(instrument.instrument_type, "sampler")
+        
+        # Check basic properties
+        self.assertEqual(instrument.type, 0x02)  # Sampler type ID
+        
+        # Make sure it read the modulators
+        self.assertEqual(len(instrument.modulators), 4)
+        
+    def test_write_to_file(self):
+        # Read from fixture
+        original = M8Instrument.read_from_file(self.fixture_path)
+        
+        # Write to temp file
+        original.write_to_file(self.temp_path)
+        
+        # Read back from temp file
+        read_back = M8Instrument.read_from_file(self.temp_path)
+        
+        # Should match original
+        self.assertEqual(read_back.instrument_type, original.instrument_type)
+        self.assertEqual(read_back.type, original.type)
+        self.assertEqual(read_back.name, original.name)
+        
+        # Verify file was created with correct size
+        file_size = os.path.getsize(self.temp_path)
+        self.assertGreater(file_size, 0)
+        
+    def test_round_trip(self):
+        # Create a new instrument
+        original = M8Instrument(instrument_type="wavsynth", name="TestInstr")
+        
+        # Write to file
+        original.write_to_file(self.temp_path)
+        
+        # Read back
+        read_back = M8Instrument.read_from_file(self.temp_path)
+        
+        # Compare
+        self.assertEqual(read_back.instrument_type, original.instrument_type)
+        self.assertEqual(read_back.type, original.type)
+        self.assertEqual(read_back.name, original.name)
 
 
 if __name__ == '__main__':

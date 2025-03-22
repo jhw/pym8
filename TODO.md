@@ -1,7 +1,5 @@
 # short
 
-- instrument read_from_file
-
 # medium
 
 - fx example
@@ -33,6 +31,7 @@
 
 # done
 
+- instrument read_from_file and write_to_file
 - config refactoring
   - modulators section (fields, constants)
   - metadata section (fields)

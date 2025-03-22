@@ -485,6 +485,31 @@ class M8Instrument:
         else:
             # Return an M8Block for unknown types
             return M8Block.read(data)
+            
+    @classmethod
+    def read_from_file(cls, file_path):
+        with open(file_path, "rb") as f:
+            data = f.read()
+        
+        metadata_offset = load_format_config()["metadata"]["offset"]
+        if isinstance(metadata_offset, str) and metadata_offset.startswith('0x'):
+            metadata_offset = int(metadata_offset, 16)
+        
+        instrument_data = data[metadata_offset:]
+        
+        return cls.read(instrument_data)
+        
+    def write_to_file(self, file_path):
+        instrument_data = self.write()
+        
+        metadata_offset = load_format_config()["metadata"]["offset"]
+        if isinstance(metadata_offset, str) and metadata_offset.startswith('0x'):
+            metadata_offset = int(metadata_offset, 16)
+            
+        m8i_data = bytearray([0] * metadata_offset) + instrument_data
+        
+        with open(file_path, "wb") as f:
+            f.write(m8i_data)
 
 class M8Instruments(list):
     """Collection of M8 instruments."""
