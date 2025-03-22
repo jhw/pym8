@@ -3,7 +3,6 @@ import argparse
 import os
 import re
 import sys
-from typing import List, Dict, Tuple
 
 from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument, M8Instruments
@@ -12,7 +11,7 @@ from m8.api.phrases import M8Phrase, M8Phrases
 from m8.api.song import M8SongMatrix
 
 
-def get_m8s_files(directory: str, pattern: str = None) -> List[str]:
+def get_m8s_files(directory, pattern=None):
     """
     Get a list of .m8s files in the specified directory, optionally filtering by pattern.
     """
@@ -39,7 +38,7 @@ def get_m8s_files(directory: str, pattern: str = None) -> List[str]:
     return files
 
 
-def prompt_for_files(files: List[str]) -> List[str]:
+def prompt_for_files(files):
     """
     Prompt the user to select files for processing.
     """
@@ -68,7 +67,7 @@ def prompt_for_files(files: List[str]) -> List[str]:
     return selected_files
 
 
-def calculate_new_id(base_id: int, row: int, col: int) -> int:
+def calculate_new_id(base_id, row, col):
     """
     Calculate new ID based on the M8 row/column pattern.
     In M8, tens digit = column, ones digit = row.
@@ -76,7 +75,7 @@ def calculate_new_id(base_id: int, row: int, col: int) -> int:
     return (col * 10) + row
 
 
-def concat_projects(projects: List[M8Project]) -> M8Project:
+def concat_projects(projects):
     """
     Concatenate multiple M8 projects with one-to-one chain structure.
     Projects are arranged vertically in the output.

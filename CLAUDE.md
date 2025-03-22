@@ -14,8 +14,8 @@
 
 - DO NOT create backwards compatible code (no "if legacy format..." logic)
 - DO NOT create inline defaults (e.g., `value = data.get("field", "default")`) - assume data is valid
-- DO NOT use type hints
-- Add explanatory comments only for complex algorithms, non-obvious design decisions, and important implementation details that would aid future maintenance and refactoring
+- ABSOLUTELY NO TYPE HINTS! Never include Python type annotations in generated code
+- COMMENTS POLICY: DO NOT add any explanatory comments to code unless explicitly requested; only add comments for genuinely complex algorithms and critical implementation details
 - Use descriptive variable names that match the domain terminology
 - Keep functions focused on a single responsibility
 - Follow existing code style and conventions in the project

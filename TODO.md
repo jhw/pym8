@@ -1,7 +1,5 @@
 # short
 
-- remove typing
-
 - bake_chains script
 
 # medium
@@ -37,6 +35,7 @@
 
 # done
 
+- remove typing
 - concat_phrases script
 - validation of flat structures [notes]
 - check if project read/write is tested
