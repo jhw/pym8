@@ -8,23 +8,23 @@ config = load_format_config()["metadata"]
 class M8Metadata:
     """Stores M8 tracker metadata including song name, directory, tempo, key, transpose and quantize."""
     
-    DIRECTORY_OFFSET = config["strings"]["directory"]["offset"]
-    DIRECTORY_LENGTH = config["strings"]["directory"]["length"]
-    TRANSPOSE_OFFSET = config["offsets"]["transpose"]
-    TEMPO_OFFSET = config["offsets"]["tempo"]
-    TEMPO_SIZE = config["offsets"]["tempo_size"]
-    QUANTIZE_OFFSET = config["offsets"]["quantize"]
-    NAME_OFFSET = config["strings"]["name"]["offset"]
-    NAME_LENGTH = config["strings"]["name"]["length"]
-    KEY_OFFSET = config["offsets"]["key"]
+    DIRECTORY_OFFSET = config["fields"]["directory"]["offset"]
+    DIRECTORY_LENGTH = config["fields"]["directory"]["size"]
+    TRANSPOSE_OFFSET = config["fields"]["transpose"]["offset"]
+    TEMPO_OFFSET = config["fields"]["tempo"]["offset"]
+    TEMPO_SIZE = config["fields"]["tempo"]["size"]
+    QUANTIZE_OFFSET = config["fields"]["quantize"]["offset"]
+    NAME_OFFSET = config["fields"]["name"]["offset"]
+    NAME_LENGTH = config["fields"]["name"]["size"]
+    KEY_OFFSET = config["fields"]["key"]["offset"]
     BLOCK_SIZE = config["block_size"]
 
-    def __init__(self, directory=config["default_values"]["directory"], 
-                 transpose=config["default_values"]["transpose"], 
-                 tempo=config["default_values"]["tempo"], 
-                 quantize=config["default_values"]["quantize"], 
-                 name=config["default_values"]["name"], 
-                 key=config["default_values"]["key"]):
+    def __init__(self, directory=config["fields"]["directory"]["default"], 
+                 transpose=config["fields"]["transpose"]["default"], 
+                 tempo=config["fields"]["tempo"]["default"], 
+                 quantize=config["fields"]["quantize"]["default"], 
+                 name=config["fields"]["name"]["default"], 
+                 key=config["fields"]["key"]["default"]):
         self.directory = directory
         self.transpose = transpose
         self.tempo = tempo

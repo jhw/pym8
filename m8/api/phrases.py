@@ -16,10 +16,10 @@ PHRASE_COUNT = config["count"]              # Maximum number of phrases
 class M8PhraseStep:
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""
     
-    NOTE_OFFSET = config["offsets"]["note"]
-    VELOCITY_OFFSET = config["offsets"]["velocity"]
-    INSTRUMENT_OFFSET = config["offsets"]["instrument"]
-    FX_OFFSET = config["offsets"]["fx"]
+    NOTE_OFFSET = config["fields"]["note"]["offset"]
+    VELOCITY_OFFSET = config["fields"]["velocity"]["offset"]
+    INSTRUMENT_OFFSET = config["fields"]["instrument"]["offset"]
+    FX_OFFSET = config["fields"]["fx"]["offset"]
     
     BASE_DATA_SIZE = config["constants"]["base_data_size"]
     

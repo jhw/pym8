@@ -11,10 +11,10 @@ BLOCK_COUNT = config["block_count"]
 class M8FXTuple:
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
     
-    KEY_OFFSET = 0
-    VALUE_OFFSET = 1
-    EMPTY_KEY = config["empty_key"]
-    DEFAULT_VALUE = config["default_value"]
+    KEY_OFFSET = config["fields"]["key"]["offset"]
+    VALUE_OFFSET = config["fields"]["value"]["offset"]
+    EMPTY_KEY = config["constants"]["empty_key"]
+    DEFAULT_VALUE = config["constants"]["default_value"]
     
     def __init__(self, key=EMPTY_KEY, value=DEFAULT_VALUE):
         self._data = bytearray([key, value])

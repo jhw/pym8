@@ -13,8 +13,8 @@ CHAIN_COUNT = config["count"]
 class M8ChainStep:
     """Represents a single step in an M8 chain that references a phrase with transposition."""
     
-    PHRASE_OFFSET = config["offsets"]["phrase"]
-    TRANSPOSE_OFFSET = config["offsets"]["transpose"]
+    PHRASE_OFFSET = config["fields"]["phrase"]["offset"]
+    TRANSPOSE_OFFSET = config["fields"]["transpose"]["offset"]
     EMPTY_PHRASE = config["constants"]["empty_phrase"]
     DEFAULT_TRANSPOSE = config["constants"]["default_transpose"]
     

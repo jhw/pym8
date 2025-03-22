@@ -1,5 +1,8 @@
 # short
 
+- config refactoring
+  5. modulators - Complex nested structure
+
 - instrument read_from_file
 
 # medium

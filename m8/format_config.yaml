@@ -1,26 +1,13 @@
 metadata:
   offset: 0x0E
   block_size: 147
-  strings:
-    directory:
-      offset: 0
-      length: 128
-    name:
-      offset: 134
-      length: 12
-  offsets:
-    transpose: 128
-    tempo: 129
-    tempo_size: 4
-    quantize: 133
-    key: 146
-  default_values:
-    directory: "/Songs/"
-    transpose: 0
-    tempo: 120.0
-    quantize: 0
-    name: "HELLO"
-    key: 0
+  fields:
+    directory: {offset: 0, size: 128, type: "STRING", default: "/Songs/"}
+    transpose: {offset: 128, size: 1, type: "UINT8", default: 0}
+    tempo: {offset: 129, size: 4, type: "FLOAT", default: 120.0}
+    quantize: {offset: 133, size: 1, type: "UINT8", default: 0}
+    name: {offset: 134, size: 12, type: "STRING", default: "HELLO"}
+    key: {offset: 146, size: 1, type: "UINT8", default: 0}
   
 groove:
   offset: 0xEE
@@ -38,11 +25,11 @@ phrases:
     empty_note: 0xFF
     empty_velocity: 0xFF
     empty_instrument: 0xFF
-  offsets:
-    note: 0
-    velocity: 1
-    instrument: 2
-    fx: 3
+  fields:
+    note: {offset: 0, size: 1, type: "UINT8", default: 0xFF}
+    velocity: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
+    instrument: {offset: 2, size: 1, type: "UINT8", default: 0xFF}
+    fx: {offset: 3, size: 6, type: "UINT8", default: 0x00}
   
 chains:
   offset: 0x9A5E
@@ -52,9 +39,9 @@ chains:
   constants:
     empty_phrase: 0xFF
     default_transpose: 0x00
-  offsets:
-    phrase: 0
-    transpose: 1
+  fields:
+    phrase: {offset: 0, size: 1, type: "UINT8", default: 0xFF}
+    transpose: {offset: 1, size: 1, type: "UINT8", default: 0x00}
   
 table:
   offset: 0xBA3E
@@ -62,8 +49,12 @@ table:
 fx:
   block_size: 2
   block_count: 3
-  default_value: 0x00
-  empty_key: 0xFF
+  constants:
+    default_value: 0x00
+    empty_key: 0xFF
+  fields:
+    key: {offset: 0, size: 1, type: "UINT8", default: 0xFF}
+    value: {offset: 1, size: 1, type: "UINT8", default: 0x00}
   
 instruments:
   offset: 0x13A3E
