@@ -1,3 +1,36 @@
+### fmsynth mods 22/03/25
+
+ Now I see the issue more clearly. The MOD_OFFSET is a critical value that determines where modulators are written
+  relative to SynthParams content. Let me recalculate the absolute byte positions by carefully tracing the code flow:
+
+  WavSynth:
+  - Common fields: 12 + 1 + 1 + 3 = 17 bytes
+  - Synth-specific fields: 5 bytes (shape, size, mult, warp, scan)
+  - SynthParams begins at byte 22
+  - SynthParams.write() is called with MOD_OFFSET = 30
+  - This means modulators are written starting at position 22 + 30 = 52 bytes from the start
+
+  MacroSynth:
+  - Common fields: 12 + 1 + 1 + 3 = 17 bytes
+  - Synth-specific fields: 5 bytes (shape, timbre, color, degrade, redux)
+  - SynthParams begins at byte 22
+  - SynthParams.write() is called with MOD_OFFSET = 30
+  - This means modulators are written starting at position 22 + 30 = 52 bytes from the start
+
+  FMSynth:
+  - Common fields: 12 + 1 + 1 + 3 = 17 bytes
+  - algo: 1 byte
+  - Operator data: 28 bytes (4 bytes shapes + 8 bytes ratio + 8 bytes level + 4 bytes mod_a + 4 bytes mod_b)
+  - mod1-4: 4 bytes
+  - SynthParams begins at byte 50
+  - SynthParams.write() is called with MOD_OFFSET = 2
+  - This means modulators are written starting at position 50 + 2 = 52 bytes from the start
+
+  The modulators in all three synth types actually start at the same byte position: 52!
+
+  This explains the strange small MOD_OFFSET value of 2 for FMSynth - it's compensating for all the additional operator
+   data to ensure the modulators all align at the same position.
+
 ### m8i files 22/03/25
 
 - create a project with an imported m8i
