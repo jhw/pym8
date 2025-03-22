@@ -115,6 +115,20 @@ class M8Chain(list):
                         f"Chain step {step_idx} references non-existent or empty "
                         f"phrase {step.phrase}"
                     )
+                    
+    def validate_one_to_one_pattern(self, chain_idx):
+        """Validates this chain follows the one-to-one pattern."""
+        # Rule 1: Only the first step should have a phrase
+        valid_first_step = self[0].phrase != M8ChainStep.EMPTY_PHRASE
+        
+        # Rule 2: All other steps must be empty
+        all_other_steps_empty = all(step.phrase == M8ChainStep.EMPTY_PHRASE for step in self[1:])
+        
+        # Rule 3: The phrase ID must match the chain ID
+        phrase_matches_chain_id = self[0].phrase == chain_idx
+        
+        # All conditions must be met
+        return valid_first_step and all_other_steps_empty and phrase_matches_chain_id
     
     @property
     def available_step_slot(self):

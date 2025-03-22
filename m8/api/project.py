@@ -127,6 +127,15 @@ class M8Project:
         
         # Phrases -> Instruments validation
         self.phrases.validate_references_instruments(self.instruments)
+        
+    def validate_one_to_one_chains(self):
+        """Validates chains have one phrase matching their own ID."""
+        for chain_idx, chain in enumerate(self.chains):
+            if not chain.is_empty():
+                if not chain.validate_one_to_one_pattern(chain_idx):
+                    return False
+                    
+        return True
     
     def write(self) -> bytes:
         output = bytearray(self.data)

@@ -155,6 +155,35 @@ class TestM8Project(unittest.TestCase):
         # Should fail validation
         with self.assertRaises(M8ValidationError):
             test_chain.validate_references_phrases(test_phrases)
+            
+    def test_validate_one_to_one_chains(self):
+        from m8.api.chains import M8ChainStep, M8Chain
+        
+        # Create a test project with chains that follow one-to-one pattern
+        project = M8Project()
+        project.chains = M8Chains()
+        
+        # Chain 0 references Phrase 0 in first step
+        chain0 = M8Chain()
+        chain0[0].phrase = 0
+        project.chains[0] = chain0
+        
+        # Chain 1 references Phrase 1 in first step
+        chain1 = M8Chain()
+        chain1[0].phrase = 1
+        project.chains[1] = chain1
+        
+        # Should validate successfully
+        self.assertTrue(project.validate_one_to_one_chains())
+        
+        # Now break the pattern in chain 1 by using a different phrase ID
+        project.chains[1][0].phrase = 5
+        self.assertFalse(project.validate_one_to_one_chains())
+        
+        # Fix chain 1 but add a second phrase reference in chain 0
+        project.chains[1][0].phrase = 1
+        project.chains[0][1].phrase = 2
+        self.assertFalse(project.validate_one_to_one_chains())
     
     def test_write_read_file(self):
         # Skip this test if we don't have the template file

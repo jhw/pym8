@@ -289,6 +289,31 @@ class TestM8Chain(unittest.TestCase):
         # Test case 3: Empty chain should be valid
         chain = M8Chain()
         chain.validate_references_phrases([])  # Should not raise even with empty phrases list
+        
+    def test_validate_one_to_one_pattern(self):
+        # Test case 1: Valid one-to-one pattern (chain 5 with phrase 5)
+        chain = M8Chain()
+        chain[0] = M8ChainStep(phrase=5, transpose=0)
+        # All other steps are empty by default
+        
+        self.assertTrue(chain.validate_one_to_one_pattern(5))
+        
+        # Test case 2: Invalid - phrase ID doesn't match chain ID
+        chain = M8Chain()
+        chain[0] = M8ChainStep(phrase=10, transpose=0)
+        
+        self.assertFalse(chain.validate_one_to_one_pattern(5))
+        
+        # Test case 3: Invalid - has a second phrase
+        chain = M8Chain()
+        chain[0] = M8ChainStep(phrase=5, transpose=0)
+        chain[1] = M8ChainStep(phrase=6, transpose=0)
+        
+        self.assertFalse(chain.validate_one_to_one_pattern(5))
+        
+        # Test case 4: Invalid - empty chain (no phrases)
+        chain = M8Chain()
+        self.assertFalse(chain.validate_one_to_one_pattern(5))
     
     def test_available_step_slot(self):
         # Test available_step_slot property
