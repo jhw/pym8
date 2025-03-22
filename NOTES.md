@@ -1,3 +1,19 @@
+### m8si files 22/03/25
+
+- create a project with an imported m8i
+- export this and the m8i itself 
+- ask Claude to create file which creates project from M8s, then outputs concatenated binary data from version plus metadata plus instrument zero, and also m8i, in a way which will allow output to be pasted back here for interpretation
+- instrument needs a read from file method in the same way that project does
+- is project read from file even tested?
+
+### `flat` structures 22/03/25
+
+- bake chains should be part of tooling scripts here
+- but concat phrases should be part as well
+- key condition is that chains are single element and have the same phrase number
+- could be part of validation
+- but what to call it?
+
 ### pico waveforms 08/03/25
 
 ```

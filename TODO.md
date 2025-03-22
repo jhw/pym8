@@ -1,19 +1,25 @@
 # short
 
-- fx example
-- chain baking script
-- m8i files
+- check if project read/write is tested
+- validation of flat structures [notes]
+- m8i files [notes]
 
 # medium
 
+- fx example
 - revisit empty() methods
+
+- bake_chains script
+- concat_phrases script
+
 - sampler slice points
 - trash80 FM drums
 - rave stabs >> hypersynth, tables
 
 # beats
 
-- you don't need chains model, just phrases
+- revoke chains model in favour of phrases only
+- replace concat_phrases with m8/tools version
 
 # roadmap
 
