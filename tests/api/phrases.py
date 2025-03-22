@@ -501,7 +501,7 @@ class TestM8Phrase(unittest.TestCase):
         clone[0].note = 48
         self.assertEqual(original[0].note, 60)
     
-    def test_validate_instruments(self):
+    def test_validate_references_instruments(self):
         # Create mock instruments list
         mock_instruments = [type('MockInstrument', (), {'is_empty': lambda: False})] * 10
         # Add an M8Block instance which should be treated as empty
@@ -511,23 +511,23 @@ class TestM8Phrase(unittest.TestCase):
         phrase = M8Phrase()
         phrase[0] = M8PhraseStep(note=60, velocity=100, instrument=5)
         phrase[3] = M8PhraseStep(note=72, velocity=80, instrument=3)
-        phrase.validate_instruments(mock_instruments)  # Should not raise
+        phrase.validate_references_instruments(mock_instruments)  # Should not raise
         
         # Test case 2: Reference to non-existent instrument
         phrase = M8Phrase()
         phrase[0] = M8PhraseStep(note=60, velocity=100, instrument=20)  # Instrument 20 doesn't exist
         with self.assertRaises(M8ValidationError):
-            phrase.validate_instruments(mock_instruments)
+            phrase.validate_references_instruments(mock_instruments)
         
         # Test case 3: Reference to empty instrument (M8Block)
         phrase = M8Phrase()
         phrase[0] = M8PhraseStep(note=60, velocity=100, instrument=10)  # Instrument 10 is an M8Block
         with self.assertRaises(M8ValidationError):
-            phrase.validate_instruments(mock_instruments)
+            phrase.validate_references_instruments(mock_instruments)
         
         # Test case 4: Empty phrase should be valid
         phrase = M8Phrase()
-        phrase.validate_instruments([])  # Should not raise
+        phrase.validate_references_instruments([])  # Should not raise
     
     def test_available_step_slot(self):
         # Test available_step_slot property
@@ -831,7 +831,7 @@ class TestM8Phrases(unittest.TestCase):
         clone[0][0].note = 48
         self.assertEqual(original[0][0].note, 60)
     
-    def test_validate_instruments(self):
+    def test_validate_references_instruments(self):
         # Create mock instruments list
         mock_instruments = [type('MockInstrument', (), {'is_empty': lambda: False})] * 10
         
@@ -839,13 +839,13 @@ class TestM8Phrases(unittest.TestCase):
         phrases = M8Phrases()
         phrases[0][0] = M8PhraseStep(note=60, velocity=100, instrument=5)
         phrases[2][3] = M8PhraseStep(note=72, velocity=80, instrument=3)
-        phrases.validate_instruments(mock_instruments)  # Should not raise
+        phrases.validate_references_instruments(mock_instruments)  # Should not raise
         
         # Test case 2: Reference to non-existent instrument
         phrases = M8Phrases()
         phrases[0][0] = M8PhraseStep(note=60, velocity=100, instrument=20)  # Instrument 20 doesn't exist
         with self.assertRaises(M8ValidationError):
-            phrases.validate_instruments(mock_instruments)
+            phrases.validate_references_instruments(mock_instruments)
     
     def test_as_list(self):
         # Test as_list method

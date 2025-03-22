@@ -149,7 +149,7 @@ class TestM8SongRow(unittest.TestCase):
         clone[0] = 30
         self.assertEqual(original[0], 10)
     
-    def test_validate_chains(self):
+    def test_validate_references_chains(self):
         # Mock chains list for validation
         mock_chains = [
             type('MockChain', (), {'is_empty': lambda: False}),  # Chain 0 (not empty)
@@ -161,23 +161,23 @@ class TestM8SongRow(unittest.TestCase):
         row = M8SongRow()
         row[0] = 0  # References valid chain 0
         row[1] = 1  # References valid chain 1
-        row.validate_chains(mock_chains)  # Should not raise exception
+        row.validate_references_chains(mock_chains)  # Should not raise exception
         
         # Test case 2: Reference to non-existent chain
         row = M8SongRow()
         row[0] = 5  # References chain 5, which doesn't exist
         with self.assertRaises(M8ValidationError):
-            row.validate_chains(mock_chains)
+            row.validate_references_chains(mock_chains)
         
         # Test case 3: Reference to empty chain
         row = M8SongRow()
         row[0] = 2  # References chain 2, which is empty
         with self.assertRaises(M8ValidationError):
-            row.validate_chains(mock_chains)
+            row.validate_references_chains(mock_chains)
         
         # Test case 4: Empty row should always be valid
         row = M8SongRow()
-        row.validate_chains([])  # Should not raise exception even with empty chains list
+        row.validate_references_chains([])  # Should not raise exception even with empty chains list
     
     def test_as_dict(self):
         # Test as_dict method
@@ -377,7 +377,7 @@ class TestM8SongMatrix(unittest.TestCase):
         clone[0][0] = 10
         self.assertEqual(original[0][0], 1)
     
-    def test_validate_chains(self):
+    def test_validate_references_chains(self):
         # Mock chains list for validation
         mock_chains = [
             type('MockChain', (), {'is_empty': lambda: False}),  # Chain 0 (not empty)
@@ -389,23 +389,23 @@ class TestM8SongMatrix(unittest.TestCase):
         matrix = M8SongMatrix()
         matrix[0][0] = 0  # References valid chain 0
         matrix[1][0] = 1  # References valid chain 1
-        matrix.validate_chains(mock_chains)  # Should not raise exception
+        matrix.validate_references_chains(mock_chains)  # Should not raise exception
         
         # Test case 2: Reference to non-existent chain
         matrix = M8SongMatrix()
         matrix[0][0] = 5  # References chain 5, which doesn't exist
         with self.assertRaises(M8ValidationError):
-            matrix.validate_chains(mock_chains)
+            matrix.validate_references_chains(mock_chains)
         
         # Test case 3: Reference to empty chain
         matrix = M8SongMatrix()
         matrix[0][0] = 2  # References chain 2, which is empty
         with self.assertRaises(M8ValidationError):
-            matrix.validate_chains(mock_chains)
+            matrix.validate_references_chains(mock_chains)
         
         # Test case 4: Empty matrix should always be valid
         matrix = M8SongMatrix()
-        matrix.validate_chains([])  # Should not raise exception even with empty chains list
+        matrix.validate_references_chains([])  # Should not raise exception even with empty chains list
     
     def test_as_list(self):
         # Test as_list method

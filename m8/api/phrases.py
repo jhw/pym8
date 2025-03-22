@@ -199,7 +199,7 @@ class M8Phrase(list):
             result.extend(step_data)
         return bytes(result)
 
-    def validate_instruments(self, instruments):
+    def validate_references_instruments(self, instruments):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
                 if step.instrument != M8PhraseStep.EMPTY_INSTRUMENT and (
@@ -312,10 +312,10 @@ class M8Phrases(list):
             result.extend(phrase_data)
         return bytes(result)
 
-    def validate_instruments(self, instruments):
+    def validate_references_instruments(self, instruments):
         for phrase_idx, phrase in enumerate(self):
             try:
-                phrase.validate_instruments(instruments)
+                phrase.validate_references_instruments(instruments)
             except M8ValidationError as e:
                 raise M8ValidationError(f"Phrase {phrase_idx}: {str(e)}") from e
     

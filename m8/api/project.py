@@ -117,16 +117,16 @@ class M8Project:
             
         self.chains[slot] = chain
 
-    def validate(self):
+    def validate_references(self):
         """Validates references consistency between song, chains, phrases, and instruments."""
         # Song -> Chains validation
-        self.song.validate_chains(self.chains)
+        self.song.validate_references_chains(self.chains)
         
         # Chains -> Phrases validation
-        self.chains.validate_phrases(self.phrases)
+        self.chains.validate_references_phrases(self.phrases)
         
         # Phrases -> Instruments validation
-        self.phrases.validate_instruments(self.instruments)
+        self.phrases.validate_references_instruments(self.instruments)
     
     def write(self) -> bytes:
         output = bytearray(self.data)

@@ -270,7 +270,7 @@ class TestM8Chain(unittest.TestCase):
         clone[0].phrase = 30
         self.assertEqual(original[0].phrase, 10)
     
-    def test_validate_phrases(self):
+    def test_validate_references_phrases(self):
         # Create a mock phrases list
         mock_phrases = [None] * 20  # Just need a list of the right length
         
@@ -278,17 +278,17 @@ class TestM8Chain(unittest.TestCase):
         chain = M8Chain()
         chain[0] = M8ChainStep(phrase=10, transpose=5)
         chain[1] = M8ChainStep(phrase=15, transpose=10)
-        chain.validate_phrases(mock_phrases)  # Should not raise
+        chain.validate_references_phrases(mock_phrases)  # Should not raise
         
         # Test case 2: Reference to non-existent phrase
         chain = M8Chain()
         chain[0] = M8ChainStep(phrase=30, transpose=5)  # Phrase 30 doesn't exist
         with self.assertRaises(M8ValidationError):
-            chain.validate_phrases(mock_phrases)
+            chain.validate_references_phrases(mock_phrases)
         
         # Test case 3: Empty chain should be valid
         chain = M8Chain()
-        chain.validate_phrases([])  # Should not raise even with empty phrases list
+        chain.validate_references_phrases([])  # Should not raise even with empty phrases list
     
     def test_available_step_slot(self):
         # Test available_step_slot property
@@ -584,7 +584,7 @@ class TestM8Chains(unittest.TestCase):
         clone[0][0].phrase = 30
         self.assertEqual(original[0][0].phrase, 10)
     
-    def test_validate_phrases(self):
+    def test_validate_references_phrases(self):
         # Create a mock phrases list
         mock_phrases = [None] * 20  # Just need a list of the right length
         
@@ -592,17 +592,17 @@ class TestM8Chains(unittest.TestCase):
         chains = M8Chains()
         chains[0][0] = M8ChainStep(phrase=10, transpose=5)
         chains[5][3] = M8ChainStep(phrase=15, transpose=10)
-        chains.validate_phrases(mock_phrases)  # Should not raise
+        chains.validate_references_phrases(mock_phrases)  # Should not raise
         
         # Test case 2: Reference to non-existent phrase
         chains = M8Chains()
         chains[0][0] = M8ChainStep(phrase=30, transpose=5)  # Phrase 30 doesn't exist
         with self.assertRaises(M8ValidationError):
-            chains.validate_phrases(mock_phrases)
+            chains.validate_references_phrases(mock_phrases)
         
         # Test case 3: Empty chains should be valid
         chains = M8Chains()
-        chains.validate_phrases([])  # Should not raise even with empty phrases list
+        chains.validate_references_phrases([])  # Should not raise even with empty phrases list
     
     def test_as_list(self):
         # Test as_list method

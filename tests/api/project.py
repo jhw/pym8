@@ -132,13 +132,13 @@ class TestM8Project(unittest.TestCase):
         with self.assertRaises(IndexError):
             self.project.add_chain(M8Chain())
     
-    def test_validate(self):
+    def test_validate_references(self):
         from m8.api import M8ValidationError
         from m8.api.chains import M8ChainStep
         from m8.api.chains import M8Chain
         
         # Create a brand new test case using minimal objects
-        # Skip testing the project.validate() and just test chain.validate_phrases() directly
+        # Skip testing the project.validate_references() and just test chain.validate_references_phrases() directly
         # which allows us to better control the test conditions
         
         # Create test data: a minimal phrases list and a chain with an invalid reference
@@ -148,13 +148,13 @@ class TestM8Project(unittest.TestCase):
         # Set a valid phrase reference (within range)
         test_chain[0].phrase = 5
         # Should pass validation
-        test_chain.validate_phrases(test_phrases)
+        test_chain.validate_references_phrases(test_phrases)
         
         # Set an invalid phrase reference (out of range but not EMPTY_PHRASE)
         test_chain[0].phrase = 100  # Way outside the range of test_phrases
         # Should fail validation
         with self.assertRaises(M8ValidationError):
-            test_chain.validate_phrases(test_phrases)
+            test_chain.validate_references_phrases(test_phrases)
     
     def test_write_read_file(self):
         # Skip this test if we don't have the template file

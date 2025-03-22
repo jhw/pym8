@@ -46,7 +46,7 @@ class M8SongRow:
     def write(self):
         return bytes(self._data)
     
-    def validate_chains(self, chains):
+    def validate_references_chains(self, chains):
         if not self.is_empty():
             for col_idx in range(COL_COUNT):
                 chain_idx = self[col_idx]
@@ -124,10 +124,10 @@ class M8SongMatrix(list):
             result.extend(row_data)
         return bytes(result)
     
-    def validate_chains(self, chains):
+    def validate_references_chains(self, chains):
         for row_idx, row in enumerate(self):
             try:
-                row.validate_chains(chains)
+                row.validate_references_chains(chains)
             except M8ValidationError as e:
                 raise M8ValidationError(f"Row {row_idx}: {str(e)}") from e
     

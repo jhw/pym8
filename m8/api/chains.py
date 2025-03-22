@@ -105,7 +105,7 @@ class M8Chain(list):
             result.extend(step_data)
         return bytes(result)
     
-    def validate_phrases(self, phrases):
+    def validate_references_phrases(self, phrases):
         if not self.is_empty():
             for step_idx, step in enumerate(self):
                 if step.phrase != M8ChainStep.EMPTY_PHRASE and (
@@ -211,10 +211,10 @@ class M8Chains(list):
             result.extend(chain_data)
         return bytes(result)
     
-    def validate_phrases(self, phrases):
+    def validate_references_phrases(self, phrases):
         for chain_idx, chain in enumerate(self):
             try:
-                chain.validate_phrases(phrases)
+                chain.validate_references_phrases(phrases)
             except M8ValidationError as e:
                 raise M8ValidationError(f"Chain {chain_idx}: {str(e)}") from e
     
