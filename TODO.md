@@ -1,10 +1,10 @@
 # short
 
-- bake_chains script
-
-# medium
+- bake_chains handling of blanks
 
 - m8i files [notes]
+
+# medium
 
 - fx example
 - revisit empty() methods
@@ -35,6 +35,7 @@
 
 # done
 
+- bake_chains script
 - remove typing
 - concat_phrases script
 - validation of flat structures [notes]
