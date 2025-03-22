@@ -1,6 +1,7 @@
 # short
 
-- m8i files
+- load m8i and print from project modulator offset
+- adapt to print modulators from modulator offse
 
 # medium
 
@@ -33,6 +34,7 @@
 
 # done
 
+- remove version
 - don't write to var
 - bake_chains handling of blanks
 - bake_chains script

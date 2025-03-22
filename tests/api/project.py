@@ -3,7 +3,6 @@ import os
 import tempfile
 from m8.api import M8Block
 from m8.api.project import M8Project, OFFSETS
-from m8.api.version import M8Version
 from m8.api.metadata import M8Metadata
 from m8.api.song import M8SongMatrix, M8SongRow
 from m8.api.chains import M8Chain, M8Chains
@@ -14,7 +13,6 @@ class TestM8Project(unittest.TestCase):
     def setUp(self):
         """Set up a minimal project for testing."""
         self.project = M8Project()
-        self.project.version = M8Version(major=4, minor=1, patch=0)
         self.project.metadata = M8Metadata(name="Test Project")
         self.project.song = M8SongMatrix()
         self.project.chains = M8Chains()
@@ -203,7 +201,6 @@ class TestM8Project(unittest.TestCase):
                 read_project = M8Project.read_from_file(tmp_path)
                 
                 # Compare basic attributes
-                self.assertEqual(str(read_project.version), str(project.version))
                 self.assertEqual(read_project.metadata.name, project.metadata.name)
                 
                 # Check that all the major components were preserved
@@ -221,7 +218,6 @@ class TestM8Project(unittest.TestCase):
         project_dict = self.project.as_dict()
         
         # Check the structure of the dictionary
-        self.assertEqual(project_dict["version"], str(self.project.version))
         self.assertEqual(project_dict["metadata"]["name"], self.project.metadata.name)
         self.assertIn("instruments", project_dict)
         self.assertIn("phrases", project_dict)
@@ -232,7 +228,6 @@ class TestM8Project(unittest.TestCase):
         new_project = M8Project.from_dict(project_dict)
         
         # Check the reconstructed project
-        self.assertEqual(str(new_project.version), str(self.project.version))
         self.assertEqual(new_project.metadata.name, self.project.metadata.name)
         
         # Check instrument was properly reconstructed
@@ -262,7 +257,6 @@ class TestM8Project(unittest.TestCase):
                 read_project = M8Project.read_from_json_file(tmp_path)
                 
                 # Compare basic attributes
-                self.assertEqual(str(read_project.version), str(self.project.version))
                 self.assertEqual(read_project.metadata.name, self.project.metadata.name)
                 
                 # Check that all the major components were preserved
@@ -281,7 +275,6 @@ class TestM8Project(unittest.TestCase):
             project = M8Project.initialise()
             
             # Just perform some basic checks
-            self.assertIsNotNone(project.version)
             self.assertIsNotNone(project.metadata)
             self.assertIsNotNone(project.song)
             self.assertIsNotNone(project.chains)
