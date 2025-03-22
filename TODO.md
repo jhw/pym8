@@ -1,15 +1,14 @@
 # short
 
-- validation of flat structures [notes]
-- m8i files [notes]
+- bake_chains script
+- concat_phrases script
 
 # medium
 
+- m8i files [notes]
+
 - fx example
 - revisit empty() methods
-
-- bake_chains script
-- concat_phrases script
 
 - sampler slice points
 - trash80 FM drums
@@ -36,6 +35,7 @@
 
 # done
 
+- validation of flat structures [notes]
 - check if project read/write is tested
 - refactor modulators as per instruments
 - move instruments
