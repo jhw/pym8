@@ -1,16 +1,16 @@
 # short
 
-## enum roadmap
+- int values not found in enums to raise exceptions
 
-- phrase notes
+- add constructor enum supoort to modulator
+- add mod destination enums
+- add constructor enum support to fx
+- add fx enums
+- add constructor enum support to phrases
+- add phrase note enum
 
-- phrase fx (*)
-- mod destinations (*)
-
----
-
+- instrument/modulator enum strings to be upper case
 - specify enum defaults as strings in config yaml
-- instrument/modulator enum strings to be upper case?
 
 # medium
 
