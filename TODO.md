@@ -1,4 +1,6 @@
-# short [enums]
+# short
+
+# enum roadmap
 
 - phrase notes
 - phrase fx (*)
@@ -11,6 +13,10 @@
 - limit types
 
 - mod destinations (*)
+
+# in progress
+
+- abstract enum helper functions (done)
 
 # medium
 
