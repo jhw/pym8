@@ -1,6 +1,6 @@
 # short
 
-- project initialise cleanup
+- clean up project initialise file paths
 - fx example
 
 # medium
@@ -32,6 +32,7 @@
 
 # done
 
+- does project.toml include templates
 - version checking
 - add back version and log
 - instrument type classes should have M8 prefix 

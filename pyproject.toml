@@ -32,7 +32,7 @@ where = ["."]
 include = ["m8*"]
 
 [tool.setuptools.package-data]
-"m8" = ["*.m8s"]
+"m8" = ["**/*.m8s"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
