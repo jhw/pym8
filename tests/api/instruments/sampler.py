@@ -1,11 +1,11 @@
 import unittest
-from m8.api.instruments import M8Params, M8Instrument
+from m8.api.instruments import M8InstrumentParams, M8Instrument
 from m8.api.modulators import M8Modulator, M8ModulatorType
 
 class TestM8SamplerParams(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
-        params = M8Params.from_config("sampler")
+        params = M8InstrumentParams.from_config("sampler")
         
         # Check defaults for key parameters
         self.assertEqual(params.play_mode, 0x0)
@@ -27,7 +27,7 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(params.sample_path, "")
         
         # Test with kwargs
-        params = M8Params.from_config("sampler",
+        params = M8InstrumentParams.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -101,7 +101,7 @@ class TestM8SamplerParams(unittest.TestCase):
         binary_data.extend([0] * (128 - len(test_path)))
         
         # Create params and read from binary
-        params = M8Params.from_config("sampler")
+        params = M8InstrumentParams.from_config("sampler")
         params.read(binary_data)
         
         # Check values
@@ -125,7 +125,7 @@ class TestM8SamplerParams(unittest.TestCase):
     
     def test_write_to_binary(self):
         # Create params with specific values
-        params = M8Params.from_config("sampler",
+        params = M8InstrumentParams.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -179,7 +179,7 @@ class TestM8SamplerParams(unittest.TestCase):
     
     def test_read_write_consistency(self):
         # Create original params
-        original = M8Params.from_config("sampler",
+        original = M8InstrumentParams.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -203,7 +203,7 @@ class TestM8SamplerParams(unittest.TestCase):
         binary = original.write()
         
         # Read back from binary
-        deserialized = M8Params.from_config("sampler")
+        deserialized = M8InstrumentParams.from_config("sampler")
         deserialized.read(binary)
         
         # Check values match
@@ -227,7 +227,7 @@ class TestM8SamplerParams(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = M8Params.from_config("sampler",
+        params = M8InstrumentParams.from_config("sampler",
             play_mode=0x1,
             slice=0x5,
             start=0x10,
@@ -297,7 +297,7 @@ class TestM8SamplerParams(unittest.TestCase):
         }
         
         # Create from dict
-        params = M8Params.from_dict("sampler", data)
+        params = M8InstrumentParams.from_dict("sampler", data)
         
         # Check values
         for key, value in data.items():
@@ -313,7 +313,7 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(sampler.type, 0x02)
         
         # Check params object is created
-        self.assertIsInstance(sampler.params, M8Params)
+        self.assertIsInstance(sampler.params, M8InstrumentParams)
         
         # Check common parameters
         self.assertNotEqual(sampler.name, "")  # Should auto-generate a name

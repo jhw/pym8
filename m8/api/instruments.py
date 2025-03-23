@@ -33,7 +33,7 @@ class M8ParamType(Enum):
     UINT8 = auto()      # Standard 1-byte integer (0-255)
     STRING = auto()     # String type with variable length
 
-class M8Params:
+class M8InstrumentParams:
     """Dynamic parameter container for instrument parameters with support for different parameter types."""
     
     @staticmethod
@@ -310,7 +310,7 @@ class M8Instrument:
         self.finetune = common_defaults["finetune"]  # Center value for fine tuning
         
         # Create params object based on instrument type
-        self.params = M8Params.from_config(instrument_type)
+        self.params = M8InstrumentParams.from_config(instrument_type)
         
         # Set up modulators
         self.modulators_offset = get_instrument_modulators_offset(instrument_type)
@@ -358,7 +358,7 @@ class M8Instrument:
         next_offset = self._read_common_parameters(data)
         
         # Create and read the appropriate params object based on instrument type
-        self.params = M8Params.from_config(self.instrument_type)
+        self.params = M8InstrumentParams.from_config(self.instrument_type)
         self.params.read(data)
         
         # Set the modulators offset based on instrument type
@@ -532,7 +532,7 @@ class M8Instrument:
                     setattr(instrument, key, data[key])
             
             # Create params object and set parameters
-            instrument.params = M8Params.from_config(instrument.instrument_type)
+            instrument.params = M8InstrumentParams.from_config(instrument.instrument_type)
             for key, value in data.items():
                 if key not in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune", "type", "modulators"] and hasattr(instrument.params, key):
                     setattr(instrument.params, key, value)

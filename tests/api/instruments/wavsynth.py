@@ -1,11 +1,11 @@
 import unittest
-from m8.api.instruments import M8Instrument, M8Params
+from m8.api.instruments import M8Instrument, M8InstrumentParams
 from m8.api.modulators import M8Modulator, M8ModulatorType
 
-class TestM8Params(unittest.TestCase):
+class TestM8InstrumentParams(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor for WavSynth params
-        params = M8Params.from_config("wavsynth")
+        params = M8InstrumentParams.from_config("wavsynth")
         
         # Check defaults for some key parameters
         self.assertEqual(params.shape, 0x0)
@@ -25,7 +25,7 @@ class TestM8Params(unittest.TestCase):
         self.assertEqual(params.reverb, 0x0)
         
         # Test with kwargs
-        params = M8Params.from_config("wavsynth",
+        params = M8InstrumentParams.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -83,7 +83,7 @@ class TestM8Params(unittest.TestCase):
         ])
         
         # Create params and read from binary
-        params = M8Params.from_config("wavsynth")
+        params = M8InstrumentParams.from_config("wavsynth")
         params.read(binary_data)
         
         # Check values
@@ -105,7 +105,7 @@ class TestM8Params(unittest.TestCase):
     
     def test_write_to_binary(self):
         # Create params with specific values
-        params = M8Params.from_config("wavsynth",
+        params = M8InstrumentParams.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -149,7 +149,7 @@ class TestM8Params(unittest.TestCase):
     
     def test_read_write_consistency(self):
         # Create original params
-        original = M8Params.from_config("wavsynth",
+        original = M8InstrumentParams.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,
@@ -171,7 +171,7 @@ class TestM8Params(unittest.TestCase):
         binary = original.write()
         
         # Read back from binary
-        deserialized = M8Params.from_config("wavsynth")
+        deserialized = M8InstrumentParams.from_config("wavsynth")
         deserialized.read(binary)
         
         # Check values match
@@ -193,7 +193,7 @@ class TestM8Params(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = M8Params.from_config("wavsynth",
+        params = M8InstrumentParams.from_config("wavsynth",
             shape=0x1,
             size=0x70,
             mult=0x90,

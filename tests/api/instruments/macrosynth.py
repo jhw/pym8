@@ -1,11 +1,11 @@
 import unittest
-from m8.api.instruments import M8Params, M8Instrument
+from m8.api.instruments import M8InstrumentParams, M8Instrument
 from m8.api.modulators import M8Modulator, M8ModulatorType
 
 class TestM8MacroSynthParams(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
-        params = M8Params.from_config("macrosynth")
+        params = M8InstrumentParams.from_config("macrosynth")
         
         # Check defaults for key parameters
         self.assertEqual(params.shape, 0x0)
@@ -25,7 +25,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         self.assertEqual(params.reverb, 0x0)
         
         # Test with kwargs
-        params = M8Params.from_config("macrosynth",
+        params = M8InstrumentParams.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -83,7 +83,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         ])
         
         # Read from binary
-        params = M8Params.from_config("macrosynth")
+        params = M8InstrumentParams.from_config("macrosynth")
         params.read(binary_data)
         
         # Check values
@@ -105,7 +105,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
     
     def test_write_to_binary(self):
         # Create params with specific values
-        params = M8Params.from_config("macrosynth",
+        params = M8InstrumentParams.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -145,7 +145,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
     
     def test_read_write_consistency(self):
         # Create original params
-        original = M8Params.from_config("macrosynth",
+        original = M8InstrumentParams.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -167,7 +167,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         binary = original.write()
         
         # Read back from binary
-        deserialized = M8Params.from_config("macrosynth")
+        deserialized = M8InstrumentParams.from_config("macrosynth")
         deserialized.read(binary)
         
         # Check values match
@@ -189,7 +189,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = M8Params.from_config("macrosynth",
+        params = M8InstrumentParams.from_config("macrosynth",
             shape=0x1,
             timbre=0x70,
             color=0x90,
@@ -253,7 +253,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         }
         
         # Create from dict
-        params = M8Params.from_dict("macrosynth", data)
+        params = M8InstrumentParams.from_dict("macrosynth", data)
         
         # Check values
         for key, value in data.items():
@@ -269,7 +269,7 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(synth.type, 0x01)
         
         # Check params object is created
-        self.assertIsInstance(synth.params, M8Params)
+        self.assertIsInstance(synth.params, M8InstrumentParams)
         
         # Check common parameters
         self.assertNotEqual(synth.name, "")  # Should auto-generate a name

@@ -18,8 +18,6 @@
 - abstract enum helper functions (done)
 
 # medium
-
-- M8Params >> M8InstrumentParams
 - fx example
 - TODO.md >> github project
 - 5.0.2 test
@@ -51,6 +49,7 @@
 
 # done
 
+- M8Params >> M8InstrumentParams
 - wavsynth shapes
 - clean up project initialise file paths
 - does project.toml include templates

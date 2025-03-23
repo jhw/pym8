@@ -3,13 +3,13 @@ import unittest
 import os
 import tempfile
 from m8.api.instruments import (
-    M8ParamType, M8Params, M8Instrument, M8Instruments,
+    M8ParamType, M8InstrumentParams, M8Instrument, M8Instruments,
     BLOCK_SIZE, BLOCK_COUNT, INSTRUMENT_TYPES
 )
 from m8.api import M8Block
 from m8.api.modulators import M8Modulator, M8Modulators, M8ModulatorType, create_default_modulators
 
-class TestM8Params(unittest.TestCase):
+class TestM8InstrumentParams(unittest.TestCase):
     def setUp(self):
         # Define test parameter definitions
         self.test_param_defs = {
@@ -19,21 +19,21 @@ class TestM8Params(unittest.TestCase):
         }
         
         # Create a test params obj manually
-        self.params = M8Params(self.test_param_defs)
+        self.params = M8InstrumentParams(self.test_param_defs)
     
     def test_calculate_parameter_size(self):
-        size = M8Params.calculate_parameter_size(self.test_param_defs)
+        size = M8InstrumentParams.calculate_parameter_size(self.test_param_defs)
         self.assertEqual(size, 10)  # Total of all param sizes (1+1+8)
     
     def test_constructor_and_defaults(self):
         # Test default constructor
-        params = M8Params(self.test_param_defs)
+        params = M8InstrumentParams(self.test_param_defs)
         self.assertEqual(params.volume, 0)
         self.assertEqual(params.pitch, 0)
         self.assertEqual(params.name, "")
         
         # Test with kwargs
-        params = M8Params(self.test_param_defs, volume=10, pitch=20, name="Test")
+        params = M8InstrumentParams(self.test_param_defs, volume=10, pitch=20, name="Test")
         self.assertEqual(params.volume, 10)
         self.assertEqual(params.pitch, 20)
         self.assertEqual(params.name, "Test")
@@ -47,7 +47,7 @@ class TestM8Params(unittest.TestCase):
         ])
         
         # Create params and read from binary
-        params = M8Params(self.test_param_defs)
+        params = M8InstrumentParams(self.test_param_defs)
         params.read(binary_data)
         
         # Check values
@@ -62,13 +62,13 @@ class TestM8Params(unittest.TestCase):
             84, 101, 115, 116, 0, 65, 66, 67     # "Test" + null + "ABC"
         ])
         
-        params = M8Params(self.test_param_defs)
+        params = M8InstrumentParams(self.test_param_defs)
         params.read(binary_data)
         self.assertEqual(params.name, "Test")  # Should stop at null terminator
     
     def test_write_to_binary(self):
         # Create params
-        params = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
+        params = M8InstrumentParams(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Write to binary
         binary = params.write()
@@ -81,24 +81,24 @@ class TestM8Params(unittest.TestCase):
         self.assertEqual(binary[6:10], b'\x00\x00\x00\x00')  # padding
         
         # Test with string longer than defined size
-        params = M8Params(self.test_param_defs, volume=50, pitch=100, name="TestTooLong")
+        params = M8InstrumentParams(self.test_param_defs, volume=50, pitch=100, name="TestTooLong")
         binary = params.write()
         self.assertEqual(binary[2:10], b'TestTooL')  # Truncated
         
         # Test with non-string value in string field
-        params = M8Params(self.test_param_defs, volume=50, pitch=100, name=None)
+        params = M8InstrumentParams(self.test_param_defs, volume=50, pitch=100, name=None)
         binary = params.write()
         self.assertEqual(binary[2:10], b'\x00\x00\x00\x00\x00\x00\x00\x00')  # All nulls
     
     def test_read_write_consistency(self):
         # Create original params
-        original = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
+        original = M8InstrumentParams(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Write to binary
         binary = original.write()
         
         # Read back from binary
-        deserialized = M8Params(self.test_param_defs)
+        deserialized = M8InstrumentParams(self.test_param_defs)
         deserialized.read(binary)
         
         # Check values match
@@ -108,7 +108,7 @@ class TestM8Params(unittest.TestCase):
     
     def test_clone(self):
         # Create original params
-        original = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
+        original = M8InstrumentParams(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Clone
         clone = original.clone()
@@ -127,7 +127,7 @@ class TestM8Params(unittest.TestCase):
     
     def test_as_dict(self):
         # Create params
-        params = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
+        params = M8InstrumentParams(self.test_param_defs, volume=50, pitch=100, name="Test")
         
         # Convert to dict
         result = params.as_dict()
@@ -149,7 +149,7 @@ class TestM8Params(unittest.TestCase):
         }
         
         # Create from dict (direct call)
-        params = M8Params(self.test_param_defs)
+        params = M8InstrumentParams(self.test_param_defs)
         for key, value in data.items():
             setattr(params, key, value)
         
@@ -163,7 +163,7 @@ class TestM8Params(unittest.TestCase):
             "volume": 75
         }
         
-        params = M8Params(self.test_param_defs)
+        params = M8InstrumentParams(self.test_param_defs)
         for key, value in data.items():
             setattr(params, key, value)
             
@@ -172,9 +172,9 @@ class TestM8Params(unittest.TestCase):
         self.assertEqual(params.name, "")  # Default
         
         # Test dict/object round trip
-        original = M8Params(self.test_param_defs, volume=50, pitch=100, name="Test")
+        original = M8InstrumentParams(self.test_param_defs, volume=50, pitch=100, name="Test")
         dict_data = original.as_dict()
-        roundtrip = M8Params(self.test_param_defs)
+        roundtrip = M8InstrumentParams(self.test_param_defs)
         for key, value in dict_data.items():
             setattr(roundtrip, key, value)
         
