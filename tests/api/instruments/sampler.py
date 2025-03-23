@@ -28,13 +28,13 @@ class TestM8SamplerParams(unittest.TestCase):
         
         # Test with kwargs
         params = M8InstrumentParams.from_config("sampler",
-            play_mode=0x1,
+            play_mode="REV",
             slice=0x5,
             start=0x10,
             loop_start=0x20,
             length=0xE0,
             degrade=0x30,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
@@ -126,13 +126,13 @@ class TestM8SamplerParams(unittest.TestCase):
     def test_write_to_binary(self):
         # Create params with specific values
         params = M8InstrumentParams.from_config("sampler",
-            play_mode=0x1,
+            play_mode="REV",
             slice=0x5,
             start=0x10,
             loop_start=0x20,
             length=0xE0,
             degrade=0x30,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
@@ -180,13 +180,13 @@ class TestM8SamplerParams(unittest.TestCase):
     def test_read_write_consistency(self):
         # Create original params
         original = M8InstrumentParams.from_config("sampler",
-            play_mode=0x1,
+            play_mode="REV",
             slice=0x5,
             start=0x10,
             loop_start=0x20,
             length=0xE0,
             degrade=0x30,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
@@ -228,13 +228,13 @@ class TestM8SamplerParams(unittest.TestCase):
     def test_as_dict(self):
         # Create params
         params = M8InstrumentParams.from_config("sampler",
-            play_mode=0x1,  # REV
+            play_mode="REV",
             slice=0x5,
             start=0x10,
             loop_start=0x20,
             length=0xE0,
             degrade=0x30,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
@@ -342,11 +342,11 @@ class TestM8Sampler(unittest.TestCase):
             finetune=0x90,
             
             # Sampler-specific parameters
-            play_mode=0x1,
+            play_mode="REV",
             slice=0x5,
             start=0x10,
             length=0xE0,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xD0,
             pan=0x70,
             sample_path="/samples/kick.wav"
@@ -362,11 +362,17 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(sampler.finetune, 0x90)
         
         # Check sampler-specific parameters
-        self.assertEqual(sampler.params.play_mode, 0x1)
+        if isinstance(sampler.params.play_mode, int):
+            self.assertEqual(sampler.params.play_mode, 0x1)
+        else:
+            self.assertEqual(sampler.params.play_mode, "REV")
         self.assertEqual(sampler.params.slice, 0x5)
         self.assertEqual(sampler.params.start, 0x10)
         self.assertEqual(sampler.params.length, 0xE0)
-        self.assertEqual(sampler.params.filter, 0x2)
+        if isinstance(sampler.params.filter, int):
+            self.assertEqual(sampler.params.filter, 0x2)
+        else:
+            self.assertEqual(sampler.params.filter, "HIGHPASS")
         self.assertEqual(sampler.params.cutoff, 0xD0)
         self.assertEqual(sampler.params.pan, 0x70)
         self.assertEqual(sampler.params.sample_path, "/samples/kick.wav")
@@ -455,13 +461,13 @@ class TestM8Sampler(unittest.TestCase):
             volume=0x10,
             pitch=0x20,
             finetune=0x90,
-            play_mode=0x1,
+            play_mode="REV",
             slice=0x5,
             start=0x10,
             loop_start=0x20,
             length=0xE0,
             degrade=0x30,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
@@ -543,7 +549,7 @@ class TestM8Sampler(unittest.TestCase):
             eq=0x2,
             
             # Specific parameters
-            play_mode=0x1,  # REV
+            play_mode="REV",
             slice=0x5,
             start=0x10,
             cutoff=0xD0,

@@ -51,6 +51,7 @@
 - macrosynth shapes
 - sampler play modes
 - filter types
+- constructor support for enum field string values
 - clean up project initialise file paths
 - does project.toml include templates
 - version checking

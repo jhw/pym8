@@ -174,3 +174,52 @@ def deserialize_enum(enum_class, value, log_prefix=None):
             logger.warning(f"Deserializing unknown {prefix}type ID: {value}")
         
         return value
+
+def deserialize_param_enum(enum_paths, value, param_name=None):
+    import importlib
+    logger = logging.getLogger(__name__)
+    
+    if not isinstance(value, str):
+        return value
+        
+    enum_classes = []
+    for enum_path in enum_paths:
+        try:
+            module_name, class_name = enum_path.rsplit('.', 1)
+            module = importlib.import_module(module_name)
+            enum_class = getattr(module, class_name)
+            enum_classes.append(enum_class)
+        except (ImportError, AttributeError) as e:
+            logger.warning(f"Error importing enum {enum_path}: {e}")
+    
+    if enum_classes:
+        for enum_class in enum_classes:
+            try:
+                return enum_class[value].value
+            except KeyError:
+                continue
+    
+    param_info = f" for {param_name}" if param_name else ""
+    logger.warning(f"Could not deserialize enum string{param_info}: {value}")
+    return value
+    
+def ensure_enum_int_value(value, enum_paths):
+    if not isinstance(value, str):
+        return value
+        
+    import importlib
+    logger = logging.getLogger(__name__)
+    
+    for enum_path in enum_paths:
+        try:
+            module_name, class_name = enum_path.rsplit('.', 1)
+            module = importlib.import_module(module_name)
+            enum_class = getattr(module, class_name)
+            try:
+                return enum_class[value].value
+            except KeyError:
+                continue
+        except (ImportError, AttributeError):
+            continue
+    
+    return value

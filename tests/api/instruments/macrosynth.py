@@ -26,12 +26,12 @@ class TestM8MacroSynthParams(unittest.TestCase):
         
         # Test with kwargs
         params = M8InstrumentParams.from_config("macrosynth",
-            shape=0x1,
+            shape="MORPH",  # Using string enum value
             timbre=0x70,
             color=0x90,
             degrade=0x10,
             redux=0x20,
-            filter=0x2,
+            filter="HIGHPASS",  # Using string enum value
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
@@ -297,10 +297,11 @@ class TestM8MacroSynth(unittest.TestCase):
             pitch=0x20,
             finetune=0x90,
             
-            # MacroSynth-specific parameters
-            shape=0x1,
+            # MacroSynth-specific parameters with string enum values
+            shape="MORPH",
             timbre=0x70,
             color=0x90,
+            filter="HIGHPASS",
             cutoff=0xE0,
             pan=0x60
         )
@@ -315,7 +316,10 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x90)
         
         # Check synth-specific parameters
-        self.assertEqual(synth.params.shape, 0x1)
+        if isinstance(synth.params.shape, int):
+            self.assertEqual(synth.params.shape, 0x1)
+        else:
+            self.assertEqual(synth.params.shape, "MORPH")
         self.assertEqual(synth.params.timbre, 0x70)
         self.assertEqual(synth.params.color, 0x90)
         self.assertEqual(synth.params.cutoff, 0xE0)
@@ -372,12 +376,12 @@ class TestM8MacroSynth(unittest.TestCase):
         # Create a MacroSynth with specific parameters
         synth = M8Instrument(
             instrument_type="macrosynth",
-            shape=0x1,
+            shape="MORPH",
             timbre=0x70,
             color=0x90,
             degrade=0x10,
             redux=0x20,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
@@ -426,7 +430,7 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertFalse(synth.is_empty())
         
         # Non-empty MacroSynth (with shape)
-        synth = M8Instrument(instrument_type="macrosynth", name="", shape=0x1)
+        synth = M8Instrument(instrument_type="macrosynth", name="", shape="MORPH")
         self.assertFalse(synth.is_empty())
     
     def test_add_modulator(self):

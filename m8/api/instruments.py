@@ -1,5 +1,5 @@
 # m8/api/instruments.py
-from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum
+from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from m8.api.version import M8Version
 from enum import Enum, auto
@@ -61,6 +61,11 @@ class M8InstrumentParams:
         # Apply any kwargs
         for key, value in kwargs.items():
             if hasattr(self, key):
+                # Check if this parameter has enum support
+                param_def = self._param_defs.get(key, {})
+                if "enums" in param_def and isinstance(value, str):
+                    # Convert string enum values to numeric values
+                    value = deserialize_param_enum(param_def["enums"], value, key)
                 setattr(self, key, value)
     
     @classmethod
@@ -131,6 +136,9 @@ class M8InstrumentParams:
             
             if param_type == M8ParamType.UINT8:
                 # Write a single byte
+                if "enums" in param_def and isinstance(value, str):
+                    # Convert string enum to int value
+                    value = ensure_enum_int_value(value, param_def["enums"])
                 buffer[offset] = value & 0xFF
             elif param_type == M8ParamType.STRING:
                 # Write a string of specified length using utility function
@@ -407,6 +415,9 @@ class M8Instrument:
             
             if param_type == M8ParamType.UINT8:
                 # Write a single byte
+                if "enums" in param_def and isinstance(value, str):
+                    # Convert string enum to int value
+                    value = ensure_enum_int_value(value, param_def["enums"])
                 buffer[offset] = value & 0xFF
             elif param_type == M8ParamType.STRING:
                 # Write a string using utility function
@@ -417,6 +428,9 @@ class M8Instrument:
                     buffer[offset:end] = bytes([0] * size)
             else:
                 # Default to UINT8
+                if "enums" in param_def and isinstance(value, str):
+                    # Convert string enum to int value
+                    value = ensure_enum_int_value(value, param_def["enums"])
                 buffer[offset] = value & 0xFF
         
         # Write modulators

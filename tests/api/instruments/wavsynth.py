@@ -26,12 +26,12 @@ class TestM8InstrumentParams(unittest.TestCase):
         
         # Test with kwargs
         params = M8InstrumentParams.from_config("wavsynth",
-            shape=0x1,
+            shape="PULSE25",
             size=0x70,
             mult=0x90,
             warp=0x10,
             scan=0x20,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
@@ -270,9 +270,10 @@ class TestM8WavSynthInstrument(unittest.TestCase):
             finetune=0x90,
             
             # WavSynth-specific parameters
-            shape=0x1,
+            shape="PULSE25",
             size=0x70,
             mult=0x90,
+            filter="HIGHPASS",
             cutoff=0xE0,
             pan=0x60
         )
@@ -287,7 +288,10 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x90)
         
         # Check synth-specific parameters
-        self.assertEqual(synth.params.shape, 0x1)
+        if isinstance(synth.params.shape, int):
+            self.assertEqual(synth.params.shape, 0x1)
+        else:
+            self.assertEqual(synth.params.shape, "PULSE25")
         self.assertEqual(synth.params.size, 0x70)
         self.assertEqual(synth.params.mult, 0x90)
         self.assertEqual(synth.params.cutoff, 0xE0)
@@ -368,12 +372,12 @@ class TestM8WavSynthInstrument(unittest.TestCase):
             volume=0x10,
             pitch=0x20,
             finetune=0x90,
-            shape=0x1,
+            shape="PULSE25",
             size=0x70,
             mult=0x90,
             warp=0x10,
             scan=0x20,
-            filter=0x2,
+            filter="HIGHPASS",
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
@@ -431,7 +435,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         self.assertFalse(synth.is_empty())
         
         # Non-empty WavSynth (with shape)
-        synth = M8Instrument(instrument_type="wavsynth", name="", shape=0x1)
+        synth = M8Instrument(instrument_type="wavsynth", name="", shape="PULSE25")
         self.assertFalse(synth.is_empty())
     
     def test_add_modulator(self):
@@ -459,7 +463,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
             eq=0x2,
             
             # Synth-specific parameters
-            shape=0x1,
+            shape="PULSE25",
             size=0x70,
             mult=0x90,
             cutoff=0xE0,
