@@ -5,7 +5,6 @@
 - phrase notes
 - phrase fx (*)
 
-- macrosynth shapes
 - sampler play modes
 
 - filter types
@@ -51,6 +50,7 @@
 
 - M8Params >> M8InstrumentParams
 - wavsynth shapes
+- macrosynth shapes
 - clean up project initialise file paths
 - does project.toml include templates
 - version checking

@@ -39,7 +39,7 @@ class TestMacroSynthMapping(unittest.TestCase):
             'volume': 0,           # 0x00
             'pitch': 0,            # 0x00
             'finetune': 128,       # 0x80
-            'shape': 6,            # 0x06 (SAW_SUB - Shape enum value from M8MacroSynthShapes)
+            'shape': 'SAW_SUB',    # 0x06 (Enum value from M8MacroSynthShapes)
             'timbre': 112,         # 0x70
             'color': 144,          # 0x90
             'degrade': 1,          # 0x01

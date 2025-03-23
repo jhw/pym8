@@ -190,7 +190,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
     def test_as_dict(self):
         # Create params
         params = M8InstrumentParams.from_config("macrosynth",
-            shape=0x1,
+            shape=0x1,  # MORPH
             timbre=0x70,
             color=0x90,
             degrade=0x10,
@@ -210,9 +210,9 @@ class TestM8MacroSynthParams(unittest.TestCase):
         # Convert to dict
         result = params.as_dict()
         
-        # Check dict
+        # Check dict with shape as enum name
         expected = {
-            "shape": 0x1,
+            "shape": "MORPH",  # Enum name instead of 0x1
             "timbre": 0x70,
             "color": 0x90,
             "degrade": 0x10,
@@ -233,9 +233,9 @@ class TestM8MacroSynthParams(unittest.TestCase):
             self.assertEqual(result[key], value)
     
     def test_from_dict(self):
-        # Test data
+        # Test data with shape as enum name
         data = {
-            "shape": 0x1,
+            "shape": "MORPH",  # Enum name instead of 0x1
             "timbre": 0x70,
             "color": 0x90,
             "degrade": 0x10,
@@ -255,8 +255,12 @@ class TestM8MacroSynthParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("macrosynth", data)
         
+        # For shape, we expect the integer value 0x1 (MORPH)
+        expected_values = data.copy()
+        expected_values["shape"] = 0x1
+        
         # Check values
-        for key, value in data.items():
+        for key, value in expected_values.items():
             self.assertEqual(getattr(params, key), value)
 
 
@@ -449,7 +453,7 @@ class TestM8MacroSynth(unittest.TestCase):
             eq=0x2,
             
             # Synth-specific parameters
-            shape=0x1,
+            shape=0x1,  # MORPH
             timbre=0x70,
             color=0x90,
             cutoff=0xE0,
@@ -470,7 +474,7 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(result["eq"], 0x2)
         
         # Check synth-specific parameters
-        self.assertEqual(result["shape"], 0x1)
+        self.assertEqual(result["shape"], "MORPH")  # Now returns enum name
         self.assertEqual(result["timbre"], 0x70)
         self.assertEqual(result["color"], 0x90)
         self.assertEqual(result["cutoff"], 0xE0)

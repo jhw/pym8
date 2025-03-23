@@ -117,7 +117,7 @@ instruments:
   macrosynth:
     type_id: 0x01
     params:
-      shape: {offset: 18, size: 1, type: "UINT8", default: 0x00}
+      shape: {offset: 18, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.macrosynth.M8MacroSynthShapes"]}
       timbre: {offset: 19, size: 1, type: "UINT8", default: 0x80}
       color: {offset: 20, size: 1, type: "UINT8", default: 0x80}
       degrade: {offset: 21, size: 1, type: "UINT8", default: 0x00}
