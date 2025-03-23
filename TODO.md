@@ -2,7 +2,6 @@
 
 ## enum roadmap
 
-- limit types
 - phrase notes
 
 - phrase fx (*)
@@ -51,6 +50,7 @@
 - macrosynth shapes
 - sampler play modes
 - filter types
+- limit types
 - constructor support for enum field string values
 - clean up project initialise file paths
 - does project.toml include templates

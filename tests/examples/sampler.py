@@ -49,7 +49,7 @@ class TestSamplerMapping(unittest.TestCase):
             'cutoff': 111,         # 0x6F
             'res': 224,            # 0xE0
             'amp': 16,             # 0x10
-            'limit': 1,            # 0x01
+            'limit': "SIN",        # 0x01 (Enum value from M8LimitTypes)
             'pan': 128,            # 0x80
             'dry': 128,            # 0x80
             'chorus': 144,         # 0x90

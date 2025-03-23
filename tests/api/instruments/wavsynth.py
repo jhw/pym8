@@ -17,7 +17,7 @@ class TestM8InstrumentParams(unittest.TestCase):
         self.assertEqual(params.cutoff, 0xFF)
         self.assertEqual(params.res, 0x0)
         self.assertEqual(params.amp, 0x0)
-        self.assertEqual(params.limit, 0x0)
+        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
         self.assertEqual(params.pan, 0x80)
         self.assertEqual(params.dry, 0xC0)
         self.assertEqual(params.chorus, 0x0)
@@ -35,7 +35,7 @@ class TestM8InstrumentParams(unittest.TestCase):
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
-            limit=0x50,
+            limit="CLIP",  # Using string enum (CLIP = 0x0)
             pan=0x60,
             dry=0xB0,
             chorus=0x70,
@@ -53,7 +53,7 @@ class TestM8InstrumentParams(unittest.TestCase):
         self.assertEqual(params.cutoff, 0xE0)
         self.assertEqual(params.res, 0x30)
         self.assertEqual(params.amp, 0x40)
-        self.assertEqual(params.limit, 0x50)
+        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
         self.assertEqual(params.pan, 0x60)
         self.assertEqual(params.dry, 0xB0)
         self.assertEqual(params.chorus, 0x70)
@@ -74,7 +74,7 @@ class TestM8InstrumentParams(unittest.TestCase):
             0xE0,   # cutoff (offset 24)
             0x30,   # res (offset 25)
             0x40,   # amp (offset 26)
-            0x50,   # limit (offset 27)
+            0x0,   # limit (offset 27/28) - FOLD = 0x2
             0x60,   # pan (offset 28)
             0xB0,   # dry (offset 29)
             0x70,   # chorus (offset 30)
@@ -96,7 +96,7 @@ class TestM8InstrumentParams(unittest.TestCase):
         self.assertEqual(params.cutoff, 0xE0)
         self.assertEqual(params.res, 0x30)
         self.assertEqual(params.amp, 0x40)
-        self.assertEqual(params.limit, 0x50)
+        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
         self.assertEqual(params.pan, 0x60)
         self.assertEqual(params.dry, 0xB0)
         self.assertEqual(params.chorus, 0x70)
@@ -115,7 +115,7 @@ class TestM8InstrumentParams(unittest.TestCase):
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
-            limit=0x50,
+            limit="CLIP",  # Using string enum (CLIP = 0x0)
             pan=0x60,
             dry=0xB0,
             chorus=0x70,
@@ -140,7 +140,7 @@ class TestM8InstrumentParams(unittest.TestCase):
         self.assertEqual(binary[24], 0xE0)  # cutoff
         self.assertEqual(binary[25], 0x30)  # res
         self.assertEqual(binary[26], 0x40)  # amp
-        self.assertEqual(binary[27], 0x50)  # limit
+        self.assertEqual(binary[27], 0x0)   # limit (CLIP = 0x0)
         self.assertEqual(binary[28], 0x60)  # pan
         self.assertEqual(binary[29], 0xB0)  # dry
         self.assertEqual(binary[30], 0x70)  # chorus
@@ -159,7 +159,7 @@ class TestM8InstrumentParams(unittest.TestCase):
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
-            limit=0x50,
+            limit="CLIP",  # Using string enum (CLIP = 0x0)
             pan=0x60,
             dry=0xB0,
             chorus=0x70,
@@ -203,7 +203,7 @@ class TestM8InstrumentParams(unittest.TestCase):
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
-            limit=0x50,
+            limit="CLIP",  # Using string enum (CLIP = 0x0)
             pan=0x60,
             dry=0xB0,
             chorus=0x70,
@@ -225,7 +225,7 @@ class TestM8InstrumentParams(unittest.TestCase):
             "cutoff": 0xE0,
             "res": 0x30,
             "amp": 0x40,
-            "limit": 0x50,
+            "limit": "CLIP",  # Now using enum name
             "pan": 0x60,
             "dry": 0xB0,
             "chorus": 0x70,
@@ -381,7 +381,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
             cutoff=0xE0,
             res=0x30,
             amp=0x40,
-            limit=0x50,
+            limit="CLIP",  # Using string enum (CLIP = 0x0)
             pan=0x60,
             dry=0xB0,
             chorus=0x70,
@@ -414,7 +414,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         self.assertEqual(binary[24], 0xE0)  # cutoff
         self.assertEqual(binary[25], 0x30)  # res
         self.assertEqual(binary[26], 0x40)  # amp
-        self.assertEqual(binary[27], 0x50)  # limit
+        self.assertEqual(binary[27], 0x0)   # limit (CLIP = 0x0)
         self.assertEqual(binary[28], 0x60)  # pan
         self.assertEqual(binary[29], 0xB0)  # dry
         self.assertEqual(binary[30], 0x70)  # chorus

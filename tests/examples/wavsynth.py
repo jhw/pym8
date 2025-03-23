@@ -48,7 +48,7 @@ class TestWavSynthMapping(unittest.TestCase):
             'cutoff': 32,          # 0x20
             'res': 208,            # 0xD0
             'amp': 80,             # 0x50
-            'limit': 1,            # 0x01
+            'limit': "SIN",        # 0x01 (Enum value from M8LimitTypes)
             'pan': 128,            # 0x80
             'dry': 176,            # 0xB0
             'chorus': 144,         # 0x90

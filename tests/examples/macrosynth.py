@@ -48,7 +48,7 @@ class TestMacroSynthMapping(unittest.TestCase):
             'cutoff': 48,          # 0x30
             'res': 224,            # 0xE0
             'amp': 32,             # 0x20
-            'limit': 2,            # 0x02
+            'limit': "FOLD",       # 0x02 (Enum value from M8LimitTypes)
             'pan': 128,            # 0x80
             'dry': 160,            # 0xA0
             'chorus': 176,         # 0xB0

@@ -18,7 +18,7 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(params.cutoff, 0xFF)
         self.assertEqual(params.res, 0x0)
         self.assertEqual(params.amp, 0x0)
-        self.assertEqual(params.limit, 0x0)
+        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
         self.assertEqual(params.pan, 0x80)
         self.assertEqual(params.dry, 0xC0)
         self.assertEqual(params.chorus, 0x0)
@@ -38,7 +38,7 @@ class TestM8SamplerParams(unittest.TestCase):
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
-            limit=0x60,
+            limit="CLIP",  # Using string enum value (CLIP = 0x0)
             pan=0x70,
             dry=0xB0,
             chorus=0x80,
@@ -58,7 +58,7 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(params.cutoff, 0xD0)
         self.assertEqual(params.res, 0x40)
         self.assertEqual(params.amp, 0x50)
-        self.assertEqual(params.limit, 0x60)
+        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
         self.assertEqual(params.pan, 0x70)
         self.assertEqual(params.dry, 0xB0)
         self.assertEqual(params.chorus, 0x80)
@@ -83,7 +83,7 @@ class TestM8SamplerParams(unittest.TestCase):
             0xD0,   # cutoff (offset 25)
             0x40,   # res (offset 26)
             0x50,   # amp (offset 27)
-            0x60,   # limit (offset 28)
+            0x0,   # limit (offset 27/28) - FOLD = 0x2
             0x70,   # pan (offset 29)
             0xB0,   # dry (offset 30)
             0x80,   # chorus (offset 31)
@@ -115,7 +115,7 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(params.cutoff, 0xD0)
         self.assertEqual(params.res, 0x40)
         self.assertEqual(params.amp, 0x50)
-        self.assertEqual(params.limit, 0x60)
+        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
         self.assertEqual(params.pan, 0x70)
         self.assertEqual(params.dry, 0xB0)
         self.assertEqual(params.chorus, 0x80)
@@ -136,7 +136,7 @@ class TestM8SamplerParams(unittest.TestCase):
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
-            limit=0x60,
+            limit="CLIP",  # Using string enum value (CLIP = 0x0)
             pan=0x70,
             dry=0xB0,
             chorus=0x80,
@@ -159,7 +159,7 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(binary[25], 0xD0)  # cutoff
         self.assertEqual(binary[26], 0x40)  # res
         self.assertEqual(binary[27], 0x50)  # amp
-        self.assertEqual(binary[28], 0x60)  # limit
+        self.assertEqual(binary[28], 0x0)   # limit (CLIP = 0x0)
         self.assertEqual(binary[29], 0x70)  # pan
         self.assertEqual(binary[30], 0xB0)  # dry
         self.assertEqual(binary[31], 0x80)  # chorus
@@ -190,7 +190,7 @@ class TestM8SamplerParams(unittest.TestCase):
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
-            limit=0x60,
+            limit="CLIP",  # Using string enum value (CLIP = 0x0)
             pan=0x70,
             dry=0xB0,
             chorus=0x80,
@@ -238,7 +238,7 @@ class TestM8SamplerParams(unittest.TestCase):
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
-            limit=0x60,
+            limit="CLIP",  # Using string enum value (CLIP = 0x0)
             pan=0x70,
             dry=0xB0,
             chorus=0x80,
@@ -262,7 +262,7 @@ class TestM8SamplerParams(unittest.TestCase):
             "cutoff": 0xD0,
             "res": 0x40,
             "amp": 0x50,
-            "limit": 0x60,
+            "limit": "CLIP",  # Enum name instead of 0x2
             "pan": 0x70,
             "dry": 0xB0,
             "chorus": 0x80,
@@ -287,7 +287,7 @@ class TestM8SamplerParams(unittest.TestCase):
             "cutoff": 0xD0,
             "res": 0x40,
             "amp": 0x50,
-            "limit": 0x60,
+            "limit": "FOLD",  # Enum name instead of 0x2
             "pan": 0x70,
             "dry": 0xB0,
             "chorus": 0x80,
@@ -299,10 +299,11 @@ class TestM8SamplerParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("sampler", data)
         
-        # For play_mode and filter, we expect the integer values
+        # For play_mode, filter, and limit, we expect the integer values
         expected_values = data.copy()
         expected_values["play_mode"] = 0x1  # REV
         expected_values["filter"] = 0x2  # HIGHPASS
+        expected_values["limit"] = 0x2  # FOLD
         
         # Check values
         for key, value in expected_values.items():
@@ -471,7 +472,7 @@ class TestM8Sampler(unittest.TestCase):
             cutoff=0xD0,
             res=0x40,
             amp=0x50,
-            limit=0x60,
+            limit="CLIP",  # Using string enum value (CLIP = 0x0)
             pan=0x70,
             dry=0xB0,
             chorus=0x80,
@@ -500,7 +501,7 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(binary[25], 0xD0)  # cutoff
         self.assertEqual(binary[26], 0x40)  # res
         self.assertEqual(binary[27], 0x50)  # amp
-        self.assertEqual(binary[28], 0x60)  # limit
+        self.assertEqual(binary[28], 0x0)   # limit (CLIP = 0x0)
         self.assertEqual(binary[29], 0x70)  # pan
         self.assertEqual(binary[30], 0xB0)  # dry
         self.assertEqual(binary[31], 0x80)  # chorus

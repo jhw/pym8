@@ -107,7 +107,7 @@ instruments:
       cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
       res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
       amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
-      limit: {offset: 27, size: 1, type: "UINT8", default: 0x00}
+      limit: {offset: 27, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.M8LimitTypes"]}
       pan: {offset: 28, size: 1, type: "UINT8", default: 0x80}
       dry: {offset: 29, size: 1, type: "UINT8", default: 0xC0}
       chorus: {offset: 30, size: 1, type: "UINT8", default: 0x00}
@@ -126,7 +126,7 @@ instruments:
       cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
       res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
       amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
-      limit: {offset: 27, size: 1, type: "UINT8", default: 0x00}
+      limit: {offset: 27, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.M8LimitTypes"]}
       pan: {offset: 28, size: 1, type: "UINT8", default: 0x80}
       dry: {offset: 29, size: 1, type: "UINT8", default: 0xC0}
       chorus: {offset: 30, size: 1, type: "UINT8", default: 0x00}
@@ -146,7 +146,7 @@ instruments:
       cutoff: {offset: 25, size: 1, type: "UINT8", default: 0xFF}
       res: {offset: 26, size: 1, type: "UINT8", default: 0x00}
       amp: {offset: 27, size: 1, type: "UINT8", default: 0x00}
-      limit: {offset: 28, size: 1, type: "UINT8", default: 0x00}
+      limit: {offset: 28, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.M8LimitTypes"]}
       pan: {offset: 29, size: 1, type: "UINT8", default: 0x80}
       dry: {offset: 30, size: 1, type: "UINT8", default: 0xC0}
       chorus: {offset: 31, size: 1, type: "UINT8", default: 0x00}
