@@ -1,6 +1,7 @@
 from m8.api import M8Block, load_class, split_byte, join_nibbles
 from m8.enums import M8ModulatorType
 from m8.config import load_format_config, get_modulator_types, get_modulator_type_id, get_modulator_data, get_modulator_common_offsets
+import logging
 
 # Load configuration
 config = load_format_config()["modulators"]
@@ -245,8 +246,17 @@ class M8Modulator:
     def as_dict(self):
         """Convert modulator to dictionary for serialization."""
         # Start with the type and common parameters
+        # Use enum name if available, otherwise use raw value and log
+        if hasattr(self.type, 'name'):
+            type_value = self.type.name
+        else:
+            # Log the unusual type value
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Serializing non-enum modulator type: {self.type}")
+            type_value = self.type
+            
         result = {
-            "type": self.type.name if hasattr(self.type, 'name') else self.type,  # Use enum name if available
+            "type": type_value,
             "destination": self.destination,
             "amount": self.amount
         }
@@ -268,6 +278,8 @@ class M8Modulator:
         
         # Create a new modulator with the appropriate type
         try:
+            logger = logging.getLogger(__name__)
+            
             if isinstance(mod_type, str):
                 # Try to convert from enum name
                 try:
@@ -275,9 +287,16 @@ class M8Modulator:
                     modulator = cls(modulator_type=modulator_type)
                 except KeyError:
                     # If not a valid enum name, try as a string type name
+                    logger.warning(f"Deserializing non-enum modulator type name: {mod_type}")
                     modulator = cls(modulator_type=mod_type)
             else:
                 # Assume it's an integer type ID
+                # Check if it's a known enum value
+                try:
+                    M8ModulatorType(mod_type)
+                except ValueError:
+                    logger.warning(f"Deserializing unknown modulator type ID: {mod_type}")
+                    
                 modulator = cls(modulator_type=mod_type)
             
             # Set common parameters

@@ -415,8 +415,17 @@ class M8Instrument:
     def as_dict(self):
         """Convert instrument to dictionary for serialization."""
         # Start with the type and common parameters
+        # Use enum name if available, otherwise use raw value and log
+        if hasattr(self.type, 'name'):
+            type_value = self.type.name
+        else:
+            # Log the unusual type value
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Serializing non-enum instrument type: {self.type}")
+            type_value = self.type
+            
         result = {
-            "type": self.type.name if hasattr(self.type, 'name') else self.type,  # Use enum name if available
+            "type": type_value,
             "name": self.name,
             "transpose": self.transpose,
             "eq": self.eq,
@@ -446,6 +455,8 @@ class M8Instrument:
         # Create a new instrument with the appropriate type
         # Handle both enum name strings and integer type IDs
         try:
+            logger = logging.getLogger(__name__)
+            
             if isinstance(instr_type, str):
                 # Try to convert from enum name
                 try:
@@ -453,9 +464,16 @@ class M8Instrument:
                     instrument = cls(instrument_type=instrument_type)
                 except KeyError:
                     # If not a valid enum name, try as a string type name
+                    logger.warning(f"Deserializing non-enum instrument type name: {instr_type}")
                     instrument = cls(instrument_type=instr_type)
             else:
                 # Assume it's an integer type ID
+                # Check if it's a known enum value
+                try:
+                    M8InstrumentType(instr_type)
+                except ValueError:
+                    logger.warning(f"Deserializing unknown instrument type ID: {instr_type}")
+                    
                 instrument = cls(instrument_type=instr_type)
             
             # Set common parameters
