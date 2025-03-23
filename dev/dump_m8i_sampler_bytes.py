@@ -148,7 +148,7 @@ def dump_m8i(file_path):
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Dump M8 instrument file (.m8i) up to modulators offset")
-    parser.add_argument("file_path", nargs="?", default=os.path.join("dev", "303.m8i"),
+    parser.add_argument("file_path", nargs="?", default=os.path.join("dev", "303SAMPLER.m8i"),
                         help="Path to M8 instrument file (.m8i)")
     
     args = parser.parse_args()

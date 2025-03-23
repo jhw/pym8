@@ -1,11 +1,14 @@
 # short
 
+- add back version and log
+- fx example
+
 # medium
 
-- fx example
+- fmsynth
 - sampler slice points
-- trash80 FM drums
-- rave stabs >> hypersynth, tables
+- hypersynth
+- tables
 
 # beats
 
