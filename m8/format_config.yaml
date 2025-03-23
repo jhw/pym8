@@ -98,7 +98,7 @@ instruments:
   wavsynth:
     type_id: 0x00
     params:
-      shape: {offset: 18, size: 1, type: "UINT8", default: 0x00}
+      shape: {offset: 18, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.wavsynth.M8WavSynthShapes"]}
       size: {offset: 19, size: 1, type: "UINT8", default: 0x80}
       mult: {offset: 20, size: 1, type: "UINT8", default: 0x80}
       warp: {offset: 21, size: 1, type: "UINT8", default: 0x00}

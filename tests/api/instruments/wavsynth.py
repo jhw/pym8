@@ -216,7 +216,7 @@ class TestM8Params(unittest.TestCase):
         
         # Check dict
         expected = {
-            "shape": 0x1,
+            "shape": "PULSE25",  # Now using enum name
             "size": 0x70,
             "mult": 0x90,
             "warp": 0x10,
@@ -480,7 +480,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         self.assertEqual(result["eq"], 0x2)
         
         # Check synth-specific parameters
-        self.assertEqual(result["shape"], 0x1)
+        self.assertEqual(result["shape"], "PULSE25")  # Now using enum name
         self.assertEqual(result["size"], 0x70)
         self.assertEqual(result["mult"], 0x90)
         self.assertEqual(result["cutoff"], 0xE0)

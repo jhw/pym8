@@ -5,7 +5,6 @@
 - phrase notes
 - phrase fx (*)
 
-- wavsynth shapes
 - macrosynth shapes
 - sampler play modes
 
@@ -52,6 +51,7 @@
 
 # done
 
+- wavsynth shapes
 - clean up project initialise file paths
 - does project.toml include templates
 - version checking

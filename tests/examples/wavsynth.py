@@ -39,7 +39,7 @@ class TestWavSynthMapping(unittest.TestCase):
             'volume': 0,           # 0x00
             'pitch': 0,            # 0x00
             'finetune': 128,       # 0x80
-            'shape': 69,           # 0x45 (WT_VOXSYNTH)
+            'shape': "WT_VOXSYNTH", # 0x45 (Now using enum name)
             'size': 64,            # 0x40
             'mult': 32,            # 0x20
             'warp': 16,            # 0x10

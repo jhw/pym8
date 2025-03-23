@@ -4,6 +4,8 @@ from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulat
 from m8.api.version import M8Version
 from enum import Enum, auto
 from m8.enums import M8InstrumentType
+import importlib
+import logging
 from m8.config import (
     load_format_config, get_offset, get_instrument_type_id,
     get_instrument_modulators_offset, get_instrument_types,
@@ -152,7 +154,44 @@ class M8Params:
     
     def as_dict(self):
         """Convert parameters to dictionary for serialization."""
-        return {param_name: getattr(self, param_name) for param_name in self._param_defs.keys()}
+        result = {}
+        
+        for param_name, param_def in self._param_defs.items():
+            value = getattr(self, param_name)
+            
+            # Handle enum parameters
+            if "enums" in param_def:
+                enum_classes = []
+                
+                # Import the enum classes dynamically
+                for enum_path in param_def["enums"]:
+                    try:
+                        module_name, class_name = enum_path.rsplit('.', 1)
+                        module = importlib.import_module(module_name)
+                        enum_class = getattr(module, class_name)
+                        enum_classes.append(enum_class)
+                    except (ImportError, AttributeError) as e:
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Error importing enum {enum_path}: {e}")
+                
+                # If we have valid enum classes, try to convert and serialize
+                if enum_classes:
+                    # Try to convert to an enum instance if it's not already one
+                    if not hasattr(value, 'name'):
+                        for enum_class in enum_classes:
+                            try:
+                                if isinstance(value, int):
+                                    value = enum_class(value)
+                                    break  # Successfully converted to enum
+                            except ValueError:
+                                continue
+                    
+                    # Serialize the enum value or raw value
+                    value = serialize_enum(value, param_name)
+            
+            result[param_name] = value
+            
+        return result
     
     @classmethod
     def from_dict(cls, instrument_type, data):
@@ -161,7 +200,41 @@ class M8Params:
         
         for param_name in params._param_defs.keys():
             if param_name in data:
-                setattr(params, param_name, data[param_name])
+                value = data[param_name]
+                
+                # Handle enum parameters
+                param_def = params._param_defs[param_name]
+                if "enums" in param_def:
+                    enum_classes = []
+                    
+                    # Import the enum classes dynamically
+                    for enum_path in param_def["enums"]:
+                        try:
+                            module_name, class_name = enum_path.rsplit('.', 1)
+                            module = importlib.import_module(module_name)
+                            enum_class = getattr(module, class_name)
+                            enum_classes.append(enum_class)
+                        except (ImportError, AttributeError) as e:
+                            logger = logging.getLogger(__name__)
+                            logger.warning(f"Error importing enum {enum_path}: {e}")
+                    
+                    # If we have valid enum classes, try to convert the value
+                    if enum_classes:
+                        # If it's a string, try to convert to enum value
+                        if isinstance(value, str):
+                            for enum_class in enum_classes:
+                                try:
+                                    value = enum_class[value].value
+                                    break  # Found a matching enum
+                                except KeyError:
+                                    continue
+                                    
+                            # If we couldn't convert, log it
+                            if isinstance(value, str):
+                                logger = logging.getLogger(__name__)
+                                logger.warning(f"Deserializing non-enum {param_name} string: {value}")
+                
+                setattr(params, param_name, value)
             
         return params
 
