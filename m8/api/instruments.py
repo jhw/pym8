@@ -3,8 +3,9 @@ from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_str
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from m8.api.version import M8Version
 from enum import Enum, auto
+from m8.enums import M8InstrumentType
 from m8.config import (
-    load_format_config, get_offset, get_instrument_type_id, 
+    load_format_config, get_offset, get_instrument_type_id,
     get_instrument_modulators_offset, get_instrument_types,
     get_instrument_common_offsets, get_instrument_common_defaults
 )
@@ -17,25 +18,6 @@ config = load_format_config()
 
 # Instrument type mapping
 INSTRUMENT_TYPES = get_instrument_types()
-
-# Instrument type enum
-class M8InstrumentType(Enum):
-    WAVSYNTH = "wavsynth"
-    MACROSYNTH = "macrosynth"
-    SAMPLER = "sampler"
-    
-    @classmethod
-    def get_type_id(cls, type_name):
-        """Get the numeric type ID from the type name."""
-        return get_instrument_type_id(type_name)
-    
-    @classmethod
-    def from_id(cls, type_id):
-        """Get the enum value from a numeric type ID."""
-        for type_enum in cls:
-            if get_instrument_type_id(type_enum.value) == type_id:
-                return type_enum
-        return None
 
 # Global counter for auto-generating instrument names
 _INSTRUMENT_COUNTER = 0
@@ -206,21 +188,25 @@ class M8Instrument:
         # Process instrument_type
         if instrument_type is None:
             # Default to wavsynth if not specified
-            instrument_type = M8InstrumentType.WAVSYNTH.value
+            self.type = M8InstrumentType.WAVSYNTH
+            instrument_type = "wavsynth"
         elif isinstance(instrument_type, int):
-            # Convert type ID to string name
-            instr_type_enum = M8InstrumentType.from_id(instrument_type)
-            if instr_type_enum:
-                instrument_type = instr_type_enum.value
-            else:
+            # Convert type ID to enum
+            try:
+                self.type = M8InstrumentType(instrument_type)
+                instrument_type = INSTRUMENT_TYPES[instrument_type]
+            except (ValueError, KeyError):
                 raise ValueError(f"Unknown instrument type ID: {instrument_type}")
         elif isinstance(instrument_type, M8InstrumentType):
-            # If it's already an enum, get its value
-            instrument_type = instrument_type.value
+            # If it's already an enum, use it directly
+            self.type = instrument_type
+            instrument_type = INSTRUMENT_TYPES[instrument_type.value]
+        else:
+            # Assume it's a string type name
+            self.type = M8InstrumentType(get_instrument_type_id(instrument_type))
         
-        # Set the instrument type and ID
+        # Set the instrument type name
         self.instrument_type = instrument_type
-        self.type = M8InstrumentType.get_type_id(instrument_type)
         
         # Initialize version (will be set from project or read from file)
         self.version = M8Version()
@@ -430,7 +416,7 @@ class M8Instrument:
         """Convert instrument to dictionary for serialization."""
         # Start with the type and common parameters
         result = {
-            "type": self.type,
+            "type": self.type.name if hasattr(self.type, 'name') else self.type,  # Use enum name if available
             "name": self.name,
             "transpose": self.transpose,
             "eq": self.eq,
@@ -458,9 +444,19 @@ class M8Instrument:
         instr_type = data["type"]
         
         # Create a new instrument with the appropriate type
-        if instr_type in INSTRUMENT_TYPES:
-            instrument_type = INSTRUMENT_TYPES[instr_type]
-            instrument = cls(instrument_type=instrument_type)
+        # Handle both enum name strings and integer type IDs
+        try:
+            if isinstance(instr_type, str):
+                # Try to convert from enum name
+                try:
+                    instrument_type = M8InstrumentType[instr_type].value
+                    instrument = cls(instrument_type=instrument_type)
+                except KeyError:
+                    # If not a valid enum name, try as a string type name
+                    instrument = cls(instrument_type=instr_type)
+            else:
+                # Assume it's an integer type ID
+                instrument = cls(instrument_type=instr_type)
             
             # Set common parameters
             for key in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune"]:
@@ -468,7 +464,7 @@ class M8Instrument:
                     setattr(instrument, key, data[key])
             
             # Create params object and set parameters
-            instrument.params = M8Params.from_config(instrument_type)
+            instrument.params = M8Params.from_config(instrument.instrument_type)
             for key, value in data.items():
                 if key not in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune", "type", "modulators"] and hasattr(instrument.params, key):
                     setattr(instrument.params, key, value)
@@ -478,8 +474,8 @@ class M8Instrument:
                 instrument.modulators = M8Modulators.from_list(data["modulators"])
             
             return instrument
-        else:
-            raise ValueError(f"Unknown instrument type: {instr_type}")
+        except (ValueError, KeyError) as e:
+            raise ValueError(f"Invalid instrument type: {instr_type}. Error: {str(e)}")
 
     @classmethod
     def read(cls, data):

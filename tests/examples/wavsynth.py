@@ -19,7 +19,7 @@ class TestWavSynthMapping(unittest.TestCase):
     
     def test_wavsynth_type(self):
         # Verify instrument type
-        self.assertEqual(self.instrument_dict['type'], 0)
+        self.assertEqual(self.instrument_dict['type'], 0)  # When loading from file, the numeric ID is preserved
         # Check that the instrument is recognized as a WavSynth
         self.assertEqual(self.instrument.instrument_type, "wavsynth")
         

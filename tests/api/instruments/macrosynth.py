@@ -464,7 +464,7 @@ class TestM8MacroSynth(unittest.TestCase):
         result = synth.as_dict()
         
         # Check common parameters
-        self.assertEqual(result["type"], 0x01)
+        self.assertEqual(result["type"], "MACROSYNTH")
         self.assertEqual(result["name"], "TestMacroSynth")
         self.assertEqual(result["transpose"], 0x5)
         self.assertEqual(result["eq"], 0x2)
@@ -480,7 +480,7 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertIn("modulators", result)
         self.assertIsInstance(result["modulators"], list)
         self.assertGreater(len(result["modulators"]), 0)
-        self.assertEqual(result["modulators"][0]["type"], 3)  # LFO type ID
+        self.assertEqual(result["modulators"][0]["type"], "LFO")  # LFO type name
         self.assertEqual(result["modulators"][0]["destination"], 2)
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)

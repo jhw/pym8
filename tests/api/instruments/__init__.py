@@ -452,7 +452,7 @@ class TestInstrumentBase(unittest.TestCase):
         result = instr.as_dict()
         
         # Check dict
-        self.assertEqual(result["type"], 0x00)  # WavSynth type id
+        self.assertEqual(result["type"], "WAVSYNTH")  # WavSynth type id
         self.assertEqual(result["name"], "Test")
         self.assertEqual(result["transpose"], 0x5)
         self.assertEqual(result["eq"], 0x2)
@@ -465,7 +465,7 @@ class TestInstrumentBase(unittest.TestCase):
         self.assertIn("modulators", result)
         self.assertIsInstance(result["modulators"], list)
         self.assertGreater(len(result["modulators"]), 0)
-        self.assertEqual(result["modulators"][0]["type"], 3)  # LFO type ID
+        self.assertEqual(result["modulators"][0]["type"], "LFO")  # LFO type name
         self.assertEqual(result["modulators"][0]["destination"], 2)
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)
@@ -642,11 +642,11 @@ class TestM8Instruments(unittest.TestCase):
         
         # Check specific instruments
         instr0 = next(i for i in result if i["index"] == 0)
-        self.assertEqual(instr0["type"], 0x00)
+        self.assertEqual(instr0["type"], "WAVSYNTH")
         self.assertEqual(instr0["name"], "Test1")
         
         instr5 = next(i for i in result if i["index"] == 5)
-        self.assertEqual(instr5["type"], 0x01)
+        self.assertEqual(instr5["type"], "MACROSYNTH")
         self.assertEqual(instr5["name"], "Test2")
         
         # Test empty instruments

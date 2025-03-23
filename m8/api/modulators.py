@@ -1,5 +1,5 @@
 from m8.api import M8Block, load_class, split_byte, join_nibbles
-from enum import Enum
+from m8.enums import M8ModulatorType
 from m8.config import load_format_config, get_modulator_types, get_modulator_type_id, get_modulator_data, get_modulator_common_offsets
 
 # Load configuration
@@ -14,28 +14,6 @@ MODULATOR_TYPES = get_modulator_types()
 
 # Default modulator configurations
 DEFAULT_MODULATOR_CONFIGS = config["default_config"]  # 2 AHD envelopes, 2 LFOs
-
-# Modulator type enum
-class M8ModulatorType(Enum):
-    AHD_ENVELOPE = "ahd_envelope"
-    ADSR_ENVELOPE = "adsr_envelope"
-    DRUM_ENVELOPE = "drum_envelope"
-    LFO = "lfo"
-    TRIGGER_ENVELOPE = "trigger_envelope"
-    TRACKING_ENVELOPE = "tracking_envelope"
-    
-    @classmethod
-    def get_type_id(cls, type_name):
-        """Get the numeric type ID from the type name."""
-        return get_modulator_type_id(type_name)
-    
-    @classmethod
-    def from_id(cls, type_id):
-        """Get the enum value from a numeric type ID."""
-        for type_enum in cls:
-            if get_modulator_type_id(type_enum.value) == type_id:
-                return type_enum
-        return None
 
 class M8ModulatorParams:
     """Dynamic parameter container for modulator parameters."""
@@ -151,21 +129,25 @@ class M8Modulator:
         # Process modulator_type
         if modulator_type is None:
             # Default to AHD envelope if not specified
-            modulator_type = M8ModulatorType.AHD_ENVELOPE.value
+            self.type = M8ModulatorType.AHD_ENVELOPE
+            modulator_type = "ahd_envelope"
         elif isinstance(modulator_type, int):
-            # Convert type ID to string name
-            mod_type_enum = M8ModulatorType.from_id(modulator_type)
-            if mod_type_enum:
-                modulator_type = mod_type_enum.value
-            else:
+            # Convert type ID to enum
+            try:
+                self.type = M8ModulatorType(modulator_type)
+                modulator_type = MODULATOR_TYPES[modulator_type]
+            except (ValueError, KeyError):
                 raise ValueError(f"Unknown modulator type ID: {modulator_type}")
         elif isinstance(modulator_type, M8ModulatorType):
-            # If it's already an enum, get its value
-            modulator_type = modulator_type.value
+            # If it's already an enum, use it directly
+            self.type = modulator_type
+            modulator_type = MODULATOR_TYPES[modulator_type.value]
+        else:
+            # Assume it's a string type name
+            self.type = M8ModulatorType(get_modulator_type_id(modulator_type))
         
-        # Set the modulator type and ID
+        # Set the modulator type name
         self.modulator_type = modulator_type
-        self.type = M8ModulatorType.get_type_id(modulator_type)
         
         # Common modulator parameters
         self.destination = self.EMPTY_DESTINATION
@@ -264,7 +246,7 @@ class M8Modulator:
         """Convert modulator to dictionary for serialization."""
         # Start with the type and common parameters
         result = {
-            "type": self.type,
+            "type": self.type.name if hasattr(self.type, 'name') else self.type,  # Use enum name if available
             "destination": self.destination,
             "amount": self.amount
         }
@@ -285,9 +267,18 @@ class M8Modulator:
         mod_type = data["type"]
         
         # Create a new modulator with the appropriate type
-        if mod_type in MODULATOR_TYPES:
-            modulator_type = MODULATOR_TYPES[mod_type]
-            modulator = cls(modulator_type=modulator_type)
+        try:
+            if isinstance(mod_type, str):
+                # Try to convert from enum name
+                try:
+                    modulator_type = M8ModulatorType[mod_type].value
+                    modulator = cls(modulator_type=modulator_type)
+                except KeyError:
+                    # If not a valid enum name, try as a string type name
+                    modulator = cls(modulator_type=mod_type)
+            else:
+                # Assume it's an integer type ID
+                modulator = cls(modulator_type=mod_type)
             
             # Set common parameters
             for key in ["destination", "amount"]:
@@ -300,8 +291,8 @@ class M8Modulator:
                     setattr(modulator.params, key, value)
             
             return modulator
-        else:
-            raise ValueError(f"Unknown modulator type: {mod_type}")
+        except (ValueError, KeyError) as e:
+            raise ValueError(f"Invalid modulator type: {mod_type}. Error: {str(e)}")
 
 class M8Modulators(list):
     """Collection of M8 modulators."""

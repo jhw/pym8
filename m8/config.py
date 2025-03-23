@@ -92,6 +92,11 @@ def get_modulator_types():
 
 def get_modulator_type_id(modulator_type):
     """Retrieves type ID for a modulator from configuration."""
+    # If it's already an integer, just return it
+    if isinstance(modulator_type, int):
+        return modulator_type
+        
+    # Handle string type names
     config = load_format_config()
     if 'modulators' in config and 'types' in config['modulators'] and modulator_type in config['modulators']['types']:
         type_id = config['modulators']['types'][modulator_type]['id']
@@ -102,6 +107,11 @@ def get_modulator_type_id(modulator_type):
 
 def get_instrument_type_id(instrument_type):
     """Retrieves type ID for an instrument from configuration."""
+    # If it's already an integer, just return it
+    if isinstance(instrument_type, int):
+        return instrument_type
+        
+    # Handle string type names
     config = load_format_config()
     if 'instruments' in config and instrument_type in config['instruments']:
         type_id = config['instruments'][instrument_type]['type_id']

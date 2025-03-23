@@ -267,7 +267,7 @@ class TestM8Modulator(unittest.TestCase):
         result = mod.as_dict()
         
         # Check dict
-        self.assertEqual(result["type"], 3)
+        self.assertEqual(result["type"], "LFO")
         self.assertEqual(result["destination"], 0x5)
         self.assertEqual(result["amount"], 0x80)
         self.assertEqual(result["oscillator"], 0x1)
@@ -467,12 +467,12 @@ class TestM8Modulators(unittest.TestCase):
         
         # Check specific modulators
         mod0 = next(i for i in result if i["index"] == 0)
-        self.assertEqual(mod0["type"], 3)
+        self.assertEqual(mod0["type"], "LFO")
         self.assertEqual(mod0["destination"], 1)
         self.assertEqual(mod0["amount"], 0xFF)
         
         mod1 = next(i for i in result if i["index"] == 1)
-        self.assertEqual(mod1["type"], 0)
+        self.assertEqual(mod1["type"], "AHD_ENVELOPE")
         self.assertEqual(mod1["destination"], 2)
         self.assertEqual(mod1["amount"], 0xFF)
     

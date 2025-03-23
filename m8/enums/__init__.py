@@ -25,6 +25,35 @@ def generate_notes_enum():
 # Create the notes enum
 M8Notes = generate_notes_enum()
 
+class M8InstrumentType(IntEnum):
+    WAVSYNTH = 0x00
+    MACROSYNTH = 0x01
+    SAMPLER = 0x02
+    
+    @classmethod
+    def from_id(cls, type_id):
+        """Get the enum value from a numeric type ID."""
+        try:
+            return cls(type_id)
+        except ValueError:
+            return None
+
+class M8ModulatorType(IntEnum):
+    AHD_ENVELOPE = 0x00
+    ADSR_ENVELOPE = 0x01
+    DRUM_ENVELOPE = 0x02
+    LFO = 0x03
+    TRIGGER_ENVELOPE = 0x04
+    TRACKING_ENVELOPE = 0x05
+    
+    @classmethod
+    def from_id(cls, type_id):
+        """Get the enum value from a numeric type ID."""
+        try:
+            return cls(type_id)
+        except ValueError:
+            return None
+
 class M8SequencerFX(IntEnum):
     ARP = 0x0
     ARC = 0x45
