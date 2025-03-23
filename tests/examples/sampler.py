@@ -45,7 +45,7 @@ class TestSamplerMapping(unittest.TestCase):
             'loop_start': 0,       # 0x00
             'length': 128,         # 0x80
             'degrade': 1,          # 0x01
-            'filter': 3,           # 0x03
+            'filter': "BANDPASS",  # 0x03 (Enum value from M8FilterTypes)
             'cutoff': 111,         # 0x6F
             'res': 224,            # 0xE0
             'amp': 16,             # 0x10

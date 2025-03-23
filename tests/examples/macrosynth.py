@@ -44,7 +44,7 @@ class TestMacroSynthMapping(unittest.TestCase):
             'color': 144,          # 0x90
             'degrade': 1,          # 0x01
             'redux': 208,          # 0xD0
-            'filter': 1,           # 0x01
+            'filter': "LOWPASS",   # 0x01 (Enum value from M8FilterTypes)
             'cutoff': 48,          # 0x30
             'res': 224,            # 0xE0
             'amp': 32,             # 0x20

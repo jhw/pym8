@@ -103,7 +103,7 @@ instruments:
       mult: {offset: 20, size: 1, type: "UINT8", default: 0x80}
       warp: {offset: 21, size: 1, type: "UINT8", default: 0x00}
       scan: {offset: 22, size: 1, type: "UINT8", default: 0x00}
-      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00}
+      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.M8FilterTypes"]}
       cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
       res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
       amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
@@ -122,7 +122,7 @@ instruments:
       color: {offset: 20, size: 1, type: "UINT8", default: 0x80}
       degrade: {offset: 21, size: 1, type: "UINT8", default: 0x00}
       redux: {offset: 22, size: 1, type: "UINT8", default: 0x00}
-      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00}
+      filter: {offset: 23, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.M8FilterTypes"]}
       cutoff: {offset: 24, size: 1, type: "UINT8", default: 0xFF}
       res: {offset: 25, size: 1, type: "UINT8", default: 0x00}
       amp: {offset: 26, size: 1, type: "UINT8", default: 0x00}
@@ -142,7 +142,7 @@ instruments:
       loop_start: {offset: 21, size: 1, type: "UINT8", default: 0x00}
       length: {offset: 22, size: 1, type: "UINT8", default: 0xFF}
       degrade: {offset: 23, size: 1, type: "UINT8", default: 0x00}
-      filter: {offset: 24, size: 1, type: "UINT8", default: 0x00}
+      filter: {offset: 24, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.M8FilterTypes"]}
       cutoff: {offset: 25, size: 1, type: "UINT8", default: 0xFF}
       res: {offset: 26, size: 1, type: "UINT8", default: 0x00}
       amp: {offset: 27, size: 1, type: "UINT8", default: 0x00}

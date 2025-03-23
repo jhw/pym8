@@ -44,7 +44,7 @@ class TestWavSynthMapping(unittest.TestCase):
             'mult': 32,            # 0x20
             'warp': 16,            # 0x10
             'scan': 16,            # 0x10
-            'filter': 1,           # 0x01
+            'filter': "LOWPASS",   # 0x01 (Enum value from M8FilterTypes)
             'cutoff': 32,          # 0x20
             'res': 208,            # 0xD0
             'amp': 80,             # 0x50

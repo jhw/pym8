@@ -221,7 +221,7 @@ class TestM8InstrumentParams(unittest.TestCase):
             "mult": 0x90,
             "warp": 0x10,
             "scan": 0x20,
-            "filter": 0x2,
+            "filter": "HIGHPASS",  # Now using enum name
             "cutoff": 0xE0,
             "res": 0x30,
             "amp": 0x40,

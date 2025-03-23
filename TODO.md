@@ -1,20 +1,20 @@
 # short
 
-# enum roadmap
+## enum roadmap
 
-- phrase notes
-- phrase fx (*)
-
-- filter types
 - limit types
+- phrase notes
 
+- phrase fx (*)
 - mod destinations (*)
 
-# in progress
+---
 
-- abstract enum helper functions (done)
+- specify enum defaults as strings in config yaml
+- instrument/modulator enum strings to be upper case?
 
 # medium
+
 - fx example
 - TODO.md >> github project
 - 5.0.2 test
@@ -50,6 +50,7 @@
 - wavsynth shapes
 - macrosynth shapes
 - sampler play modes
+- filter types
 - clean up project initialise file paths
 - does project.toml include templates
 - version checking

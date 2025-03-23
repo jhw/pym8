@@ -250,7 +250,7 @@ class TestM8SamplerParams(unittest.TestCase):
         # Convert to dict
         result = params.as_dict()
         
-        # Check dict with play_mode as enum name
+        # Check dict with play_mode and filter as enum names
         expected = {
             "play_mode": "REV",  # Enum name instead of 0x1
             "slice": 0x5,
@@ -258,7 +258,7 @@ class TestM8SamplerParams(unittest.TestCase):
             "loop_start": 0x20,
             "length": 0xE0,
             "degrade": 0x30,
-            "filter": 0x2,
+            "filter": "HIGHPASS",  # Enum name instead of 0x2
             "cutoff": 0xD0,
             "res": 0x40,
             "amp": 0x50,
@@ -275,7 +275,7 @@ class TestM8SamplerParams(unittest.TestCase):
             self.assertEqual(result[key], value)
     
     def test_from_dict(self):
-        # Test data with play_mode as enum name
+        # Test data with play_mode and filter as enum names
         data = {
             "play_mode": "REV",  # Enum name instead of 0x1
             "slice": 0x5,
@@ -283,7 +283,7 @@ class TestM8SamplerParams(unittest.TestCase):
             "loop_start": 0x20,
             "length": 0xE0,
             "degrade": 0x30,
-            "filter": 0x2,
+            "filter": "HIGHPASS",  # Enum name instead of 0x2
             "cutoff": 0xD0,
             "res": 0x40,
             "amp": 0x50,
@@ -299,9 +299,10 @@ class TestM8SamplerParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("sampler", data)
         
-        # For play_mode, we expect the integer value 0x1 (REV)
+        # For play_mode and filter, we expect the integer values
         expected_values = data.copy()
-        expected_values["play_mode"] = 0x1
+        expected_values["play_mode"] = 0x1  # REV
+        expected_values["filter"] = 0x2  # HIGHPASS
         
         # Check values
         for key, value in expected_values.items():

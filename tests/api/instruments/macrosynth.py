@@ -217,7 +217,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
             "color": 0x90,
             "degrade": 0x10,
             "redux": 0x20,
-            "filter": 0x2,
+            "filter": "HIGHPASS",  # Now using enum name
             "cutoff": 0xE0,
             "res": 0x30,
             "amp": 0x40,
@@ -233,14 +233,14 @@ class TestM8MacroSynthParams(unittest.TestCase):
             self.assertEqual(result[key], value)
     
     def test_from_dict(self):
-        # Test data with shape as enum name
+        # Test data with shape and filter as enum names
         data = {
             "shape": "MORPH",  # Enum name instead of 0x1
             "timbre": 0x70,
             "color": 0x90,
             "degrade": 0x10,
             "redux": 0x20,
-            "filter": 0x2,
+            "filter": "HIGHPASS",  # Enum name instead of 0x2
             "cutoff": 0xE0,
             "res": 0x30,
             "amp": 0x40,
@@ -255,9 +255,10 @@ class TestM8MacroSynthParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("macrosynth", data)
         
-        # For shape, we expect the integer value 0x1 (MORPH)
+        # For shape and filter, we expect the integer values
         expected_values = data.copy()
-        expected_values["shape"] = 0x1
+        expected_values["shape"] = 0x1  # MORPH
+        expected_values["filter"] = 0x2  # HIGHPASS
         
         # Check values
         for key, value in expected_values.items():
