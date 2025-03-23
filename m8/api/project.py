@@ -187,41 +187,35 @@ class M8Project:
 
     @classmethod
     def initialise(cls, template_name: str = "DEFAULT401"):
-        """Creates a new project from a template file, searching in multiple locations."""
+        """Creates a new project from a template file."""
         import os
         import sys
         
-        # Try multiple approaches to find the template file
+        template_filename = template_name if template_name.endswith('.m8s') else f"{template_name}.m8s"
         
-        # 1. Direct check for site-packages installation
-        for path in sys.path:
-            if 'site-packages' in path:
-                potential_path = os.path.join(path, 'm8', 'templates', f"{template_name}.m8s")
-                if os.path.exists(potential_path):
-                    return cls.read_from_file(potential_path)
-        
-        # 2. Try pkg_resources as a fallback
         try:
-            import pkg_resources
+            import importlib.resources
             try:
-                template_path = pkg_resources.resource_filename('m8', f'templates/{template_name}.m8s')
-                if os.path.exists(template_path):
-                    return cls.read_from_file(template_path)
-            except (ImportError, pkg_resources.DistributionNotFound, TypeError):
-                # If pkg_resources.resource_filename fails, continue to next approach
+                with importlib.resources.path('m8.templates', template_filename) as template_path:
+                    if os.path.exists(template_path):
+                        return cls.read_from_file(str(template_path))
+            except (ImportError, ModuleNotFoundError, FileNotFoundError):
                 pass
         except ImportError:
-            # pkg_resources not available
             pass
             
-        # 3. Try relative path (for local development)
-        module_path = os.path.dirname(os.path.abspath(__file__))
-        template_path = os.path.join(module_path, "..", "templates", f"{template_name}.m8s")
-        
-        if not os.path.exists(template_path):
-            raise FileNotFoundError(f"Template '{template_name}' not found. Check that {template_name}.m8s exists in the m8/templates directory.")
+        for path in sys.path:
+            potential_path = os.path.join(path, 'm8', 'templates', template_filename)
+            if os.path.exists(potential_path):
+                return cls.read_from_file(potential_path)
             
-        return cls.read_from_file(template_path)
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(module_path, "..", "templates", template_filename)
+        
+        if os.path.exists(template_path):
+            return cls.read_from_file(template_path)
+            
+        raise FileNotFoundError(f"Template '{template_filename}' not found. Check that it exists in the m8/templates directory.")
 
     def write_to_file(self, filename: str):
         with open(filename, "wb") as f:

@@ -1,41 +1,44 @@
-# Project Preferences
+# Project Guidelines
 
-## Project Structure
-
+## Project Overview
 - This project is a reader/writer for the Dirtywave M8 tracker binary file format
 - Core functionality lives in m8/api
+- Tests mirror the structure of the main codebase in the /tests directory
 
-## Environment
+## Code Requirements
 
-- see requirements.txt
-- pip- installed dependencies live in env/lib/python3.10/site-packages
+### Critical Rules
+- **NO TYPE HINTS**: Never include Python type annotations
+- **NO COMMENTS**: Do not add explanatory comments unless explicitly requested or for genuinely complex algorithms
+- **NO BACKWARDS COMPATIBILITY**: Avoid "if legacy format..." logic
+- **NO INLINE DEFAULTS**: Don't use patterns like `value = data.get("field", "default")`
 
-## Code Style
-
-- DO NOT create backwards compatible code (no "if legacy format..." logic)
-- DO NOT create inline defaults (e.g., `value = data.get("field", "default")`) - assume data is valid
-- ABSOLUTELY NO TYPE HINTS! Never include Python type annotations in generated code
-- COMMENTS POLICY: DO NOT add any explanatory comments to code unless explicitly requested; only add comments for genuinely complex algorithms and critical implementation details
-- Use descriptive variable names that match the domain terminology
+### Code Style
 - Keep functions focused on a single responsibility
+- Use descriptive variable names that match domain terminology
 - Follow existing code style and conventions in the project
+- When working with files, check if corresponding tests exist and update them
+- Assume input data is valid - don't defensively check inputs
 
+## Testing Workflow
+1. All tests live in the /tests directory mirroring the m8 directory structure
+2. For changes to m8/api/foo.py, look for corresponding tests in tests/api/foo.py
+3. Run tests with `python run_tests.py` after making any changes
+4. Create/update tests when adding new functionality
+5. If you go through more than 3 test cycles with worsening error percentages, stop and ask for help
 
-## Git Workflow
-
-- Always work in branch claude-code; if this doesn't exist, create it; if you are not on this branch, check it out
-- For substantial changes, stage files incrementally in logical groups
-- When suggesting changes that affect multiple files, summarize the changes
-- Always test before staging; ALWAYS ask before committing
-- DO NOT create any tags unless asked
-- When asked to create a tag, lookup the list of tags and bump the minor version
-- Don't push anything to origin; I will do that
-- Check TODO.md to see what tasks are prioritized and should be worked on next
+## Task Management
+- Check TODO.md for prioritized tasks
 - When completing a task, move it from its section to the "done" section in TODO.md
 
-## Testing 
+## Git Workflow
+- Always work in branch `claude-code`
+- Stage files incrementally in logical groups for substantial changes
+- Always test before staging
+- Always ask before committing
+- Don't push anything to origin
+- Don't create tags unless specifically asked
 
-- There is an extensive test suite in /tests and a script which runs all tests called run_tests.py
-- Run this to see if changes you have made pass and reflect on the results when iterating towards solutions
-- Count how many test cycles you go through, and if the percentage of errors is getting better or worse; if you go through more than 3 cycles and the error percentage is worsening, consider stopping and asking for help
-
+## Environment
+- Dependencies are listed in requirements.txt
+- Pip-installed dependencies live in env/lib/python3.10/site-packages

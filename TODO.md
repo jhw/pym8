@@ -1,10 +1,10 @@
 # short
 
-- clean up project initialise file paths
 - fx example
 
 # medium
 
+- 5.0.2 test
 - fmsynth
 - sampler slice points
 - hypersynth
@@ -32,6 +32,7 @@
 
 # done
 
+- clean up project initialise file paths
 - does project.toml include templates
 - version checking
 - add back version and log
