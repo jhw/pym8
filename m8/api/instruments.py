@@ -1,5 +1,5 @@
 # m8/api/instruments.py
-from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string
+from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from m8.api.version import M8Version
 from enum import Enum, auto
@@ -415,14 +415,7 @@ class M8Instrument:
     def as_dict(self):
         """Convert instrument to dictionary for serialization."""
         # Start with the type and common parameters
-        # Use enum name if available, otherwise use raw value and log
-        if hasattr(self.type, 'name'):
-            type_value = self.type.name
-        else:
-            # Log the unusual type value
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Serializing non-enum instrument type: {self.type}")
-            type_value = self.type
+        type_value = serialize_enum(self.type, 'instrument')
             
         result = {
             "type": type_value,
@@ -457,24 +450,8 @@ class M8Instrument:
         try:
             logger = logging.getLogger(__name__)
             
-            if isinstance(instr_type, str):
-                # Try to convert from enum name
-                try:
-                    instrument_type = M8InstrumentType[instr_type].value
-                    instrument = cls(instrument_type=instrument_type)
-                except KeyError:
-                    # If not a valid enum name, try as a string type name
-                    logger.warning(f"Deserializing non-enum instrument type name: {instr_type}")
-                    instrument = cls(instrument_type=instr_type)
-            else:
-                # Assume it's an integer type ID
-                # Check if it's a known enum value
-                try:
-                    M8InstrumentType(instr_type)
-                except ValueError:
-                    logger.warning(f"Deserializing unknown instrument type ID: {instr_type}")
-                    
-                instrument = cls(instrument_type=instr_type)
+            instrument_type = deserialize_enum(M8InstrumentType, instr_type, 'instrument')
+            instrument = cls(instrument_type=instrument_type)
             
             # Set common parameters
             for key in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune"]:

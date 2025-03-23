@@ -1,4 +1,4 @@
-from m8.api import M8Block, load_class, split_byte, join_nibbles
+from m8.api import M8Block, load_class, split_byte, join_nibbles, serialize_enum, deserialize_enum
 from m8.enums import M8ModulatorType
 from m8.config import load_format_config, get_modulator_types, get_modulator_type_id, get_modulator_data, get_modulator_common_offsets
 import logging
@@ -246,14 +246,7 @@ class M8Modulator:
     def as_dict(self):
         """Convert modulator to dictionary for serialization."""
         # Start with the type and common parameters
-        # Use enum name if available, otherwise use raw value and log
-        if hasattr(self.type, 'name'):
-            type_value = self.type.name
-        else:
-            # Log the unusual type value
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Serializing non-enum modulator type: {self.type}")
-            type_value = self.type
+        type_value = serialize_enum(self.type, 'modulator')
             
         result = {
             "type": type_value,
@@ -280,24 +273,8 @@ class M8Modulator:
         try:
             logger = logging.getLogger(__name__)
             
-            if isinstance(mod_type, str):
-                # Try to convert from enum name
-                try:
-                    modulator_type = M8ModulatorType[mod_type].value
-                    modulator = cls(modulator_type=modulator_type)
-                except KeyError:
-                    # If not a valid enum name, try as a string type name
-                    logger.warning(f"Deserializing non-enum modulator type name: {mod_type}")
-                    modulator = cls(modulator_type=mod_type)
-            else:
-                # Assume it's an integer type ID
-                # Check if it's a known enum value
-                try:
-                    M8ModulatorType(mod_type)
-                except ValueError:
-                    logger.warning(f"Deserializing unknown modulator type ID: {mod_type}")
-                    
-                modulator = cls(modulator_type=mod_type)
+            modulator_type = deserialize_enum(M8ModulatorType, mod_type, 'modulator')
+            modulator = cls(modulator_type=modulator_type)
             
             # Set common parameters
             for key in ["destination", "amount"]:

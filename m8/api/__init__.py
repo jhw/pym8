@@ -1,4 +1,5 @@
 import json
+import logging
 
 # exceptions
     
@@ -144,3 +145,32 @@ def json_loads(json_str):
     """Deserialize a JSON string using M8 decoding (hex strings to integers)."""
     return json.loads(json_str,
                       object_hook = m8_json_decoder)
+
+# enum helpers
+
+def serialize_enum(enum_value, log_prefix=None):
+    if hasattr(enum_value, 'name'):
+        return enum_value.name
+    else:
+        logger = logging.getLogger(__name__)
+        prefix = f"{log_prefix} " if log_prefix else ""
+        logger.warning(f"Serializing non-enum {prefix}type: {enum_value}")
+        return enum_value
+
+def deserialize_enum(enum_class, value, log_prefix=None):
+    logger = logging.getLogger(__name__)
+    prefix = f"{log_prefix} " if log_prefix else ""
+    
+    if isinstance(value, str):
+        try:
+            return enum_class[value].value
+        except KeyError:
+            logger.warning(f"Deserializing non-enum {prefix}type name: {value}")
+            return value
+    else:
+        try:
+            enum_class(value)
+        except ValueError:
+            logger.warning(f"Deserializing unknown {prefix}type ID: {value}")
+        
+        return value
