@@ -228,7 +228,7 @@ class TestM8SamplerParams(unittest.TestCase):
     def test_as_dict(self):
         # Create params
         params = M8InstrumentParams.from_config("sampler",
-            play_mode=0x1,
+            play_mode=0x1,  # REV
             slice=0x5,
             start=0x10,
             loop_start=0x20,
@@ -250,9 +250,9 @@ class TestM8SamplerParams(unittest.TestCase):
         # Convert to dict
         result = params.as_dict()
         
-        # Check dict
+        # Check dict with play_mode as enum name
         expected = {
-            "play_mode": 0x1,
+            "play_mode": "REV",  # Enum name instead of 0x1
             "slice": 0x5,
             "start": 0x10,
             "loop_start": 0x20,
@@ -275,9 +275,9 @@ class TestM8SamplerParams(unittest.TestCase):
             self.assertEqual(result[key], value)
     
     def test_from_dict(self):
-        # Test data
+        # Test data with play_mode as enum name
         data = {
-            "play_mode": 0x1,
+            "play_mode": "REV",  # Enum name instead of 0x1
             "slice": 0x5,
             "start": 0x10,
             "loop_start": 0x20,
@@ -299,8 +299,12 @@ class TestM8SamplerParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("sampler", data)
         
+        # For play_mode, we expect the integer value 0x1 (REV)
+        expected_values = data.copy()
+        expected_values["play_mode"] = 0x1
+        
         # Check values
-        for key, value in data.items():
+        for key, value in expected_values.items():
             self.assertEqual(getattr(params, key), value)
 
 
@@ -538,7 +542,7 @@ class TestM8Sampler(unittest.TestCase):
             eq=0x2,
             
             # Specific parameters
-            play_mode=0x1,
+            play_mode=0x1,  # REV
             slice=0x5,
             start=0x10,
             cutoff=0xD0,
@@ -560,7 +564,7 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(result["eq"], 0x2)
         
         # Check specific parameters
-        self.assertEqual(result["play_mode"], 0x1)
+        self.assertEqual(result["play_mode"], "REV")  # Now returns enum name
         self.assertEqual(result["slice"], 0x5)
         self.assertEqual(result["start"], 0x10)
         self.assertEqual(result["cutoff"], 0xD0)

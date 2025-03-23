@@ -39,7 +39,7 @@ class TestSamplerMapping(unittest.TestCase):
             'volume': 0,           # 0x00
             'pitch': 0,            # 0x00
             'finetune': 129,       # 0x81
-            'play_mode': 0,        # 0x00
+            'play_mode': 'FWD',    # 0x00 (Enum value from M8SamplerPlayMode)
             'slice': 0,            # 0x00
             'start': 0,            # 0x00
             'loop_start': 0,       # 0x00

@@ -136,7 +136,7 @@ instruments:
   sampler:
     type_id: 0x02
     params:
-      play_mode: {offset: 18, size: 1, type: "UINT8", default: 0x00}
+      play_mode: {offset: 18, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.sampler.M8SamplerPlayMode"]}
       slice: {offset: 19, size: 1, type: "UINT8", default: 0x00}
       start: {offset: 20, size: 1, type: "UINT8", default: 0x00}
       loop_start: {offset: 21, size: 1, type: "UINT8", default: 0x00}
