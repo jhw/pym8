@@ -1,12 +1,26 @@
-# short
+# short [enums]
 
-- fx example
+- phrase notes
+- phrase fx (*)
+
+- wavsynth shapes
+- macrosynth shapes
+- sampler play modes
+
+- filter types
+- limit types
+
+- mod destinations (*)
 
 # medium
 
+- M8Params >> M8InstrumentParams
+- fx example
+- TODO.md >> github project
 - 5.0.2 test
+
+- sampler slices
 - fmsynth
-- sampler slice points
 - hypersynth
 - tables
 
