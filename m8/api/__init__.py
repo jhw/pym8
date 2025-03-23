@@ -149,39 +149,50 @@ def json_loads(json_str):
 # enum helpers
 
 def serialize_enum(enum_value, log_prefix=None):
+    # If it's already an enum instance, return its name
     if hasattr(enum_value, 'name'):
         return enum_value.name
-    else:
-        logger = logging.getLogger(__name__)
-        prefix = f"{log_prefix} " if log_prefix else ""
-        logger.warning(f"Serializing non-enum {prefix}type: {enum_value}")
-        return enum_value
-
-def deserialize_enum(enum_class, value, log_prefix=None):
+    
+    # For backward compatibility, preserve integer values
+    # This allows existing code to continue working
     logger = logging.getLogger(__name__)
     prefix = f"{log_prefix} " if log_prefix else ""
+    logger.warning(f"Serializing non-enum {prefix}type: {enum_value}")
+    return enum_value
+
+def deserialize_enum(enum_class, value, log_prefix=None):
+    from m8.enums import M8EnumError
     
     if isinstance(value, str):
         try:
             return enum_class[value].value
         except KeyError:
-            logger.warning(f"Deserializing non-enum {prefix}type name: {value}")
-            return value
+            error_msg = f"Invalid enum string value: '{value}' not found in {enum_class.__name__}"
+            if log_prefix:
+                error_msg = f"{log_prefix}: {error_msg}"
+            raise M8EnumError(error_msg)
     else:
+        # For integers, just validate but don't raise an error if not found
+        # This maintains backward compatibility with existing data
         try:
             enum_class(value)
         except ValueError:
+            logger = logging.getLogger(__name__)
+            prefix = f"{log_prefix} " if log_prefix else ""
             logger.warning(f"Deserializing unknown {prefix}type ID: {value}")
         
         return value
 
 def deserialize_param_enum(enum_paths, value, param_name=None):
     import importlib
+    from m8.enums import M8EnumError
     logger = logging.getLogger(__name__)
     
+    # Only string values need to be converted; integers are kept as is
     if not isinstance(value, str):
         return value
         
+    # Attempt to find the enum value in one of the provided enum classes
     enum_classes = []
     for enum_path in enum_paths:
         try:
@@ -199,17 +210,20 @@ def deserialize_param_enum(enum_paths, value, param_name=None):
             except KeyError:
                 continue
     
-    param_info = f" for {param_name}" if param_name else ""
-    logger.warning(f"Could not deserialize enum string{param_info}: {value}")
-    return value
+    # If we reach here, the string value doesn't match any enum
+    param_details = f" for parameter '{param_name}'" if param_name else ""
+    error_msg = f"Invalid enum string value: '{value}' not found in any of the provided enum classes{param_details}"
+    raise M8EnumError(error_msg)
     
 def ensure_enum_int_value(value, enum_paths):
+    # Only string values need to be converted; integers are kept as is
     if not isinstance(value, str):
         return value
         
     import importlib
-    logger = logging.getLogger(__name__)
+    from m8.enums import M8EnumError
     
+    # Try to find the enum in all provided paths
     for enum_path in enum_paths:
         try:
             module_name, class_name = enum_path.rsplit('.', 1)
@@ -222,4 +236,6 @@ def ensure_enum_int_value(value, enum_paths):
         except (ImportError, AttributeError):
             continue
     
-    return value
+    # If we reach here, the string value doesn't match any enum
+    error_msg = f"Invalid enum string value: '{value}' not found in any of the provided enum classes"
+    raise M8EnumError(error_msg)

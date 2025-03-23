@@ -1,7 +1,5 @@
 # short
 
-- int values not found in enums to raise exceptions
-
 - add constructor enum supoort to modulator
 - add mod destination enums
 - add constructor enum support to fx
@@ -52,6 +50,7 @@
 - filter types
 - limit types
 - constructor support for enum field string values
+- int values not found in enums to raise exceptions
 - clean up project initialise file paths
 - does project.toml include templates
 - version checking

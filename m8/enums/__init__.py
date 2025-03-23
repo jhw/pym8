@@ -1,5 +1,9 @@
 from enum import IntEnum
 
+class M8EnumError(Exception):
+    """Exception raised when an invalid enum value is provided."""
+    pass
+
 def generate_notes_enum():
     # Define all notes without the # symbol
     raw_note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
