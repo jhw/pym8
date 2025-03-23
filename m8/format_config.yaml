@@ -1,3 +1,6 @@
+version:
+  offset: 0x0A
+  
 metadata:
   offset: 0x0E
   block_size: 147

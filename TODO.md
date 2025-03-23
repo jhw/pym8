@@ -1,6 +1,5 @@
 # short
 
-- add back version and log
 - fx example
 
 # medium
@@ -32,6 +31,7 @@
 
 # done
 
+- add back version and log
 - instrument type classes should have M8 prefix 
 - song counts should be in config 
 - remove custom IndexError (not needed/used)

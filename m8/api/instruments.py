@@ -1,10 +1,16 @@
 # m8/api/instruments.py
 from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
+from m8.api.version import M8Version
 from enum import Enum, auto
-from m8.config import load_format_config, get_instrument_type_id, get_instrument_modulators_offset, get_instrument_types, get_instrument_common_offsets, get_instrument_common_defaults
+from m8.config import (
+    load_format_config, get_offset, get_instrument_type_id, 
+    get_instrument_modulators_offset, get_instrument_types,
+    get_instrument_common_offsets, get_instrument_common_defaults
+)
 
 import random
+import logging
 
 # Load configuration
 config = load_format_config()
@@ -494,10 +500,16 @@ class M8Instrument:
         with open(file_path, "rb") as f:
             data = f.read()
         
-        metadata_offset = load_format_config()["metadata"]["offset"]
-        if isinstance(metadata_offset, str) and metadata_offset.startswith('0x'):
-            metadata_offset = int(metadata_offset, 16)
+        # Set up logging
+        logger = logging.getLogger(__name__)
         
+        # Read version from file
+        version_offset = get_offset("version")
+        version = M8Version.read(data[version_offset:])
+        logger.info(f"M8 instrument file {file_path} has version {version}")
+        
+        # Read instrument data
+        metadata_offset = get_offset("metadata")
         instrument_data = data[metadata_offset:]
         
         return cls.read(instrument_data)
@@ -505,12 +517,13 @@ class M8Instrument:
     def write_to_file(self, file_path):
         instrument_data = self.write()
         
-        metadata_offset = load_format_config()["metadata"]["offset"]
-        if isinstance(metadata_offset, str) and metadata_offset.startswith('0x'):
-            metadata_offset = int(metadata_offset, 16)
+        # Get metadata offset
+        metadata_offset = get_offset("metadata")
             
+        # Create data buffer with zeros for header and instrument data
         m8i_data = bytearray([0] * metadata_offset) + instrument_data
         
+        # Write file
         with open(file_path, "wb") as f:
             f.write(m8i_data)
 

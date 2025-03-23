@@ -4,12 +4,18 @@ from m8.api.instruments import M8Instruments
 from m8.api.metadata import M8Metadata
 from m8.api.phrases import M8Phrases
 from m8.api.song import M8SongMatrix
+from m8.api.version import M8Version
 from m8.config import get_offset
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Reference: https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
 
 # Dictionary to cache offsets loaded from configuration
 OFFSETS = {
+    "version": get_offset("version"),
     "metadata": get_offset("metadata"),
     "groove": get_offset("groove"),
     "song": get_offset("song"),
@@ -38,6 +44,10 @@ class M8Project:
     def read(cls, data):
         instance = cls()
         instance.data = bytearray(data)
+
+        # Read version and log it
+        version = M8Version.read(data[OFFSETS["version"]:])
+        logger.info(f"M8 file version: {version}")
 
         instance.metadata = M8Metadata.read(data[OFFSETS["metadata"]:])
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
@@ -135,6 +145,7 @@ class M8Project:
     
     def write(self) -> bytes:
         output = bytearray(self.data)
+        
         for name, offset in OFFSETS.items():
             if hasattr(self, name):
                 block = getattr(self, name)
