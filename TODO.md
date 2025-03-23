@@ -1,5 +1,6 @@
 # short
 
+- project initialise cleanup
 - fx example
 
 # medium
@@ -31,6 +32,7 @@
 
 # done
 
+- version checking
 - add back version and log
 - instrument type classes should have M8 prefix 
 - song counts should be in config 

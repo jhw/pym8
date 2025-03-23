@@ -222,6 +222,9 @@ class M8Instrument:
         self.instrument_type = instrument_type
         self.type = M8InstrumentType.get_type_id(instrument_type)
         
+        # Initialize version (will be set from project or read from file)
+        self.version = M8Version()
+        
         # Generate sequential name if not provided
         if 'name' not in kwargs:
             # Use instrument type for name base
@@ -435,6 +438,7 @@ class M8Instrument:
             "volume": self.volume,
             "pitch": self.pitch,
             "finetune": self.finetune
+            # Version is deliberately excluded from serialization
         }
         
         # Add instrument-specific parameters
@@ -496,7 +500,7 @@ class M8Instrument:
             return M8Block.read(data)
             
     @classmethod
-    def read_from_file(cls, file_path):
+    def read_from_file(cls, file_path, expected_version=None):
         with open(file_path, "rb") as f:
             data = f.read()
         
@@ -508,20 +512,33 @@ class M8Instrument:
         version = M8Version.read(data[version_offset:])
         logger.info(f"M8 instrument file {file_path} has version {version}")
         
+        # Check if version matches expected version if provided
+        if expected_version is not None and str(version) != str(expected_version):
+            raise ValueError(f"Version mismatch: instrument has version {version}, expected {expected_version}")
+        
         # Read instrument data
         metadata_offset = get_offset("metadata")
         instrument_data = data[metadata_offset:]
         
-        return cls.read(instrument_data)
+        # Create instrument and store version
+        instrument = cls.read(instrument_data)
+        instrument.version = version
+        
+        return instrument
         
     def write_to_file(self, file_path):
         instrument_data = self.write()
         
-        # Get metadata offset
+        # Get offsets
+        version_offset = get_offset("version")
         metadata_offset = get_offset("metadata")
             
         # Create data buffer with zeros for header and instrument data
         m8i_data = bytearray([0] * metadata_offset) + instrument_data
+        
+        # Write version
+        version_data = self.version.write()
+        m8i_data[version_offset:version_offset + len(version_data)] = version_data
         
         # Write file
         with open(file_path, "wb") as f:

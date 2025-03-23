@@ -39,15 +39,16 @@ class M8Project:
         self.chains = None
         self.phrases = None
         self.instruments = None
+        self.version = M8Version()
 
     @classmethod
     def read(cls, data):
         instance = cls()
         instance.data = bytearray(data)
 
-        # Read version and log it
-        version = M8Version.read(data[OFFSETS["version"]:])
-        logger.info(f"M8 file version: {version}")
+        # Read version, store it, and log it
+        instance.version = M8Version.read(data[OFFSETS["version"]:])
+        logger.info(f"M8 file version: {instance.version}")
 
         instance.metadata = M8Metadata.read(data[OFFSETS["metadata"]:])
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
@@ -70,12 +71,20 @@ class M8Project:
         if slot is None:
             raise IndexError("No empty instrument slots available in this project")
             
+        # Set the instrument's version to match project version
+        if hasattr(instrument, 'version'):
+            instrument.version = self.version
+            
         self.instruments[slot] = instrument
         return slot
         
     def set_instrument(self, instrument, slot):
         if not (0 <= slot < len(self.instruments)):
             raise IndexError(f"Instrument slot index must be between 0 and {len(self.instruments)-1}")
+            
+        # Set the instrument's version to match project version
+        if hasattr(instrument, 'version'):
+            instrument.version = self.version
             
         self.instruments[slot] = instrument
 
@@ -142,12 +151,28 @@ class M8Project:
                     return False
                     
         return True
+        
+    def validate_versions(self):
+        """Validates that all instruments have the same version as the project."""
+        if not hasattr(self, 'instruments') or self.instruments is None:
+            return True
+            
+        for instrument in self.instruments:
+            if hasattr(instrument, 'version') and not isinstance(instrument, M8Block):
+                if str(instrument.version) != str(self.version):
+                    return False
+                    
+        return True
     
     def write(self) -> bytes:
         output = bytearray(self.data)
         
+        # Write version data
+        version_data = self.version.write()
+        output[OFFSETS["version"]:OFFSETS["version"] + len(version_data)] = version_data
+        
         for name, offset in OFFSETS.items():
-            if hasattr(self, name):
+            if hasattr(self, name) and name != "version":
                 block = getattr(self, name)
                 data = block.write()
                 
@@ -210,6 +235,7 @@ class M8Project:
             "chains": self.chains.as_list(),
             "phrases": self.phrases.as_list(),
             "instruments": self.instruments.as_list()
+            # Version is deliberately excluded from serialization
         }
     
     @classmethod
