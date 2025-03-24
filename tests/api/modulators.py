@@ -185,92 +185,49 @@ class TestM8Modulator(unittest.TestCase):
         self.assertEqual(mod.params.frequency, 0x30)
     
     def test_constructor_with_string_enums(self):
-        """Test using string enum values with modulator constructor.
-        
-        The test validates that:
-        1. String enum values can be passed to the constructor
-        2. String values should be preserved in the object's properties
-        3. When writing to binary format, string values get converted to the correct numeric values
-        """
-        # IDEAL IMPLEMENTATION (showing how it should work when fully implemented)
-        # This is the desired API for using string enum values with modulators
-        
-        # Create modulators using string enum values for destinations
-        
-        # WavSynth destination
-        mod_wavsynth = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x00,  # WavSynth
-            destination="CUTOFF",  # String enum value
-            amount=0x80
-        )
-        
-        # MacroSynth destination
-        mod_macrosynth = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x01,  # MacroSynth
-            destination="TIMBRE",  # String enum value
-            amount=0x80
-        )
-        
-        # Sampler destination
-        mod_sampler = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x02,  # Sampler
-            destination="CUTOFF",  # String enum value
-            amount=0x80
-        )
-        
-        # String values should be preserved in object properties
-        self.assertEqual(mod_wavsynth.destination, "CUTOFF")
-        self.assertEqual(mod_macrosynth.destination, "TIMBRE")
-        self.assertEqual(mod_sampler.destination, "CUTOFF")
-        
-        # BINARY CONVERSION TEST - For actual implementation testing
-        # When writing to binary, strings should be automatically converted to correct numeric values
-        # Import enum classes for comparing numeric values
+        """Test using string enum values with modulator constructor."""
         from m8.enums.wavsynth import M8WavSynthModDestinations
         from m8.enums.macrosynth import M8MacroSynthModDestinations
         from m8.enums.sampler import M8SamplerModDestinations
         
-        # For actual test execution, we need to use numeric values until the implementation
-        # fully supports string values
-        mod_wavsynth_actual = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x00,  # WavSynth
-            destination=M8WavSynthModDestinations.CUTOFF.value,  # Using numeric value 0x7
-            amount=0x80
-        )
+        # Test data for parameterized testing of instrument types
+        test_data = [
+            {
+                "instrument_type": 0x00,  # WavSynth
+                "enum_class": M8WavSynthModDestinations,
+                "string_value": "CUTOFF",
+                "numeric_value": M8WavSynthModDestinations.CUTOFF.value
+            },
+            {
+                "instrument_type": 0x01,  # MacroSynth
+                "enum_class": M8MacroSynthModDestinations,
+                "string_value": "TIMBRE",
+                "numeric_value": M8MacroSynthModDestinations.TIMBRE.value
+            },
+            {
+                "instrument_type": 0x02,  # Sampler
+                "enum_class": M8SamplerModDestinations,
+                "string_value": "CUTOFF",
+                "numeric_value": M8SamplerModDestinations.CUTOFF.value
+            }
+        ]
         
-        mod_macrosynth_actual = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x01,  # MacroSynth
-            destination=M8MacroSynthModDestinations.TIMBRE.value,  # Using numeric value 0x3
-            amount=0x80
-        )
-        
-        mod_sampler_actual = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x02,  # Sampler
-            destination=M8SamplerModDestinations.CUTOFF.value,  # Using numeric value 0x6
-            amount=0x80
-        )
-        
-        # Write to binary format
-        wavsynth_binary = mod_wavsynth_actual.write()
-        macrosynth_binary = mod_macrosynth_actual.write()
-        sampler_binary = mod_sampler_actual.write()
-        
-        # Verify correct numeric values in binary output
-        # The type/destination byte is at offset 0, with destination in the lower nibble
-        # For CUTOFF in WavSynth (0x7), with LFO type (0x3), should be 0x37
-        self.assertEqual(wavsynth_binary[0] & 0x0F, M8WavSynthModDestinations.CUTOFF.value)
-        
-        # For TIMBRE in MacroSynth (0x3), with LFO type (0x3), should be 0x33  
-        self.assertEqual(macrosynth_binary[0] & 0x0F, M8MacroSynthModDestinations.TIMBRE.value)
-        
-        # For CUTOFF in Sampler (0x6), with LFO type (0x3), should be 0x36
-        self.assertEqual(sampler_binary[0] & 0x0F, M8SamplerModDestinations.CUTOFF.value)
+        # Run tests for each instrument type
+        for data in test_data:
+            # Create modulator with string enum value
+            mod = M8Modulator(
+                modulator_type="lfo",
+                instrument_type=data["instrument_type"],
+                destination=data["string_value"],
+                amount=0x80
+            )
+            
+            # Check string value is preserved in the object property
+            self.assertEqual(mod.destination, data["string_value"])
+            
+            # Write to binary and ensure correct conversion to numeric value
+            binary = mod.write()
+            self.assertEqual(binary[0] & 0x0F, data["numeric_value"])
     
     def test_read(self):
         # Create a modulator
@@ -387,117 +344,60 @@ class TestM8Modulator(unittest.TestCase):
         self.assertEqual(result["frequency"], 0x30)
         
     def test_as_dict_with_enum_serialization(self):
-        """Test serialization of modulator parameters with enum values.
-        
-        The test validates that:
-        1. Numeric enum values should be serialized to string representations
-        2. String enum values should be preserved during serialization
-        3. The as_dict() method should handle this conversion automatically
-        """
-        # IDEAL IMPLEMENTATION (showing how it should work when fully implemented)
-        # This demonstrates the desired serialization behavior
-        
-        # Step 1: Create modulators with string enum values
-        # WavSynth with string enum
-        wavsynth_ideal = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x00,  # WavSynth
-            destination="CUTOFF",   # String enum value
-            amount=0x80
-        )
-        
-        # MacroSynth with string enum
-        macrosynth_ideal = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x01,  # MacroSynth
-            destination="TIMBRE",   # String enum value
-            amount=0x80
-        )
-        
-        # Sampler with string enum
-        sampler_ideal = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x02,  # Sampler
-            destination="CUTOFF",   # String enum value
-            amount=0x80
-        )
-        
-        # Step 2: Serialize to dictionary
-        # This should preserve string values
-        result_wavsynth_ideal = wavsynth_ideal.as_dict()
-        result_macrosynth_ideal = macrosynth_ideal.as_dict()
-        result_sampler_ideal = sampler_ideal.as_dict()
-        
-        # Step 3: Verify string enum values are preserved in serialized output
-        self.assertEqual(result_wavsynth_ideal["destination"], "CUTOFF")
-        self.assertEqual(result_macrosynth_ideal["destination"], "TIMBRE")
-        self.assertEqual(result_sampler_ideal["destination"], "CUTOFF")
-        
-        # ACTUAL IMPLEMENTATION TEST (current behavior)
-        # This demonstrates the current implementation and shows manual conversion
+        """Test serialization of modulator parameters with enum values."""
         from m8.enums.wavsynth import M8WavSynthModDestinations
         from m8.enums.macrosynth import M8MacroSynthModDestinations
         from m8.enums.sampler import M8SamplerModDestinations
-        from m8.api import serialize_param_enum_value
         
-        # Create modulators with numeric enum values (current working implementation)
-        mod_wavsynth = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x00,  # WavSynth
-            destination=M8WavSynthModDestinations.CUTOFF.value,  # Numeric value
-            amount=0x80
-        )
+        # Test data for parameterized testing of instrument types
+        test_data = [
+            {
+                "instrument_type": 0x00,  # WavSynth
+                "enum_class": M8WavSynthModDestinations,
+                "string_value": "CUTOFF",
+                "numeric_value": M8WavSynthModDestinations.CUTOFF.value
+            },
+            {
+                "instrument_type": 0x01,  # MacroSynth
+                "enum_class": M8MacroSynthModDestinations,
+                "string_value": "TIMBRE",
+                "numeric_value": M8MacroSynthModDestinations.TIMBRE.value
+            },
+            {
+                "instrument_type": 0x02,  # Sampler
+                "enum_class": M8SamplerModDestinations,
+                "string_value": "CUTOFF",
+                "numeric_value": M8SamplerModDestinations.CUTOFF.value
+            }
+        ]
         
-        mod_macrosynth = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x01,  # MacroSynth
-            destination=M8MacroSynthModDestinations.TIMBRE.value,  # Numeric value
-            amount=0x80
-        )
-        
-        mod_sampler = M8Modulator(
-            modulator_type="lfo",
-            instrument_type=0x02,  # Sampler
-            destination=M8SamplerModDestinations.CUTOFF.value,  # Numeric value
-            amount=0x80
-        )
-        
-        # Convert to dict (current behavior returns numeric values)
-        result_wavsynth = mod_wavsynth.as_dict()
-        result_macrosynth = mod_macrosynth.as_dict()
-        result_sampler = mod_sampler.as_dict()
-        
-        # Manual conversion from numeric to string enum values (showing how it should work)
-        cutoff_string = serialize_param_enum_value(
-            M8WavSynthModDestinations.CUTOFF.value,
-            {"enums": ["m8.enums.wavsynth.M8WavSynthModDestinations"]},
-            None,
-            "destination"
-        )
-        
-        timbre_string = serialize_param_enum_value(
-            M8MacroSynthModDestinations.TIMBRE.value,
-            {"enums": ["m8.enums.macrosynth.M8MacroSynthModDestinations"]},
-            None,
-            "destination"
-        )
-        
-        cutoff_sampler_string = serialize_param_enum_value(
-            M8SamplerModDestinations.CUTOFF.value,
-            {"enums": ["m8.enums.sampler.M8SamplerModDestinations"]},
-            None,
-            "destination"
-        )
-        
-        # Verify manual string conversion works correctly
-        self.assertEqual(cutoff_string, "CUTOFF")
-        self.assertEqual(timbre_string, "TIMBRE")
-        self.assertEqual(cutoff_sampler_string, "CUTOFF")
-        
-        # Implementation should return string enum values when instrument_type is provided
-        self.assertEqual(result_wavsynth["destination"], "CUTOFF")
-        self.assertEqual(result_macrosynth["destination"], "TIMBRE")
-        self.assertEqual(result_sampler["destination"], "CUTOFF")
+        # Test with string enum values
+        for data in test_data:
+            # Create modulator with string enum
+            mod_string = M8Modulator(
+                modulator_type="lfo",
+                instrument_type=data["instrument_type"],
+                destination=data["string_value"],
+                amount=0x80
+            )
+            
+            # Serialize to dictionary and check that string values are preserved
+            result = mod_string.as_dict()
+            self.assertEqual(result["destination"], data["string_value"])
+            
+        # Test with numeric enum values
+        for data in test_data:
+            # Create modulator with numeric enum
+            mod_numeric = M8Modulator(
+                modulator_type="lfo",
+                instrument_type=data["instrument_type"],
+                destination=data["numeric_value"],
+                amount=0x80
+            )
+            
+            # Serialize to dictionary and check that numeric values are converted to strings
+            result = mod_numeric.as_dict()
+            self.assertEqual(result["destination"], data["string_value"])
     
     def test_from_dict(self):
         # Test data
@@ -523,129 +423,72 @@ class TestM8Modulator(unittest.TestCase):
         self.assertEqual(mod.params.frequency, 0x30)
     
     def test_from_dict_with_string_enums(self):
-        """Test deserialization of dictionary with string enum values to modulator objects.
-        
-        The test validates that:
-        1. Dictionaries with string enum values can be properly deserialized
-        2. String values should be preserved in the object's properties
-        3. When converting to binary format, the string values get translated to numeric values
-        """
-        # IDEAL IMPLEMENTATION (showing how it should work when fully implemented)
-        # This demonstrates the desired behavior for string-based deserialization
-        
-        # Example dictionaries with string enum values for destinations
-        # WavSynth data with string enum
-        wavsynth_data_ideal = {
-            "type": "LFO",
-            "destination": "CUTOFF",  # String enum value
-            "amount": 0x80,
-            "oscillator": 0x1
-        }
-        
-        # MacroSynth data with string enum
-        macrosynth_data_ideal = {
-            "type": "LFO", 
-            "destination": "TIMBRE",  # String enum value
-            "amount": 0x80,
-            "oscillator": 0x1
-        }
-        
-        # Sampler data with string enum
-        sampler_data_ideal = {
-            "type": "LFO",
-            "destination": "CUTOFF",  # String enum value
-            "amount": 0x80,
-            "oscillator": 0x1
-        }
-        
-        # Create modulators from dictionaries with instrument_type context
-        mod_wavsynth_ideal = M8Modulator.from_dict(wavsynth_data_ideal, instrument_type=0x00)  # WavSynth
-        mod_macrosynth_ideal = M8Modulator.from_dict(macrosynth_data_ideal, instrument_type=0x01)  # MacroSynth
-        mod_sampler_ideal = M8Modulator.from_dict(sampler_data_ideal, instrument_type=0x02)  # Sampler
-        
-        # String values should be preserved in the objects
-        self.assertEqual(mod_wavsynth_ideal.destination, "CUTOFF")
-        self.assertEqual(mod_macrosynth_ideal.destination, "TIMBRE")
-        self.assertEqual(mod_sampler_ideal.destination, "CUTOFF")
-        
-        # ACTUAL IMPLEMENTATION TEST (current implementation)
-        # This demonstrates the current behavior and conversion mechanisms
+        """Test deserialization of dictionary with string enum values to modulator objects."""
         from m8.enums.wavsynth import M8WavSynthModDestinations
         from m8.enums.macrosynth import M8MacroSynthModDestinations
         from m8.enums.sampler import M8SamplerModDestinations
         
-        # Example dictionaries with numeric enum values (current working implementation)
-        data_wavsynth = {
-            "type": "LFO",
-            "destination": M8WavSynthModDestinations.CUTOFF.value,  # Using numeric value
-            "amount": 0x80,
-            "oscillator": 0x1
-        }
+        # Test data for parameterized testing of instrument types
+        test_data = [
+            {
+                "instrument_type": 0x00,  # WavSynth
+                "enum_class": M8WavSynthModDestinations,
+                "string_value": "CUTOFF",
+                "numeric_value": M8WavSynthModDestinations.CUTOFF.value
+            },
+            {
+                "instrument_type": 0x01,  # MacroSynth
+                "enum_class": M8MacroSynthModDestinations,
+                "string_value": "TIMBRE",
+                "numeric_value": M8MacroSynthModDestinations.TIMBRE.value
+            },
+            {
+                "instrument_type": 0x02,  # Sampler
+                "enum_class": M8SamplerModDestinations,
+                "string_value": "CUTOFF",
+                "numeric_value": M8SamplerModDestinations.CUTOFF.value
+            }
+        ]
         
-        data_macrosynth = {
-            "type": "LFO",
-            "destination": M8MacroSynthModDestinations.TIMBRE.value,  # Using numeric value
-            "amount": 0x80,
-            "oscillator": 0x1
-        }
-        
-        data_sampler = {
-            "type": "LFO",
-            "destination": M8SamplerModDestinations.CUTOFF.value,  # Using numeric value
-            "amount": 0x80,
-            "oscillator": 0x1
-        }
-        
-        # Create modulators with numeric values
-        mod_wavsynth = M8Modulator.from_dict(data_wavsynth, instrument_type=0x00)  # WavSynth
-        mod_macrosynth = M8Modulator.from_dict(data_macrosynth, instrument_type=0x01)  # MacroSynth
-        mod_sampler = M8Modulator.from_dict(data_sampler, instrument_type=0x02)  # Sampler
-        
-        # Check that numeric values are preserved
-        self.assertEqual(mod_wavsynth.destination, M8WavSynthModDestinations.CUTOFF.value)
-        self.assertEqual(mod_macrosynth.destination, M8MacroSynthModDestinations.TIMBRE.value)
-        self.assertEqual(mod_sampler.destination, M8SamplerModDestinations.CUTOFF.value)
-        
-        # When writing to binary, numeric values should be properly included
-        wavsynth_binary = mod_wavsynth.write()
-        macrosynth_binary = mod_macrosynth.write()
-        sampler_binary = mod_sampler.write()
-        
-        # The destination is in the lower nibble of the first byte
-        self.assertEqual(wavsynth_binary[0] & 0x0F, M8WavSynthModDestinations.CUTOFF.value)
-        self.assertEqual(macrosynth_binary[0] & 0x0F, M8MacroSynthModDestinations.TIMBRE.value)
-        self.assertEqual(sampler_binary[0] & 0x0F, M8SamplerModDestinations.CUTOFF.value)
-        
-        # DEMONSTRATION OF STRING-TO-NUMERIC CONVERSION
-        # This shows how conversion from string to numeric values should work
-        from m8.api import deserialize_param_enum
-        
-        # Test conversion of string to int value (manually)
-        cutoff_int = deserialize_param_enum(
-            ["m8.enums.wavsynth.M8WavSynthModDestinations"],
-            "CUTOFF",
-            "destination",
-            0x00
-        )
-        
-        timbre_int = deserialize_param_enum(
-            ["m8.enums.macrosynth.M8MacroSynthModDestinations"],
-            "TIMBRE",
-            "destination",
-            0x01
-        )
-        
-        cutoff_sampler_int = deserialize_param_enum(
-            ["m8.enums.sampler.M8SamplerModDestinations"],
-            "CUTOFF",
-            "destination",
-            0x02
-        )
-        
-        # Verify string-to-int conversion works properly
-        self.assertEqual(cutoff_int, M8WavSynthModDestinations.CUTOFF.value)
-        self.assertEqual(timbre_int, M8MacroSynthModDestinations.TIMBRE.value)
-        self.assertEqual(cutoff_sampler_int, M8SamplerModDestinations.CUTOFF.value)
+        # Test with string enum values in dictionaries
+        for data in test_data:
+            # Create a dictionary with string enum value
+            dict_data = {
+                "type": "LFO",
+                "destination": data["string_value"],
+                "amount": 0x80,
+                "oscillator": 0x1
+            }
+            
+            # Create modulator from dictionary
+            mod = M8Modulator.from_dict(dict_data, instrument_type=data["instrument_type"])
+            
+            # String value should be preserved in the object
+            self.assertEqual(mod.destination, data["string_value"])
+            
+            # Write to binary and check correct numeric conversion
+            binary = mod.write()
+            self.assertEqual(binary[0] & 0x0F, data["numeric_value"])
+            
+        # Test with numeric enum values in dictionaries
+        for data in test_data:
+            # Create a dictionary with numeric enum value
+            dict_data = {
+                "type": "LFO",
+                "destination": data["numeric_value"],
+                "amount": 0x80,
+                "oscillator": 0x1
+            }
+            
+            # Create modulator from dictionary
+            mod = M8Modulator.from_dict(dict_data, instrument_type=data["instrument_type"])
+            
+            # Numeric value should be preserved in the object
+            self.assertEqual(mod.destination, data["numeric_value"])
+            
+            # As_dict should convert numeric values to strings
+            result = mod.as_dict()
+            self.assertEqual(result["destination"], data["string_value"])
 
 class TestM8Modulators(unittest.TestCase):
     def setUp(self):
