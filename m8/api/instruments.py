@@ -83,12 +83,12 @@ class M8InstrumentParams(EnumPropertyMixin):
         # Convert instrument_type to uppercase to match our standardized config keys
         lookup_type = instrument_type.upper() if isinstance(instrument_type, str) else instrument_type
         
-        # Load parameter definitions from config
-        param_defs = config["instruments"][lookup_type]["params"].copy()
+        # Load parameter definitions from config - now nested under 'types'
+        param_defs = config["instruments"]["types"][lookup_type]["params"].copy()
         
         # Special case for sampler: add sample_path from top level
-        if lookup_type == "SAMPLER" and "sample_path" in config["instruments"][lookup_type]:
-            param_defs["sample_path"] = config["instruments"][lookup_type]["sample_path"]
+        if lookup_type == "SAMPLER" and "sample_path" in config["instruments"]["types"][lookup_type]:
+            param_defs["sample_path"] = config["instruments"]["types"][lookup_type]["sample_path"]
             
         return cls(param_defs, instrument_type_id, **kwargs)
     

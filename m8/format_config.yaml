@@ -31,144 +31,6 @@ fx:
 groove:
   offset: 0xee
 instruments:
-  MACROSYNTH:
-    params:
-      amp:
-        offset: 0x1a
-      chorus:
-        offset: 0x1e
-      color:
-        default: 0x80
-        offset: 0x14
-      cutoff:
-        default: 0xff
-        offset: 0x18
-      degrade:
-        offset: 0x15
-      delay:
-        offset: 0x1f
-      dry:
-        default: 0xc0
-        offset: 0x1d
-      filter:
-        enums:
-        - m8.enums.M8FilterTypes
-        offset: 0x17
-      limit:
-        enums:
-        - m8.enums.M8LimitTypes
-        offset: 0x1b
-      pan:
-        default: 0x80
-        offset: 0x1c
-      redux:
-        offset: 0x16
-      res:
-        offset: 0x19
-      reverb:
-        offset: 0x20
-      shape:
-        enums:
-        - m8.enums.macrosynth.M8MacroSynthShapes
-        offset: 0x12
-      timbre:
-        default: 0x80
-        offset: 0x13
-    type_id: 0x1
-  SAMPLER:
-    params:
-      amp:
-        offset: 0x1b
-      chorus:
-        offset: 0x1f
-      cutoff:
-        default: 0xff
-        offset: 0x19
-      degrade:
-        offset: 0x17
-      delay:
-        offset: 0x20
-      dry:
-        default: 0xc0
-        offset: 0x1e
-      filter:
-        enums:
-        - m8.enums.M8FilterTypes
-        offset: 0x18
-      length:
-        default: 0xff
-        offset: 0x16
-      limit:
-        enums:
-        - m8.enums.M8LimitTypes
-        offset: 0x1c
-      loop_start:
-        offset: 0x15
-      pan:
-        default: 0x80
-        offset: 0x1d
-      play_mode:
-        enums:
-        - m8.enums.sampler.M8SamplerPlayMode
-        offset: 0x12
-      res:
-        offset: 0x1a
-      reverb:
-        offset: 0x21
-      slice:
-        offset: 0x13
-      start:
-        offset: 0x14
-    sample_path:
-      default: ''
-      offset: 0x57
-      size: 0x80
-      type: STRING
-    type_id: 0x2
-  WAVSYNTH:
-    params:
-      amp:
-        offset: 0x1a
-      chorus:
-        offset: 0x1e
-      cutoff:
-        default: 0xff
-        offset: 0x18
-      delay:
-        offset: 0x1f
-      dry:
-        default: 0xc0
-        offset: 0x1d
-      filter:
-        enums:
-        - m8.enums.M8FilterTypes
-        offset: 0x17
-      limit:
-        enums:
-        - m8.enums.M8LimitTypes
-        offset: 0x1b
-      mult:
-        default: 0x80
-        offset: 0x14
-      pan:
-        default: 0x80
-        offset: 0x1c
-      res:
-        offset: 0x19
-      reverb:
-        offset: 0x20
-      scan:
-        offset: 0x16
-      shape:
-        enums:
-        - m8.enums.wavsynth.M8WavSynthShapes
-        offset: 0x12
-      size:
-        default: 0x80
-        offset: 0x13
-      warp:
-        offset: 0x15
-    type_id: 0x0
   block_size: 0xd7
   common_fields:
     finetune:
@@ -206,6 +68,149 @@ instruments:
   param_types:
     STRING: 0x2
     UINT8: 0x1
+  type_id_map:
+    0: m8.api.instruments.M8WavSynthInstrument
+    1: m8.api.instruments.M8MacroSynthInstrument
+    2: m8.api.instruments.M8SamplerInstrument
+  types:
+    MACROSYNTH:
+      params:
+        amp:
+          offset: 0x1a
+        chorus:
+          offset: 0x1e
+        color:
+          default: 0x80
+          offset: 0x14
+        cutoff:
+          default: 0xff
+          offset: 0x18
+        degrade:
+          offset: 0x15
+        delay:
+          offset: 0x1f
+        dry:
+          default: 0xc0
+          offset: 0x1d
+        filter:
+          enums:
+          - m8.enums.M8FilterTypes
+          offset: 0x17
+        limit:
+          enums:
+          - m8.enums.M8LimitTypes
+          offset: 0x1b
+        pan:
+          default: 0x80
+          offset: 0x1c
+        redux:
+          offset: 0x16
+        res:
+          offset: 0x19
+        reverb:
+          offset: 0x20
+        shape:
+          enums:
+          - m8.enums.macrosynth.M8MacroSynthShapes
+          offset: 0x12
+        timbre:
+          default: 0x80
+          offset: 0x13
+      type_id: 0x1
+    SAMPLER:
+      params:
+        amp:
+          offset: 0x1b
+        chorus:
+          offset: 0x1f
+        cutoff:
+          default: 0xff
+          offset: 0x19
+        degrade:
+          offset: 0x17
+        delay:
+          offset: 0x20
+        dry:
+          default: 0xc0
+          offset: 0x1e
+        filter:
+          enums:
+          - m8.enums.M8FilterTypes
+          offset: 0x18
+        length:
+          default: 0xff
+          offset: 0x16
+        limit:
+          enums:
+          - m8.enums.M8LimitTypes
+          offset: 0x1c
+        loop_start:
+          offset: 0x15
+        pan:
+          default: 0x80
+          offset: 0x1d
+        play_mode:
+          enums:
+          - m8.enums.sampler.M8SamplerPlayMode
+          offset: 0x12
+        res:
+          offset: 0x1a
+        reverb:
+          offset: 0x21
+        slice:
+          offset: 0x13
+        start:
+          offset: 0x14
+      sample_path:
+        default: ''
+        offset: 0x57
+        size: 0x80
+        type: STRING
+      type_id: 0x2
+    WAVSYNTH:
+      params:
+        amp:
+          offset: 0x1a
+        chorus:
+          offset: 0x1e
+        cutoff:
+          default: 0xff
+          offset: 0x18
+        delay:
+          offset: 0x1f
+        dry:
+          default: 0xc0
+          offset: 0x1d
+        filter:
+          enums:
+          - m8.enums.M8FilterTypes
+          offset: 0x17
+        limit:
+          enums:
+          - m8.enums.M8LimitTypes
+          offset: 0x1b
+        mult:
+          default: 0x80
+          offset: 0x14
+        pan:
+          default: 0x80
+          offset: 0x1c
+        res:
+          offset: 0x19
+        reverb:
+          offset: 0x20
+        scan:
+          offset: 0x16
+        shape:
+          enums:
+          - m8.enums.wavsynth.M8WavSynthShapes
+          offset: 0x12
+        size:
+          default: 0x80
+          offset: 0x13
+        warp:
+          offset: 0x15
+      type_id: 0x0
 metadata:
   block_size: 0x93
   fields:

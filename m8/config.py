@@ -206,8 +206,9 @@ def get_instrument_type_id(instrument_type):
     # Try uppercase version first
     lookup_type = instrument_type.upper() if isinstance(instrument_type, str) else instrument_type
     
-    if 'instruments' in config and lookup_type in config['instruments']:
-        type_id = config['instruments'][lookup_type]['type_id']
+    if ('instruments' in config and 'types' in config['instruments'] and 
+        lookup_type in config['instruments']['types']):
+        type_id = config['instruments']['types'][lookup_type]['type_id']
         if isinstance(type_id, str) and type_id.startswith('0x'):
             return int(type_id, 16)
         return type_id
@@ -215,8 +216,9 @@ def get_instrument_type_id(instrument_type):
     # Try lowercase version as fallback
     lookup_type = instrument_type.lower() if isinstance(instrument_type, str) else instrument_type
     
-    if 'instruments' in config and lookup_type in config['instruments']:
-        type_id = config['instruments'][lookup_type]['type_id']
+    if ('instruments' in config and 'types' in config['instruments'] and 
+        lookup_type in config['instruments']['types']):
+        type_id = config['instruments']['types'][lookup_type]['type_id']
         if isinstance(type_id, str) and type_id.startswith('0x'):
             return int(type_id, 16)
         return type_id
@@ -235,14 +237,20 @@ def get_instrument_types():
     config = load_format_config()
     result = {}
     
-    for instr_type, instr_config in config['instruments'].items():
-        # Skip non-instrument sections
-        if isinstance(instr_config, dict) and 'type_id' in instr_config:
-            type_id = instr_config['type_id']
-            # Convert hex strings to integers
-            if isinstance(type_id, str) and type_id.startswith('0x'):
-                type_id = int(type_id, 16)
-            result[type_id] = instr_type.upper()
+    if 'instruments' in config and 'types' in config['instruments']:
+        for instr_type, instr_config in config['instruments']['types'].items():
+            # Skip non-instrument sections
+            if isinstance(instr_config, dict) and 'type_id' in instr_config:
+                type_id = instr_config['type_id']
+                # Convert hex strings to integers
+                if isinstance(type_id, str) and type_id.startswith('0x'):
+                    type_id = int(type_id, 16)
+                result[type_id] = instr_type.upper()
+    
+    # Also add entries from type_id_map if it exists
+    if 'instruments' in config and 'type_id_map' in config['instruments']:
+        # This doesn't include instrument type names but could be useful in the future
+        pass
             
     return result
 
