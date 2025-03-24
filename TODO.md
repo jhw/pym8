@@ -53,7 +53,7 @@
 ✓ implement proper modulator is_empty() definition using configuration
 ✓ implement proper is_empty() definition and re-enable is_empty tests
 ✓ add tools for future Claude string substitution tasks
-- api bug
+✓ add M8UnknownTypeError exception and remove default fallbacks to WAVSYNTH/AHD_ENVELOPE
 ✓ standardize instrument/modulator enum strings to use uppercase consistently
   ✓ update format_config.yaml to use uppercase keys for instrument and modulator types
   ✓ removed case-insensitive lookup - now using uppercase everywhere

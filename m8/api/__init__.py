@@ -23,6 +23,10 @@ class M8ValidationError(Exception):
     """Exception for M8 data validation errors when parameters don't meet constraints."""
     pass
 
+class M8UnknownTypeError(Exception):
+    """Exception raised when an unknown instrument or modulator type is encountered."""
+    pass
+
 # default class
 
 class M8Block:

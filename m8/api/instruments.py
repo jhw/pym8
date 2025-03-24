@@ -1,5 +1,5 @@
 # m8/api/instruments.py
-from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value
+from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from m8.api.utils.enums import EnumPropertyMixin
 from m8.api.version import M8Version
@@ -301,8 +301,8 @@ class M8Instrument(EnumPropertyMixin):
         if self.type in INSTRUMENT_TYPES:
             self.instrument_type = INSTRUMENT_TYPES[self.type]
         else:
-            # Default to wavsynth for unknown types
-            self.instrument_type = "WAVSYNTH"
+            # Raise exception for unknown instrument types
+            raise M8UnknownTypeError(f"Unknown instrument type ID: {self.type}")
         
         # Read name as a string (null-terminated) using utility function
         self.name = read_fixed_string(data, self.NAME_OFFSET, self.NAME_LENGTH)
@@ -543,8 +543,11 @@ class M8Instrument(EnumPropertyMixin):
             
             return instrument
         else:
-            # Return an M8Block for unknown types
-            return M8Block.read(data)
+            # For empty blocks (all zeros), return M8Block
+            if all(b == 0 for b in data[:10]):  # Check first few bytes
+                return M8Block.read(data)
+            # Otherwise raise exception for unknown types
+            raise M8UnknownTypeError(f"Unknown instrument type ID: {instr_type}")
             
     @classmethod
     def read_from_file(cls, file_path, expected_version=None):
@@ -618,11 +621,20 @@ class M8Instruments(list):
             
             # Check the instrument type byte
             instr_type = block_data[0]
-            if instr_type in INSTRUMENT_TYPES:
-                # Read using the base class read method
-                instance.append(M8Instrument.read(block_data))
-            else:
-                # Default to M8Block for unknown types or empty slots
+            try:
+                if instr_type in INSTRUMENT_TYPES:
+                    # Read using the base class read method
+                    instance.append(M8Instrument.read(block_data))
+                else:
+                    # Default to M8Block for empty slots (all zeros)
+                    if all(b == 0 for b in block_data[:10]):  # Check first few bytes
+                        instance.append(M8Block.read(block_data))
+                    else:
+                        # Raise exception for unknown instrument types with data
+                        raise M8UnknownTypeError(f"Unknown instrument type ID: {instr_type}")
+            except M8UnknownTypeError as e:
+                # Log error but treat as M8Block to be resilient in collection reading
+                logging.warning(f"Block {i}: {str(e)} - treating as raw data block")
                 instance.append(M8Block.read(block_data))
         
         return instance

@@ -1,6 +1,6 @@
 from m8.api import (
     M8Block, load_class, split_byte, join_nibbles, serialize_enum, deserialize_enum,
-    deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value
+    deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
 )
 from m8.api.utils.enums import EnumPropertyMixin
 from m8.enums import M8ModulatorType
@@ -223,8 +223,8 @@ class M8Modulator(EnumPropertyMixin):
         if self.type in MODULATOR_TYPES:
             self.modulator_type = MODULATOR_TYPES[self.type]
         else:
-            # Default to AHD_ENVELOPE for unknown types
-            self.modulator_type = "AHD_ENVELOPE"
+            # Raise exception for unknown modulator types
+            raise M8UnknownTypeError(f"Unknown modulator type ID: {self.type}")
         
         # Read amount
         self.amount = data[self.AMOUNT_OFFSET]
@@ -378,13 +378,22 @@ class M8Modulators(list):
             first_byte = block_data[0]
             mod_type, dest = split_byte(first_byte)
             
-            if mod_type in MODULATOR_TYPES:
-                # For valid modulator types, create a modulator and read the data
-                modulator = M8Modulator(modulator_type=mod_type)
-                modulator.read(block_data)
-                instance.append(modulator)
-            else:
-                # For unknown types, use M8Block
+            try:
+                if mod_type in MODULATOR_TYPES:
+                    # For valid modulator types, create a modulator and read the data
+                    modulator = M8Modulator(modulator_type=mod_type)
+                    modulator.read(block_data)
+                    instance.append(modulator)
+                else:
+                    # Default to M8Block for empty slots (all zeros)
+                    if all(b == 0 for b in block_data[:3]):  # Check first few bytes
+                        instance.append(M8Block.read(block_data))
+                    else:
+                        # Raise exception for unknown modulator types with data
+                        raise M8UnknownTypeError(f"Unknown modulator type ID: {mod_type}")
+            except M8UnknownTypeError as e:
+                # Log error but treat as M8Block to be resilient in collection reading
+                logging.warning(f"Block {i}: {str(e)} - treating as raw data block")
                 instance.append(M8Block.read(block_data))
         
         return instance
