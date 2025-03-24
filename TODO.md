@@ -1,6 +1,5 @@
 # short
 
-- yaml format with hex codes
 - nest instrument subclasses in format yaml
 - check uppercase forcing wrt instrumnet/modulator names
 - some comments violating policy
@@ -46,6 +45,7 @@
 
 # done
 
+✓ yaml format with hex codes
 ✓ implement UINT4_2 field type for packed 4-bit values in config
 ✓ convert common_offsets, common_defaults into field-like structure
 ✓ add default: 0 as third default for YAML fields
