@@ -11,7 +11,7 @@ class TestInstrumentEnumSupport(unittest.TestCase):
         # Test data for wavsynth and macrosynth
         self.test_data = [
             {
-                "instrument_type": "wavsynth",
+                "instrument_type": "WAVSYNTH",
                 "type_id": 0x00,
                 "type_string": "WAVSYNTH",
                 "shape_enum": M8WavSynthShapes,
@@ -19,7 +19,7 @@ class TestInstrumentEnumSupport(unittest.TestCase):
                 "shape_numeric": M8WavSynthShapes.PULSE25.value
             },
             {
-                "instrument_type": "macrosynth",
+                "instrument_type": "MACROSYNTH",
                 "type_id": 0x01,
                 "type_string": "MACROSYNTH",
                 "shape_enum": M8MacroSynthShapes,

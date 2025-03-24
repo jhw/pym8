@@ -55,8 +55,17 @@ def get_modulator_data(modulator_type):
     config = load_format_config()
     if 'modulators' in config and 'types' in config['modulators']:
         modulator_types = config['modulators']['types']
-        if modulator_type in modulator_types:
-            return modulator_types[modulator_type]
+        
+        # Try uppercase version first
+        lookup_type = modulator_type.upper() if isinstance(modulator_type, str) else modulator_type
+        if lookup_type in modulator_types:
+            return modulator_types[lookup_type]
+            
+        # Try lowercase version as fallback
+        lookup_type = modulator_type.lower() if isinstance(modulator_type, str) else modulator_type
+        if lookup_type in modulator_types:
+            return modulator_types[lookup_type]
+            
         raise ValueError(f"Modulator type '{modulator_type}' not found in configuration")
     raise ValueError("Modulators section not found in configuration")
 
@@ -86,7 +95,7 @@ def get_modulator_types():
             # Convert hex strings to integers
             if isinstance(type_id, str) and type_id.startswith('0x'):
                 type_id = int(type_id, 16)
-            result[type_id] = mod_type
+            result[type_id] = mod_type.upper()
             
     return result
 
@@ -98,11 +107,25 @@ def get_modulator_type_id(modulator_type):
         
     # Handle string type names
     config = load_format_config()
-    if 'modulators' in config and 'types' in config['modulators'] and modulator_type in config['modulators']['types']:
-        type_id = config['modulators']['types'][modulator_type]['id']
+    
+    # Try uppercase version first
+    lookup_type = modulator_type.upper() if isinstance(modulator_type, str) else modulator_type
+    
+    if 'modulators' in config and 'types' in config['modulators'] and lookup_type in config['modulators']['types']:
+        type_id = config['modulators']['types'][lookup_type]['id']
         if isinstance(type_id, str) and type_id.startswith('0x'):
             return int(type_id, 16)
         return type_id
+        
+    # Try lowercase version as fallback
+    lookup_type = modulator_type.lower() if isinstance(modulator_type, str) else modulator_type
+    
+    if 'modulators' in config and 'types' in config['modulators'] and lookup_type in config['modulators']['types']:
+        type_id = config['modulators']['types'][lookup_type]['id']
+        if isinstance(type_id, str) and type_id.startswith('0x'):
+            return int(type_id, 16)
+        return type_id
+        
     raise ValueError(f"Type ID for modulator '{modulator_type}' not found in configuration")
 
 def get_instrument_type_id(instrument_type):
@@ -113,11 +136,25 @@ def get_instrument_type_id(instrument_type):
         
     # Handle string type names
     config = load_format_config()
-    if 'instruments' in config and instrument_type in config['instruments']:
-        type_id = config['instruments'][instrument_type]['type_id']
+    
+    # Try uppercase version first
+    lookup_type = instrument_type.upper() if isinstance(instrument_type, str) else instrument_type
+    
+    if 'instruments' in config and lookup_type in config['instruments']:
+        type_id = config['instruments'][lookup_type]['type_id']
         if isinstance(type_id, str) and type_id.startswith('0x'):
             return int(type_id, 16)
         return type_id
+        
+    # Try lowercase version as fallback
+    lookup_type = instrument_type.lower() if isinstance(instrument_type, str) else instrument_type
+    
+    if 'instruments' in config and lookup_type in config['instruments']:
+        type_id = config['instruments'][lookup_type]['type_id']
+        if isinstance(type_id, str) and type_id.startswith('0x'):
+            return int(type_id, 16)
+        return type_id
+        
     raise ValueError(f"Type ID for instrument '{instrument_type}' not found in configuration")
 
 def get_instrument_modulators_offset(instrument_type=None):
@@ -139,7 +176,7 @@ def get_instrument_types():
             # Convert hex strings to integers
             if isinstance(type_id, str) and type_id.startswith('0x'):
                 type_id = int(type_id, 16)
-            result[type_id] = instr_type
+            result[type_id] = instr_type.upper()
             
     return result
 
@@ -172,8 +209,17 @@ def get_modulator_type_field_def(modulator_type, field_name):
     """Retrieves field definition for a specific field of a modulator type."""
     config = load_format_config()
     if 'modulators' in config and 'types' in config['modulators']:
-        if modulator_type in config['modulators']['types']:
-            mod_data = config['modulators']['types'][modulator_type]
+        # Try uppercase version first
+        lookup_type = modulator_type.upper() if isinstance(modulator_type, str) else modulator_type
+        if lookup_type in config['modulators']['types']:
+            mod_data = config['modulators']['types'][lookup_type]
+            if 'fields' in mod_data and field_name in mod_data['fields']:
+                return mod_data['fields'][field_name]
+                
+        # Try lowercase version as fallback
+        lookup_type = modulator_type.lower() if isinstance(modulator_type, str) else modulator_type
+        if lookup_type in config['modulators']['types']:
+            mod_data = config['modulators']['types'][lookup_type]
             if 'fields' in mod_data and field_name in mod_data['fields']:
                 return mod_data['fields'][field_name]
     return None

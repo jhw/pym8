@@ -52,8 +52,14 @@ class M8ModulatorParams:
         """Create parameters from modulator type config."""
         config = load_format_config()
         
+        # Convert modulator_type to uppercase to match our standardized config keys
+        if isinstance(modulator_type, str):
+            lookup_type = modulator_type.upper()
+        else:
+            lookup_type = modulator_type
+        
         # Load parameter definitions from config
-        param_defs = config["modulators"]["types"][modulator_type]["fields"].copy()
+        param_defs = config["modulators"]["types"][lookup_type]["fields"].copy()
         
         return cls(param_defs, instrument_type, **kwargs)
     
@@ -184,8 +190,8 @@ class M8Modulator(EnumPropertyMixin):
             # Assume it's a string type name
             self.type = M8ModulatorType(get_modulator_type_id(modulator_type))
         
-        # Set the modulator type name
-        self.modulator_type = modulator_type
+        # Set the modulator type name (always uppercase for consistency)
+        self.modulator_type = modulator_type.upper() if isinstance(modulator_type, str) else modulator_type
         
         # Store instrument type for enum lookups
         self.instrument_type = instrument_type

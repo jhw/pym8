@@ -12,7 +12,7 @@ class TestModulatorEnumSupport(unittest.TestCase):
         """Test using string enum values with modulator constructor."""
         # WavSynth destination
         mod_wavsynth = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             instrument_type=0x00,  # WavSynth
             destination="CUTOFF",  # String enum value
             amount=0x80
@@ -20,7 +20,7 @@ class TestModulatorEnumSupport(unittest.TestCase):
         
         # MacroSynth destination
         mod_macrosynth = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             instrument_type=0x01,  # MacroSynth
             destination="TIMBRE",  # String enum value
             amount=0x80
@@ -28,7 +28,7 @@ class TestModulatorEnumSupport(unittest.TestCase):
         
         # Sampler destination
         mod_sampler = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             instrument_type=0x02,  # Sampler
             destination="CUTOFF",  # String enum value
             amount=0x80
@@ -53,14 +53,14 @@ class TestModulatorEnumSupport(unittest.TestCase):
         """Test serialization of modulator parameters with enum values."""
         # Using numeric values for creation
         mod_wavsynth = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             instrument_type=0x00,  # WavSynth
             destination=M8WavSynthModDestinations.CUTOFF.value,
             amount=0x80
         )
         
         mod_macrosynth = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             instrument_type=0x01,  # MacroSynth
             destination=M8MacroSynthModDestinations.TIMBRE.value,
             amount=0x80
@@ -135,7 +135,7 @@ class TestModulatorEnumSupport(unittest.TestCase):
         for data in test_data:
             # Create modulator with string enum
             mod = M8Modulator(
-                modulator_type="lfo",
+                modulator_type="LFO",
                 instrument_type=data["instrument_type"],
                 destination=data["string_value"],
                 amount=0x80

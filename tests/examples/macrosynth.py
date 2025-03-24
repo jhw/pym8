@@ -21,7 +21,7 @@ class TestMacroSynthMapping(unittest.TestCase):
         # Verify instrument type
         self.assertEqual(self.instrument_dict['type'], 1)
         # Check that the instrument is recognized as a MacroSynth
-        self.assertEqual(self.instrument.instrument_type, "macrosynth")
+        self.assertEqual(self.instrument.instrument_type, "MACROSYNTH")
         
     def test_macrosynth_name(self):
         # Test that the instrument name should be "MYMACRO" after stripping

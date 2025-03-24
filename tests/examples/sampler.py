@@ -21,7 +21,7 @@ class TestSamplerMapping(unittest.TestCase):
         # Verify instrument type
         self.assertEqual(self.instrument_dict['type'], 2)
         # Check that the instrument is recognized as a Sampler
-        self.assertEqual(self.instrument.instrument_type, "sampler")
+        self.assertEqual(self.instrument.instrument_type, "SAMPLER")
         
     def test_sampler_name(self):
         # Test that the instrument name should be "MYSAMPLER" after stripping

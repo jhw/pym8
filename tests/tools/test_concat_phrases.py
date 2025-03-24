@@ -43,7 +43,7 @@ class TestConcatPhrases(unittest.TestCase):
         project = M8Project.initialise()
         
         # Add an instrument
-        instrument = M8Instrument(instrument_type="wavsynth", name=f"TestInst{project_num}")
+        instrument = M8Instrument(instrument_type="WAVSYNTH", name=f"TestInst{project_num}")
         inst_idx = project.add_instrument(instrument)
         
         # Create 3 phrases with one-to-one chains

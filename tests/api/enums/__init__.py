@@ -31,7 +31,7 @@ class TestEnumErrorHandling(unittest.TestCase):
         """Test that instrument constructor raises M8EnumError with invalid enum string."""
         # From format_config.yaml, we can see 'filter' is the field name for the filter type
         with self.assertRaises(M8EnumError):
-            M8InstrumentParams.from_config("wavsynth", filter="INVALID_FILTER_TYPE")
+            M8InstrumentParams.from_config("WAVSYNTH", filter="INVALID_FILTER_TYPE")
     
     def test_integers_do_not_raise_errors(self):
         """Test that integer values don't raise errors even if invalid."""
@@ -41,6 +41,6 @@ class TestEnumErrorHandling(unittest.TestCase):
         self.assertEqual(ensure_enum_int_value(99, ['m8.enums.M8FilterTypes']), 99)
         
         # Should not raise an error with invalid integer
-        params = M8InstrumentParams.from_config("wavsynth", filter=99)
+        params = M8InstrumentParams.from_config("WAVSYNTH", filter=99)
         # From format_config.yaml, 'filter' is the field name
         self.assertEqual(getattr(params, "filter"), 99)

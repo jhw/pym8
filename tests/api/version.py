@@ -17,7 +17,7 @@ class TestM8Version(unittest.TestCase):
         project.instruments = M8Instruments()
         
         # Create instrument
-        instrument = M8Instrument("wavsynth", name="TestSynth")
+        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
         
         # When adding to project, instrument should inherit project version
         slot = project.add_instrument(instrument)
@@ -28,7 +28,7 @@ class TestM8Version(unittest.TestCase):
         self.assertEqual(str(project.instruments[slot].version), "4.1.2")
         
         # Adding a new instrument should give it the updated version
-        instrument2 = M8Instrument("macrosynth", name="Test2")
+        instrument2 = M8Instrument("MACROSYNTH", name="Test2")
         slot2 = project.add_instrument(instrument2)
         self.assertEqual(str(project.instruments[slot2].version), "4.1.3")
         
@@ -43,7 +43,7 @@ class TestM8Version(unittest.TestCase):
         project.instruments = M8Instruments()
         
         # Add an instrument, it should inherit project version
-        instrument = M8Instrument("wavsynth", name="TestSynth")
+        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
         slot = project.add_instrument(instrument)
         
         # Version validation should pass
@@ -68,7 +68,7 @@ class TestM8Version(unittest.TestCase):
         project.version = M8Version(4, 2, 0)
         
         # Add instrument that inherits the version
-        instrument = M8Instrument("wavsynth", name="TestSynth")
+        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
         slot = project.add_instrument(instrument)
         self.assertEqual(str(project.instruments[slot].version), "4.2.0")
         
@@ -133,7 +133,7 @@ class TestM8Version(unittest.TestCase):
         project.instruments = M8Instruments()
         
         # Add an instrument
-        instrument = M8Instrument("wavsynth", name="TestSynth")
+        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
         project.add_instrument(instrument)
         
         # Serialize to dict

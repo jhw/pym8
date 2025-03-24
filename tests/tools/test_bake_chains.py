@@ -39,7 +39,7 @@ class TestBakeChains(unittest.TestCase):
         project = M8Project.initialise()
         
         # Add an instrument
-        instrument = M8Instrument(instrument_type="wavsynth", name="TestInst")
+        instrument = M8Instrument(instrument_type="WAVSYNTH", name="TestInst")
         inst_idx = project.add_instrument(instrument)
         
         # Create phrases (each with one note)

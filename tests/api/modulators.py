@@ -149,14 +149,14 @@ class TestM8ModulatorParams(unittest.TestCase):
 class TestM8Modulator(unittest.TestCase):
     def setUp(self):
         # Create a modulator for testing
-        self.modulator = M8Modulator(modulator_type="lfo", destination=1, amount=0xFF)
+        self.modulator = M8Modulator(modulator_type="LFO", destination=1, amount=0xFF)
     
     def test_constructor_and_defaults(self):
         # Test default constructor
         mod = M8Modulator()
         
         # Check type is set correctly - should default to ahd_envelope
-        self.assertEqual(mod.modulator_type, "ahd_envelope")
+        self.assertEqual(mod.modulator_type, "AHD_ENVELOPE")
         self.assertEqual(mod.type, 0)  # ahd_envelope type id
         
         # Check common parameters
@@ -168,7 +168,7 @@ class TestM8Modulator(unittest.TestCase):
         
         # Test with specific type and parameters
         mod = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             destination=0x5,
             amount=0x80,
             oscillator=0x1,
@@ -176,7 +176,7 @@ class TestM8Modulator(unittest.TestCase):
             frequency=0x30
         )
         
-        self.assertEqual(mod.modulator_type, "lfo")
+        self.assertEqual(mod.modulator_type, "LFO")
         self.assertEqual(mod.type, 3)  # lfo type id
         self.assertEqual(mod.destination, 0x5)
         self.assertEqual(mod.amount, 0x80)
@@ -216,7 +216,7 @@ class TestM8Modulator(unittest.TestCase):
         for data in test_data:
             # Create modulator with string enum value
             mod = M8Modulator(
-                modulator_type="lfo",
+                modulator_type="LFO",
                 instrument_type=data["instrument_type"],
                 destination=data["string_value"],
                 amount=0x80
@@ -247,7 +247,7 @@ class TestM8Modulator(unittest.TestCase):
         
         # Check common parameters
         self.assertEqual(mod.type, 3)
-        self.assertEqual(mod.modulator_type, "lfo")
+        self.assertEqual(mod.modulator_type, "LFO")
         self.assertEqual(mod.destination, 5)
         self.assertEqual(mod.amount, 0x80)
         
@@ -259,7 +259,7 @@ class TestM8Modulator(unittest.TestCase):
     def test_write(self):
         # Create a modulator with specific parameters
         mod = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             destination=0x5,
             amount=0x80,
             oscillator=0x1,
@@ -292,7 +292,7 @@ class TestM8Modulator(unittest.TestCase):
     def test_clone(self):
         # Create original modulator
         original = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             destination=0x5,
             amount=0x80,
             oscillator=0x1,
@@ -324,7 +324,7 @@ class TestM8Modulator(unittest.TestCase):
     def test_as_dict(self):
         # Create modulator
         mod = M8Modulator(
-            modulator_type="lfo",
+            modulator_type="LFO",
             destination=0x5,
             amount=0x80,
             oscillator=0x1,
@@ -375,7 +375,7 @@ class TestM8Modulator(unittest.TestCase):
         for data in test_data:
             # Create modulator with string enum
             mod_string = M8Modulator(
-                modulator_type="lfo",
+                modulator_type="LFO",
                 instrument_type=data["instrument_type"],
                 destination=data["string_value"],
                 amount=0x80
@@ -389,7 +389,7 @@ class TestM8Modulator(unittest.TestCase):
         for data in test_data:
             # Create modulator with numeric enum
             mod_numeric = M8Modulator(
-                modulator_type="lfo",
+                modulator_type="LFO",
                 instrument_type=data["instrument_type"],
                 destination=data["numeric_value"],
                 amount=0x80
@@ -415,7 +415,7 @@ class TestM8Modulator(unittest.TestCase):
         
         # Check values
         self.assertEqual(mod.type, 3)
-        self.assertEqual(mod.modulator_type, "lfo")
+        self.assertEqual(mod.modulator_type, "LFO")
         self.assertEqual(mod.destination, 0x5)
         self.assertEqual(mod.amount, 0x80)
         self.assertEqual(mod.params.oscillator, 0x1)
@@ -507,8 +507,8 @@ class TestM8Modulators(unittest.TestCase):
             self.assertIsInstance(mod, M8Block)
         
         # Test with items
-        item1 = M8Modulator(modulator_type="lfo", destination=1)
-        item2 = M8Modulator(modulator_type="ahd_envelope", destination=2)
+        item1 = M8Modulator(modulator_type="LFO", destination=1)
+        item2 = M8Modulator(modulator_type="AHD_ENVELOPE", destination=2)
         
         modulators = M8Modulators(items=[item1, item2])
         
@@ -550,14 +550,14 @@ class TestM8Modulators(unittest.TestCase):
         # Check types and parameters of modulators
         # Modulator 0 should be a LFO
         self.assertEqual(modulators[0].type, 3)
-        self.assertEqual(modulators[0].modulator_type, "lfo")
+        self.assertEqual(modulators[0].modulator_type, "LFO")
         self.assertEqual(modulators[0].destination, 1)
         self.assertEqual(modulators[0].amount, 0xFF)
         self.assertEqual(modulators[0].params.frequency, 0x10)
         
         # Modulator 1 should be an AHD envelope
         self.assertEqual(modulators[1].type, 0)
-        self.assertEqual(modulators[1].modulator_type, "ahd_envelope")
+        self.assertEqual(modulators[1].modulator_type, "AHD_ENVELOPE")
         self.assertEqual(modulators[1].destination, 2)
         self.assertEqual(modulators[1].amount, 0xFF)
         self.assertEqual(modulators[1].params.decay, 0x80)
@@ -571,10 +571,10 @@ class TestM8Modulators(unittest.TestCase):
         modulators = M8Modulators()
         
         # Set up modulator 0
-        modulators[0] = M8Modulator(modulator_type="lfo", destination=1, amount=0xFF, frequency=0x10)
+        modulators[0] = M8Modulator(modulator_type="LFO", destination=1, amount=0xFF, frequency=0x10)
         
         # Set up modulator 1
-        modulators[1] = M8Modulator(modulator_type="ahd_envelope", destination=2, amount=0xFF, decay=0x80)
+        modulators[1] = M8Modulator(modulator_type="AHD_ENVELOPE", destination=2, amount=0xFF, decay=0x80)
         
         # Write to binary
         binary = modulators.write()
@@ -600,10 +600,10 @@ class TestM8Modulators(unittest.TestCase):
         modulators = M8Modulators()
         
         # Set up modulator 0
-        modulators[0] = M8Modulator(modulator_type="lfo", destination=1, amount=0xFF, frequency=0x10)
+        modulators[0] = M8Modulator(modulator_type="LFO", destination=1, amount=0xFF, frequency=0x10)
         
         # Set up modulator 1
-        modulators[1] = M8Modulator(modulator_type="ahd_envelope", destination=2, amount=0xFF, decay=0x80)
+        modulators[1] = M8Modulator(modulator_type="AHD_ENVELOPE", destination=2, amount=0xFF, decay=0x80)
         
         # Write to binary
         binary = modulators.write()
@@ -631,7 +631,7 @@ class TestM8Modulators(unittest.TestCase):
         
         # Set up modulator 0 with WavSynth enum destination
         modulators[0] = M8Modulator(
-            modulator_type="lfo", 
+            modulator_type="LFO", 
             instrument_type=0x00,  # WavSynth
             destination=M8WavSynthModDestinations.CUTOFF.value,  # Numeric value 0x7
             amount=0xFF
@@ -639,7 +639,7 @@ class TestM8Modulators(unittest.TestCase):
         
         # Set up modulator 1 with MacroSynth enum destination
         modulators[1] = M8Modulator(
-            modulator_type="ahd_envelope", 
+            modulator_type="AHD_ENVELOPE", 
             instrument_type=0x01,  # MacroSynth
             destination=M8MacroSynthModDestinations.TIMBRE.value,  # Numeric value 0x3
             amount=0xFF
@@ -681,8 +681,8 @@ class TestM8Modulators(unittest.TestCase):
     def test_clone(self):
         # Create original modulators
         original = M8Modulators()
-        original[0] = M8Modulator(modulator_type="lfo", destination=1, amount=0xFF, frequency=0x10)
-        original[1] = M8Modulator(modulator_type="ahd_envelope", destination=2, amount=0xFF, decay=0x80)
+        original[0] = M8Modulator(modulator_type="LFO", destination=1, amount=0xFF, frequency=0x10)
+        original[1] = M8Modulator(modulator_type="AHD_ENVELOPE", destination=2, amount=0xFF, decay=0x80)
         
         # Clone
         clone = original.clone()
@@ -706,8 +706,8 @@ class TestM8Modulators(unittest.TestCase):
     def test_as_list(self):
         # Create modulators
         modulators = M8Modulators()
-        modulators[0] = M8Modulator(modulator_type="lfo", destination=1, amount=0xFF, frequency=0x10)
-        modulators[1] = M8Modulator(modulator_type="ahd_envelope", destination=2, amount=0xFF, decay=0x80)
+        modulators[0] = M8Modulator(modulator_type="LFO", destination=1, amount=0xFF, frequency=0x10)
+        modulators[1] = M8Modulator(modulator_type="AHD_ENVELOPE", destination=2, amount=0xFF, decay=0x80)
         
         # Convert to list
         result = modulators.as_list()
@@ -735,14 +735,14 @@ class TestM8Modulators(unittest.TestCase):
         
         # Set modulators with different instrument types and enum destinations
         modulators[0] = M8Modulator(
-            modulator_type="lfo", 
+            modulator_type="LFO", 
             instrument_type=0x00,  # WavSynth
             destination=M8WavSynthModDestinations.CUTOFF.value,  # Numeric value 0x7
             amount=0xFF
         )
         
         modulators[1] = M8Modulator(
-            modulator_type="ahd_envelope", 
+            modulator_type="AHD_ENVELOPE", 
             instrument_type=0x01,  # MacroSynth
             destination=M8MacroSynthModDestinations.TIMBRE.value,  # Numeric value 0x3
             amount=0xFF
@@ -796,13 +796,13 @@ class TestM8Modulators(unittest.TestCase):
         
         # Check specific modulators
         self.assertEqual(modulators[0].type, 3)
-        self.assertEqual(modulators[0].modulator_type, "lfo")
+        self.assertEqual(modulators[0].modulator_type, "LFO")
         self.assertEqual(modulators[0].destination, 1)
         self.assertEqual(modulators[0].amount, 0xFF)
         self.assertEqual(modulators[0].params.frequency, 0x10)
         
         self.assertEqual(modulators[1].type, 0)
-        self.assertEqual(modulators[1].modulator_type, "ahd_envelope")
+        self.assertEqual(modulators[1].modulator_type, "AHD_ENVELOPE")
         self.assertEqual(modulators[1].destination, 2)
         self.assertEqual(modulators[1].amount, 0xFF)
         self.assertEqual(modulators[1].params.decay, 0x80)
@@ -843,12 +843,12 @@ class TestM8Modulators(unittest.TestCase):
         
         # Check specific modulators
         self.assertEqual(modulators[0].type, 3)  # LFO = 3
-        self.assertEqual(modulators[0].modulator_type, "lfo")
+        self.assertEqual(modulators[0].modulator_type, "LFO")
         self.assertEqual(modulators[0].destination, M8WavSynthModDestinations.CUTOFF.value)
         self.assertEqual(modulators[0].amount, 0xFF)
         
         self.assertEqual(modulators[1].type, 0)  # AHD_ENVELOPE = 0
-        self.assertEqual(modulators[1].modulator_type, "ahd_envelope")
+        self.assertEqual(modulators[1].modulator_type, "AHD_ENVELOPE")
         self.assertEqual(modulators[1].destination, M8MacroSynthModDestinations.TIMBRE.value)
         
         # Values should be correctly included in binary format
@@ -867,27 +867,27 @@ class TestHelperFunctions(unittest.TestCase):
         
         # First two should be AHD envelopes
         self.assertEqual(modulators[0].type, 0)
-        self.assertEqual(modulators[0].modulator_type, "ahd_envelope")
+        self.assertEqual(modulators[0].modulator_type, "AHD_ENVELOPE")
         
         self.assertEqual(modulators[1].type, 0)
-        self.assertEqual(modulators[1].modulator_type, "ahd_envelope")
+        self.assertEqual(modulators[1].modulator_type, "AHD_ENVELOPE")
         
         # Last two should be LFOs
         self.assertEqual(modulators[2].type, 3)
-        self.assertEqual(modulators[2].modulator_type, "lfo")
+        self.assertEqual(modulators[2].modulator_type, "LFO")
         
         self.assertEqual(modulators[3].type, 3)
-        self.assertEqual(modulators[3].modulator_type, "lfo")
+        self.assertEqual(modulators[3].modulator_type, "LFO")
 
 class TestModulatorTypes(unittest.TestCase):
     def test_ahd_envelope(self):
         # Create a modulator with AHD envelope type
-        mod = M8Modulator(modulator_type="ahd_envelope", destination=1, amount=0xFF, 
+        mod = M8Modulator(modulator_type="AHD_ENVELOPE", destination=1, amount=0xFF, 
                          attack=0x10, hold=0x20, decay=0x80)
         
         # Check type and parameters
         self.assertEqual(mod.type, 0)
-        self.assertEqual(mod.modulator_type, "ahd_envelope")
+        self.assertEqual(mod.modulator_type, "AHD_ENVELOPE")
         self.assertEqual(mod.destination, 1)
         self.assertEqual(mod.amount, 0xFF)
         self.assertEqual(mod.params.attack, 0x10)
@@ -914,12 +914,12 @@ class TestModulatorTypes(unittest.TestCase):
     
     def test_adsr_envelope(self):
         # Create a modulator with ADSR envelope type
-        mod = M8Modulator(modulator_type="adsr_envelope", destination=1, amount=0xFF, 
+        mod = M8Modulator(modulator_type="ADSR_ENVELOPE", destination=1, amount=0xFF, 
                          attack=0x10, decay=0x20, sustain=0x80, release=0x40)
         
         # Check type and parameters
         self.assertEqual(mod.type, 1)
-        self.assertEqual(mod.modulator_type, "adsr_envelope")
+        self.assertEqual(mod.modulator_type, "ADSR_ENVELOPE")
         self.assertEqual(mod.destination, 1)
         self.assertEqual(mod.amount, 0xFF)
         self.assertEqual(mod.params.attack, 0x10)
@@ -949,12 +949,12 @@ class TestModulatorTypes(unittest.TestCase):
     
     def test_drum_envelope(self):
         # Create a modulator with Drum envelope type
-        mod = M8Modulator(modulator_type="drum_envelope", destination=1, amount=0xFF, 
+        mod = M8Modulator(modulator_type="DRUM_ENVELOPE", destination=1, amount=0xFF, 
                          peak=0x10, body=0x20, decay=0x80)
         
         # Check type and parameters
         self.assertEqual(mod.type, 2)
-        self.assertEqual(mod.modulator_type, "drum_envelope")
+        self.assertEqual(mod.modulator_type, "DRUM_ENVELOPE")
         self.assertEqual(mod.destination, 1)
         self.assertEqual(mod.amount, 0xFF)
         self.assertEqual(mod.params.peak, 0x10)
@@ -981,12 +981,12 @@ class TestModulatorTypes(unittest.TestCase):
     
     def test_lfo(self):
         # Create a modulator with LFO type
-        mod = M8Modulator(modulator_type="lfo", destination=1, amount=0xFF, 
+        mod = M8Modulator(modulator_type="LFO", destination=1, amount=0xFF, 
                          oscillator=0x1, trigger=0x2, frequency=0x30)
         
         # Check type and parameters
         self.assertEqual(mod.type, 3)
-        self.assertEqual(mod.modulator_type, "lfo")
+        self.assertEqual(mod.modulator_type, "LFO")
         self.assertEqual(mod.destination, 1)
         self.assertEqual(mod.amount, 0xFF)
         self.assertEqual(mod.params.oscillator, 0x1)
@@ -1013,12 +1013,12 @@ class TestModulatorTypes(unittest.TestCase):
     
     def test_trigger_envelope(self):
         # Create a modulator with Trigger envelope type
-        mod = M8Modulator(modulator_type="trigger_envelope", destination=1, amount=0xFF, 
+        mod = M8Modulator(modulator_type="TRIGGER_ENVELOPE", destination=1, amount=0xFF, 
                          attack=0x10, hold=0x20, decay=0x40, source=0x01)
         
         # Check type and parameters
         self.assertEqual(mod.type, 4)
-        self.assertEqual(mod.modulator_type, "trigger_envelope")
+        self.assertEqual(mod.modulator_type, "TRIGGER_ENVELOPE")
         self.assertEqual(mod.destination, 1)
         self.assertEqual(mod.amount, 0xFF)
         self.assertEqual(mod.params.attack, 0x10)
@@ -1048,12 +1048,12 @@ class TestModulatorTypes(unittest.TestCase):
     
     def test_tracking_envelope(self):
         # Create a modulator with Tracking envelope type
-        mod = M8Modulator(modulator_type="tracking_envelope", destination=1, amount=0xFF, 
+        mod = M8Modulator(modulator_type="TRACKING_ENVELOPE", destination=1, amount=0xFF, 
                          source=0x01, low_value=0x10, high_value=0x7F)
         
         # Check type and parameters
         self.assertEqual(mod.type, 5)
-        self.assertEqual(mod.modulator_type, "tracking_envelope")
+        self.assertEqual(mod.modulator_type, "TRACKING_ENVELOPE")
         self.assertEqual(mod.destination, 1)
         self.assertEqual(mod.amount, 0xFF)
         self.assertEqual(mod.params.source, 0x01)

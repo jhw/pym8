@@ -13,7 +13,7 @@ class TestParameterizedInstruments(unittest.TestCase):
         self.test_data = [
             {
                 "name": "WavSynth",
-                "instrument_type": "wavsynth",
+                "instrument_type": "WAVSYNTH",
                 "type_id": 0x00,
                 "type_enum": M8InstrumentType.WAVSYNTH,
                 "params": {
@@ -39,7 +39,7 @@ class TestParameterizedInstruments(unittest.TestCase):
             },
             {
                 "name": "MacroSynth",
-                "instrument_type": "macrosynth",
+                "instrument_type": "MACROSYNTH",
                 "type_id": 0x01,
                 "type_enum": M8InstrumentType.MACROSYNTH,
                 "params": {
@@ -65,7 +65,7 @@ class TestParameterizedInstruments(unittest.TestCase):
             },
             {
                 "name": "Sampler",
-                "instrument_type": "sampler",
+                "instrument_type": "SAMPLER",
                 "type_id": 0x02,
                 "type_enum": M8InstrumentType.SAMPLER,
                 "params": {

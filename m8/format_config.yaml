@@ -95,7 +95,7 @@ instruments:
     UINT8: 1
     STRING: 2
   
-  wavsynth:
+  WAVSYNTH:
     type_id: 0x00
     params:
       shape: {offset: 18, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.wavsynth.M8WavSynthShapes"]}
@@ -114,7 +114,7 @@ instruments:
       delay: {offset: 31, size: 1, type: "UINT8", default: 0x00}
       reverb: {offset: 32, size: 1, type: "UINT8", default: 0x00}
     
-  macrosynth:
+  MACROSYNTH:
     type_id: 0x01
     params:
       shape: {offset: 18, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.macrosynth.M8MacroSynthShapes"]}
@@ -133,7 +133,7 @@ instruments:
       delay: {offset: 31, size: 1, type: "UINT8", default: 0x00}
       reverb: {offset: 32, size: 1, type: "UINT8", default: 0x00}
   
-  sampler:
+  SAMPLER:
     type_id: 0x02
     params:
       play_mode: {offset: 18, size: 1, type: "UINT8", default: 0x00, enums: ["m8.enums.sampler.M8SamplerPlayMode"]}
@@ -188,7 +188,7 @@ modulators:
     0x05: "m8.api.modulators.M8TrackingEnvelope"
   
   types:
-    ahd_envelope: 
+    AHD_ENVELOPE: 
       id: 0x00
       fields:
         destination: {
@@ -207,7 +207,7 @@ modulators:
         hold: {offset: 3, size: 1, type: "UINT8", default: 0x00}
         decay: {offset: 4, size: 1, type: "UINT8", default: 0x80}
     
-    adsr_envelope:
+    ADSR_ENVELOPE:
       id: 0x01
       fields:
         destination: {
@@ -227,7 +227,7 @@ modulators:
         sustain: {offset: 4, size: 1, type: "UINT8", default: 0x80}
         release: {offset: 5, size: 1, type: "UINT8", default: 0x80}
     
-    drum_envelope:
+    DRUM_ENVELOPE:
       id: 0x02
       fields:
         destination: {
@@ -246,7 +246,7 @@ modulators:
         body: {offset: 3, size: 1, type: "UINT8", default: 0x10}
         decay: {offset: 4, size: 1, type: "UINT8", default: 0x80}
     
-    lfo:
+    LFO:
       id: 0x03
       fields:
         destination: {
@@ -265,7 +265,7 @@ modulators:
         trigger: {offset: 3, size: 1, type: "UINT8", default: 0x00}
         frequency: {offset: 4, size: 1, type: "UINT8", default: 0x10}
     
-    trigger_envelope:
+    TRIGGER_ENVELOPE:
       id: 0x04
       fields:
         destination: {
@@ -285,7 +285,7 @@ modulators:
         decay: {offset: 4, size: 1, type: "UINT8", default: 0x40}
         source: {offset: 5, size: 1, type: "UINT8", default: 0x00}
     
-    tracking_envelope:
+    TRACKING_ENVELOPE:
       id: 0x05
       fields:
         destination: {
