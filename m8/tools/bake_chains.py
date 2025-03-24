@@ -8,10 +8,7 @@ from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.song import M8SongRow
 
 def identify_chain_blocks(song):
-    """
-    Identifies square blocks of chain IDs in the song matrix.
-    Blocks are separated by empty rows.
-    """
+    """Find square blocks of chain IDs in the song matrix."""
     blocks = []
     current_block = []
     current_block_start_row = 0
@@ -43,10 +40,7 @@ def identify_chain_blocks(song):
     return blocks
 
 def validate_block_is_square(block):
-    """
-    Validates that a block is a perfect square matrix.
-    Returns the dimensions of the square if valid, otherwise raises ValueError.
-    """
+    """Check if a block is a perfect square matrix."""
     # Check if all rows have the same number of elements
     if not block:
         return 0, 0
@@ -66,9 +60,7 @@ def validate_block_is_square(block):
     return len(block), first_row_len
 
 def prompt_for_blocks(blocks, project):
-    """
-    Prompts the user to select blocks for processing.
-    """
+    """Ask user to select blocks for processing."""
     selected_blocks = []
     
     print(f"Found {len(blocks)} chain blocks:")
@@ -100,20 +92,11 @@ def prompt_for_blocks(blocks, project):
     return selected_blocks
 
 def calculate_new_id(row, col):
-    """
-    Calculate new ID based on the M8 row/column pattern.
-    In M8, tens digit = column, ones digit = row.
-    """
+    """Calculate chain ID from row/column position."""
     return (col * 10) + row
 
 def bake_chain_block(project, block_data, target_row):
-    """
-    Bakes a block of chains into new chains.
-    
-    - Each column in the block will become a single new chain
-    - The original chains will be blanked out
-    - The new chains will be placed in the target row
-    """
+    """Convert a block of chains into consolidated new chains."""
     start_row, block = block_data
     rows, cols = validate_block_is_square(block)
     
@@ -159,9 +142,7 @@ def bake_chain_block(project, block_data, target_row):
     return new_chain_ids
 
 def bake_chains(project):
-    """
-    Bakes chains in the project.
-    """
+    """Process and combine chains in the project."""
     # Identify chain blocks
     blocks = identify_chain_blocks(project.song)
     

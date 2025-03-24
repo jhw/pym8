@@ -1,7 +1,7 @@
 # short
 
-- check uppercase forcing wrt instrumnet/modulator names
-- some comments violating policy
+- enum default string values in config
+- check uppercase forcing wrt instrument/modulator names
 
 - add constructor enum support to fx
 - add fx enums
@@ -44,6 +44,7 @@
 
 # done
 
+✓ fix docstring comments violating policy
 ✓ nest instrument subclasses in format yaml
 ✓ yaml format with hex codes
 ✓ implement UINT4_2 field type for packed 4-bit values in config

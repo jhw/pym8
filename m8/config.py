@@ -76,7 +76,7 @@ def _apply_field_defaults(config):
     return config
 
 def get_offset(section_name):
-    """Retrieves section offset from configuration, handling hex values."""
+    """Gets section offset from configuration."""
     config = load_format_config()
     if section_name in config and 'offset' in config[section_name]:
         offset_value = config[section_name]['offset']
@@ -86,14 +86,14 @@ def get_offset(section_name):
     raise ValueError(f"Offset for section '{section_name}' not found in configuration")
 
 def get_count(section_name):
-    """Retrieves count value for a section from configuration."""
+    """Gets count value for a section from configuration."""
     config = load_format_config()
     if section_name in config and 'count' in config[section_name]:
         return config[section_name]['count']
     raise ValueError(f"Count for section '{section_name}' not found in configuration")
 
 def get_param_data(section_path, param_name):
-    """Navigates nested config to retrieve parameter data at the specified path."""
+    """Gets parameter data at the specified path."""
     config = load_format_config()
     current = config
     

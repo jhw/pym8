@@ -11,16 +11,7 @@ import logging
 # Main enum functions
 
 def serialize_enum(enum_value, log_prefix=None):
-    """
-    Convert an enum instance to its string name representation.
-    
-    Args:
-        enum_value: The enum value to serialize
-        log_prefix: Optional prefix for log messages
-        
-    Returns:
-        String name representation of the enum, or the original value if not an enum
-    """
+    """Convert an enum instance to its string name."""
     if hasattr(enum_value, 'name'):
         return enum_value.name
     
@@ -30,20 +21,7 @@ def serialize_enum(enum_value, log_prefix=None):
     return enum_value
 
 def deserialize_enum(enum_class, value, log_prefix=None):
-    """
-    Convert a string enum name or numeric value to its corresponding enum value.
-    
-    Args:
-        enum_class: The enum class to use for conversion
-        value: String enum name or numeric value
-        log_prefix: Optional prefix for log messages
-        
-    Returns:
-        The numeric value of the enum
-        
-    Raises:
-        M8EnumError: If string value doesn't match any enum name
-    """
+    """Convert a string enum name or numeric value to enum value."""
     from m8.enums import M8EnumError
     
     if isinstance(value, str):
@@ -67,16 +45,7 @@ def deserialize_enum(enum_class, value, log_prefix=None):
 # Instrument-specific enum functions
 
 def get_enum_paths_for_instrument(enum_paths, instrument_type):
-    """
-    Get enum paths specific to an instrument type from a dict mapping.
-    
-    Args:
-        enum_paths: String, list, or dict mapping instrument types to enum paths
-        instrument_type: The instrument type ID
-        
-    Returns:
-        Enum paths for the specified instrument type, or the original paths
-    """
+    """Get enum paths specific to an instrument type."""
     if not isinstance(enum_paths, dict) or instrument_type is None:
         return enum_paths
         
@@ -91,16 +60,7 @@ def get_enum_paths_for_instrument(enum_paths, instrument_type):
     return enum_paths.get(instrument_type_key)
 
 def load_enum_classes(enum_paths, log_context=None):
-    """
-    Dynamically load enum classes from their module paths.
-    
-    Args:
-        enum_paths: String or list of strings with fully qualified enum class paths
-        log_context: Optional context for logging
-        
-    Returns:
-        List of enum classes
-    """
+    """Dynamically load enum classes from module paths."""
     logger = logging.getLogger(__name__)
     enum_classes = []
     
@@ -135,18 +95,7 @@ def load_enum_classes(enum_paths, log_context=None):
 # Parameter-level enum functions
 
 def serialize_param_enum_value(value, param_def, instrument_type=None, param_name=None):
-    """
-    Serialize a parameter value to its enum string representation if applicable.
-    
-    Args:
-        value: The parameter value to serialize
-        param_def: Parameter definition with optional 'enums' field
-        instrument_type: Optional instrument type for instrument-specific enums
-        param_name: Optional parameter name for logging
-        
-    Returns:
-        String enum name or original value
-    """
+    """Serialize a parameter value to its enum string representation."""
     if "enums" not in param_def:
         return value
         
@@ -172,21 +121,7 @@ def serialize_param_enum_value(value, param_def, instrument_type=None, param_nam
     return value
 
 def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=None):
-    """
-    Deserialize a parameter value from string enum name to numeric value.
-    
-    Args:
-        enum_paths: String, list, or dict of enum class paths
-        value: String enum name or numeric value
-        param_name: Optional parameter name for error messages
-        instrument_type: Optional instrument type for instrument-specific enums
-        
-    Returns:
-        Numeric enum value or original value
-        
-    Raises:
-        M8EnumError: If string value doesn't match any enum name
-    """
+    """Convert parameter string enum name to numeric value."""
     from m8.enums import M8EnumError
     
     if not isinstance(value, str):
@@ -212,20 +147,7 @@ def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=N
     raise M8EnumError(error_msg)
     
 def ensure_enum_int_value(value, enum_paths, instrument_type=None):
-    """
-    Ensure a value is converted to its integer enum value if it's a string enum name.
-    
-    Args:
-        value: String enum name or numeric value
-        enum_paths: Enum class paths to use for conversion
-        instrument_type: Optional instrument type
-        
-    Returns:
-        Integer enum value or original value
-        
-    Raises:
-        M8EnumError: If string value doesn't match any enum name
-    """
+    """Convert a value to integer enum value if it's a string enum name."""
     if not isinstance(value, str):
         return value
     
@@ -251,12 +173,7 @@ def ensure_enum_int_value(value, enum_paths, instrument_type=None):
 # Enum mixins and decorators
 
 class EnumPropertyMixin:
-    """
-    Mixin to add enum support to class properties.
-    
-    This mixin adds methods to easily convert between string enum names and
-    numeric enum values for class properties.
-    """
+    """Mixin to add enum support to class properties."""
     
     def _get_enum_value(self, property_name, value, default=None):
         """Get the numeric value for an enum property."""
@@ -291,57 +208,17 @@ class EnumPropertyMixin:
 # Utility functions for working with enums
 
 def get_enum_names(enum_class):
-    """
-    Get a list of all valid enum names for an enum class.
-    
-    Args:
-        enum_class: The enum class
-        
-    Returns:
-        List of string enum names
-    """
+    """Get a list of all valid enum names for an enum class."""
     return [e.name for e in enum_class]
 
 def get_enum_values(enum_class):
-    """
-    Get a list of all valid enum values for an enum class.
-    
-    Args:
-        enum_class: The enum class
-        
-    Returns:
-        List of integer enum values
-    """
+    """Get a list of all valid enum values for an enum class."""
     return [e.value for e in enum_class]
 
 def enum_name_to_value(enum_class, name):
-    """
-    Convert an enum name to its value.
-    
-    Args:
-        enum_class: The enum class
-        name: String enum name
-        
-    Returns:
-        Integer enum value
-        
-    Raises:
-        KeyError: If name is not a valid enum name
-    """
+    """Convert an enum name to its value."""
     return enum_class[name].value
 
 def enum_value_to_name(enum_class, value):
-    """
-    Convert an enum value to its name.
-    
-    Args:
-        enum_class: The enum class
-        value: Integer enum value
-        
-    Returns:
-        String enum name
-        
-    Raises:
-        ValueError: If value is not a valid enum value
-    """
+    """Convert an enum value to its name."""
     return enum_class(value).name
