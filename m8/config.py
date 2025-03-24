@@ -21,6 +21,8 @@ def _apply_field_defaults(config):
     - Default size: 1
     - Default type: "UINT8"
     - Default default: 0
+    
+    Also handles UINT4_2 fields with nibble components.
     """
     if not isinstance(config, dict):
         return config
@@ -32,10 +34,20 @@ def _apply_field_defaults(config):
             if 'offset' in value:
                 if 'size' not in value:
                     value['size'] = 1
-                if 'type' not in value:
-                    value['type'] = "UINT8"
-                if 'default' not in value:
-                    value['default'] = 0
+                
+                # Handle special UINT4_2 type
+                if 'type' in value and value['type'] == "UINT4_2":
+                    # Process components if present
+                    if 'components' in value:
+                        for comp_name, comp_def in value['components'].items():
+                            if 'default' not in comp_def:
+                                comp_def['default'] = 0
+                else:
+                    # Regular field handling
+                    if 'type' not in value:
+                        value['type'] = "UINT8"
+                    if 'default' not in value:
+                        value['default'] = 0
             
             # Named collections of fields
             if key == 'fields' or key == 'params':
@@ -43,10 +55,20 @@ def _apply_field_defaults(config):
                     if isinstance(field_def, dict) and 'offset' in field_def:
                         if 'size' not in field_def:
                             field_def['size'] = 1
-                        if 'type' not in field_def:
-                            field_def['type'] = "UINT8"
-                        if 'default' not in field_def:
-                            field_def['default'] = 0
+                        
+                        # Handle special UINT4_2 type
+                        if 'type' in field_def and field_def['type'] == "UINT4_2":
+                            # Process components if present
+                            if 'components' in field_def:
+                                for comp_name, comp_def in field_def['components'].items():
+                                    if 'default' not in comp_def:
+                                        comp_def['default'] = 0
+                        else:
+                            # Regular field handling
+                            if 'type' not in field_def:
+                                field_def['type'] = "UINT8"
+                            if 'default' not in field_def:
+                                field_def['default'] = 0
             
             # Recursively process nested dictionaries
             config[key] = _apply_field_defaults(value)
@@ -227,15 +249,41 @@ def get_instrument_types():
 def get_instrument_common_offsets():
     """Retrieves common parameter offsets for instruments from configuration."""
     config = load_format_config()
-    if 'instruments' in config and 'common_offsets' in config['instruments']:
-        return config['instruments']['common_offsets']
-    raise ValueError("Common offsets for instruments not found in configuration")
+    if 'instruments' in config and 'common_fields' in config['instruments']:
+        # Extract offsets from common_fields
+        offsets = {}
+        for field_name, field_config in config['instruments']['common_fields'].items():
+            offsets[field_name] = field_config['offset']
+            
+            # Handle UINT4_2 components
+            if 'type' in field_config and field_config['type'] == "UINT4_2" and 'components' in field_config:
+                # Add offsets for component fields as well
+                # This allows code to reference transpose and eq directly if needed
+                for comp_name, comp_config in field_config['components'].items():
+                    offsets[comp_name] = field_config['offset']
+        
+        return offsets
+    raise ValueError("Common fields for instruments not found in configuration")
 
 def get_instrument_common_defaults():
     """Retrieves common parameter defaults for instruments from configuration."""
     config = load_format_config()
-    if 'instruments' in config and 'common_defaults' in config['instruments']:
-        return config['instruments']['common_defaults']
+    if 'instruments' in config and 'common_fields' in config['instruments']:
+        # Extract defaults from common_fields
+        defaults = {}
+        for field_name, field_config in config['instruments']['common_fields'].items():
+            # Only add default if explicitly defined
+            if 'default' in field_config:
+                defaults[field_name] = field_config['default']
+                
+            # Handle UINT4_2 components 
+            if 'type' in field_config and field_config['type'] == "UINT4_2" and 'components' in field_config:
+                # Add defaults for component fields
+                for comp_name, comp_config in field_config['components'].items():
+                    if 'default' in comp_config:
+                        defaults[comp_name] = comp_config['default']
+        
+        return defaults
     raise ValueError("Common defaults for instruments not found in configuration")
 
 def get_modulator_common_offsets():

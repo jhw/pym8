@@ -170,23 +170,36 @@ instruments:
         offset: 21
     type_id: 0
   block_size: 215
-  common_defaults:
-    eq: 1
-    finetune: 128
-    name: ' '
-    pitch: 0
-    table_tick: 1
-    transpose: 4
-    volume: 0
-  common_offsets:
-    finetune: 17
-    name: 1
-    name_length: 12
-    pitch: 16
-    table_tick: 14
-    transpose_eq: 13
-    type: 0
-    volume: 15
+  common_fields:
+    finetune:
+      default: 128
+      offset: 17
+    name:
+      default: ' '
+      offset: 1
+      size: 12
+      type: STRING
+    name_length:
+      offset: 12
+    pitch:
+      offset: 16
+    table_tick:
+      default: 1
+      offset: 14
+    transpose_eq:
+      offset: 13
+      type: "UINT4_2"
+      components:
+        transpose:
+          nibble: 1
+          default: 4
+        eq:
+          nibble: 2
+          default: 1
+    type:
+      offset: 0
+    volume:
+      offset: 15
   count: 128
   modulators_offset: 63
   offset: 80446

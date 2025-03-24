@@ -307,9 +307,9 @@ class M8Instrument(EnumPropertyMixin):
         # Read name as a string (null-terminated) using utility function
         self.name = read_fixed_string(data, self.NAME_OFFSET, self.NAME_LENGTH)
         
-        # Split byte into transpose/eq
-        transpose_eq = data[self.TRANSPOSE_EQ_OFFSET]
-        self.transpose, self.eq = split_byte(transpose_eq)
+        # Read the byte at offset that contains both transpose and eq
+        combined_byte = data[self.TRANSPOSE_EQ_OFFSET]
+        self.transpose, self.eq = split_byte(combined_byte)
         
         self.table_tick = data[self.TABLE_TICK_OFFSET]
         self.volume = data[self.VOLUME_OFFSET]
@@ -347,7 +347,7 @@ class M8Instrument(EnumPropertyMixin):
         name_bytes = write_fixed_string(self.name, self.NAME_LENGTH)
         buffer[self.NAME_OFFSET:self.NAME_OFFSET+self.NAME_LENGTH] = name_bytes
         
-        # Write transpose/eq
+        # Write transpose and eq combined into a single byte
         buffer[self.TRANSPOSE_EQ_OFFSET] = join_nibbles(self.transpose, self.eq)
         
         # Write remaining common parameters

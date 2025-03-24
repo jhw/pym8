@@ -74,6 +74,56 @@ When loading field definitions from YAML:
 3. Check if `default` is missing and add default `default: 0`
 4. Apply these defaults at configuration load time
 
+# UINT4_2 Field Type
+
+## Overview
+
+The UINT4_2 field type represents a byte that contains two 4-bit values packed together. This is common in the M8 format where multiple parameters are stored efficiently in a single byte.
+
+## Format in Configuration
+
+A UINT4_2 field is defined with a special structure that describes both its overall properties and its component parts:
+
+```yaml
+transpose_eq:
+  offset: 13
+  type: "UINT4_2"
+  components:
+    transpose:
+      nibble: 1  # Lower nibble (bits 0-3)
+      default: 4
+    eq:
+      nibble: 2  # Upper nibble (bits 4-7)
+      default: 1
+```
+
+## Key Components
+
+1. The main field defines:
+   - `offset`: Byte position in the data structure
+   - `type`: Set to "UINT4_2" to indicate this is a composite field
+
+2. The `components` section lists the individual nibble values:
+   - Each component has its own name (e.g., "transpose", "eq")
+   - `nibble`: Indicates which nibble (1 for lower, 2 for upper)
+   - `default`: Default value for this component
+
+## Processing
+
+When reading/writing this field:
+1. The byte at the specified offset contains both values
+2. The lower 4 bits (nibble 1) contain the first value
+3. The upper 4 bits (nibble 2) contain the second value
+4. These are split/joined using `split_byte()` and `join_nibbles()` utilities
+
+## Benefits
+
+This structure provides several advantages:
+1. Self-documenting configuration that clearly shows which parameters are combined
+2. Consistent field model for all types of fields
+3. Makes the relationships between parameters explicit
+4. Maintains backward compatibility with existing code that uses the combined field
+
 ### fmsynth mods 22/03/25
 
  Now I see the issue more clearly. The MOD_OFFSET is a critical value that determines where modulators are written
