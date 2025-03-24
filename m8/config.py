@@ -7,7 +7,51 @@ def load_format_config():
     """Loads M8 format configuration from YAML with caching to avoid disk reads."""
     config_path = os.path.join(os.path.dirname(__file__), 'format_config.yaml')
     with open(config_path, 'r') as config_file:
-        return yaml.safe_load(config_file)
+        config = yaml.safe_load(config_file)
+        
+    # Apply defaults to field definitions
+    config = _apply_field_defaults(config)
+    return config
+
+def _apply_field_defaults(config):
+    """
+    Apply default values to field definitions throughout the config.
+    For any dictionary that appears to be a field definition (has 'offset'),
+    adds default values if they're missing:
+    - Default size: 1
+    - Default type: "UINT8"
+    - Default default: 0
+    """
+    if not isinstance(config, dict):
+        return config
+        
+    # Process all dictionary items recursively
+    for key, value in config.items():
+        if isinstance(value, dict):
+            # Check if this looks like a field definition
+            if 'offset' in value:
+                if 'size' not in value:
+                    value['size'] = 1
+                if 'type' not in value:
+                    value['type'] = "UINT8"
+                if 'default' not in value:
+                    value['default'] = 0
+            
+            # Named collections of fields
+            if key == 'fields' or key == 'params':
+                for field_name, field_def in value.items():
+                    if isinstance(field_def, dict) and 'offset' in field_def:
+                        if 'size' not in field_def:
+                            field_def['size'] = 1
+                        if 'type' not in field_def:
+                            field_def['type'] = "UINT8"
+                        if 'default' not in field_def:
+                            field_def['default'] = 0
+            
+            # Recursively process nested dictionaries
+            config[key] = _apply_field_defaults(value)
+    
+    return config
 
 def get_offset(section_name):
     """Retrieves section offset from configuration, handling hex values."""

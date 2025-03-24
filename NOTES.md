@@ -41,6 +41,39 @@
 The config loading functions now handle both uppercase and lowercase variants of instrument
 and modulator types, so code that uses the lowercase versions should continue to work.
 
+# Default Field Properties in Configuration
+
+## Default rules:
+
+1. If a field has no explicit `size`, `type`, or `default`, the following are applied:
+   - `size: 1`
+   - `type: "UINT8"`
+   - `default: 0`
+
+2. This applies to most instrument parameters, modulator fields, and other common fields.
+
+3. These defaults should be used to simplify the configuration YAML file.
+
+## Example:
+
+Current verbose format:
+```yaml
+transpose: {offset: 128, size: 1, type: "UINT8", default: 0}
+```
+
+Simplified format:
+```yaml
+transpose: {offset: 128}
+```
+
+## Implementation notes:
+
+When loading field definitions from YAML:
+1. Check if `size` is missing and add default `size: 1`
+2. Check if `type` is missing and add default `type: "UINT8"`
+3. Check if `default` is missing and add default `default: 0`
+4. Apply these defaults at configuration load time
+
 ### fmsynth mods 22/03/25
 
  Now I see the issue more clearly. The MOD_OFFSET is a critical value that determines where modulators are written

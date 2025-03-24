@@ -1,7 +1,6 @@
 # short
 
 - check uppercase forcing wrt instrumnet/modulator names
-- specify enum defaults as strings in config yaml
 
 - add constructor enum support to fx
 - add fx enums
@@ -43,6 +42,8 @@
 
 # done
 
+✓ add default: 0 as third default for YAML fields
+✓ default size/type defaults for YAML fields (size: 1, type: "UINT8")
 ✓ abstract bit utils, json utils
 ✓ implement proper modulator is_empty() definition using configuration
 ✓ implement proper is_empty() definition and re-enable is_empty tests
