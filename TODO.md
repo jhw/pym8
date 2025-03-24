@@ -1,8 +1,9 @@
 # short
 
+- abstract bit utils, json utils
+- check uppercase forcing wrt instrumnet/modulator names
 - implement proper is_empty() definition and re-enable is_empty tests
 - specify enum defaults as strings in config yaml
-- abstract bit utils
 
 - add constructor enum support to fx
 - add fx enums
