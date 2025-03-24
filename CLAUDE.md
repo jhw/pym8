@@ -20,6 +20,13 @@
 - When working with files, check if corresponding tests exist and update them
 - Assume input data is valid - don't defensively check inputs
 
+## Utility Tools
+- Use tools in the `tools/` directory for common operations
+- For string pattern substitution across multiple files, use `tools/string_substitution.py`
+  - This is helpful for refactoring enum strings, renaming identifiers, etc.
+  - See `tools/fix_case.py` for an example of how to use it
+- For general code refactoring that requires complex pattern matching, always use these tools rather than manual edits
+
 ## Testing Workflow
 1. All tests live in the /tests directory mirroring the m8 directory structure
 2. For changes to m8/api/foo.py, look for corresponding tests in tests/api/foo.py

@@ -2,9 +2,7 @@
 
 - implement proper is_empty() definition and re-enable is_empty tests
 - specify enum defaults as strings in config yaml
-- api bug
 - abstract bit utils
-- check forcing of uppercase
 
 - add constructor enum support to fx
 - add fx enums
@@ -44,6 +42,8 @@
 
 # done
 
+✓ add tools for future Claude string substitution tasks
+- api bug
 - standardize instrument/modulator enum strings to use uppercase consistently
   - update format_config.yaml to use uppercase keys for instrument and modulator types
   - added case-insensitive lookup for backward compatibility
