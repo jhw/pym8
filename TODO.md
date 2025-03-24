@@ -1,14 +1,14 @@
 # short
 
-- add constructor enum support to fx
-- add fx enums
-- check fx is_empty()
-
-- add constructor enum support to phrases
-- add phrase note enum
-- check phrase is_empty()
+- optimize enum class loading to cache loaded classes and avoid repeated loading
+- improve error handling for invalid enum values across instruments, modulators, and fx
+- streamline get_enum_paths_for_instrument to handle IntEnum values without redundancy
+- add clone method to M8FXTuple to properly handle instrument_type
 
 # medium
+
+- phrase note enum support
+- phrase and fx is_empty()
 
 - fx example
 - TODO.md >> github project
@@ -41,6 +41,8 @@
 
 # done
 
+✓ add constructor enum support to fx
+✓ add fx enums
 - standardize instrument/modulator enum strings to use uppercase consistently
 ✓ fix docstring comments violating policy
 ✓ nest instrument subclasses in format yaml

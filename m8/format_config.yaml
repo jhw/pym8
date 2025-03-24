@@ -26,6 +26,23 @@ fx:
     key:
       default: 0xff
       offset: 0x0
+      enums:
+        # Instrument-specific FX enums (including common ones for each type)
+        '0x00':  # WAVSYNTH
+          - m8.enums.wavsynth.M8WavSynthFX
+          - m8.enums.M8SequencerFX
+          - m8.enums.M8MixerFX
+          - m8.enums.M8ModulatorFX
+        '0x01':  # MACROSYNTH
+          - m8.enums.macrosynth.M8MacroSynthFX
+          - m8.enums.M8SequencerFX
+          - m8.enums.M8MixerFX
+          - m8.enums.M8ModulatorFX
+        '0x02':  # SAMPLER
+          - m8.enums.sampler.M8SamplerFX
+          - m8.enums.M8SequencerFX
+          - m8.enums.M8MixerFX
+          - m8.enums.M8ModulatorFX
     value:
       offset: 0x1
 groove:

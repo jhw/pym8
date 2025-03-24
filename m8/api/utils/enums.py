@@ -48,7 +48,14 @@ def get_enum_paths_for_instrument(enum_paths, instrument_type):
     """Get enum paths specific to an instrument type."""
     if not isinstance(enum_paths, dict) or instrument_type is None:
         return enum_paths
-        
+    
+    # Try enum.value directly first (for IntEnum types)
+    if hasattr(instrument_type, 'value'):
+        hex_key = f"0x{instrument_type.value:02x}"
+        if hex_key in enum_paths:
+            return enum_paths.get(hex_key)
+            
+    # Fall back to string representation
     instrument_type_key = str(instrument_type)
     
     if instrument_type_key.isdigit():
