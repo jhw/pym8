@@ -1,5 +1,12 @@
 # short
 
+```
+m8/api/instruments.py:        if lookup_type == "SAMPLER" and "sample_path" in config["instruments"]["types"][lookup_type]:
+m8/api/fx.py:            if "enums" in config["fields"]["key"]:
+m8/api/fx.py:        if self._instrument_type is not None and "enums" in config["fields"]["key"]:
+m8/api/fx.py:            if "enums" in config["fields"]["key"]:
+```
+ 
 - optimize enum class loading to cache loaded classes and avoid repeated loading
 - improve error handling for invalid enum values across instruments, modulators, and fx
 - streamline get_enum_paths_for_instrument to handle IntEnum values without redundancy
