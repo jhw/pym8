@@ -167,3 +167,13 @@ def get_modulator_common_offsets():
             offsets[field_name] = field_config['offset']
         return offsets
     raise ValueError("Fields for modulators not found in configuration")
+
+def get_modulator_type_field_def(modulator_type, field_name):
+    """Retrieves field definition for a specific field of a modulator type."""
+    config = load_format_config()
+    if 'modulators' in config and 'types' in config['modulators']:
+        if modulator_type in config['modulators']['types']:
+            mod_data = config['modulators']['types'][modulator_type]
+            if 'fields' in mod_data and field_name in mod_data['fields']:
+                return mod_data['fields'][field_name]
+    return None

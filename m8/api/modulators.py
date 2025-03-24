@@ -2,8 +2,12 @@ from m8.api import (
     M8Block, load_class, split_byte, join_nibbles, serialize_enum, deserialize_enum,
     deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value
 )
+from m8.api.utils.enums import EnumPropertyMixin
 from m8.enums import M8ModulatorType
-from m8.config import load_format_config, get_modulator_types, get_modulator_type_id, get_modulator_data, get_modulator_common_offsets
+from m8.config import (
+    load_format_config, get_modulator_types, get_modulator_type_id, 
+    get_modulator_data, get_modulator_common_offsets, get_modulator_type_field_def
+)
 import logging
 import importlib
 
@@ -144,7 +148,7 @@ class M8ModulatorParams:
             
         return params
 
-class M8Modulator:
+class M8Modulator(EnumPropertyMixin):
     """Unified modulator class for all M8 modulator types."""
     
     # Get common parameter offsets from config
@@ -240,24 +244,25 @@ class M8Modulator:
     
     def write(self):
         """Convert the modulator to binary data."""
-        # Create a buffer of the correct size
         buffer = bytearray([0] * BLOCK_SIZE)
         
-        # Write combined type/destination
-        buffer[self.TYPE_DEST_BYTE_OFFSET] = join_nibbles(self.type, self.destination)
+        # Get destination value, converting from string if needed
+        dest_value = self.destination
+        if isinstance(dest_value, str):
+            # Get field definition from config for this modulator type
+            field_def = get_modulator_type_field_def(self.modulator_type, "destination")
+            if field_def and "enums" in field_def:
+                # Use generic enum conversion with config-provided enum paths
+                dest_value = ensure_enum_int_value(dest_value, field_def["enums"], self.instrument_type)
         
-        # Write amount
+        buffer[self.TYPE_DEST_BYTE_OFFSET] = join_nibbles(self.type, dest_value)
         buffer[self.AMOUNT_OFFSET] = self.amount
         
-        # Write modulator-specific parameters
         params_data = self.params.write()
         
-        # Copy non-amount parameter bytes to the buffer
-        # Start at offset 2 for modulator-specific params (after type/dest and amount)
         for i in range(min(len(params_data), BLOCK_SIZE - 2)):
             buffer[i + 2] = params_data[i]
         
-        # Return the finalized buffer
         return bytes(buffer)
     
     def is_empty(self):
@@ -281,19 +286,30 @@ class M8Modulator:
     
     def as_dict(self):
         """Convert modulator to dictionary for serialization."""
-        # Start with the type and common parameters
         type_value = serialize_enum(self.type, 'modulator')
-            
+        
+        # Handle destination serialization
+        dest_value = self.destination
+        if isinstance(dest_value, int) and self.instrument_type is not None:
+            # Get field definition from config for this modulator type
+            field_def = get_modulator_type_field_def(self.modulator_type, "destination")
+            if field_def and "enums" in field_def:
+                # Use generic enum serialization with config-provided enum paths
+                dest_value = serialize_param_enum_value(
+                    dest_value, 
+                    field_def, 
+                    self.instrument_type, 
+                    "destination"
+                )
+        
         result = {
             "type": type_value,
-            "destination": self.destination,
+            "destination": dest_value,
             "amount": self.amount
         }
         
-        # Add modulator-specific parameters
         params_dict = self.params.as_dict()
         for key, value in params_dict.items():
-            # Skip destination if already included in common params
             if key != "destination" and key != "amount":
                 result[key] = value
             
@@ -302,18 +318,20 @@ class M8Modulator:
     @classmethod
     def from_dict(cls, data, instrument_type=None):
         """Create a modulator from a dictionary."""
-        # Get the modulator type
         mod_type = data["type"]
         
-        # Create a new modulator with the appropriate type
         try:
             modulator_type = deserialize_enum(M8ModulatorType, mod_type, 'modulator')
             modulator = cls(modulator_type=modulator_type, instrument_type=instrument_type)
             
-            # Set common parameters
-            for key in ["destination", "amount"]:
-                if key in data:
-                    setattr(modulator, key, data[key])
+            # Process destination value with enum support
+            if "destination" in data:
+                dest_value = data["destination"]
+                # We can store the string value directly, it will be converted when needed
+                modulator.destination = dest_value
+            
+            if "amount" in data:
+                modulator.amount = data["amount"]
             
             # Set modulator-specific parameters
             for key, value in data.items():

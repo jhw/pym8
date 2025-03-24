@@ -494,10 +494,10 @@ class TestM8Modulator(unittest.TestCase):
         self.assertEqual(timbre_string, "TIMBRE")
         self.assertEqual(cutoff_sampler_string, "CUTOFF")
         
-        # Current implementation returns numeric values (this will need to be updated)
-        self.assertEqual(result_wavsynth["destination"], M8WavSynthModDestinations.CUTOFF.value)
-        self.assertEqual(result_macrosynth["destination"], M8MacroSynthModDestinations.TIMBRE.value)
-        self.assertEqual(result_sampler["destination"], M8SamplerModDestinations.CUTOFF.value)
+        # Implementation should return string enum values when instrument_type is provided
+        self.assertEqual(result_wavsynth["destination"], "CUTOFF")
+        self.assertEqual(result_macrosynth["destination"], "TIMBRE")
+        self.assertEqual(result_sampler["destination"], "CUTOFF")
     
     def test_from_dict(self):
         # Test data
@@ -911,15 +911,15 @@ class TestM8Modulators(unittest.TestCase):
         # Should only include non-empty modulators with their indexes
         self.assertEqual(len(result), 2)
         
-        # Check specific modulators - integer values expected
+        # Check specific modulators - string enum values expected
         mod0 = next(i for i in result if i["index"] == 0)
         self.assertEqual(mod0["type"], "LFO")
-        self.assertEqual(mod0["destination"], M8WavSynthModDestinations.CUTOFF.value)
+        self.assertEqual(mod0["destination"], "CUTOFF")
         self.assertEqual(mod0["amount"], 0xFF)
         
         mod1 = next(i for i in result if i["index"] == 1)
         self.assertEqual(mod1["type"], "AHD_ENVELOPE")
-        self.assertEqual(mod1["destination"], M8MacroSynthModDestinations.TIMBRE.value)
+        self.assertEqual(mod1["destination"], "TIMBRE")
         self.assertEqual(mod1["amount"], 0xFF)
     
     def test_from_list(self):
