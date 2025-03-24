@@ -1,6 +1,5 @@
 # short
 
-- abstract bit utils, json utils
 - check uppercase forcing wrt instrumnet/modulator names
 - specify enum defaults as strings in config yaml
 
@@ -44,6 +43,7 @@
 
 # done
 
+✓ abstract bit utils, json utils
 ✓ implement proper modulator is_empty() definition using configuration
 ✓ implement proper is_empty() definition and re-enable is_empty tests
 ✓ add tools for future Claude string substitution tasks
