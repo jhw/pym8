@@ -1,6 +1,7 @@
 # m8/api/instruments.py
-from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value
+from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
+from m8.api.utils.enums import EnumPropertyMixin
 from m8.api.version import M8Version
 from enum import Enum, auto
 from m8.enums import M8InstrumentType
@@ -33,7 +34,7 @@ class M8ParamType(Enum):
     UINT8 = auto()      # Standard 1-byte integer (0-255)
     STRING = auto()     # String type with variable length
 
-class M8InstrumentParams:
+class M8InstrumentParams(EnumPropertyMixin):
     """Dynamic parameter container for instrument parameters with support for different parameter types."""
     
     @staticmethod
@@ -47,11 +48,17 @@ class M8InstrumentParams:
             total_size = max(total_size, end)
         return total_size
     
-    def __init__(self, param_defs, **kwargs):
+    def __init__(self, param_defs, instrument_type=None, **kwargs):
         """
         Initialize the parameter group with the given parameter definitions.
+        
+        Args:
+            param_defs: Parameter definitions dictionary
+            instrument_type: Optional instrument type ID for enum handling
+            **kwargs: Parameter values to set
         """
         self._param_defs = param_defs
+        self._instrument_type = instrument_type
         
         # Initialize parameters with defaults
         for param_name, param_def in param_defs.items():
@@ -65,11 +72,11 @@ class M8InstrumentParams:
                 param_def = self._param_defs.get(key, {})
                 if "enums" in param_def and isinstance(value, str):
                     # Convert string enum values to numeric values
-                    value = deserialize_param_enum(param_def["enums"], value, key)
+                    value = deserialize_param_enum(param_def["enums"], value, key, instrument_type)
                 setattr(self, key, value)
     
     @classmethod
-    def from_config(cls, instrument_type, **kwargs):
+    def from_config(cls, instrument_type, instrument_type_id=None, **kwargs):
         """Create parameters from instrument type config."""
         config = load_format_config()
         
@@ -80,7 +87,7 @@ class M8InstrumentParams:
         if instrument_type == "sampler" and "sample_path" in config["instruments"][instrument_type]:
             param_defs["sample_path"] = config["instruments"][instrument_type]["sample_path"]
             
-        return cls(param_defs, **kwargs)
+        return cls(param_defs, instrument_type_id, **kwargs)
     
     def read(self, data):
         """Read parameters from binary data."""
@@ -138,7 +145,7 @@ class M8InstrumentParams:
                 # Write a single byte
                 if "enums" in param_def and isinstance(value, str):
                     # Convert string enum to int value
-                    value = ensure_enum_int_value(value, param_def["enums"])
+                    value = ensure_enum_int_value(value, param_def["enums"], self._instrument_type)
                 buffer[offset] = value & 0xFF
             elif param_type == M8ParamType.STRING:
                 # Write a string of specified length using utility function
@@ -155,7 +162,7 @@ class M8InstrumentParams:
     
     def clone(self):
         """Create a deep copy of this parameter object."""
-        instance = self.__class__(self._param_defs)
+        instance = self.__class__(self._param_defs, self._instrument_type)
         for param_name in self._param_defs.keys():
             setattr(instance, param_name, getattr(self, param_name))
         return instance
@@ -167,86 +174,32 @@ class M8InstrumentParams:
         for param_name, param_def in self._param_defs.items():
             value = getattr(self, param_name)
             
-            # Handle enum parameters
+            # Handle enum parameters with simplified approach using serialize_param_enum_value
             if "enums" in param_def:
-                enum_classes = []
-                
-                # Import the enum classes dynamically
-                for enum_path in param_def["enums"]:
-                    try:
-                        module_name, class_name = enum_path.rsplit('.', 1)
-                        module = importlib.import_module(module_name)
-                        enum_class = getattr(module, class_name)
-                        enum_classes.append(enum_class)
-                    except (ImportError, AttributeError) as e:
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"Error importing enum {enum_path}: {e}")
-                
-                # If we have valid enum classes, try to convert and serialize
-                if enum_classes:
-                    # Try to convert to an enum instance if it's not already one
-                    if not hasattr(value, 'name'):
-                        for enum_class in enum_classes:
-                            try:
-                                if isinstance(value, int):
-                                    value = enum_class(value)
-                                    break  # Successfully converted to enum
-                            except ValueError:
-                                continue
-                    
-                    # Serialize the enum value or raw value
-                    value = serialize_enum(value, param_name)
+                value = serialize_param_enum_value(value, param_def, self._instrument_type, param_name)
             
             result[param_name] = value
             
         return result
     
     @classmethod
-    def from_dict(cls, instrument_type, data):
+    def from_dict(cls, instrument_type, data, instrument_type_id=None):
         """Create parameters from a dictionary."""
-        params = cls.from_config(instrument_type)
+        params = cls.from_config(instrument_type, instrument_type_id)
         
         for param_name in params._param_defs.keys():
             if param_name in data:
                 value = data[param_name]
                 
-                # Handle enum parameters
+                # Handle enum parameters with simplified approach
                 param_def = params._param_defs[param_name]
-                if "enums" in param_def:
-                    enum_classes = []
-                    
-                    # Import the enum classes dynamically
-                    for enum_path in param_def["enums"]:
-                        try:
-                            module_name, class_name = enum_path.rsplit('.', 1)
-                            module = importlib.import_module(module_name)
-                            enum_class = getattr(module, class_name)
-                            enum_classes.append(enum_class)
-                        except (ImportError, AttributeError) as e:
-                            logger = logging.getLogger(__name__)
-                            logger.warning(f"Error importing enum {enum_path}: {e}")
-                    
-                    # If we have valid enum classes, try to convert the value
-                    if enum_classes:
-                        # If it's a string, try to convert to enum value
-                        if isinstance(value, str):
-                            for enum_class in enum_classes:
-                                try:
-                                    value = enum_class[value].value
-                                    break  # Found a matching enum
-                                except KeyError:
-                                    continue
-                                    
-                            # If we couldn't convert, log it
-                            if isinstance(value, str):
-                                logger = logging.getLogger(__name__)
-                                logger.warning(f"Deserializing non-enum {param_name} string: {value}")
+                # We preserve string enum values without conversion
                 
                 setattr(params, param_name, value)
             
         return params
 
-class M8Instrument:
+class M8Instrument(EnumPropertyMixin):
     """Unified instrument class for all M8 instrument types."""
     
     # Get common parameter offsets from config
@@ -317,13 +270,14 @@ class M8Instrument:
         self.pitch = common_defaults["pitch"]
         self.finetune = common_defaults["finetune"]  # Center value for fine tuning
         
+        # Get type ID for enum handling
+        type_id = self.type.value if hasattr(self.type, 'value') else self.type
+        
         # Create params object based on instrument type
-        self.params = M8InstrumentParams.from_config(instrument_type)
+        self.params = M8InstrumentParams.from_config(instrument_type, type_id)
         
         # Set up modulators
         self.modulators_offset = get_instrument_modulators_offset(instrument_type)
-        # Pass type ID for instrument-specific enums
-        type_id = self.type.value if hasattr(self.type, 'value') else self.type
         self.modulators = M8Modulators(items=create_default_modulators())
         
         # Apply common parameters from kwargs
@@ -368,7 +322,8 @@ class M8Instrument:
         next_offset = self._read_common_parameters(data)
         
         # Create and read the appropriate params object based on instrument type
-        self.params = M8InstrumentParams.from_config(self.instrument_type)
+        type_id = self.type if isinstance(self.type, int) else getattr(self.type, 'value', 0)
+        self.params = M8InstrumentParams.from_config(self.instrument_type, type_id)
         self.params.read(data)
         
         # Set the modulators offset based on instrument type
@@ -547,11 +502,15 @@ class M8Instrument:
                 if key in data:
                     setattr(instrument, key, data[key])
             
+            # Get type ID for enum handling
+            type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
+            
             # Create params object and set parameters
-            instrument.params = M8InstrumentParams.from_config(instrument.instrument_type)
-            for key, value in data.items():
-                if key not in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune", "type", "modulators"] and hasattr(instrument.params, key):
-                    setattr(instrument.params, key, value)
+            # We'll use from_dict to properly handle string enum values
+            param_data = {k: v for k, v in data.items() 
+                          if k not in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune", "type", "modulators"]}
+            
+            instrument.params = M8InstrumentParams.from_dict(instrument.instrument_type, param_data, type_id)
             
             # Set modulators
             if "modulators" in data:

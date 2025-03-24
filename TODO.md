@@ -1,17 +1,12 @@
 # short
 
-- is instrument enum testing as good as modulator
-- references to "manual" in modulator testing
-- do enum helpers support a list but also a dict with list values?
-- abstraction of helper support to utils to simplify modulator testing
+- instrument/modulator enum strings to be upper case
+- specify enum defaults as strings in config yaml
 
 - add constructor enum support to fx
 - add fx enums
 - add constructor enum support to phrases
 - add phrase note enum
-
-- instrument/modulator enum strings to be upper case
-- specify enum defaults as strings in config yaml
 
 # medium
 
@@ -46,6 +41,9 @@
 
 # done
 
+- do enum helpers support a list but also a dict with list values?
+- references to "manual" in modulator testing?
+- abstraction of helper support to utils to simplify modulator testing
 - add constructor enum supoort to modulator
 - add mod destination enums
 - M8Params >> M8InstrumentParams

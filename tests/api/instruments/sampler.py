@@ -299,11 +299,8 @@ class TestM8SamplerParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("sampler", data)
         
-        # For play_mode, filter, and limit, we expect the integer values
+        # With EnumPropertyMixin, string enum values are now preserved
         expected_values = data.copy()
-        expected_values["play_mode"] = 0x1  # REV
-        expected_values["filter"] = 0x2  # HIGHPASS
-        expected_values["limit"] = 0x2  # FOLD
         
         # Check values
         for key, value in expected_values.items():
