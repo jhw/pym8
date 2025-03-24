@@ -1,10 +1,13 @@
 # short
 
+- combine common_offsets, common_fields into field- like structure
+- nest instrument subclasses in format yaml
 - check uppercase forcing wrt instrumnet/modulator names
 
 - add constructor enum support to fx
 - add fx enums
 - check fx is_empty()
+
 - add constructor enum support to phrases
 - add phrase note enum
 - check phrase is_empty()

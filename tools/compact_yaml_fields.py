@@ -22,9 +22,9 @@ def compact_yaml_fields(file_path):
     # Process the YAML structure recursively
     process_config(yaml_content)
     
-    # Write the changes back with indentation preserved
+    # Write the changes back with indentation preserved and consistent ordering
     with open(file_path, 'w') as f:
-        yaml.dump(yaml_content, f, default_flow_style=False, sort_keys=False)
+        yaml.dump(yaml_content, f, default_flow_style=False, sort_keys=True)
     
     print(f"Updated {file_path} - Compacted field definitions")
     return True

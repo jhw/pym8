@@ -19,6 +19,7 @@
 - Follow existing code style and conventions in the project
 - When working with files, check if corresponding tests exist and update them
 - Assume input data is valid - don't defensively check inputs
+- When using YAML, always use `yaml.dump()` with `default_flow_style=False` and `sort_keys=True` to maintain consistent formatting and predictable field order
 
 ## Utility Tools
 - Use tools in the `tools/` directory for common operations
