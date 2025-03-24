@@ -1,7 +1,10 @@
 # short
 
-- add constructor enum supoort to modulator
-- add mod destination enums
+- is instrument enum testing as good as modulator
+- references to "manual" in modulator testing
+- do enum helpers support a list but also a dict with list values?
+- abstraction of helper support to utils to simplify modulator testing
+
 - add constructor enum support to fx
 - add fx enums
 - add constructor enum support to phrases
@@ -43,6 +46,8 @@
 
 # done
 
+- add constructor enum supoort to modulator
+- add mod destination enums
 - M8Params >> M8InstrumentParams
 - wavsynth shapes
 - macrosynth shapes

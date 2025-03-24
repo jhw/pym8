@@ -191,7 +191,17 @@ modulators:
     ahd_envelope: 
       id: 0x00
       fields:
-        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        destination: {
+          offset: 0, 
+          nibble: 1, 
+          type: "UINT8", 
+          default: 0x00, 
+          enums: {
+            "0x00": ["m8.enums.wavsynth.M8WavSynthModDestinations"],
+            "0x01": ["m8.enums.macrosynth.M8MacroSynthModDestinations"],
+            "0x02": ["m8.enums.sampler.M8SamplerModDestinations"]
+          }
+        }
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
         hold: {offset: 3, size: 1, type: "UINT8", default: 0x00}
@@ -200,7 +210,17 @@ modulators:
     adsr_envelope:
       id: 0x01
       fields:
-        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        destination: {
+          offset: 0, 
+          nibble: 1, 
+          type: "UINT8", 
+          default: 0x00, 
+          enums: {
+            "0x00": ["m8.enums.wavsynth.M8WavSynthModDestinations"],
+            "0x01": ["m8.enums.macrosynth.M8MacroSynthModDestinations"],
+            "0x02": ["m8.enums.sampler.M8SamplerModDestinations"]
+          }
+        }
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
         decay: {offset: 3, size: 1, type: "UINT8", default: 0x80}
@@ -210,7 +230,17 @@ modulators:
     drum_envelope:
       id: 0x02
       fields:
-        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        destination: {
+          offset: 0, 
+          nibble: 1, 
+          type: "UINT8", 
+          default: 0x00, 
+          enums: {
+            "0x00": ["m8.enums.wavsynth.M8WavSynthModDestinations"],
+            "0x01": ["m8.enums.macrosynth.M8MacroSynthModDestinations"],
+            "0x02": ["m8.enums.sampler.M8SamplerModDestinations"]
+          }
+        }
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         peak: {offset: 2, size: 1, type: "UINT8", default: 0x00}
         body: {offset: 3, size: 1, type: "UINT8", default: 0x10}
@@ -219,7 +249,17 @@ modulators:
     lfo:
       id: 0x03
       fields:
-        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        destination: {
+          offset: 0, 
+          nibble: 1, 
+          type: "UINT8", 
+          default: 0x00, 
+          enums: {
+            "0x00": ["m8.enums.wavsynth.M8WavSynthModDestinations"],
+            "0x01": ["m8.enums.macrosynth.M8MacroSynthModDestinations"],
+            "0x02": ["m8.enums.sampler.M8SamplerModDestinations"]
+          }
+        }
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         oscillator: {offset: 2, size: 1, type: "UINT8", default: 0x00}
         trigger: {offset: 3, size: 1, type: "UINT8", default: 0x00}
@@ -228,7 +268,17 @@ modulators:
     trigger_envelope:
       id: 0x04
       fields:
-        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        destination: {
+          offset: 0, 
+          nibble: 1, 
+          type: "UINT8", 
+          default: 0x00, 
+          enums: {
+            "0x00": ["m8.enums.wavsynth.M8WavSynthModDestinations"],
+            "0x01": ["m8.enums.macrosynth.M8MacroSynthModDestinations"],
+            "0x02": ["m8.enums.sampler.M8SamplerModDestinations"]
+          }
+        }
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         attack: {offset: 2, size: 1, type: "UINT8", default: 0x00}
         hold: {offset: 3, size: 1, type: "UINT8", default: 0x00}
@@ -238,7 +288,17 @@ modulators:
     tracking_envelope:
       id: 0x05
       fields:
-        destination: {offset: 0, nibble: 1, type: "UINT8", default: 0x00}
+        destination: {
+          offset: 0, 
+          nibble: 1, 
+          type: "UINT8", 
+          default: 0x00, 
+          enums: {
+            "0x00": ["m8.enums.wavsynth.M8WavSynthModDestinations"],
+            "0x01": ["m8.enums.macrosynth.M8MacroSynthModDestinations"],
+            "0x02": ["m8.enums.sampler.M8SamplerModDestinations"]
+          }
+        }
         amount: {offset: 1, size: 1, type: "UINT8", default: 0xFF}
         source: {offset: 2, size: 1, type: "UINT8", default: 0x00}
         low_value: {offset: 3, size: 1, type: "UINT8", default: 0x00}

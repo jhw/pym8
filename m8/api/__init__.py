@@ -149,12 +149,9 @@ def json_loads(json_str):
 # enum helpers
 
 def serialize_enum(enum_value, log_prefix=None):
-    # If it's already an enum instance, return its name
     if hasattr(enum_value, 'name'):
         return enum_value.name
     
-    # For backward compatibility, preserve integer values
-    # This allows existing code to continue working
     logger = logging.getLogger(__name__)
     prefix = f"{log_prefix} " if log_prefix else ""
     logger.warning(f"Serializing non-enum {prefix}type: {enum_value}")
@@ -172,8 +169,6 @@ def deserialize_enum(enum_class, value, log_prefix=None):
                 error_msg = f"{log_prefix}: {error_msg}"
             raise M8EnumError(error_msg)
     else:
-        # For integers, just validate but don't raise an error if not found
-        # This maintains backward compatibility with existing data
         try:
             enum_class(value)
         except ValueError:
@@ -183,25 +178,85 @@ def deserialize_enum(enum_class, value, log_prefix=None):
         
         return value
 
-def deserialize_param_enum(enum_paths, value, param_name=None):
-    import importlib
-    from m8.enums import M8EnumError
-    logger = logging.getLogger(__name__)
-    
-    # Only string values need to be converted; integers are kept as is
-    if not isinstance(value, str):
-        return value
+def get_enum_paths_for_instrument(enum_paths, instrument_type):
+    if not isinstance(enum_paths, dict) or instrument_type is None:
+        return enum_paths
         
-    # Attempt to find the enum value in one of the provided enum classes
+    instrument_type_key = str(instrument_type)
+    
+    if instrument_type_key.isdigit():
+        hex_key = f"0x{int(instrument_type_key):02x}"
+        if hex_key in enum_paths:
+            instrument_type_key = hex_key
+    
+    return enum_paths.get(instrument_type_key)
+
+def load_enum_classes(enum_paths, log_context=None):
+    import importlib
+    logger = logging.getLogger(__name__)
     enum_classes = []
+    
+    if not enum_paths:
+        return enum_classes
+        
+    # Make sure enum_paths is iterable
+    if isinstance(enum_paths, str):
+        enum_paths = [enum_paths]
+        
     for enum_path in enum_paths:
+        # Skip empty or invalid paths
+        if not enum_path or not isinstance(enum_path, str):
+            continue
+            
         try:
             module_name, class_name = enum_path.rsplit('.', 1)
             module = importlib.import_module(module_name)
             enum_class = getattr(module, class_name)
             enum_classes.append(enum_class)
-        except (ImportError, AttributeError) as e:
-            logger.warning(f"Error importing enum {enum_path}: {e}")
+        except (ImportError, AttributeError, ValueError) as e:
+            context = f" for {log_context}" if log_context else ""
+            logger.warning(f"Error importing enum {enum_path}{context}: {e}")
+            
+    return enum_classes
+
+def serialize_param_enum_value(value, param_def, instrument_type=None, param_name=None):
+    if "enums" not in param_def:
+        return value
+        
+    enum_paths = get_enum_paths_for_instrument(param_def["enums"], instrument_type)
+    if not enum_paths:
+        return value
+        
+    enum_classes = load_enum_classes(enum_paths, param_name)
+    if not enum_classes:
+        return value
+        
+    if hasattr(value, 'name'):
+        return value.name
+        
+    if isinstance(value, int):
+        for enum_class in enum_classes:
+            try:
+                enum_value = enum_class(value)
+                return enum_value.name
+            except ValueError:
+                continue
+                
+    return value
+
+def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=None):
+    from m8.enums import M8EnumError
+    
+    if not isinstance(value, str):
+        return value
+    
+    enum_paths = get_enum_paths_for_instrument(enum_paths, instrument_type)
+    if not enum_paths:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"No enum defined for instrument type {instrument_type} parameter {param_name}")
+        return value
+    
+    enum_classes = load_enum_classes(enum_paths, param_name)
     
     if enum_classes:
         for enum_class in enum_classes:
@@ -210,32 +265,29 @@ def deserialize_param_enum(enum_paths, value, param_name=None):
             except KeyError:
                 continue
     
-    # If we reach here, the string value doesn't match any enum
     param_details = f" for parameter '{param_name}'" if param_name else ""
     error_msg = f"Invalid enum string value: '{value}' not found in any of the provided enum classes{param_details}"
     raise M8EnumError(error_msg)
     
-def ensure_enum_int_value(value, enum_paths):
-    # Only string values need to be converted; integers are kept as is
+def ensure_enum_int_value(value, enum_paths, instrument_type=None):
     if not isinstance(value, str):
         return value
-        
-    import importlib
+    
     from m8.enums import M8EnumError
     
-    # Try to find the enum in all provided paths
-    for enum_path in enum_paths:
+    enum_paths = get_enum_paths_for_instrument(enum_paths, instrument_type)
+    if not enum_paths:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"No enum defined for instrument type {instrument_type}")
+        return value
+    
+    enum_classes = load_enum_classes(enum_paths)
+    
+    for enum_class in enum_classes:
         try:
-            module_name, class_name = enum_path.rsplit('.', 1)
-            module = importlib.import_module(module_name)
-            enum_class = getattr(module, class_name)
-            try:
-                return enum_class[value].value
-            except KeyError:
-                continue
-        except (ImportError, AttributeError):
+            return enum_class[value].value
+        except KeyError:
             continue
     
-    # If we reach here, the string value doesn't match any enum
     error_msg = f"Invalid enum string value: '{value}' not found in any of the provided enum classes"
     raise M8EnumError(error_msg)

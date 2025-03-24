@@ -322,6 +322,8 @@ class M8Instrument:
         
         # Set up modulators
         self.modulators_offset = get_instrument_modulators_offset(instrument_type)
+        # Pass type ID for instrument-specific enums
+        type_id = self.type.value if hasattr(self.type, 'value') else self.type
         self.modulators = M8Modulators(items=create_default_modulators())
         
         # Apply common parameters from kwargs
@@ -553,7 +555,9 @@ class M8Instrument:
             
             # Set modulators
             if "modulators" in data:
-                instrument.modulators = M8Modulators.from_list(data["modulators"])
+                # Pass the instrument type ID for instrument-specific enum handling
+                type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
+                instrument.modulators = M8Modulators.from_list(data["modulators"], type_id)
             
             return instrument
         except (ValueError, KeyError) as e:
