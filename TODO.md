@@ -1,5 +1,6 @@
 # short
 
+- yaml format with hex codes
 - nest instrument subclasses in format yaml
 - check uppercase forcing wrt instrumnet/modulator names
 - some comments violating policy
