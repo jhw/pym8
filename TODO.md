@@ -1,6 +1,6 @@
 # short
 
-- check uppercase forcing wrt instrument/modulator names
+- lowercase vs uppercase
 
 - add constructor enum support to fx
 - add fx enums
