@@ -1,6 +1,5 @@
 # short
 
-- enum default string values in config
 - check uppercase forcing wrt instrument/modulator names
 
 - add constructor enum support to fx
@@ -44,6 +43,7 @@
 
 # done
 
+- enum default string values in config
 ✓ fix docstring comments violating policy
 ✓ nest instrument subclasses in format yaml
 ✓ yaml format with hex codes
