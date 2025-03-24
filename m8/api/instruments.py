@@ -402,20 +402,10 @@ class M8Instrument(EnumPropertyMixin):
 
     def is_empty(self):
         """Check if this instrument is empty."""
-        # First check if the name is non-empty
-        if self.name.strip() != "":
-            return False
-            
-        # If name is empty, do additional checks based on instrument type
-        if self.instrument_type == "wavsynth" or self.instrument_type == "macrosynth":
-            # Check if shape or volume is non-zero, which would make it non-empty
-            return self.volume == 0x0 and self.params.shape == 0x0
-        elif self.instrument_type == "sampler":
-            # Check if volume or sample_path is non-empty, which would make it non-empty
-            return self.volume == 0x0 and getattr(self.params, "sample_path", "") == ""
-        else:
-            # Default to just checking name
-            return True
+        # An instrument is empty if its type ID is not in the list of known instrument types
+        # from the format_config.yaml
+        type_value = getattr(self.type, 'value', self.type) if hasattr(self.type, 'value') else self.type
+        return not isinstance(type_value, int) or type_value not in INSTRUMENT_TYPES
 
     def clone(self):
         """Create a deep copy of this instrument."""
@@ -651,9 +641,8 @@ class M8Instruments(list):
     
     def is_empty(self):
         """Check if the instruments collection is empty."""
-        # A reasonable implementation: the collection is empty if it has no instruments
-        # or if all instruments are empty blocks
-        return len(self) == 0 or all(isinstance(instr, M8Block) for instr in self)
+        # The collection is empty if all instruments are empty
+        return all(isinstance(instr, M8Block) or instr.is_empty() for instr in self)
     
     def write(self):
         result = bytearray()
