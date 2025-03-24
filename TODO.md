@@ -1,6 +1,8 @@
 # short
 
-- instrument/modulator enum strings to be upper case
+- standardize instrument/modulator enum strings to use uppercase consistently
+  - update format_config.yaml to use uppercase keys for instrument and modulator types
+  - ensure all enum references in code and tests use uppercase consistently
 - specify enum defaults as strings in config yaml
 
 - add constructor enum support to fx
