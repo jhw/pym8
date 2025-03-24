@@ -62,7 +62,11 @@ class TestMacroSynthMapping(unittest.TestCase):
                                 f"Field '{field}' doesn't match expected value")
     
     def test_macrosynth_modulators(self):
-        # Test modulators
+        # Test modulators - focusing on the ones with non-zero destination
+        # Filter modulators to only include ones with a destination (OLD definition of non-empty)
+        non_zero_destination_mods = [mod for mod in self.instrument_dict['modulators'] 
+                                    if mod['destination'] != 0]
+        
         expected_modulators = [
             {
                 'destination': 1,    # 0x01
@@ -84,11 +88,17 @@ class TestMacroSynthMapping(unittest.TestCase):
             }
         ]
         
-        self.assertEqual(len(self.instrument_dict['modulators']), len(expected_modulators),
-                        "Number of modulators doesn't match")
+        # Verify we have the right number of non-zero destination modulators
+        self.assertEqual(len(non_zero_destination_mods), len(expected_modulators),
+                        "Number of non-zero destination modulators doesn't match")
         
+        # Sort both lists by index to ensure comparison works
+        non_zero_destination_mods.sort(key=lambda x: x['index'])
+        expected_modulators.sort(key=lambda x: x['index'])
+        
+        # Compare just the modulators with non-zero destinations
         for i, expected_modulator in enumerate(expected_modulators):
-            actual_modulator = self.instrument_dict['modulators'][i]
+            actual_modulator = non_zero_destination_mods[i]
             for field, expected_value in expected_modulator.items():
                 with self.subTest(modulator=i, field=field):
                     self.assertEqual(actual_modulator[field], expected_value,

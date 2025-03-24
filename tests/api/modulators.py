@@ -281,12 +281,14 @@ class TestM8Modulator(unittest.TestCase):
         self.assertTrue(any(b != 0 for b in binary[2:BLOCK_SIZE]))
     
     def test_is_empty(self):
-        # Empty modulator has destination 0
-        mod = M8Modulator(destination=0)
+        # Create a fake modulator type not in MODULATOR_TYPES
+        invalid_type = 0xFF
+        mod = M8Modulator()
+        mod.type = invalid_type
         self.assertTrue(mod.is_empty())
         
-        # Non-empty modulator has non-zero destination
-        mod = M8Modulator(destination=1)
+        # Non-empty modulator has a valid type
+        mod = M8Modulator(modulator_type="LFO")  # LFO is a valid type
         self.assertFalse(mod.is_empty())
     
     def test_clone(self):

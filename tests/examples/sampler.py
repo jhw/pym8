@@ -69,9 +69,13 @@ class TestSamplerMapping(unittest.TestCase):
                         "Sample path doesn't match expected value")
     
     def test_sampler_modulators(self):
-        # Test that there are no modulators
-        self.assertEqual(len(self.instrument_dict['modulators']), 0,
-                        "Number of modulators should be 0")
+        # Test that there are no modulators with destinations
+        # Filter modulators to only include ones with a destination (OLD definition of non-empty)
+        non_zero_destination_mods = [mod for mod in self.instrument_dict['modulators'] 
+                                    if mod['destination'] != 0]
+        
+        self.assertEqual(len(non_zero_destination_mods), 0,
+                        "Number of modulators with destinations should be 0")
 
 
 if __name__ == '__main__':

@@ -6,8 +6,10 @@
 
 - add constructor enum support to fx
 - add fx enums
+- check fx is_empty()
 - add constructor enum support to phrases
 - add phrase note enum
+- check phrase is_empty()
 
 # medium
 
@@ -42,6 +44,7 @@
 
 # done
 
+✓ implement proper modulator is_empty() definition using configuration
 ✓ implement proper is_empty() definition and re-enable is_empty tests
 ✓ add tools for future Claude string substitution tasks
 - api bug
