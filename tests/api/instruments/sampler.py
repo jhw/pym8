@@ -297,7 +297,7 @@ class TestM8SamplerParams(unittest.TestCase):
         }
         
         # Create from dict
-        params = M8InstrumentParams.from_dict("sampler", data)
+        params = M8InstrumentParams.from_dict("SAMPLER", data)
         
         # With EnumPropertyMixin, string enum values are now preserved
         expected_values = data.copy()

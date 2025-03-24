@@ -1,7 +1,5 @@
 # short
 
-- lowercase vs uppercase
-
 - add constructor enum support to fx
 - add fx enums
 - check fx is_empty()
@@ -43,7 +41,7 @@
 
 # done
 
-- enum default string values in config
+- standardize instrument/modulator enum strings to use uppercase consistently
 ✓ fix docstring comments violating policy
 ✓ nest instrument subclasses in format yaml
 ✓ yaml format with hex codes
@@ -56,12 +54,10 @@
 ✓ implement proper is_empty() definition and re-enable is_empty tests
 ✓ add tools for future Claude string substitution tasks
 - api bug
-- standardize instrument/modulator enum strings to use uppercase consistently
-  - update format_config.yaml to use uppercase keys for instrument and modulator types
-  - added case-insensitive lookup for backward compatibility
-  - all config accessors now handle both uppercase and lowercase
-  - updated all tests to use uppercase enum strings consistently
-  - temporarily commented out inconsistent is_empty tests
+✓ standardize instrument/modulator enum strings to use uppercase consistently
+  ✓ update format_config.yaml to use uppercase keys for instrument and modulator types
+  ✓ removed case-insensitive lookup - now using uppercase everywhere
+  ✓ updated all tests to use uppercase enum strings consistently
 - do enum helpers support a list but also a dict with list values?
 - references to "manual" in modulator testing?
 - abstraction of helper support to utils to simplify modulator testing

@@ -80,8 +80,8 @@ class M8InstrumentParams(EnumPropertyMixin):
         """Create parameters from instrument type config."""
         config = load_format_config()
         
-        # Convert instrument_type to uppercase to match our standardized config keys
-        lookup_type = instrument_type.upper() if isinstance(instrument_type, str) else instrument_type
+        # Use instrument_type as provided without case conversion
+        lookup_type = instrument_type
         
         # Load parameter definitions from config - now nested under 'types'
         param_defs = config["instruments"]["types"][lookup_type]["params"].copy()
@@ -226,7 +226,7 @@ class M8Instrument(EnumPropertyMixin):
         if instrument_type is None:
             # Default to wavsynth if not specified
             self.type = M8InstrumentType.WAVSYNTH
-            instrument_type = "wavsynth"
+            instrument_type = "WAVSYNTH"
         elif isinstance(instrument_type, int):
             # Convert type ID to enum
             try:
@@ -251,7 +251,7 @@ class M8Instrument(EnumPropertyMixin):
         # Generate sequential name if not provided
         if 'name' not in kwargs:
             # Use instrument type for name base
-            base_name = instrument_type.upper()
+            base_name = instrument_type
             # Truncate or pad to 8 characters
             name_base = (base_name[:8] if len(base_name) > 8 else base_name.ljust(8))
             # Use global counter for 4-digit hex code
@@ -302,7 +302,7 @@ class M8Instrument(EnumPropertyMixin):
             self.instrument_type = INSTRUMENT_TYPES[self.type]
         else:
             # Default to wavsynth for unknown types
-            self.instrument_type = "wavsynth"
+            self.instrument_type = "WAVSYNTH"
         
         # Read name as a string (null-terminated) using utility function
         self.name = read_fixed_string(data, self.NAME_OFFSET, self.NAME_LENGTH)

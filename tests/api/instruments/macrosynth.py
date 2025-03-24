@@ -253,7 +253,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
         }
         
         # Create from dict
-        params = M8InstrumentParams.from_dict("macrosynth", data)
+        params = M8InstrumentParams.from_dict("MACROSYNTH", data)
         
         # With EnumPropertyMixin, string enum values are now preserved
         expected_values = data.copy()

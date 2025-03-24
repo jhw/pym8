@@ -52,11 +52,8 @@ class M8ModulatorParams:
         """Create parameters from modulator type config."""
         config = load_format_config()
         
-        # Convert modulator_type to uppercase to match our standardized config keys
-        if isinstance(modulator_type, str):
-            lookup_type = modulator_type.upper()
-        else:
-            lookup_type = modulator_type
+        # Use modulator_type as provided without case conversion
+        lookup_type = modulator_type
         
         # Load parameter definitions from config
         param_defs = config["modulators"]["types"][lookup_type]["fields"].copy()
@@ -174,7 +171,7 @@ class M8Modulator(EnumPropertyMixin):
         if modulator_type is None:
             # Default to AHD envelope if not specified
             self.type = M8ModulatorType.AHD_ENVELOPE
-            modulator_type = "ahd_envelope"
+            modulator_type = "AHD_ENVELOPE"
         elif isinstance(modulator_type, int):
             # Convert type ID to enum
             try:
@@ -190,8 +187,8 @@ class M8Modulator(EnumPropertyMixin):
             # Assume it's a string type name
             self.type = M8ModulatorType(get_modulator_type_id(modulator_type))
         
-        # Set the modulator type name (always uppercase for consistency)
-        self.modulator_type = modulator_type.upper() if isinstance(modulator_type, str) else modulator_type
+        # Set the modulator type name as provided
+        self.modulator_type = modulator_type
         
         # Store instrument type for enum lookups
         self.instrument_type = instrument_type
@@ -226,8 +223,8 @@ class M8Modulator(EnumPropertyMixin):
         if self.type in MODULATOR_TYPES:
             self.modulator_type = MODULATOR_TYPES[self.type]
         else:
-            # Default to ahd_envelope for unknown types
-            self.modulator_type = "ahd_envelope"
+            # Default to AHD_ENVELOPE for unknown types
+            self.modulator_type = "AHD_ENVELOPE"
         
         # Read amount
         self.amount = data[self.AMOUNT_OFFSET]
