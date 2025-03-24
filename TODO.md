@@ -1,6 +1,5 @@
 # short
 
-- combine common_offsets, common_fields into field- like structure
 - nest instrument subclasses in format yaml
 - check uppercase forcing wrt instrumnet/modulator names
 - some comments violating policy
@@ -46,6 +45,8 @@
 
 # done
 
+✓ implement UINT4_2 field type for packed 4-bit values in config
+✓ convert common_offsets, common_defaults into field-like structure
 ✓ add default: 0 as third default for YAML fields
 ✓ default size/type defaults for YAML fields (size: 1, type: "UINT8")
 ✓ abstract bit utils, json utils
