@@ -72,14 +72,9 @@ class TestSamplerMapping(unittest.TestCase):
     
     def test_sampler_modulators(self):
         # Test that there are no modulators with destinations
-        # Filter modulators to only include ones with a non-zero/OFF destination
-        # (Now handles enum strings and treats 'OFF' as equivalent to 'NONE')
-        # Since 'OFF' might be quoted in YAML, we need to handle both 'OFF' and OFF
+        # Filter modulators with active destinations (not OFF)
         non_zero_destination_mods = [mod for mod in self.instrument_dict['modulators'] 
-                                    if mod['destination'] != 0 and 
-                                       mod['destination'] != 'NONE' and 
-                                       mod['destination'] != 'OFF' and
-                                       mod['destination'] != "'OFF'"]
+                                    if mod['destination'] != 'OFF']
         
         self.assertEqual(len(non_zero_destination_mods), 0,
                         "Number of modulators with destinations should be 0")

@@ -1,7 +1,5 @@
 # short
 
-- Fix non_zero_destination_mods in example tests
-
 # medium
 
 - TODO.md >> github project
@@ -34,6 +32,7 @@
 # done
 
 ✓ Fix modulator destination enum serialization (see NOTES.md for details)
+✓ Fix non_zero_destination_mods in example tests
 ✓ refactor tools/concat_phrases.py and tools/bake_chains.py to use a class-based approach
 ✓ update tests for refactored tools
 ✓ phrase note enum support (M8PhraseStep with EnumPropertyMixin)
