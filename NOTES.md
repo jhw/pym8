@@ -2,21 +2,19 @@
 
 ## Potential Enum Abstraction Improvements
 
-The current enum abstraction could be improved in several ways:
+While the current implementation already handles context-aware enum resolution through the dictionary-based configuration and proper context propagation, there are still opportunities to reduce code duplication and improve maintainability:
 
-1. **Context-aware enum serialization/deserialization**: Currently, each client class has to handle instrument-specific enum mapping. This creates duplication, particularly in `as_dict()` and `from_dict()` methods where similar patterns appear.
+1. **Automated property generation**: The current approach requires boilerplate for each enum property with getters/setters. Consider a decorator or metaclass that generates enum properties automatically based on configuration, which would eliminate duplicate code across classes.
 
-2. **Consistent parent-child relationships**: The instrument-modulator relationship shows this problem. Passing `instrument_type` throughout the hierarchy is verbose and error-prone.
+2. **Declarative property definitions**: Rather than manually implementing each property getter/setter with enum conversion logic, properties could be defined declaratively with their enum type, offset, and empty value.
 
-3. **Automated property generation**: The current approach requires boilerplate for each enum property with getters/setters. Consider a decorator or metaclass that generates enum properties.
+3. **Centralized enum conversion**: The common pattern of checking if a value is empty, then checking if it has enum mappings, and finally converting it could be centralized into a single utility function.
 
-4. **Centralized enum resolution**: The enum mixin could handle more of the lookup logic, while client classes could declare their enum dependencies declaratively.
+4. **Unified serialization API**: The variability between client classes' serialization logic could be standardized into a protocol or abstract base class that implements common patterns.
 
-5. **Enum context management**: A context manager pattern could simplify code that needs instrument-specific enums.
+5. **Explicit enum validation**: Currently, validation is separate from the is_empty() checks. A more comprehensive API could include explicit validation methods that verify enum values against their allowed sets.
 
-6. **Unified serialization API**: The variability between client classes' serialization logic could be standardized into a protocol.
-
-The duplication is most evident in the property handling for enums. Each class implements similar patterns for converting between string and numeric representations, which could be abstracted further.
+The most duplicated code is in the property handling for enums. Each class implements similar patterns for converting between string and numeric representations, which could be abstracted further with property factories or descriptors.
 
 ## Modulator Destination Enum Serialization Issue
 
