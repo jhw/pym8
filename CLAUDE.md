@@ -46,6 +46,10 @@
 - Always ask before committing
 - Don't push anything to origin
 - Don't create tags unless specifically asked
+- **IMPORTANT**: Always commit changes before requesting a conversation compaction
+  - This ensures work isn't lost when the context is reset
+  - Helps maintain accurate commit messages that reflect all related changes
+  - Creates clear breakpoints between logical tasks
 
 ## Environment
 - Dependencies are listed in requirements.txt
