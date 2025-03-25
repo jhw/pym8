@@ -1,11 +1,10 @@
 # short
 
 - Enhance enum property handling (see "Enum Implementation Improvement Opportunities" in NOTES.md)
-  - Create decorator or metaclass for automated enum property generation
-  - Implement declarative property definitions with enum metadata
   - Develop centralized enum conversion utilities
   - Standardize serialization API across classes
   - Add explicit enum validation methods
+  - Reduce boilerplate while maintaining a single, consistent pattern
 
 # medium
 

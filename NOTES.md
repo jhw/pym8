@@ -4,17 +4,15 @@
 
 While the current implementation already handles context-aware enum resolution through the dictionary-based configuration and proper context propagation, there are still opportunities to reduce code duplication and improve maintainability:
 
-1. **Automated property generation**: The current approach requires boilerplate for each enum property with getters/setters. Consider a decorator or metaclass that generates enum properties automatically based on configuration, which would eliminate duplicate code across classes.
+1. **Centralized enum conversion**: The common pattern of checking if a value is empty, then checking if it has enum mappings, and finally converting it could be centralized into a single utility function while maintaining the current pattern.
 
-2. **Declarative property definitions**: Rather than manually implementing each property getter/setter with enum conversion logic, properties could be defined declaratively with their enum type, offset, and empty value.
+2. **Unified serialization API**: The variability between client classes' serialization logic could be standardized into a protocol or abstract base class that implements common patterns.
 
-3. **Centralized enum conversion**: The common pattern of checking if a value is empty, then checking if it has enum mappings, and finally converting it could be centralized into a single utility function.
+3. **Explicit enum validation**: Currently, validation is separate from the is_empty() checks. A more comprehensive API could include explicit validation methods that verify enum values against their allowed sets.
 
-4. **Unified serialization API**: The variability between client classes' serialization logic could be standardized into a protocol or abstract base class that implements common patterns.
+4. **Reduce boilerplate**: Consider refactoring to reduce repetitive code while maintaining a single, consistent pattern across all classes in the codebase.
 
-5. **Explicit enum validation**: Currently, validation is separate from the is_empty() checks. A more comprehensive API could include explicit validation methods that verify enum values against their allowed sets.
-
-The most duplicated code is in the property handling for enums. Each class implements similar patterns for converting between string and numeric representations, which could be abstracted further with property factories or descriptors.
+The most important consideration is maintaining a unified, consistent approach to enum handling throughout the codebase. Any improvements should be applicable to both classes with fixed property sets and those with dynamic, configuration-driven properties.
 
 ## Modulator Destination Enum Serialization Issue
 
