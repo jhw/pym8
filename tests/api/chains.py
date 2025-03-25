@@ -136,6 +136,24 @@ class TestM8ChainStep(unittest.TestCase):
         
         self.assertEqual(roundtrip.phrase, original.phrase)
         self.assertEqual(roundtrip.transpose, original.transpose)
+    
+    def test_clone(self):
+        # Test clone method
+        original = M8ChainStep(phrase=25, transpose=7)
+        clone = original.clone()
+        
+        # Verify clone has the same values
+        self.assertEqual(clone.phrase, original.phrase)
+        self.assertEqual(clone.transpose, original.transpose)
+        
+        # Verify clone is a different object
+        self.assertIsNot(clone, original)
+        
+        # Modify clone and verify original remains unchanged
+        clone.phrase = 30
+        clone.transpose = 12
+        self.assertEqual(original.phrase, 25)
+        self.assertEqual(original.transpose, 7)
 
 
 class TestM8Chain(unittest.TestCase):

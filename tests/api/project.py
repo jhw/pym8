@@ -287,6 +287,39 @@ class TestM8Project(unittest.TestCase):
         # Test with a non-existent template name
         with self.assertRaises(FileNotFoundError):
             M8Project.initialise("NONEXISTENT_TEMPLATE")
+            
+    def test_clone(self):
+        # Clone the test project set up in setUp
+        cloned_project = self.project.clone()
+        
+        # Verify they are separate instances
+        self.assertIsNot(cloned_project, self.project)
+        self.assertIsNot(cloned_project.metadata, self.project.metadata)
+        self.assertIsNot(cloned_project.instruments, self.project.instruments)
+        self.assertIsNot(cloned_project.phrases, self.project.phrases)
+        self.assertIsNot(cloned_project.chains, self.project.chains)
+        self.assertIsNot(cloned_project.song, self.project.song)
+        
+        # Verify the data was copied correctly
+        self.assertEqual(cloned_project.metadata.name, self.project.metadata.name)
+        
+        # Check the instrument in the clone
+        cloned_instrument = cloned_project.instruments[self.instrument_slot]
+        self.assertEqual(cloned_instrument.name, self.test_instrument.name)
+        self.assertIsNot(cloned_instrument, self.test_instrument)
+        
+        # Verify reference chain is maintained
+        # Chain -> Phrase -> Instrument
+        cloned_chain = cloned_project.chains[self.chain_slot]
+        self.assertEqual(cloned_chain[0].phrase, self.phrase_slot)
+        
+        cloned_phrase = cloned_project.phrases[self.phrase_slot]
+        self.assertEqual(cloned_phrase[0].instrument, self.instrument_slot)
+        
+        # Modify the clone and verify original is unchanged
+        cloned_project.metadata.name = "Modified Clone"
+        self.assertEqual(self.project.metadata.name, "Test Project")
+        self.assertEqual(cloned_project.metadata.name, "Modified Clone")
 
 
 if __name__ == '__main__':

@@ -132,6 +132,22 @@ class M8Project:
             
         self.chains[slot] = chain
 
+    def clone(self):
+        instance = self.__class__()
+        
+        # Clone all components
+        instance.metadata = self.metadata.clone()
+        instance.instruments = self.instruments.clone()
+        instance.phrases = self.phrases.clone()
+        instance.chains = self.chains.clone()
+        instance.song = self.song.clone()
+        
+        # Copy version information if available
+        if hasattr(self, '_version'):
+            instance._version = self._version
+            
+        return instance
+        
     def validate_references(self):
         """Validates references consistency between song, chains, phrases, and instruments."""
         # Song -> Chains validation

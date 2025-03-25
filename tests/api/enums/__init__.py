@@ -1,36 +1,36 @@
 import unittest
 import logging
-from m8.enums import M8EnumError
+from m8.api import M8EnumValueError
 from m8.enums import M8FilterTypes, M8LimitTypes
 from m8.api import deserialize_enum, deserialize_param_enum, ensure_enum_int_value
 from m8.api.instruments import M8InstrumentParams
 
 class TestEnumErrorHandling(unittest.TestCase):
-    """Test that invalid enum values raise M8EnumError."""
+    """Test that invalid enum values raise M8EnumValueError."""
     
     def setUp(self):
         # Suppress warning logs during tests
         logging.getLogger().setLevel(logging.ERROR)
     
     def test_deserialize_enum_raises_on_invalid_string(self):
-        """Test that deserialize_enum raises M8EnumError for invalid strings."""
-        with self.assertRaises(M8EnumError):
+        """Test that deserialize_enum raises M8EnumValueError for invalid strings."""
+        with self.assertRaises(M8EnumValueError):
             deserialize_enum(M8FilterTypes, "INVALID_FILTER_TYPE")
     
     def test_deserialize_param_enum_raises_on_invalid_string(self):
-        """Test that deserialize_param_enum raises M8EnumError for invalid strings."""
-        with self.assertRaises(M8EnumError):
+        """Test that deserialize_param_enum raises M8EnumValueError for invalid strings."""
+        with self.assertRaises(M8EnumValueError):
             deserialize_param_enum(['m8.enums.M8FilterTypes'], "INVALID_FILTER_TYPE")
     
     def test_ensure_enum_int_value_raises_on_invalid_string(self):
-        """Test that ensure_enum_int_value raises M8EnumError for invalid strings."""
-        with self.assertRaises(M8EnumError):
+        """Test that ensure_enum_int_value raises M8EnumValueError for invalid strings."""
+        with self.assertRaises(M8EnumValueError):
             ensure_enum_int_value("INVALID_FILTER_TYPE", ['m8.enums.M8FilterTypes'])
     
     def test_constructor_raises_on_invalid_enum_string(self):
-        """Test that instrument constructor raises M8EnumError with invalid enum string."""
+        """Test that instrument constructor raises M8EnumValueError with invalid enum string."""
         # From format_config.yaml, we can see 'filter' is the field name for the filter type
-        with self.assertRaises(M8EnumError):
+        with self.assertRaises(M8EnumValueError):
             M8InstrumentParams.from_config("WAVSYNTH", filter="INVALID_FILTER_TYPE")
     
     def test_integers_do_not_raise_errors(self):

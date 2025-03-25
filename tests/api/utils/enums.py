@@ -9,7 +9,7 @@ from m8.api.utils.enums import (
     get_enum_names, get_enum_values,
     enum_name_to_value, enum_value_to_name
 )
-from m8.enums import M8EnumError
+from m8.api import M8EnumValueError
 
 # Test enum classes
 class TestEnum(IntEnum):
@@ -46,7 +46,7 @@ class TestEnumFunctions(unittest.TestCase):
         self.assertEqual(deserialize_enum(TestEnum, 3), 3)
         
         # Test with invalid string
-        with self.assertRaises(M8EnumError):
+        with self.assertRaises(M8EnumValueError):
             deserialize_enum(TestEnum, "INVALID_VALUE")
 
 class TestInstrumentEnumFunctions(unittest.TestCase):
@@ -201,7 +201,7 @@ class TestParameterEnumFunctions(unittest.TestCase):
         )
         
         # Test with invalid string
-        with self.assertRaises(M8EnumError):
+        with self.assertRaises(M8EnumValueError):
             deserialize_param_enum(["m8.enums.M8FilterTypes"], "INVALID_FILTER", "filter_type")
     
     def test_ensure_enum_int_value(self):
@@ -220,7 +220,7 @@ class TestParameterEnumFunctions(unittest.TestCase):
         )
         
         # Test with invalid string
-        with self.assertRaises(M8EnumError):
+        with self.assertRaises(M8EnumValueError):
             ensure_enum_int_value("INVALID_VALUE", ["m8.enums.M8FilterTypes"])
         
         # Test with instrument-specific enums

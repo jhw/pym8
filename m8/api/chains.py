@@ -49,6 +49,12 @@ class M8ChainStep:
     def transpose(self, value):
         self._data[self.TRANSPOSE_OFFSET] = value
     
+    def clone(self):
+        return self.__class__(
+            phrase=self.phrase,
+            transpose=self.transpose
+        )
+    
     def as_dict(self):
         return {
             "phrase": self.phrase,
@@ -88,10 +94,7 @@ class M8Chain(list):
         instance.clear()  # Remove default items
         
         for step in self:
-            if hasattr(step, 'clone'):
-                instance.append(step.clone())
-            else:
-                instance.append(M8ChainStep.read(step.write()))
+            instance.append(step.clone())
         
         return instance
     

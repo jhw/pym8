@@ -94,6 +94,14 @@ class M8FXTuple(EnumPropertyMixin):
     def value(self, value):
         self._data[self.VALUE_OFFSET] = value
     
+    def clone(self):
+        """Create a copy of this FX tuple that preserves instrument_type."""
+        return self.__class__(
+            key=self.key,
+            value=self.value,
+            instrument_type=self._instrument_type
+        )
+    
     def as_dict(self):
         return {
             "key": self.key,
