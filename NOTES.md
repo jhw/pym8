@@ -1,3 +1,123 @@
+# Proposed Instrument Context Manager
+
+## Overview (25/03/25)
+
+The current implementation couples instruments directly with their children (modulators, FX) by passing the `instrument_type` explicitly. This creates tight coupling and makes it challenging to handle cases where context needs to be determined dynamically (like FX in phrases).
+
+A context manager approach would provide a more flexible, decoupled solution:
+
+```python
+class M8InstrumentContext:
+    """Context manager for instrument-related operations."""
+    
+    _instance = None  # Singleton instance
+    
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+        
+    def __init__(self):
+        self.project = None
+        self.current_instrument_id = None
+        self.current_instrument = None
+        
+    def set_project(self, project):
+        """Set the current project context."""
+        self.project = project
+        
+    def get_instrument_type(self, instrument_id=None):
+        """Get instrument type for a given instrument ID or current instrument."""
+        if instrument_id is not None:
+            # Look up instrument type by ID
+            if self.project and 0 <= instrument_id < len(self.project.instruments):
+                instrument = self.project.instruments[instrument_id]
+                return getattr(instrument, 'instrument_type', None)
+        elif self.current_instrument_id is not None:
+            # Use current instrument from context
+            if self.project and 0 <= self.current_instrument_id < len(self.project.instruments):
+                instrument = self.project.instruments[self.current_instrument_id]
+                return getattr(instrument, 'instrument_type', None)
+        return None
+        
+    def with_instrument(self, instrument_id):
+        """Context manager for operations with a specific instrument."""
+        return _InstrumentContextBlock(self, instrument_id)
+
+class _InstrumentContextBlock:
+    """Context block for instrument operations."""
+    def __init__(self, manager, instrument_id):
+        self.manager = manager
+        self.instrument_id = instrument_id
+        self.previous_id = None
+        
+    def __enter__(self):
+        self.previous_id = self.manager.current_instrument_id
+        self.manager.current_instrument_id = self.instrument_id
+        return self.manager
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.manager.current_instrument_id = self.previous_id
+```
+
+## Usage Examples
+
+### 1. For Modulators (replacing direct coupling)
+
+Current approach:
+```python
+modulator = M8Modulator(modulator_type=type, instrument_type=instrument.instrument_type)
+modulator_dict = modulator.as_dict()  # Needs instrument_type for proper enum serialization
+```
+
+With context manager:
+```python
+context = M8InstrumentContext.get_instance()
+with context.with_instrument(instrument_idx):
+    modulator = M8Modulator(modulator_type=type)  # No instrument_type needed
+    modulator_dict = modulator.as_dict()  # Uses context for enum serialization
+```
+
+### 2. For FX in Phrase Steps
+
+Current issue: FX in phrase steps need the instrument type for proper enum serialization, but there's no clean way to propagate this information.
+
+With context manager:
+```python
+# When serializing a phrase step
+def step_as_dict(self):
+    result = {...}
+    
+    # If this step references an instrument, set context for FX serialization
+    if self.instrument != 0xFF:  # Not empty
+        context = M8InstrumentContext.get_instance()
+        with context.with_instrument(self.instrument):
+            # FX serialization will automatically use the instrument context
+            result["fx"] = self.fx.as_list()
+    else:
+        # No instrument context needed
+        result["fx"] = self.fx.as_list()
+    
+    return result
+```
+
+## Benefits
+
+1. **Decoupled Design**: Objects no longer need direct references to their parent context
+2. **Flexible Context Resolution**: Can resolve instrument type from either explicit ID or current context
+3. **Consistent API**: Same mechanism works for all places needing instrument context (modulators, FX, etc.)
+4. **Improved Testability**: Easy to set up test contexts without creating full object hierarchies
+5. **Simplified Parameter Passing**: No more passing instrument_type through multiple layers
+
+## Implementation Strategy
+
+1. Create the context manager in m8/api/utils/context.py
+2. Modify FX and modulator serialization to use the context manager
+3. Update the phrase step serialization to establish instrument context for FX
+4. Maintain backward compatibility with the existing explicit instrument_type parameters
+5. Gradually transition away from explicit coupling in future versions
+
 # Enum Implementation Improvement Opportunities
 
 ## Enum Implementation Design Decision (28/03/25)
