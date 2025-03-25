@@ -17,6 +17,32 @@ def discover_test_modules(package_name="tests"):
             # If it's a module, import it to add its tests to the registry
             importlib.import_module(name)
 
+def clean_temp_test_dirs():
+    """Clean up temporary test directories created by tests."""
+    tmp_dir = os.path.join(os.getcwd(), "tmp")
+    if not os.path.exists(tmp_dir):
+        return
+        
+    import shutil
+    import re
+    
+    # Pattern for test directories
+    test_dir_patterns = [
+        r"test_bake_chains_\d+",
+        r"test_concat_phrases_\d+"
+    ]
+    
+    for item in os.listdir(tmp_dir):
+        item_path = os.path.join(tmp_dir, item)
+        if os.path.isdir(item_path):
+            for pattern in test_dir_patterns:
+                if re.match(pattern, item):
+                    try:
+                        print(f"Cleaning up test directory: {item_path}")
+                        shutil.rmtree(item_path)
+                    except Exception as e:
+                        print(f"Failed to remove {item_path}: {e}")
+
 def run_tests():
     """Discover and run all tests in the tests package."""
     # Ensure the current directory is in the Python path
@@ -36,6 +62,9 @@ def run_tests():
     # Run the tests
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
+    
+    # Clean up any leftover temporary test directories
+    clean_temp_test_dirs()
     
     # Return non-zero exit code if tests failed
     return 0 if result.wasSuccessful() else 1
