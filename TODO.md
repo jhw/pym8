@@ -1,5 +1,6 @@
 # short
 
+- Fix modulator destination enum serialization (see NOTES.md for details)
 - TODO.md >> github project
 - sampler slices
 
