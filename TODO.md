@@ -1,14 +1,14 @@
 # short
 
-- Fix modulator destination enum serialization (see NOTES.md for details)
-- TODO.md >> github project
-- sampler slices
+- Fix YAML serialization of 'OFF' enum values (see NOTES.md)
+- Fix non_zero_destination_mods in example tests
 
 # medium
 
+- TODO.md >> github project
+- sampler slices
 - fx example
-- 5.0.2 test
-
+- 5.0.2
 - fmsynth
 - hypersynth
 - tables
@@ -34,6 +34,7 @@
 
 # done
 
+✓ Fix modulator destination enum serialization (see NOTES.md for details)
 ✓ refactor tools/concat_phrases.py and tools/bake_chains.py to use a class-based approach
 ✓ update tests for refactored tools
 ✓ phrase note enum support (M8PhraseStep with EnumPropertyMixin)

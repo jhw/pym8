@@ -336,6 +336,12 @@ class M8Instrument(EnumPropertyMixin):
         
         # Read modulators
         self.modulators = M8Modulators.read(data[self.modulators_offset:])
+        
+        # Set instrument_type on each modulator to establish parent-child relationship
+        # This enables proper enum context for modulator destination serialization
+        for modulator in self.modulators:
+            if hasattr(modulator, 'instrument_type'):
+                modulator.instrument_type = type_id
 
     def write(self):
         """Convert the instrument to binary data."""

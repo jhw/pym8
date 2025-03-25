@@ -65,15 +65,20 @@ class TestWavSynthMapping(unittest.TestCase):
     
     def test_wavsynth_modulators(self):
         # Test modulators - focusing on the ones with non-zero destination
-        # Filter modulators to only include ones with a destination (OLD definition of non-empty)
+        # Filter modulators to only include ones with a non-zero/OFF destination
+        # (Now handles enum strings and treats 'OFF' as equivalent to 'NONE')
+        # Since 'OFF' might be quoted in YAML, we need to handle both 'OFF' and OFF
         non_zero_destination_mods = [mod for mod in self.instrument_dict['modulators'] 
-                                    if mod['destination'] != 0]
+                                    if mod['destination'] != 0 and 
+                                       mod['destination'] != 'NONE' and 
+                                       mod['destination'] != 'OFF' and
+                                       mod['destination'] != "'OFF'"]
         
-        # TODO: When read() properly handles parent-child relationships for enum serialization,
-        # these should use string names for type and destination
+        # Now read() properly handles parent-child relationships for enum serialization,
+        # so destination is using string enum names
         expected_modulators = [
             {
-                'destination': 1,    # 0x01
+                'destination': 'VOLUME',  # 0x01
                 'amount': 255,       # 0xFF
                 'attack': 0,         # 0x00
                 'hold': 0,           # 0x00
@@ -82,7 +87,7 @@ class TestWavSynthMapping(unittest.TestCase):
                 'index': 0           # 0x00
             },
             {
-                'destination': 7,    # 0x07
+                'destination': 'CUTOFF',  # 0x07
                 'amount': 128,       # 0x80
                 'attack': 0,         # 0x00
                 'hold': 0,           # 0x00

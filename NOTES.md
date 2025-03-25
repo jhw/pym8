@@ -26,6 +26,22 @@ The implementation for context-aware modulator enums can leverage the existing i
 4. Once the parent context is available, the existing enum utilities will handle conversion between string names and numeric values automatically
 5. This approach completes the consistent external enum usage across the entire API, making modulator destinations use string enum values just like all other enum fields
 
+## YAML Serialization Issue (26/03/25)
+
+When examining the output of tools/inspect_instruments.py, we noticed that 'OFF' enum values appear with single quotes in YAML output (e.g., `destination: 'OFF'`), while other enum values don't have quotes (e.g., `destination: VOLUME`). This occurs because:
+
+1. 'OFF' is a reserved word in YAML that normally means 'false' (like 'off', 'no', or 'false')
+2. The YAML serializer automatically quotes such reserved words to prevent them from being interpreted as boolean values
+
+Potential solutions:
+1. Modify the YAML repr in tools/inspect_instruments.py to avoid quoting these values
+2. More fundamentally, modify the enum serialization functions in m8/api/utils/enums.py to:
+   - Detect YAML keywords in enum values
+   - Return a modified string (e.g., '_OFF' instead of 'OFF') that won't be recognized as a YAML keyword
+   - This would require changes to both serialization and deserialization to maintain consistency
+
+Given the limited impact (only affects display in the inspect_instruments tool), this can be addressed in a future update.
+
 # Notes on standardizing enum string case
 
 ## Changes Made (24/03/25)
