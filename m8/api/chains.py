@@ -31,6 +31,12 @@ class M8ChainStep:
         return bytes(self._data)
     
     def is_empty(self):
+        """Check if this chain step is empty.
+        
+        Uses a lenient approach that only checks if the phrase reference equals
+        the M8 empty phrase value (0xFF). This maintains consistency with other
+        emptiness checks throughout the codebase and follows the M8's concept of emptiness.
+        """
         return self.phrase == self.EMPTY_PHRASE
     
     @property
@@ -99,6 +105,12 @@ class M8Chain(list):
         return instance
     
     def is_empty(self):
+        """Check if this chain is empty.
+        
+        A chain is considered empty if all of its steps are empty.
+        This lenient approach delegates to each step's is_empty() method,
+        maintaining consistency in emptiness definitions throughout the codebase.
+        """
         return all(step.is_empty() for step in self)
     
     def write(self):

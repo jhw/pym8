@@ -49,6 +49,15 @@ class M8FXTuple(EnumPropertyMixin):
         return bytes(self._data)
     
     def is_empty(self):
+        """Check if this FX tuple is empty.
+        
+        Uses a lenient approach that only checks if the key equals the M8 empty key value (0xFF),
+        rather than validating against instrument-specific FX enums. This approach is preferable because:
+        1. It's simpler and more performant
+        2. It doesn't require instrument context to be propagated everywhere
+        3. It's more resilient to future changes in the M8 firmware
+        4. It maintains separation between emptiness checks and validity checks
+        """
         return self._data[self.KEY_OFFSET] == self.EMPTY_KEY
     
     @property

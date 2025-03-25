@@ -58,6 +58,16 @@ class M8PhraseStep(EnumPropertyMixin):
         return instance
 
     def is_empty(self):
+        """Check if this phrase step is empty.
+        
+        Uses a lenient approach that checks if note, velocity and instrument equal their
+        M8 empty values (typically 0xFF), rather than validating notes against enums.
+        This approach is preferable because:
+        1. It focuses on the M8's definition of emptiness
+        2. It's more performant by avoiding enum lookups
+        3. It's less coupled to enum implementations
+        4. It maintains separation between emptiness checks and validity checks
+        """
         return (self.note == self.EMPTY_NOTE and
                 self.velocity == self.EMPTY_VELOCITY and
                 self.instrument == self.EMPTY_INSTRUMENT and

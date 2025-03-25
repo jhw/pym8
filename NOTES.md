@@ -1,6 +1,26 @@
-# Modulator Destination Enum Serialization Issue
+# Enum Implementation Improvement Opportunities
 
-## Read Method Issue (25/03/25)
+## Potential Enum Abstraction Improvements
+
+The current enum abstraction could be improved in several ways:
+
+1. **Context-aware enum serialization/deserialization**: Currently, each client class has to handle instrument-specific enum mapping. This creates duplication, particularly in `as_dict()` and `from_dict()` methods where similar patterns appear.
+
+2. **Consistent parent-child relationships**: The instrument-modulator relationship shows this problem. Passing `instrument_type` throughout the hierarchy is verbose and error-prone.
+
+3. **Automated property generation**: The current approach requires boilerplate for each enum property with getters/setters. Consider a decorator or metaclass that generates enum properties.
+
+4. **Centralized enum resolution**: The enum mixin could handle more of the lookup logic, while client classes could declare their enum dependencies declaratively.
+
+5. **Enum context management**: A context manager pattern could simplify code that needs instrument-specific enums.
+
+6. **Unified serialization API**: The variability between client classes' serialization logic could be standardized into a protocol.
+
+The duplication is most evident in the property handling for enums. Each class implements similar patterns for converting between string and numeric representations, which could be abstracted further.
+
+## Modulator Destination Enum Serialization Issue
+
+### Read Method Issue (25/03/25)
 
 We've discovered an issue with modulator destination enum serialization related to the parent-child relationship between instruments and modulators:
 
@@ -9,14 +29,14 @@ We've discovered an issue with modulator destination enum serialization related 
 3. This means that modulators don't have the context they need to properly convert numeric enum values to string names
 4. For example, a destination value of 1 should be converted to "VOLUME", but without knowing the parent instrument type, this can't happen automatically
 
-## Steps Needed:
+### Steps Needed:
 
 1. Modify the instrument read method to set the `instrument_type` on each modulator after reading it
 2. This would involve updating `M8Instrument.read()` to set the instrument_type on each modulator after reading the modulators
 3. Ensure the instrument type is set before calling as_dict() on modulators
 4. Update tests to verify that enum values are properly serialized after reading from binary
 
-## Implementation Note (25/03/25)
+### Implementation Note (25/03/25)
 
 The implementation for context-aware modulator enums can leverage the existing infrastructure:
 

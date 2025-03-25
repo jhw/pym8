@@ -36,6 +36,12 @@ class M8SongRow:
         return instance
     
     def is_empty(self):
+        """Check if this song row is empty.
+        
+        Uses a lenient approach that checks if all chain references equal the M8 empty chain value (0xFF).
+        This approach focuses on the M8's definition of emptiness rather than validating against
+        external references, maintaining consistency with other emptiness checks in the codebase.
+        """
         return all(chain == self.EMPTY_CHAIN for chain in self._data)
     
     def __getitem__(self, index):
@@ -120,6 +126,12 @@ class M8SongMatrix(list):
         return instance
     
     def is_empty(self):
+        """Check if this song matrix is empty.
+        
+        A song matrix is considered empty if all of its rows are empty.
+        This lenient approach delegates to each row's is_empty() method,
+        maintaining consistency in emptiness definitions throughout the codebase.
+        """
         return all(row.is_empty() for row in self)
     
     def write(self):

@@ -1,5 +1,13 @@
 # short
 
+- Improve enum abstraction (see "Enum Implementation Improvement Opportunities" in NOTES.md)
+  - Implement context-aware enum serialization/deserialization
+  - Develop solution for consistent parent-child relationships
+  - Create decorator or metaclass for automated enum property generation
+  - Build centralized enum resolution system
+  - Consider enum context management pattern
+  - Standardize serialization API across classes
+
 # medium
 
 - TODO.md >> github project
