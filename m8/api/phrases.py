@@ -1,5 +1,6 @@
 from m8.api import M8ValidationError, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
+from m8.api.utils.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum
 from m8.config import load_format_config
 
 # Load configuration
@@ -13,7 +14,7 @@ STEP_COUNT = config["step_count"]           # Number of steps per phrase
 PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total phrase size in bytes
 PHRASE_COUNT = config["count"]              # Maximum number of phrases
 
-class M8PhraseStep:
+class M8PhraseStep(EnumPropertyMixin):
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""
     
     NOTE_OFFSET = config["fields"]["note"]["offset"]
@@ -28,6 +29,18 @@ class M8PhraseStep:
     EMPTY_INSTRUMENT = config["constants"]["empty_instrument"]
     
     def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
+        # Process note value - convert from string enum if needed
+        if isinstance(note, str) and note != self.EMPTY_NOTE:
+            if "enums" in config["fields"]["note"]:
+                note = deserialize_param_enum(
+                    config["fields"]["note"]["enums"],
+                    note,
+                    "note",
+                    None
+                )
+            else:
+                note = int(note)  # Try direct conversion
+                
         self._data = bytearray([note, velocity, instrument])
         self.fx = M8FXTuples()
 
@@ -57,10 +70,37 @@ class M8PhraseStep:
 
     @property
     def note(self):
-        return self._data[self.NOTE_OFFSET]
+        # Get the underlying byte value
+        numeric_value = self._data[self.NOTE_OFFSET]
+        
+        # If empty note, just return it as-is
+        if numeric_value == self.EMPTY_NOTE:
+            return numeric_value
+            
+        # If there are enum mappings, convert to string
+        if "enums" in config["fields"]["note"]:
+            string_value = serialize_param_enum_value(
+                numeric_value,
+                config["fields"]["note"],
+                None,
+                "note"
+            )
+            return string_value
+        
+        return numeric_value
     
     @note.setter
     def note(self, value):
+        # Convert string enum to numeric value if needed
+        if isinstance(value, str) and value != self.EMPTY_NOTE:
+            if "enums" in config["fields"]["note"]:
+                value = deserialize_param_enum(
+                    config["fields"]["note"]["enums"],
+                    value,
+                    "note",
+                    None
+                )
+        
         self._data[self.NOTE_OFFSET] = value
     
     @property

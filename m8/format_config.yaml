@@ -442,6 +442,8 @@ phrases:
     note:
       default: 0xff
       offset: 0x0
+      enums:
+        - m8.enums.M8Notes
     velocity:
       default: 0xff
       offset: 0x1

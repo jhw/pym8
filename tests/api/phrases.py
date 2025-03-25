@@ -5,6 +5,7 @@ from m8.api.phrases import (
 )
 from m8.api.fx import M8FXTuple, M8FXTuples
 from m8.api import M8ValidationError, M8Block
+from m8.enums import M8Notes
 
 class TestM8PhraseStep(unittest.TestCase):
     def test_read_from_binary(self):
@@ -12,7 +13,7 @@ class TestM8PhraseStep(unittest.TestCase):
         test_data = bytearray()
         
         # Basic step data (note, velocity, instrument)
-        test_data.extend([60, 100, 5])  # note=60 (middle C), velocity=100, instrument=5
+        test_data.extend([60, 100, 5])  # note=60 (C_6), velocity=100, instrument=5
         
         # FX tuples
         test_data.extend([10, 20])  # FX1: key=10, value=20
@@ -22,8 +23,8 @@ class TestM8PhraseStep(unittest.TestCase):
         # Read from binary
         step = M8PhraseStep.read(test_data)
         
-        # Verify basic fields
-        self.assertEqual(step.note, 60)
+        # Verify basic fields - note should now be a string enum name
+        self.assertEqual(step.note, "C_6")
         self.assertEqual(step.velocity, 100)
         self.assertEqual(step.instrument, 5)
         
@@ -43,8 +44,8 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertTrue(step.is_empty())
     
     def test_write_to_binary(self):
-        # Create a step with some data
-        step = M8PhraseStep(note=60, velocity=100, instrument=5)
+        # Create a step with some data using string note
+        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         
         # Set up FX tuples
         step.fx[0] = M8FXTuple(key=10, value=20)
@@ -56,8 +57,8 @@ class TestM8PhraseStep(unittest.TestCase):
         # Verify size and contents
         self.assertEqual(len(binary), M8PhraseStep.BASE_DATA_SIZE + FX_BLOCK_COUNT * 2)
         
-        # Check basic fields
-        self.assertEqual(binary[0], 60)  # note
+        # Check basic fields - note should be converted to binary value 60 (C_6)
+        self.assertEqual(binary[0], 60)  # note C_6 = 60
         self.assertEqual(binary[1], 100)  # velocity
         self.assertEqual(binary[2], 5)    # instrument
         
@@ -70,8 +71,8 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertEqual(binary[8], 0)                    # FX3 value
     
     def test_read_write_consistency(self):
-        # Create a step with some data
-        original = M8PhraseStep(note=60, velocity=100, instrument=5)
+        # Create a step with some data using string note
+        original = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         original.fx[0] = M8FXTuple(key=10, value=20)
         original.fx[1] = M8FXTuple(key=30, value=40)
         
@@ -82,7 +83,7 @@ class TestM8PhraseStep(unittest.TestCase):
         deserialized = M8PhraseStep.read(binary)
         
         # Verify all fields match
-        self.assertEqual(deserialized.note, original.note)
+        self.assertEqual(deserialized.note, original.note)  # Both should be string "C_5"
         self.assertEqual(deserialized.velocity, original.velocity)
         self.assertEqual(deserialized.instrument, original.instrument)
         
@@ -98,15 +99,21 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertEqual(step.instrument, M8PhraseStep.EMPTY_INSTRUMENT)
         self.assertEqual(len(step.fx), FX_BLOCK_COUNT)
         
-        # Test with parameters
+        # Test with string note parameter
+        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
+        self.assertEqual(step.note, "C_6")
+        self.assertEqual(step.velocity, 100)
+        self.assertEqual(step.instrument, 5)
+        
+        # Test with numeric note parameter (should still return string from getter)
         step = M8PhraseStep(note=60, velocity=100, instrument=5)
-        self.assertEqual(step.note, 60)
+        self.assertEqual(step.note, "C_6")
         self.assertEqual(step.velocity, 100)
         self.assertEqual(step.instrument, 5)
         
         # Test with partial parameters
-        step = M8PhraseStep(note=60)
-        self.assertEqual(step.note, 60)
+        step = M8PhraseStep(note="C_6")
+        self.assertEqual(step.note, "C_6")
         self.assertEqual(step.velocity, M8PhraseStep.EMPTY_VELOCITY)
         self.assertEqual(step.instrument, M8PhraseStep.EMPTY_INSTRUMENT)
     
@@ -114,15 +121,19 @@ class TestM8PhraseStep(unittest.TestCase):
         # Test property getters and setters
         step = M8PhraseStep()
         
-        # Test setters
-        step.note = 60
+        # Test setters with string enum
+        step.note = "C_6"
         step.velocity = 100
         step.instrument = 5
         
         # Test getters
-        self.assertEqual(step.note, 60)
+        self.assertEqual(step.note, "C_6")
         self.assertEqual(step.velocity, 100)
         self.assertEqual(step.instrument, 5)
+        
+        # Test with numeric note value
+        step.note = 62  # D_6
+        self.assertEqual(step.note, "D_6")
     
     def test_is_empty(self):
         # Test is_empty method
@@ -130,7 +141,7 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertTrue(step.is_empty())
         
         # Modify note
-        step.note = 60
+        step.note = "C_6"
         self.assertFalse(step.is_empty())
         step.note = M8PhraseStep.EMPTY_NOTE
         self.assertTrue(step.is_empty())
@@ -153,7 +164,7 @@ class TestM8PhraseStep(unittest.TestCase):
     
     def test_clone(self):
         # Test clone method
-        original = M8PhraseStep(note=60, velocity=100, instrument=5)
+        original = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         original.fx[0] = M8FXTuple(key=10, value=20)
         original.fx[1] = M8FXTuple(key=30, value=40)
         
@@ -172,9 +183,9 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertIsNot(clone, original)
         
         # Modify clone and verify original remains unchanged
-        clone.note = 72
+        clone.note = "D_6"
         clone.fx[0].key = 50
-        self.assertEqual(original.note, 60)
+        self.assertEqual(original.note, "C_6")
         self.assertEqual(original.fx[0].key, 10)
     
     def test_available_slot(self):
@@ -277,15 +288,15 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertFalse(result)
     
     def test_as_dict(self):
-        # Test as_dict method
-        step = M8PhraseStep(note=60, velocity=100, instrument=5)
+        # Test as_dict method with string note
+        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         step.fx[0] = M8FXTuple(key=10, value=20)
         step.fx[2] = M8FXTuple(key=30, value=40)
         
         result = step.as_dict()
         
-        # Verify basic fields
-        self.assertEqual(result["note"], 60)
+        # Verify basic fields - note should be string
+        self.assertEqual(result["note"], "C_6")
         self.assertEqual(result["velocity"], 100)
         self.assertEqual(result["instrument"], 5)
         
@@ -302,9 +313,9 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertEqual(fx2["value"], 40)
     
     def test_from_dict(self):
-        # Test from_dict method
+        # Test from_dict method with string note
         data = {
-            "note": 60,
+            "note": "C_6",
             "velocity": 100,
             "instrument": 5,
             "fx": [
@@ -316,7 +327,7 @@ class TestM8PhraseStep(unittest.TestCase):
         step = M8PhraseStep.from_dict(data)
         
         # Verify basic fields
-        self.assertEqual(step.note, 60)
+        self.assertEqual(step.note, "C_6")
         self.assertEqual(step.velocity, 100)
         self.assertEqual(step.instrument, 5)
         
@@ -361,7 +372,7 @@ class TestM8Phrase(unittest.TestCase):
         self.assertEqual(len(phrase), STEP_COUNT)
         
         # Verify step 0
-        self.assertEqual(phrase[0].note, 60)
+        self.assertEqual(phrase[0].note, "C_6")
         self.assertEqual(phrase[0].velocity, 100)
         self.assertEqual(phrase[0].instrument, 5)
         self.assertEqual(phrase[0].fx[0].key, 10)
@@ -427,7 +438,7 @@ class TestM8Phrase(unittest.TestCase):
         deserialized = M8Phrase.read(binary)
         
         # Verify steps are consistent
-        self.assertEqual(deserialized[0].note, 60)
+        self.assertEqual(deserialized[0].note, "C_6")
         self.assertEqual(deserialized[0].velocity, 100)
         self.assertEqual(deserialized[0].instrument, 5)
         self.assertEqual(deserialized[0].fx[0].key, 10)
@@ -436,7 +447,7 @@ class TestM8Phrase(unittest.TestCase):
         self.assertTrue(deserialized[1].is_empty())
         self.assertTrue(deserialized[2].is_empty())
         
-        self.assertEqual(deserialized[3].note, 72)
+        self.assertEqual(deserialized[3].note, "C_7")
         self.assertEqual(deserialized[3].velocity, 80)
         self.assertEqual(deserialized[3].instrument, 3)
         self.assertEqual(deserialized[3].fx[1].key, 30)
@@ -473,22 +484,22 @@ class TestM8Phrase(unittest.TestCase):
     def test_clone(self):
         # Test clone method
         original = M8Phrase()
-        original[0] = M8PhraseStep(note=60, velocity=100, instrument=5)
+        original[0] = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         original[0].fx[0] = M8FXTuple(key=10, value=20)
         
-        original[3] = M8PhraseStep(note=72, velocity=80, instrument=3)
+        original[3] = M8PhraseStep(note="C_7", velocity=80, instrument=3)
         original[3].fx[1] = M8FXTuple(key=30, value=40)
         
         clone = original.clone()
         
         # Verify clone has the same values
-        self.assertEqual(clone[0].note, 60)
+        self.assertEqual(clone[0].note, "C_6")
         self.assertEqual(clone[0].velocity, 100)
         self.assertEqual(clone[0].instrument, 5)
         self.assertEqual(clone[0].fx[0].key, 10)
         self.assertEqual(clone[0].fx[0].value, 20)
         
-        self.assertEqual(clone[3].note, 72)
+        self.assertEqual(clone[3].note, "C_7")
         self.assertEqual(clone[3].velocity, 80)
         self.assertEqual(clone[3].instrument, 3)
         self.assertEqual(clone[3].fx[1].key, 30)
@@ -498,8 +509,8 @@ class TestM8Phrase(unittest.TestCase):
         self.assertIsNot(clone, original)
         
         # Modify clone and verify original remains unchanged
-        clone[0].note = 48
-        self.assertEqual(original[0].note, 60)
+        clone[0].note = "C_5"
+        self.assertEqual(original[0].note, "C_6")
     
     def test_validate_references_instruments(self):
         # Create mock instruments list
@@ -515,13 +526,13 @@ class TestM8Phrase(unittest.TestCase):
         
         # Test case 2: Reference to non-existent instrument
         phrase = M8Phrase()
-        phrase[0] = M8PhraseStep(note=60, velocity=100, instrument=20)  # Instrument 20 doesn't exist
+        phrase[0] = M8PhraseStep(note="C_6", velocity=100, instrument=20)  # Instrument 20 doesn't exist
         with self.assertRaises(M8ValidationError):
             phrase.validate_references_instruments(mock_instruments)
         
         # Test case 3: Reference to empty instrument (M8Block)
         phrase = M8Phrase()
-        phrase[0] = M8PhraseStep(note=60, velocity=100, instrument=10)  # Instrument 10 is an M8Block
+        phrase[0] = M8PhraseStep(note="C_6", velocity=100, instrument=10)  # Instrument 10 is an M8Block
         with self.assertRaises(M8ValidationError):
             phrase.validate_references_instruments(mock_instruments)
         
@@ -546,18 +557,18 @@ class TestM8Phrase(unittest.TestCase):
     def test_add_step(self):
         # Test add_step method
         phrase = M8Phrase()
-        step = M8PhraseStep(note=60, velocity=100, instrument=5)
+        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         
         # Add step to empty phrase
         slot = phrase.add_step(step)
         self.assertEqual(slot, 0)
-        self.assertEqual(phrase[0].note, 60)
+        self.assertEqual(phrase[0].note, "C_6")
         
         # Add another step
-        step2 = M8PhraseStep(note=72, velocity=80, instrument=3)
+        step2 = M8PhraseStep(note="C_7", velocity=80, instrument=3)
         slot = phrase.add_step(step2)
         self.assertEqual(slot, 1)
-        self.assertEqual(phrase[1].note, 72)
+        self.assertEqual(phrase[1].note, "C_7")
         
         # Fill all slots and test error
         for i in range(2, STEP_COUNT):
@@ -569,11 +580,11 @@ class TestM8Phrase(unittest.TestCase):
     def test_set_step(self):
         # Test set_step method
         phrase = M8Phrase()
-        step = M8PhraseStep(note=60, velocity=100, instrument=5)
+        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         
         # Set step at specific slot
         phrase.set_step(step, 3)
-        self.assertEqual(phrase[3].note, 60)
+        self.assertEqual(phrase[3].note, "C_6")
         
         # Test invalid slot
         with self.assertRaises(IndexError):
@@ -587,10 +598,10 @@ class TestM8Phrase(unittest.TestCase):
         phrase = M8Phrase()
         
         # Add some steps
-        phrase[0] = M8PhraseStep(note=60, velocity=100, instrument=5)
+        phrase[0] = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         phrase[0].fx[0] = M8FXTuple(key=10, value=20)
         
-        phrase[3] = M8PhraseStep(note=72, velocity=80, instrument=3)
+        phrase[3] = M8PhraseStep(note="C_7", velocity=80, instrument=3)
         phrase[3].fx[1] = M8FXTuple(key=30, value=40)
         
         result = phrase.as_dict()
@@ -600,14 +611,14 @@ class TestM8Phrase(unittest.TestCase):
         
         # Find specific steps
         step0 = next(s for s in result["steps"] if s["index"] == 0)
-        self.assertEqual(step0["note"], 60)
+        self.assertEqual(step0["note"], "C_6")
         self.assertEqual(step0["velocity"], 100)
         self.assertEqual(step0["instrument"], 5)
         self.assertEqual(len(step0["fx"]), 1)
         self.assertEqual(step0["fx"][0]["key"], 10)
         
         step3 = next(s for s in result["steps"] if s["index"] == 3)
-        self.assertEqual(step3["note"], 72)
+        self.assertEqual(step3["note"], "C_7")
         self.assertEqual(step3["velocity"], 80)
         self.assertEqual(step3["instrument"], 3)
         self.assertEqual(len(step3["fx"]), 1)
@@ -624,7 +635,7 @@ class TestM8Phrase(unittest.TestCase):
             "steps": [
                 {
                     "index": 0,
-                    "note": 60,
+                    "note": "C_6",
                     "velocity": 100,
                     "instrument": 5,
                     "fx": [
@@ -633,7 +644,7 @@ class TestM8Phrase(unittest.TestCase):
                 },
                 {
                     "index": 3,
-                    "note": 72,
+                    "note": "C_7",
                     "velocity": 80,
                     "instrument": 3,
                     "fx": [
@@ -646,7 +657,7 @@ class TestM8Phrase(unittest.TestCase):
         phrase = M8Phrase.from_dict(data)
         
         # Verify steps
-        self.assertEqual(phrase[0].note, 60)
+        self.assertEqual(phrase[0].note, "C_6")
         self.assertEqual(phrase[0].velocity, 100)
         self.assertEqual(phrase[0].instrument, 5)
         self.assertEqual(phrase[0].fx[0].key, 10)
@@ -655,7 +666,7 @@ class TestM8Phrase(unittest.TestCase):
         self.assertTrue(phrase[1].is_empty())
         self.assertTrue(phrase[2].is_empty())
         
-        self.assertEqual(phrase[3].note, 72)
+        self.assertEqual(phrase[3].note, "C_7")
         self.assertEqual(phrase[3].velocity, 80)
         self.assertEqual(phrase[3].instrument, 3)
         self.assertEqual(phrase[3].fx[1].key, 30)
@@ -715,14 +726,14 @@ class TestM8Phrases(unittest.TestCase):
         self.assertEqual(len(phrases), PHRASE_COUNT)
         
         # Verify phrase 0
-        self.assertEqual(phrases[0][0].note, 60)
+        self.assertEqual(phrases[0][0].note, "C_6")
         self.assertEqual(phrases[0][0].velocity, 100)
         self.assertEqual(phrases[0][0].instrument, 5)
         self.assertEqual(phrases[0][0].fx[0].key, 10)
         self.assertEqual(phrases[0][0].fx[0].value, 20)
         
         # Verify phrase 1
-        self.assertEqual(phrases[1][3].note, 72)
+        self.assertEqual(phrases[1][3].note, "C_7")
         self.assertEqual(phrases[1][3].velocity, 80)
         self.assertEqual(phrases[1][3].instrument, 3)
         self.assertEqual(phrases[1][3].fx[1].key, 30)
@@ -772,7 +783,7 @@ class TestM8Phrases(unittest.TestCase):
         deserialized = M8Phrases.read(binary)
         
         # Verify phrase 0
-        self.assertEqual(deserialized[0][0].note, 60)
+        self.assertEqual(deserialized[0][0].note, "C_6")
         self.assertEqual(deserialized[0][0].velocity, 100)
         self.assertEqual(deserialized[0][0].instrument, 5)
         self.assertEqual(deserialized[0][0].fx[0].key, 10)
@@ -782,7 +793,7 @@ class TestM8Phrases(unittest.TestCase):
         self.assertTrue(deserialized[1].is_empty())
         
         # Verify phrase 2
-        self.assertEqual(deserialized[2][3].note, 72)
+        self.assertEqual(deserialized[2][3].note, "C_7")
         self.assertEqual(deserialized[2][3].velocity, 80)
         self.assertEqual(deserialized[2][3].instrument, 3)
         self.assertEqual(deserialized[2][3].fx[1].key, 30)
@@ -821,15 +832,15 @@ class TestM8Phrases(unittest.TestCase):
         clone = original.clone()
         
         # Verify clone has the same values
-        self.assertEqual(clone[0][0].note, 60)
-        self.assertEqual(clone[2][3].note, 72)
+        self.assertEqual(clone[0][0].note, "C_6")
+        self.assertEqual(clone[2][3].note, "C_7")
         
         # Verify clone is a different object
         self.assertIsNot(clone, original)
         
         # Modify clone and verify original remains unchanged
-        clone[0][0].note = 48
-        self.assertEqual(original[0][0].note, 60)
+        clone[0][0].note = "C_5"
+        self.assertEqual(original[0][0].note, "C_6")
     
     def test_validate_references_instruments(self):
         # Create mock instruments list
@@ -866,11 +877,11 @@ class TestM8Phrases(unittest.TestCase):
         # Find specific phrases
         phrase0 = next(p for p in result if p["index"] == 0)
         self.assertEqual(len(phrase0["steps"]), 1)
-        self.assertEqual(phrase0["steps"][0]["note"], 60)
+        self.assertEqual(phrase0["steps"][0]["note"], "C_6")
         
         phrase2 = next(p for p in result if p["index"] == 2)
         self.assertEqual(len(phrase2["steps"]), 1)
-        self.assertEqual(phrase2["steps"][0]["note"], 72)
+        self.assertEqual(phrase2["steps"][0]["note"], "C_7")
         
         # Test empty phrases
         phrases = M8Phrases()
@@ -913,7 +924,7 @@ class TestM8Phrases(unittest.TestCase):
         phrases = M8Phrases.from_list(data)
         
         # Verify phrase 0
-        self.assertEqual(phrases[0][0].note, 60)
+        self.assertEqual(phrases[0][0].note, "C_6")
         self.assertEqual(phrases[0][0].velocity, 100)
         self.assertEqual(phrases[0][0].instrument, 5)
         self.assertEqual(phrases[0][0].fx[0].key, 10)
@@ -923,7 +934,7 @@ class TestM8Phrases(unittest.TestCase):
         self.assertTrue(phrases[1].is_empty())
         
         # Verify phrase 2
-        self.assertEqual(phrases[2][3].note, 72)
+        self.assertEqual(phrases[2][3].note, "C_7")
         self.assertEqual(phrases[2][3].velocity, 80)
         self.assertEqual(phrases[2][3].instrument, 3)
         self.assertEqual(phrases[2][3].fx[1].key, 30)
