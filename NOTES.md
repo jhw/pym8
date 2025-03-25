@@ -200,6 +200,24 @@ The implementation for context-aware modulator enums can leverage the existing i
 4. Once the parent context is available, the existing enum utilities will handle conversion between string names and numeric values automatically
 5. This approach completes the consistent external enum usage across the entire API, making modulator destinations use string enum values just like all other enum fields
 
+### Context Manager Issues (28/03/25)
+
+After implementing the instrument context manager system, we discovered issues with enum serialization:
+
+1. The context manager singleton approach works correctly for operations that occur within a context block, but context isn't always maintained between operations:
+   - When an instrument creates a modulator, the context is correctly set
+   - However, when the modulator is later serialized (as_dict) outside the original context, it loses its parent context
+
+2. Even with context handling in serialize_param_enum_value, if the modulator destination is an integer value, the serialization won't work correctly unless:
+   - The modulator has its instrument_type explicitly set (tight coupling), or
+   - The modulator is being serialized within an instrument context block
+
+3. Solutions to consider:
+   - Ensure `serialize_param_enum_value`, `deserialize_param_enum`, and `ensure_enum_int_value` all check context when instrument_type is None
+   - Update all enum utility functions to properly fall back to the context manager
+   - Make sure M8Modulators.as_list() passes context to each modulator
+   - Add context-aware overrides to tools that need enum string representations
+
 ## YAML Serialization Issue (26/03/25)
 
 When examining the output of tools/inspect_instruments.py, we noticed that 'OFF' enum values appear with single quotes in YAML output (e.g., `destination: 'OFF'`), while other enum values don't have quotes (e.g., `destination: VOLUME`). This occurs because:

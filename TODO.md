@@ -1,5 +1,7 @@
 # short
 
+- Fix context manager issues with enum serialization (see "Context Manager Issues" in NOTES.md)
+
 # medium
 
 - TODO.md >> github project
