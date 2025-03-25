@@ -64,10 +64,8 @@ class TestMacroSynthMapping(unittest.TestCase):
                                 f"Field '{field}' doesn't match expected value")
     
     def test_macrosynth_modulators(self):
-        # Test modulators - focusing on the ones with non-zero destination
-        # Filter modulators with active destinations (not OFF)
-        non_zero_destination_mods = [mod for mod in self.instrument_dict['modulators'] 
-                                    if mod['destination'] != 'OFF']
+        # Test modulators - M8Modulator.is_empty() now filters out those with destination 'OFF'
+        # so we can directly test the modulators collection
         
         # Now read() properly handles parent-child relationships for enum serialization,
         # so destination is using string enum names
@@ -92,17 +90,17 @@ class TestMacroSynthMapping(unittest.TestCase):
             }
         ]
         
-        # Verify we have the right number of non-zero destination modulators
-        self.assertEqual(len(non_zero_destination_mods), len(expected_modulators),
-                        "Number of non-zero destination modulators doesn't match")
+        # Verify we have the right number of modulators
+        self.assertEqual(len(self.instrument_dict['modulators']), len(expected_modulators),
+                        "Number of modulators doesn't match")
         
         # Sort both lists by index to ensure comparison works
-        non_zero_destination_mods.sort(key=lambda x: x['index'])
+        modulators = self.instrument_dict['modulators']
         expected_modulators.sort(key=lambda x: x['index'])
         
-        # Compare just the modulators with non-zero destinations
+        # Compare the modulators
         for i, expected_modulator in enumerate(expected_modulators):
-            actual_modulator = non_zero_destination_mods[i]
+            actual_modulator = modulators[i]
             for field, expected_value in expected_modulator.items():
                 with self.subTest(modulator=i, field=field):
                     self.assertEqual(actual_modulator[field], expected_value,

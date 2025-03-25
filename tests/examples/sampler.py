@@ -72,12 +72,11 @@ class TestSamplerMapping(unittest.TestCase):
     
     def test_sampler_modulators(self):
         # Test that there are no modulators with destinations
-        # Filter modulators with active destinations (not OFF)
-        non_zero_destination_mods = [mod for mod in self.instrument_dict['modulators'] 
-                                    if mod['destination'] != 'OFF']
+        # M8Modulator.is_empty() now filters out modulators with destination 'OFF'
+        # so the modulators list should be empty
         
-        self.assertEqual(len(non_zero_destination_mods), 0,
-                        "Number of modulators with destinations should be 0")
+        self.assertEqual(len(self.instrument_dict['modulators']), 0,
+                        "Number of modulators should be 0")
 
 
 if __name__ == '__main__':
