@@ -1,12 +1,13 @@
 # short
 
+- TODO.md >> github project
+- sampler slices
+
 # medium
 
 - fx example
-- TODO.md >> github project
 - 5.0.2 test
 
-- sampler slices
 - fmsynth
 - hypersynth
 - tables
