@@ -1,6 +1,7 @@
 from m8.api import M8ValidationError, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
 from m8.api.utils.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum
+from m8.api.utils.context import M8InstrumentContext
 from m8.config import load_format_config
 
 # Load configuration
@@ -48,7 +49,16 @@ class M8PhraseStep(EnumPropertyMixin):
     def read(cls, data):
         instance = cls()
         instance._data = bytearray(data[:cls.BASE_DATA_SIZE])
-        instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
+        
+        # Set up context for FX serialization based on the instrument
+        instrument_id = instance._data[cls.INSTRUMENT_OFFSET]
+        if instrument_id != cls.EMPTY_INSTRUMENT:
+            context = M8InstrumentContext.get_instance()
+            with context.with_instrument(instrument_id=instrument_id):
+                instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
+        else:
+            instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
+            
         return instance
 
     def clone(self):
@@ -154,15 +164,30 @@ class M8PhraseStep(EnumPropertyMixin):
         slot = self.available_slot
         if slot is None:
             raise IndexError("No empty FX slots available in this step")
+        
+        # Set instrument context for FX if there's a valid instrument
+        instrument_id = self.instrument
+        if instrument_id != self.EMPTY_INSTRUMENT:
+            context = M8InstrumentContext.get_instance()
+            with context.with_instrument(instrument_id=instrument_id):
+                self.fx[slot] = M8FXTuple(key=key, value=value)
+        else:
+            self.fx[slot] = M8FXTuple(key=key, value=value)
             
-        self.fx[slot] = M8FXTuple(key=key, value=value)
         return slot
         
     def set_fx(self, key, value, slot):
         if not (0 <= slot < FX_BLOCK_COUNT):
             raise IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
-            
-        self.fx[slot] = M8FXTuple(key=key, value=value)    
+        
+        # Set instrument context for FX if there's a valid instrument
+        instrument_id = self.instrument
+        if instrument_id != self.EMPTY_INSTRUMENT:
+            context = M8InstrumentContext.get_instance()
+            with context.with_instrument(instrument_id=instrument_id):
+                self.fx[slot] = M8FXTuple(key=key, value=value)
+        else:
+            self.fx[slot] = M8FXTuple(key=key, value=value)
     
     def get_fx(self, key):
         slot = self.find_fx_slot(key)
@@ -179,11 +204,22 @@ class M8PhraseStep(EnumPropertyMixin):
         return False
 
     def as_dict(self):
+        # Set up context for FX serialization based on the instrument
+        instrument_id = self.instrument
+        
+        # Serialize FX with instrument context if there's a valid instrument reference
+        if instrument_id != self.EMPTY_INSTRUMENT:
+            context = M8InstrumentContext.get_instance()
+            with context.with_instrument(instrument_id=instrument_id):
+                fx_list = self.fx.as_list()
+        else:
+            fx_list = self.fx.as_list()
+        
         result = {
             "note": self.note,
             "velocity": self.velocity,
-            "instrument": self.instrument,
-            "fx": self.fx.as_list()  # Use the as_list() method for FX tuples
+            "instrument": instrument_id,
+            "fx": fx_list
         }
         return result
 
@@ -195,9 +231,17 @@ class M8PhraseStep(EnumPropertyMixin):
             instrument=data["instrument"]
         )
     
-        # Deserialize FX using the FXTuples' from_list method
+        # Deserialize FX using the FXTuples' from_list method, with instrument context
         if "fx" in data:
-            instance.fx = M8FXTuples.from_list(data["fx"])
+            instrument_id = data["instrument"]
+            
+            # Use instrument context if there's a valid instrument reference
+            if instrument_id != cls.EMPTY_INSTRUMENT:
+                context = M8InstrumentContext.get_instance()
+                with context.with_instrument(instrument_id=instrument_id):
+                    instance.fx = M8FXTuples.from_list(data["fx"])
+            else:
+                instance.fx = M8FXTuples.from_list(data["fx"])
     
         return instance
 
