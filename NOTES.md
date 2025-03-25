@@ -1,3 +1,21 @@
+# Modulator Destination Enum Serialization Issue
+
+## Read Method Issue (25/03/25)
+
+We've discovered an issue with modulator destination enum serialization related to the parent-child relationship between instruments and modulators:
+
+1. When instruments and their modulators are read from binary data, the parent-child relationship isn't properly established
+2. Specifically, the `instrument_type` isn't set on modulators during the read process
+3. This means that modulators don't have the context they need to properly convert numeric enum values to string names
+4. For example, a destination value of 1 should be converted to "VOLUME", but without knowing the parent instrument type, this can't happen automatically
+
+## Steps Needed:
+
+1. Modify the instrument read method to set the `instrument_type` on each modulator after reading it
+2. This would involve updating `M8Instrument.read()` to set the instrument_type on each modulator after reading the modulators
+3. Ensure the instrument type is set before calling as_dict() on modulators
+4. Update tests to verify that enum values are properly serialized after reading from binary
+
 # Notes on standardizing enum string case
 
 ## Changes Made (24/03/25)

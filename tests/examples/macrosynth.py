@@ -18,8 +18,10 @@ class TestMacroSynthMapping(unittest.TestCase):
         self.instrument_dict = self.instrument.as_dict()
     
     def test_macrosynth_type(self):
-        # Verify instrument type
-        self.assertEqual(self.instrument_dict['type'], 1)
+        # Verify instrument type - note that with current serialization it returns a string name
+        # TODO: When read() properly handles parent-child relationships for enum serialization,
+        # this test can be adjusted to expect string values consistently
+        self.assertEqual(self.instrument_dict['type'], "MACROSYNTH")
         # Check that the instrument is recognized as a MacroSynth
         self.assertEqual(self.instrument.instrument_type, "MACROSYNTH")
         
@@ -67,6 +69,8 @@ class TestMacroSynthMapping(unittest.TestCase):
         non_zero_destination_mods = [mod for mod in self.instrument_dict['modulators'] 
                                     if mod['destination'] != 0]
         
+        # TODO: When read() properly handles parent-child relationships for enum serialization,
+        # these should use string names for type and destination
         expected_modulators = [
             {
                 'destination': 1,    # 0x01
@@ -74,7 +78,7 @@ class TestMacroSynthMapping(unittest.TestCase):
                 'attack': 0,         # 0x00
                 'hold': 0,           # 0x00
                 'decay': 128,        # 0x80
-                'type': 0,           # 0x00
+                'type': 'AHD_ENVELOPE',  # 0x00
                 'index': 0           # 0x00
             },
             {
@@ -83,7 +87,7 @@ class TestMacroSynthMapping(unittest.TestCase):
                 'attack': 0,         # 0x00
                 'hold': 0,           # 0x00
                 'decay': 80,         # 0x50
-                'type': 0,           # 0x00
+                'type': 'AHD_ENVELOPE',  # 0x00
                 'index': 1           # 0x01
             }
         ]
