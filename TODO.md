@@ -2,9 +2,6 @@
 
 # medium
 
-- phrase note enum support
-- phrase and fx is_empty()
-
 - fx example
 - TODO.md >> github project
 - 5.0.2 test
@@ -17,7 +14,6 @@
 # beats
 
 - revoke chains model in favour of phrases only
-- replace concat_phrases with m8/tools version
 - check reverb_send, chorus_send refs
 
 # roadmap
@@ -36,6 +32,11 @@
 
 # done
 
+✓ refactor tools/concat_phrases.py and tools/bake_chains.py to use a class-based approach
+✓ update tests for refactored tools
+✓ phrase note enum support (M8PhraseStep with EnumPropertyMixin)
+✓ phrase and fx is_empty() implementation
+✓ replace concat_phrases with m8/tools version
 ✓ optimize enum class loading to cache loaded classes and avoid repeated loading
 ✓ improve error handling for invalid enum values across instruments, modulators, and fx
 ✓ streamline get_enum_paths_for_instrument to handle IntEnum values without redundancy

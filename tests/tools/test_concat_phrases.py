@@ -9,7 +9,7 @@ from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument, M8Instruments
 from m8.api.chains import M8Chain, M8Chains
 from m8.api.phrases import M8Phrase, M8Phrases
-from m8.tools.concat_phrases import get_m8s_files, prompt_for_files, calculate_new_id, concat_projects, main
+from m8.tools.concat_phrases import PhrasesConcatenator, main
 
 
 class TestConcatPhrases(unittest.TestCase):
@@ -66,52 +66,63 @@ class TestConcatPhrases(unittest.TestCase):
         
         return project
     
-    def test_get_m8s_files(self):
-        """Test get_m8s_files function."""
+    def test_find_m8s_files(self):
+        """Test find_m8s_files method."""
+        # Create concatenator
+        concatenator = PhrasesConcatenator()
+        
         # Test with existing directory
-        files = get_m8s_files(self.test_projects_dir)
+        files = concatenator.find_m8s_files(self.test_projects_dir)
         self.assertEqual(len(files), 3)
         
         # Test with pattern
-        files = get_m8s_files(self.test_projects_dir, "_1")
+        files = concatenator.find_m8s_files(self.test_projects_dir, "_1")
         self.assertEqual(len(files), 1)
         
         # Test with non-existent directory
         with self.assertRaises(FileNotFoundError):
-            get_m8s_files(os.path.join(self.temp_dir, "nonexistent"))
+            concatenator.find_m8s_files(os.path.join(self.temp_dir, "nonexistent"))
         
         # Test with file instead of directory
         with self.assertRaises(NotADirectoryError):
-            get_m8s_files(self.project_paths[0])
+            concatenator.find_m8s_files(self.project_paths[0])
     
     @patch('builtins.input')
     def test_prompt_for_files(self, mock_input):
-        """Test prompt_for_files function."""
+        """Test prompt_for_files method."""
+        # Create concatenator
+        concatenator = PhrasesConcatenator()
+        
         # User selects all files
         mock_input.side_effect = ['y', 'y', 'y']
-        selected = prompt_for_files(self.project_paths)
+        selected = concatenator.prompt_for_files(self.project_paths)
         self.assertEqual(len(selected), 3)
         
         # User selects no files
         mock_input.side_effect = ['n', 'n', 'n']
-        selected = prompt_for_files(self.project_paths)
+        selected = concatenator.prompt_for_files(self.project_paths)
         self.assertEqual(len(selected), 0)
         
         # User quits
         mock_input.side_effect = ['y', 'q']
-        selected = prompt_for_files(self.project_paths)
+        selected = concatenator.prompt_for_files(self.project_paths)
         self.assertEqual(len(selected), 0)
     
     def test_calculate_new_id(self):
-        """Test calculate_new_id function."""
-        self.assertEqual(calculate_new_id(0, 0, 0), 0)
-        self.assertEqual(calculate_new_id(5, 5, 1), 15)
-        self.assertEqual(calculate_new_id(23, 3, 2), 23)
+        """Test calculate_new_id method."""
+        concatenator = PhrasesConcatenator()
+        self.assertEqual(concatenator.calculate_new_id(0, 0, 0), 0)
+        self.assertEqual(concatenator.calculate_new_id(5, 5, 1), 15)
+        self.assertEqual(concatenator.calculate_new_id(23, 3, 2), 23)
     
-    def test_concat_projects(self):
-        """Test concat_projects function."""
+    def test_concatenate(self):
+        """Test concatenate method."""
+        # Create concatenator
+        concatenator = PhrasesConcatenator()
+        
         # Load the test projects
         projects = [M8Project.read_from_file(path) for path in self.project_paths]
+        concatenator.projects = projects
         
         # Collect input data for validation
         input_instrument_names = []
@@ -132,7 +143,7 @@ class TestConcatPhrases(unittest.TestCase):
                             break
         
         # Concatenate projects
-        output_project = concat_projects(projects)
+        output_project = concatenator.concatenate()
         
         # Validate the output project - this checks references 
         output_project.validate_references()
@@ -209,7 +220,7 @@ class TestConcatPhrases(unittest.TestCase):
             self.assertEqual(used_columns, expected_columns,
                            f"Projects should be arranged in columns {expected_columns}")
     
-    @patch('m8.tools.concat_phrases.prompt_for_files')
+    @patch('m8.tools.concat_phrases.PhrasesConcatenator.prompt_for_files')
     def test_main_function(self, mock_prompt):
         """Test the main function."""
         # Set up mock to return all test files
@@ -228,13 +239,16 @@ class TestConcatPhrases(unittest.TestCase):
             self.assertTrue(output_project.validate_one_to_one_chains())
             output_project.validate_references()  # This doesn't return a value, just validates
     
-    @patch('m8.tools.concat_phrases.prompt_for_files')
-    def test_main_nonexistent_dir(self, mock_prompt):
+    @patch('m8.tools.concat_phrases.PhrasesConcatenator.find_m8s_files')
+    def test_main_nonexistent_dir(self, mock_find):
         """Test main with non-existent directory."""
+        # Simulate the error that would happen with a non-existent directory
+        mock_find.side_effect = FileNotFoundError("Directory not found")
+        
         with patch('sys.argv', ['concat_phrases.py', os.path.join(self.temp_dir, "nonexistent"), self.out_file]):
             self.assertEqual(main(), 1)
     
-    @patch('m8.tools.concat_phrases.prompt_for_files')
+    @patch('m8.tools.concat_phrases.PhrasesConcatenator.prompt_for_files')
     def test_main_no_files(self, mock_prompt):
         """Test main with no files selected."""
         mock_prompt.return_value = []
@@ -242,7 +256,7 @@ class TestConcatPhrases(unittest.TestCase):
         with patch('sys.argv', ['concat_phrases.py', self.test_projects_dir, self.out_file]):
             self.assertEqual(main(), 1)
     
-    @patch('m8.tools.concat_phrases.prompt_for_files')
+    @patch('m8.tools.concat_phrases.PhrasesConcatenator.prompt_for_files')
     def test_main_creates_output_dir(self, mock_prompt):
         """Test main creates output directory if it doesn't exist."""
         mock_prompt.return_value = self.project_paths

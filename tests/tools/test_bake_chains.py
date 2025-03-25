@@ -2,17 +2,13 @@ import unittest
 import os
 import tempfile
 import shutil
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument
 from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.phrases import M8Phrase
-from m8.tools.bake_chains import (
-    identify_chain_blocks, validate_block_is_square, 
-    prompt_for_blocks, calculate_new_id, bake_chain_block,
-    bake_chains, main
-)
+from m8.tools.bake_chains import ChainBaker, main
 
 
 class TestBakeChains(unittest.TestCase):
@@ -80,8 +76,9 @@ class TestBakeChains(unittest.TestCase):
         return project
     
     def test_identify_chain_blocks(self):
-        """Test identify_chain_blocks function."""
-        blocks = identify_chain_blocks(self.project.song)
+        """Test identify_chain_blocks method."""
+        chain_baker = ChainBaker()
+        blocks = chain_baker.identify_chain_blocks(self.project.song)
         self.assertEqual(len(blocks), 2, "Should identify two blocks")
         
         # First block should be 3x3 starting at row 0
@@ -99,9 +96,11 @@ class TestBakeChains(unittest.TestCase):
             self.assertEqual(len(row), 2, "Each row should have 2 chains")
     
     def test_validate_block_is_square(self):
-        """Test validate_block_is_square function."""
+        """Test validate_block_is_square method."""
+        chain_baker = ChainBaker()
+        
         # Empty block
-        dims = validate_block_is_square([])
+        dims = chain_baker.validate_block_is_square([])
         self.assertEqual(dims, (0, 0), "Empty block should return (0, 0)")
         
         # Valid square block 3x3
@@ -110,7 +109,7 @@ class TestBakeChains(unittest.TestCase):
             [(0, 3), (1, 4), (2, 5)],
             [(0, 6), (1, 7), (2, 8)]
         ]
-        dims = validate_block_is_square(valid_block)
+        dims = chain_baker.validate_block_is_square(valid_block)
         self.assertEqual(dims, (3, 3), "Should correctly identify 3x3 block")
         
         # Non-rectangular block
@@ -120,7 +119,7 @@ class TestBakeChains(unittest.TestCase):
             [(0, 6), (1, 7), (2, 8)]
         ]
         with self.assertRaises(ValueError):
-            validate_block_is_square(non_rectangular)
+            chain_baker.validate_block_is_square(non_rectangular)
         
         # Rectangular but not square
         rectangular = [
@@ -128,46 +127,51 @@ class TestBakeChains(unittest.TestCase):
             [(0, 3), (1, 4), (2, 5)]
         ]
         with self.assertRaises(ValueError):
-            validate_block_is_square(rectangular)
+            chain_baker.validate_block_is_square(rectangular)
     
     @patch('builtins.input')
     def test_prompt_for_blocks(self, mock_input):
-        """Test prompt_for_blocks function."""
-        blocks = identify_chain_blocks(self.project.song)
+        """Test prompt_for_blocks method."""
+        chain_baker = ChainBaker()
+        chain_baker.project = self.project
+        chain_baker.blocks = chain_baker.identify_chain_blocks(self.project.song)
         
         # User selects all blocks
         mock_input.side_effect = ['y', 'y']
-        selected = prompt_for_blocks(blocks, self.project)
+        selected = chain_baker.prompt_for_blocks()
         self.assertEqual(len(selected), 2)
         
         # User selects no blocks
         mock_input.side_effect = ['n', 'n']
-        selected = prompt_for_blocks(blocks, self.project)
+        selected = chain_baker.prompt_for_blocks()
         self.assertEqual(len(selected), 0)
         
         # User quits - this behavior may be different than expected
         # When the user quits, the implementation returns an empty list
         mock_input.side_effect = ['y', 'q']
-        selected = prompt_for_blocks(blocks, self.project)
+        selected = chain_baker.prompt_for_blocks()
         self.assertEqual(len(selected), 0)
     
     def test_calculate_new_id(self):
-        """Test calculate_new_id function."""
-        self.assertEqual(calculate_new_id(0, 0), 0)
-        self.assertEqual(calculate_new_id(5, 1), 15)
-        self.assertEqual(calculate_new_id(3, 2), 23)
+        """Test calculate_new_id method."""
+        chain_baker = ChainBaker()
+        self.assertEqual(chain_baker.calculate_new_id(0, 0), 0)
+        self.assertEqual(chain_baker.calculate_new_id(5, 1), 15)
+        self.assertEqual(chain_baker.calculate_new_id(3, 2), 23)
     
     def test_bake_chain_block(self):
-        """Test bake_chain_block function."""
-        blocks = identify_chain_blocks(self.project.song)
-        start_row, block = blocks[0]  # Use the first 3x3 block
+        """Test bake_chain_block method."""
+        chain_baker = ChainBaker()
+        chain_baker.project = self.project
+        chain_baker.blocks = chain_baker.identify_chain_blocks(self.project.song)
+        start_row, block = chain_baker.blocks[0]  # Use the first 3x3 block
         
         # Count original non-empty chains
         original_non_empty = sum(1 for chain in self.project.chains if not chain.is_empty())
         
         # Bake the chains
         target_row = 10
-        new_chain_ids = bake_chain_block(self.project, (start_row, block), target_row)
+        new_chain_ids = chain_baker.bake_chain_block((start_row, block), target_row)
         
         # Verify new chains were created
         self.assertEqual(len(new_chain_ids), 3, "Should create 3 new chains")
@@ -190,19 +194,21 @@ class TestBakeChains(unittest.TestCase):
     
     @patch('builtins.input')
     def test_bake_chains(self, mock_input):
-        """Test bake_chains function."""
+        """Test bake_chains method."""
         # User selects all blocks
         mock_input.side_effect = ['y', 'y']
         
         # Count original non-empty chains
         original_non_empty = sum(1 for chain in self.project.chains if not chain.is_empty())
         
-        # Identify blocks for comparison
-        blocks = identify_chain_blocks(self.project.song)
-        selected_blocks = blocks  # All blocks are selected due to mock_input
+        # Create chain baker and setup for baking
+        chain_baker = ChainBaker()
+        chain_baker.project = self.project
+        chain_baker.identify_chain_blocks(self.project.song)
         
+        # The mock input will cause all blocks to be selected
         # Bake the chains
-        output_project = bake_chains(self.project)
+        output_project = chain_baker.bake_chains()
         
         # Verify output project is valid
         output_project.validate_references()
@@ -230,15 +236,15 @@ class TestBakeChains(unittest.TestCase):
             if row_idx not in [0, 1, 2, 5, 6] and not output_project.song[row_idx].is_empty():
                 new_rows_with_chains += 1
         
-        self.assertEqual(new_rows_with_chains, len(selected_blocks),
-                        f"Should create {len(selected_blocks)} new rows with chains")
+        self.assertEqual(new_rows_with_chains, len(chain_baker.blocks),
+                        f"Should create {len(chain_baker.blocks)} new rows with chains")
     
-    @patch('m8.tools.bake_chains.prompt_for_blocks')
+    @patch('m8.tools.bake_chains.ChainBaker.prompt_for_blocks')
     def test_main_function(self, mock_prompt):
         """Test the main function."""
-        # Mock blocks
-        blocks = identify_chain_blocks(self.project.song)
-        mock_prompt.return_value = blocks
+        # Mock blocks selection
+        mock_prompt.return_value = [(0, [[(0, 0), (1, 1), (2, 2)], [(0, 3), (1, 4), (2, 5)], [(0, 6), (1, 7), (2, 8)]]), 
+                                   (5, [[(0, 0), (1, 1)], [(0, 3), (1, 4)]])]
         
         # Run main with arguments
         with patch('sys.argv', ['bake_chains.py', self.input_file]):
@@ -264,16 +270,16 @@ class TestBakeChains(unittest.TestCase):
                 if row_idx not in [0, 1, 2, 5, 6] and not output_project.song[row_idx].is_empty():
                     new_rows_with_chains += 1
             
-            self.assertEqual(new_rows_with_chains, len(blocks),
-                            f"Should create {len(blocks)} new rows with chains")
+            self.assertEqual(new_rows_with_chains, 2,
+                            "Should create 2 new rows with chains")
     
-    @patch('m8.tools.bake_chains.prompt_for_blocks')
+    @patch('m8.tools.bake_chains.ChainBaker.prompt_for_blocks')
     def test_main_nonexistent_file(self, mock_prompt):
         """Test main with non-existent file."""
         with patch('sys.argv', ['bake_chains.py', os.path.join(self.temp_dir, "nonexistent.m8s")]):
             self.assertEqual(main(), 1)
     
-    @patch('m8.tools.bake_chains.prompt_for_blocks')
+    @patch('m8.tools.bake_chains.ChainBaker.prompt_for_blocks')
     def test_main_no_blocks(self, mock_prompt):
         """Test main with no blocks selected."""
         mock_prompt.return_value = []
