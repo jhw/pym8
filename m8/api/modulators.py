@@ -271,9 +271,25 @@ class M8Modulator(EnumPropertyMixin):
         return bytes(buffer)
     
     def is_empty(self):
-        """Check if this modulator is empty."""
+        """Check if this modulator is empty.
+        
+        A modulator is considered empty if either:
+        1. It has an invalid type, or
+        2. Its destination is 'OFF' (0x00)
+        """
+        # Check if type is valid
         type_value = getattr(self.type, 'value', self.type) if hasattr(self.type, 'value') else self.type
-        return not isinstance(type_value, int) or type_value not in MODULATOR_TYPES
+        if not isinstance(type_value, int) or type_value not in MODULATOR_TYPES:
+            return True
+            
+        # Check if destination is OFF/0
+        dest_value = self.destination
+        if isinstance(dest_value, str) and dest_value == 'OFF':
+            return True
+        elif isinstance(dest_value, int) and dest_value == 0:
+            return True
+            
+        return False
     
     def clone(self):
         """Create a deep copy of this modulator."""

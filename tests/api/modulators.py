@@ -285,11 +285,15 @@ class TestM8Modulator(unittest.TestCase):
         invalid_type = 0xFF
         mod = M8Modulator()
         mod.type = invalid_type
-        self.assertTrue(mod.is_empty())
+        self.assertTrue(mod.is_empty(), "Invalid type should be considered empty")
         
-        # Non-empty modulator has a valid type
-        mod = M8Modulator(modulator_type="LFO")  # LFO is a valid type
-        self.assertFalse(mod.is_empty())
+        # Default destination is 'OFF' (0x00), should be empty
+        mod = M8Modulator(modulator_type="LFO")  # LFO is a valid type, but default destination is OFF
+        self.assertTrue(mod.is_empty(), "Valid type but OFF destination should be considered empty")
+        
+        # Non-empty modulator has both valid type and non-OFF destination
+        mod = M8Modulator(modulator_type="LFO", destination="VOLUME")  # Valid type and active destination
+        self.assertFalse(mod.is_empty(), "Valid type and active destination should not be empty")
     
     def test_clone(self):
         # Create original modulator
