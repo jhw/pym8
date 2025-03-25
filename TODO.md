@@ -1,11 +1,5 @@
 # short
 
-- Enhance enum property handling (see "Enum Implementation Improvement Opportunities" in NOTES.md)
-  - Develop centralized enum conversion utilities
-  - Standardize serialization API across classes
-  - Add explicit enum validation methods
-  - Reduce boilerplate while maintaining a single, consistent pattern
-
 # medium
 
 - TODO.md >> github project
@@ -27,6 +21,7 @@
 - midi
 - grooves
 - scales
+- enum improvements (see "Enum Implementation Design Decision" in NOTES.md)
 
 # thoughts
 

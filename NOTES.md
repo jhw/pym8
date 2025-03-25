@@ -1,5 +1,43 @@
 # Enum Implementation Improvement Opportunities
 
+## Enum Implementation Design Decision (28/03/25)
+
+The codebase uses two complementary patterns for enum handling that align with the different requirements of their respective class types:
+
+### 1. Fixed-property pattern
+Classes with properties known at design time (M8FXTuple, M8PhraseStep, M8Instrument) use:
+- Direct property access with explicit property names
+- EnumPropertyMixin for enum conversion utilities
+- Properties with well-defined behavior and explicit getters/setters
+- Straightforward serialization/deserialization for known fields
+
+### 2. Dynamic-property pattern
+Classes where properties vary based on configuration (M8InstrumentParams, M8ModulatorParams) use:
+- Generic attribute access (setattr/getattr) based on configuration
+- Parameter definitions loaded from configuration
+- Dictionary-based property storage
+- Flexible serialization/deserialization that adapts to different types
+
+### Design Rationale
+
+We considered implementing a descriptor-based pattern to reduce boilerplate code, but decided against it for several reasons:
+
+1. **Conceptual clarity**: Having two fundamentally different patterns would create a deeper division in the codebase
+2. **Applicability limitations**: The descriptor pattern works well for fixed properties but not for dynamic ones
+3. **Learning curve**: Making part of the codebase use a different pattern would increase cognitive load
+4. **Maintainability**: Having a mix of patterns could lead to inconsistent behavior as the codebase evolves
+
+Instead, we chose to maintain the existing approach, which already uses shared utility functions from `m8/api/utils/enums.py` that provide consistent enum conversion across both patterns.
+
+### Future Improvements
+
+To reduce code duplication while maintaining the consistent approach:
+
+1. **Centralized enum conversion**: Create more utility functions for common patterns
+2. **Unified serialization approaches**: Standardize how as_dict/from_dict methods handle enums
+3. **Explicit validation**: Add methods to verify enum values against their allowed sets
+4. **Better documentation**: Clearly document the intended patterns for both class types
+
 ## Potential Enum Abstraction Improvements
 
 While the current implementation already handles context-aware enum resolution through the dictionary-based configuration and proper context propagation, there are still opportunities to reduce code duplication and improve maintainability:
