@@ -16,6 +16,16 @@ We've discovered an issue with modulator destination enum serialization related 
 3. Ensure the instrument type is set before calling as_dict() on modulators
 4. Update tests to verify that enum values are properly serialized after reading from binary
 
+## Implementation Note (25/03/25)
+
+The implementation for context-aware modulator enums can leverage the existing infrastructure:
+
+1. The codebase already has instrument-specific enums and utilities that support context-aware enum handling
+2. The configuration in format_config.yaml already maps instrument types to their relevant enum mappings
+3. The fix is straightforward - update M8Instrument.read() to establish the parent-child relationship during deserialization
+4. Once the parent context is available, the existing enum utilities will handle conversion between string names and numeric values automatically
+5. This approach completes the consistent external enum usage across the entire API, making modulator destinations use string enum values just like all other enum fields
+
 # Notes on standardizing enum string case
 
 ## Changes Made (24/03/25)
