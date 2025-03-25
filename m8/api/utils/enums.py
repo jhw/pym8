@@ -120,9 +120,14 @@ def load_enum_classes(enum_paths, log_context=None):
             continue
             
         try:
+            # Special handling for hex keys like 0x00 that are in the configuration
+            if enum_path.startswith('0x'):
+                logger.debug(f"Skipping hex value: {enum_path}")
+                continue
+                
             parts = enum_path.rsplit('.', 1)
             if len(parts) != 2:
-                logger.warning(f"Invalid enum path format: {enum_path}")
+                logger.debug(f"Invalid enum path format: {enum_path}")
                 continue
                 
             module_name, class_name = parts

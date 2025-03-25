@@ -217,14 +217,16 @@ class M8Modulator(EnumPropertyMixin):
             
         # Read the combined type/destination byte
         type_dest = data[self.TYPE_DEST_BYTE_OFFSET]
-        self.type, self.destination = split_byte(type_dest)
+        type_id, self.destination = split_byte(type_dest)
         
         # Get the modulator type string from the type ID
-        if self.type in MODULATOR_TYPES:
-            self.modulator_type = MODULATOR_TYPES[self.type]
+        if type_id in MODULATOR_TYPES:
+            # Convert to enum for consistency
+            self.type = M8ModulatorType(type_id)
+            self.modulator_type = MODULATOR_TYPES[type_id]
         else:
             # Raise exception for unknown modulator types
-            raise M8UnknownTypeError(f"Unknown modulator type ID: {self.type}")
+            raise M8UnknownTypeError(f"Unknown modulator type ID: {type_id}")
         
         # Read amount
         self.amount = data[self.AMOUNT_OFFSET]
@@ -393,7 +395,7 @@ class M8Modulators(list):
                         raise M8UnknownTypeError(f"Unknown modulator type ID: {mod_type}")
             except M8UnknownTypeError as e:
                 # Log error but treat as M8Block to be resilient in collection reading
-                logging.warning(f"Block {i}: {str(e)} - treating as raw data block")
+                # logging.warning(f"Block {i}: {str(e)} - treating as raw data block")
                 instance.append(M8Block.read(block_data))
         
         return instance

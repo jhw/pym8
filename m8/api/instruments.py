@@ -295,14 +295,16 @@ class M8Instrument(EnumPropertyMixin):
     
     def _read_common_parameters(self, data):
         """Read common parameters shared by all instrument types."""
-        self.type = data[self.TYPE_OFFSET]
+        type_id = data[self.TYPE_OFFSET]
         
         # Get the instrument type string from the type ID
-        if self.type in INSTRUMENT_TYPES:
-            self.instrument_type = INSTRUMENT_TYPES[self.type]
+        if type_id in INSTRUMENT_TYPES:
+            # Convert to enum for consistency
+            self.type = M8InstrumentType(type_id)
+            self.instrument_type = INSTRUMENT_TYPES[type_id]
         else:
             # Raise exception for unknown instrument types
-            raise M8UnknownTypeError(f"Unknown instrument type ID: {self.type}")
+            raise M8UnknownTypeError(f"Unknown instrument type ID: {type_id}")
         
         # Read name as a string (null-terminated) using utility function
         self.name = read_fixed_string(data, self.NAME_OFFSET, self.NAME_LENGTH)
@@ -634,7 +636,7 @@ class M8Instruments(list):
                         raise M8UnknownTypeError(f"Unknown instrument type ID: {instr_type}")
             except M8UnknownTypeError as e:
                 # Log error but treat as M8Block to be resilient in collection reading
-                logging.warning(f"Block {i}: {str(e)} - treating as raw data block")
+                # logging.warning(f"Block {i}: {str(e)} - treating as raw data block")
                 instance.append(M8Block.read(block_data))
         
         return instance
