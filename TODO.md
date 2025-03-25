@@ -1,6 +1,5 @@
 # short
 
-- Fix YAML serialization of 'OFF' enum values (see NOTES.md)
 - Fix non_zero_destination_mods in example tests
 
 # medium
