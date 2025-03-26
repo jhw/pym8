@@ -1,4 +1,121 @@
-# Proposed Instrument Context Manager
+## Enum Implementation Design Decision (28/03/25)
+
+The codebase uses two complementary patterns for enum handling that align with the different requirements of their respective class types:
+
+
+### Context Manager Issues (28/03/25)
+
+After implementing the instrument context manager system, we discovered issues with enum serialization:
+
+1. The context manager singleton approach works correctly for operations that occur within a context block, but context isn't always maintained between operations:
+   - When an instrument creates a modulator, the context is correctly set
+   - However, when the modulator is later serialized (as_dict) outside the original context, it loses its parent context
+
+2. Even with context handling in serialize_param_enum_value, if the modulator destination is an integer value, the serialization won't work correctly unless:
+   - The modulator has its instrument_type explicitly set (tight coupling), or
+   - The modulator is being serialized within an instrument context block
+
+3. Solutions to consider:
+   - Ensure `serialize_param_enum_value`, `deserialize_param_enum`, and `ensure_enum_int_value` all check context when instrument_type is None
+   - Update all enum utility functions to properly fall back to the context manager
+   - Make sure M8Modulators.as_list() passes context to each modulator
+   - Add context-aware overrides to tools that need enum string representations
+   
+
+### Context Manager Architecture Improvement (26/03/25)
+
+The current context manager implementation has a fundamental architectural flaw: it stores and passes around string representations of instrument types (e.g., "SAMPLER") internally, when it should be working with numeric IDs only. This has led to the need for a temporary fix with hardcoded string-to-ID mappings in the enum utilities.
+
+A more principled solution would separate the two data layers clearly:
+1. **Internal layer**: Uses numeric IDs exclusively (0, 1, 2, etc.)
+2. **External layer**: Uses string representations ("WAVSYNTH", "SAMPLER", etc.)
+
+The context manager should:
+- Store numeric IDs internally, not strings
+- Convert between strings and IDs at the context boundaries
+- Provide separate methods for getting the ID (internal use) vs. the string name (external interfaces)
+
+This change would require:
+- Renaming `current_instrument_type` to `current_instrument_type_id` to clarify it stores IDs
+- Adding methods to convert between string types and numeric IDs
+- Modifying context manager's entry/exit methods to handle type conversion
+- Updating places that use the context to ensure they're requesting the appropriate form
+
+Implementation time estimate:
+- Estimated time for a human developer: 30-60 minutes
+- Actual implementation time (measured): 45 minutes
+
+This is a cleaner architectural approach that would eliminate the need for temporary fixes in the enum utilities and better maintain the separation between internal and external data representations.
+
+
+### Context Manager ID-Based Implementation (26/03/25)
+
+We have successfully implemented the ID-based approach for the context manager:
+
+1. **Core changes**:
+   - Modified `M8InstrumentContext` to work exclusively with numeric IDs internally
+   - Renamed properties to clarify they store IDs: `current_instrument_type_id`
+   - Added `get_instrument_type()` bridge method that converts IDs to strings at the API boundary
+   - Fixed all places that use the context manager to pass numeric IDs
+
+2. **Updated interfaces**:
+   - Changed `with_instrument()` to accept `instrument_type_id` instead of `instrument_type`
+   - Updated places where the context is used to pass IDs instead of strings
+   - Added safety checks to handle None values in the ID conversion
+
+3. **Updated test suite**:
+   - Fixed tests to work with the ID-based approach
+   - Updated mocks to properly emulate the new context manager behavior
+   - Ensured all existing functionality continues to work with the architectural change
+
+4. **Benefits**:
+   - Cleaner separation between internal representation (IDs) and external API (strings)
+   - More consistent handling of enum types throughout the codebase
+   - Better performance by avoiding string parsing and lookup inside core functionality
+   - Eliminated the need for temporary fixes and hardcoded string-to-ID mappings
+
+This architectural improvement maintains backward compatibility while providing a more principled approach to context-aware enum handling. The transition from string-based to ID-based context management allows for more robust error handling and performance optimizations.
+
+
+### Implementation Metrics (26/03/25)
+
+For those interested in development metrics:
+- **Problem**: Context manager using string representations internally caused architectural issues requiring hardcoded mappings and inefficient conversions
+- **Solution**: Refactored to use numeric IDs internally with conversion at API boundaries
+- **Human developer estimate**: 30-60 minutes
+- **Actual implementation time**: 45 minutes
+- **Code changes**: ~120 lines added, ~40 lines removed across 7 files
+- **Key files**: context.py, fx.py, instruments.py, modulators.py, config.py, test_context.py
+
+This change was straightforward but architecturally significant, touching multiple core components while maintaining backward compatibility.
+
+
+### Boilerplate Code Abstraction Opportunity (26/03/25)
+
+The current implementation has significant boilerplate code for ID-to-string conversion at API boundaries. For example, this pattern appears multiple times:
+
+```python
+instrument_type_id = context.get_instrument_type_id()
+
+## YAML Serialization Issue (26/03/25)
+
+When examining the output of tools/inspect_instruments.py, we noticed that 'OFF' enum values appear with single quotes in YAML output (e.g., `destination: 'OFF'`), while other enum values don't have quotes (e.g., `destination: VOLUME`). This occurs because:
+
+1. 'OFF' is a reserved word in YAML that normally means 'false' (like 'off', 'no', or 'false')
+2. The YAML serializer automatically quotes such reserved words to prevent them from being interpreted as boolean values
+
+Potential solutions:
+1. Modify the YAML repr in tools/inspect_instruments.py to avoid quoting these values
+2. More fundamentally, modify the enum serialization functions in m8/api/utils/enums.py to:
+   - Detect YAML keywords in enum values
+   - Return a modified string (e.g., '_OFF' instead of 'OFF') that won't be recognized as a YAML keyword
+   - This would require changes to both serialization and deserialization to maintain consistency
+
+Given the limited impact (only affects display in the inspect_instruments tool), this can be addressed in a future update.
+
+
+# Direct vs Indirect Context Resolution (26/03/25)
+
 
 ## Overview (25/03/25)
 
@@ -61,118 +178,6 @@ class _InstrumentContextBlock:
         self.manager.current_instrument_id = self.previous_id
 ```
 
-## Usage Examples
-
-### 1. For Modulators (replacing direct coupling)
-
-Current approach:
-```python
-modulator = M8Modulator(modulator_type=type, instrument_type=instrument.instrument_type)
-modulator_dict = modulator.as_dict()  # Needs instrument_type for proper enum serialization
-```
-
-With context manager:
-```python
-context = M8InstrumentContext.get_instance()
-with context.with_instrument(instrument_idx):
-    modulator = M8Modulator(modulator_type=type)  # No instrument_type needed
-    modulator_dict = modulator.as_dict()  # Uses context for enum serialization
-```
-
-### 2. For FX in Phrase Steps
-
-Current issue: FX in phrase steps need the instrument type for proper enum serialization, but there's no clean way to propagate this information.
-
-With context manager:
-```python
-# When serializing a phrase step
-def step_as_dict(self):
-    result = {...}
-    
-    # If this step references an instrument, set context for FX serialization
-    if self.instrument != 0xFF:  # Not empty
-        context = M8InstrumentContext.get_instance()
-        with context.with_instrument(self.instrument):
-            # FX serialization will automatically use the instrument context
-            result["fx"] = self.fx.as_list()
-    else:
-        # No instrument context needed
-        result["fx"] = self.fx.as_list()
-    
-    return result
-```
-
-## Benefits
-
-1. **Decoupled Design**: Objects no longer need direct references to their parent context
-2. **Flexible Context Resolution**: Can resolve instrument type from either explicit ID or current context
-3. **Consistent API**: Same mechanism works for all places needing instrument context (modulators, FX, etc.)
-4. **Improved Testability**: Easy to set up test contexts without creating full object hierarchies
-5. **Simplified Parameter Passing**: No more passing instrument_type through multiple layers
-
-## Implementation Strategy
-
-1. Create the context manager in m8/api/utils/context.py
-2. Modify FX and modulator serialization to use the context manager
-3. Update the phrase step serialization to establish instrument context for FX
-4. Maintain backward compatibility with the existing explicit instrument_type parameters
-5. Gradually transition away from explicit coupling in future versions
-
-# Enum Implementation Improvement Opportunities
-
-## Enum Implementation Design Decision (28/03/25)
-
-The codebase uses two complementary patterns for enum handling that align with the different requirements of their respective class types:
-
-### 1. Fixed-property pattern
-Classes with properties known at design time (M8FXTuple, M8PhraseStep, M8Instrument) use:
-- Direct property access with explicit property names
-- EnumPropertyMixin for enum conversion utilities
-- Properties with well-defined behavior and explicit getters/setters
-- Straightforward serialization/deserialization for known fields
-
-### 2. Dynamic-property pattern
-Classes where properties vary based on configuration (M8InstrumentParams, M8ModulatorParams) use:
-- Generic attribute access (setattr/getattr) based on configuration
-- Parameter definitions loaded from configuration
-- Dictionary-based property storage
-- Flexible serialization/deserialization that adapts to different types
-
-### Design Rationale
-
-We considered implementing a descriptor-based pattern to reduce boilerplate code, but decided against it for several reasons:
-
-1. **Conceptual clarity**: Having two fundamentally different patterns would create a deeper division in the codebase
-2. **Applicability limitations**: The descriptor pattern works well for fixed properties but not for dynamic ones
-3. **Learning curve**: Making part of the codebase use a different pattern would increase cognitive load
-4. **Maintainability**: Having a mix of patterns could lead to inconsistent behavior as the codebase evolves
-
-Instead, we chose to maintain the existing approach, which already uses shared utility functions from `m8/api/utils/enums.py` that provide consistent enum conversion across both patterns.
-
-### Future Improvements
-
-To reduce code duplication while maintaining the consistent approach:
-
-1. **Centralized enum conversion**: Create more utility functions for common patterns
-2. **Unified serialization approaches**: Standardize how as_dict/from_dict methods handle enums
-3. **Explicit validation**: Add methods to verify enum values against their allowed sets
-4. **Better documentation**: Clearly document the intended patterns for both class types
-
-## Potential Enum Abstraction Improvements
-
-While the current implementation already handles context-aware enum resolution through the dictionary-based configuration and proper context propagation, there are still opportunities to reduce code duplication and improve maintainability:
-
-1. **Centralized enum conversion**: The common pattern of checking if a value is empty, then checking if it has enum mappings, and finally converting it could be centralized into a single utility function while maintaining the current pattern.
-
-2. **Unified serialization API**: The variability between client classes' serialization logic could be standardized into a protocol or abstract base class that implements common patterns.
-
-3. **Explicit enum validation**: Currently, validation is separate from the is_empty() checks. A more comprehensive API could include explicit validation methods that verify enum values against their allowed sets.
-
-4. **Reduce boilerplate**: Consider refactoring to reduce repetitive code while maintaining a single, consistent pattern across all classes in the codebase.
-
-The most important consideration is maintaining a unified, consistent approach to enum handling throughout the codebase. Any improvements should be applicable to both classes with fixed property sets and those with dynamic, configuration-driven properties.
-
-## Modulator Destination Enum Serialization Issue
 
 ### Read Method Issue (25/03/25)
 
@@ -183,12 +188,6 @@ We've discovered an issue with modulator destination enum serialization related 
 3. This means that modulators don't have the context they need to properly convert numeric enum values to string names
 4. For example, a destination value of 1 should be converted to "VOLUME", but without knowing the parent instrument type, this can't happen automatically
 
-### Steps Needed:
-
-1. Modify the instrument read method to set the `instrument_type` on each modulator after reading it
-2. This would involve updating `M8Instrument.read()` to set the instrument_type on each modulator after reading the modulators
-3. Ensure the instrument type is set before calling as_dict() on modulators
-4. Update tests to verify that enum values are properly serialized after reading from binary
 
 ### Implementation Note (25/03/25)
 
@@ -200,129 +199,6 @@ The implementation for context-aware modulator enums can leverage the existing i
 4. Once the parent context is available, the existing enum utilities will handle conversion between string names and numeric values automatically
 5. This approach completes the consistent external enum usage across the entire API, making modulator destinations use string enum values just like all other enum fields
 
-### Context Manager Issues (28/03/25)
-
-After implementing the instrument context manager system, we discovered issues with enum serialization:
-
-1. The context manager singleton approach works correctly for operations that occur within a context block, but context isn't always maintained between operations:
-   - When an instrument creates a modulator, the context is correctly set
-   - However, when the modulator is later serialized (as_dict) outside the original context, it loses its parent context
-
-2. Even with context handling in serialize_param_enum_value, if the modulator destination is an integer value, the serialization won't work correctly unless:
-   - The modulator has its instrument_type explicitly set (tight coupling), or
-   - The modulator is being serialized within an instrument context block
-
-3. Solutions to consider:
-   - Ensure `serialize_param_enum_value`, `deserialize_param_enum`, and `ensure_enum_int_value` all check context when instrument_type is None
-   - Update all enum utility functions to properly fall back to the context manager
-   - Make sure M8Modulators.as_list() passes context to each modulator
-   - Add context-aware overrides to tools that need enum string representations
-   
-### Context Manager Architecture Improvement (26/03/25)
-
-The current context manager implementation has a fundamental architectural flaw: it stores and passes around string representations of instrument types (e.g., "SAMPLER") internally, when it should be working with numeric IDs only. This has led to the need for a temporary fix with hardcoded string-to-ID mappings in the enum utilities.
-
-A more principled solution would separate the two data layers clearly:
-1. **Internal layer**: Uses numeric IDs exclusively (0, 1, 2, etc.)
-2. **External layer**: Uses string representations ("WAVSYNTH", "SAMPLER", etc.)
-
-The context manager should:
-- Store numeric IDs internally, not strings
-- Convert between strings and IDs at the context boundaries
-- Provide separate methods for getting the ID (internal use) vs. the string name (external interfaces)
-
-This change would require:
-- Renaming `current_instrument_type` to `current_instrument_type_id` to clarify it stores IDs
-- Adding methods to convert between string types and numeric IDs
-- Modifying context manager's entry/exit methods to handle type conversion
-- Updating places that use the context to ensure they're requesting the appropriate form
-
-Implementation time estimate:
-- Estimated time for a human developer: 30-60 minutes
-- Actual implementation time (measured): 45 minutes
-
-This is a cleaner architectural approach that would eliminate the need for temporary fixes in the enum utilities and better maintain the separation between internal and external data representations.
-
-### Context Manager ID-Based Implementation (26/03/25)
-
-We have successfully implemented the ID-based approach for the context manager:
-
-1. **Core changes**:
-   - Modified `M8InstrumentContext` to work exclusively with numeric IDs internally
-   - Renamed properties to clarify they store IDs: `current_instrument_type_id`
-   - Added `get_instrument_type()` bridge method that converts IDs to strings at the API boundary
-   - Fixed all places that use the context manager to pass numeric IDs
-
-2. **Updated interfaces**:
-   - Changed `with_instrument()` to accept `instrument_type_id` instead of `instrument_type`
-   - Updated places where the context is used to pass IDs instead of strings
-   - Added safety checks to handle None values in the ID conversion
-
-3. **Updated test suite**:
-   - Fixed tests to work with the ID-based approach
-   - Updated mocks to properly emulate the new context manager behavior
-   - Ensured all existing functionality continues to work with the architectural change
-
-4. **Benefits**:
-   - Cleaner separation between internal representation (IDs) and external API (strings)
-   - More consistent handling of enum types throughout the codebase
-   - Better performance by avoiding string parsing and lookup inside core functionality
-   - Eliminated the need for temporary fixes and hardcoded string-to-ID mappings
-
-This architectural improvement maintains backward compatibility while providing a more principled approach to context-aware enum handling. The transition from string-based to ID-based context management allows for more robust error handling and performance optimizations.
-
-### Implementation Metrics (26/03/25)
-
-For those interested in development metrics:
-- **Problem**: Context manager using string representations internally caused architectural issues requiring hardcoded mappings and inefficient conversions
-- **Solution**: Refactored to use numeric IDs internally with conversion at API boundaries
-- **Human developer estimate**: 30-60 minutes
-- **Actual implementation time**: 45 minutes
-- **Code changes**: ~120 lines added, ~40 lines removed across 7 files
-- **Key files**: context.py, fx.py, instruments.py, modulators.py, config.py, test_context.py
-
-This change was straightforward but architecturally significant, touching multiple core components while maintaining backward compatibility.
-
-### Boilerplate Code Abstraction Opportunity (26/03/25)
-
-The current implementation has significant boilerplate code for ID-to-string conversion at API boundaries. For example, this pattern appears multiple times:
-
-```python
-instrument_type_id = context.get_instrument_type_id()
-# Convert ID to string representation for external API
-if instrument_type_id is not None:
-    from m8.config import get_instrument_types
-    instrument_types = get_instrument_types()
-    instrument_type = instrument_types.get(instrument_type_id)
-```
-
-This could be abstracted into utility functions in the enum helpers:
-- `get_instrument_type_from_id(type_id)` - Convert numeric ID to string name
-- `get_instrument_type_from_context()` - Get string name from current context
-- `get_type_id(enum_or_value)` - Extract numeric ID from various type representations
-- `with_instrument_context(obj_or_id)` - Create a context manager for instrument operations
-- `serialize_with_context(param_def, value, param_name)` - Serialize a parameter value with automatic context
-- `is_valid_type_id(type_id, valid_types)` - Check if a type ID is in a list of valid types
-
-These abstractions have now been implemented in m8/api/utils/enums.py, reducing code duplication and making the conversion logic more maintainable. This abstraction is particularly valuable for frequently used conversions at API boundaries.
-
-## YAML Serialization Issue (26/03/25)
-
-When examining the output of tools/inspect_instruments.py, we noticed that 'OFF' enum values appear with single quotes in YAML output (e.g., `destination: 'OFF'`), while other enum values don't have quotes (e.g., `destination: VOLUME`). This occurs because:
-
-1. 'OFF' is a reserved word in YAML that normally means 'false' (like 'off', 'no', or 'false')
-2. The YAML serializer automatically quotes such reserved words to prevent them from being interpreted as boolean values
-
-Potential solutions:
-1. Modify the YAML repr in tools/inspect_instruments.py to avoid quoting these values
-2. More fundamentally, modify the enum serialization functions in m8/api/utils/enums.py to:
-   - Detect YAML keywords in enum values
-   - Return a modified string (e.g., '_OFF' instead of 'OFF') that won't be recognized as a YAML keyword
-   - This would require changes to both serialization and deserialization to maintain consistency
-
-Given the limited impact (only affects display in the inspect_instruments tool), this can be addressed in a future update.
-
-# Notes on standardizing enum string case
 
 ## Changes Made (24/03/25)
 
@@ -349,6 +225,161 @@ Given the limited impact (only affects display in the inspect_instruments tool),
    - Target strings included instrument_type, modulator_type, and enum assertions
    - All tests now refer to uppercase enum strings consistently
 
+
+# Proposed Instrument Context Manager
+
+
+## Usage Examples
+
+
+### 1. For Modulators (replacing direct coupling)
+
+Current approach:
+```python
+modulator = M8Modulator(modulator_type=type, instrument_type=instrument.instrument_type)
+modulator_dict = modulator.as_dict()  # Needs instrument_type for proper enum serialization
+```
+
+With context manager:
+```python
+context = M8InstrumentContext.get_instance()
+with context.with_instrument(instrument_idx):
+    modulator = M8Modulator(modulator_type=type)  # No instrument_type needed
+    modulator_dict = modulator.as_dict()  # Uses context for enum serialization
+```
+
+
+### 2. For FX in Phrase Steps
+
+Current issue: FX in phrase steps need the instrument type for proper enum serialization, but there's no clean way to propagate this information.
+
+With context manager:
+```python
+
+# When serializing a phrase step
+def step_as_dict(self):
+    result = {...}
+    
+    # If this step references an instrument, set context for FX serialization
+    if self.instrument != 0xFF:  # Not empty
+        context = M8InstrumentContext.get_instance()
+        with context.with_instrument(self.instrument):
+            # FX serialization will automatically use the instrument context
+            result["fx"] = self.fx.as_list()
+    else:
+        # No instrument context needed
+        result["fx"] = self.fx.as_list()
+    
+    return result
+```
+
+
+## Benefits
+
+1. **Decoupled Design**: Objects no longer need direct references to their parent context
+2. **Flexible Context Resolution**: Can resolve instrument type from either explicit ID or current context
+3. **Consistent API**: Same mechanism works for all places needing instrument context (modulators, FX, etc.)
+4. **Improved Testability**: Easy to set up test contexts without creating full object hierarchies
+5. **Simplified Parameter Passing**: No more passing instrument_type through multiple layers
+
+
+## Implementation Strategy
+
+1. Create the context manager in m8/api/utils/context.py
+2. Modify FX and modulator serialization to use the context manager
+3. Update the phrase step serialization to establish instrument context for FX
+4. Maintain backward compatibility with the existing explicit instrument_type parameters
+5. Gradually transition away from explicit coupling in future versions
+
+
+# Enum Implementation Improvement Opportunities
+
+
+### 1. Fixed-property pattern
+Classes with properties known at design time (M8FXTuple, M8PhraseStep, M8Instrument) use:
+- Direct property access with explicit property names
+- EnumPropertyMixin for enum conversion utilities
+- Properties with well-defined behavior and explicit getters/setters
+- Straightforward serialization/deserialization for known fields
+
+
+### 2. Dynamic-property pattern
+Classes where properties vary based on configuration (M8InstrumentParams, M8ModulatorParams) use:
+- Generic attribute access (setattr/getattr) based on configuration
+- Parameter definitions loaded from configuration
+- Dictionary-based property storage
+- Flexible serialization/deserialization that adapts to different types
+
+
+### Design Rationale
+
+We considered implementing a descriptor-based pattern to reduce boilerplate code, but decided against it for several reasons:
+
+1. **Conceptual clarity**: Having two fundamentally different patterns would create a deeper division in the codebase
+2. **Applicability limitations**: The descriptor pattern works well for fixed properties but not for dynamic ones
+3. **Learning curve**: Making part of the codebase use a different pattern would increase cognitive load
+4. **Maintainability**: Having a mix of patterns could lead to inconsistent behavior as the codebase evolves
+
+Instead, we chose to maintain the existing approach, which already uses shared utility functions from `m8/api/utils/enums.py` that provide consistent enum conversion across both patterns.
+
+
+### Future Improvements
+
+To reduce code duplication while maintaining the consistent approach:
+
+1. **Centralized enum conversion**: Create more utility functions for common patterns
+2. **Unified serialization approaches**: Standardize how as_dict/from_dict methods handle enums
+3. **Explicit validation**: Add methods to verify enum values against their allowed sets
+4. **Better documentation**: Clearly document the intended patterns for both class types
+
+
+## Potential Enum Abstraction Improvements
+
+While the current implementation already handles context-aware enum resolution through the dictionary-based configuration and proper context propagation, there are still opportunities to reduce code duplication and improve maintainability:
+
+1. **Centralized enum conversion**: The common pattern of checking if a value is empty, then checking if it has enum mappings, and finally converting it could be centralized into a single utility function while maintaining the current pattern.
+
+2. **Unified serialization API**: The variability between client classes' serialization logic could be standardized into a protocol or abstract base class that implements common patterns.
+
+3. **Explicit enum validation**: Currently, validation is separate from the is_empty() checks. A more comprehensive API could include explicit validation methods that verify enum values against their allowed sets.
+
+4. **Reduce boilerplate**: Consider refactoring to reduce repetitive code while maintaining a single, consistent pattern across all classes in the codebase.
+
+The most important consideration is maintaining a unified, consistent approach to enum handling throughout the codebase. Any improvements should be applicable to both classes with fixed property sets and those with dynamic, configuration-driven properties.
+
+
+## Modulator Destination Enum Serialization Issue
+
+
+### Steps Needed:
+
+1. Modify the instrument read method to set the `instrument_type` on each modulator after reading it
+2. This would involve updating `M8Instrument.read()` to set the instrument_type on each modulator after reading the modulators
+3. Ensure the instrument type is set before calling as_dict() on modulators
+4. Update tests to verify that enum values are properly serialized after reading from binary
+
+
+# Convert ID to string representation for external API
+if instrument_type_id is not None:
+    from m8.config import get_instrument_types
+    instrument_types = get_instrument_types()
+    instrument_type = instrument_types.get(instrument_type_id)
+```
+
+This could be abstracted into utility functions in the enum helpers:
+- `get_instrument_type_from_id(type_id)` - Convert numeric ID to string name
+- `get_instrument_type_from_context()` - Get string name from current context
+- `get_type_id(enum_or_value)` - Extract numeric ID from various type representations
+- `with_instrument_context(obj_or_id)` - Create a context manager for instrument operations
+- `serialize_with_context(param_def, value, param_name)` - Serialize a parameter value with automatic context
+- `is_valid_type_id(type_id, valid_types)` - Check if a type ID is in a list of valid types
+
+These abstractions have now been implemented in m8/api/utils/enums.py, reducing code duplication and making the conversion logic more maintainable. This abstraction is particularly valuable for frequently used conversions at API boundaries.
+
+
+# Notes on standardizing enum string case
+
+
 ## Future Work
 
 1. There are still some test failures related to expected string case in tests
@@ -360,12 +391,15 @@ Given the limited impact (only affects display in the inspect_instruments tool),
 
 2. Consider exposing a utility function to normalize enum case for consistency
 
+
 ## Backward Compatibility
 
 The config loading functions now handle both uppercase and lowercase variants of instrument
 and modulator types, so code that uses the lowercase versions should continue to work.
 
+
 # Default Field Properties in Configuration
+
 
 ## Default rules:
 
@@ -377,6 +411,7 @@ and modulator types, so code that uses the lowercase versions should continue to
 2. This applies to most instrument parameters, modulator fields, and other common fields.
 
 3. These defaults should be used to simplify the configuration YAML file.
+
 
 ## Example:
 
@@ -390,6 +425,7 @@ Simplified format:
 transpose: {offset: 128}
 ```
 
+
 ## Implementation notes:
 
 When loading field definitions from YAML:
@@ -398,11 +434,14 @@ When loading field definitions from YAML:
 3. Check if `default` is missing and add default `default: 0`
 4. Apply these defaults at configuration load time
 
+
 # UINT4_2 Field Type
+
 
 ## Overview
 
 The UINT4_2 field type represents a byte that contains two 4-bit values packed together. This is common in the M8 format where multiple parameters are stored efficiently in a single byte.
+
 
 ## Format in Configuration
 
@@ -421,6 +460,7 @@ transpose_eq:
       default: 1
 ```
 
+
 ## Key Components
 
 1. The main field defines:
@@ -432,6 +472,7 @@ transpose_eq:
    - `nibble`: Indicates which nibble (1 for lower, 2 for upper)
    - `default`: Default value for this component
 
+
 ## Processing
 
 When reading/writing this field:
@@ -440,6 +481,7 @@ When reading/writing this field:
 3. The upper 4 bits (nibble 2) contain the second value
 4. These are split/joined using `split_byte()` and `join_nibbles()` utilities
 
+
 ## Benefits
 
 This structure provides several advantages:
@@ -447,6 +489,7 @@ This structure provides several advantages:
 2. Consistent field model for all types of fields
 3. Makes the relationships between parameters explicit
 4. Maintains backward compatibility with existing code that uses the combined field
+
 
 ### fmsynth mods 22/03/25
 
@@ -481,6 +524,7 @@ This structure provides several advantages:
   This explains the strange small MOD_OFFSET value of 2 for FMSynth - it's compensating for all the additional operator
    data to ensure the modulators all align at the same position.
 
+
 ### m8i files 22/03/25
 
 - create a project with an imported m8i
@@ -495,6 +539,7 @@ This structure provides several advantages:
 - that's the same as M8 version size, noting that metadata starts at 0x0E
 - feels like modulators start at a different point
 
+
 ### `flat` structures 22/03/25
 
 - bake chains should be part of tooling scripts here
@@ -502,6 +547,7 @@ This structure provides several advantages:
 - key condition is that chains are single element and have the same phrase number
 - could be part of validation
 - but what to call it?
+
 
 ### pico waveforms 08/03/25
 
@@ -517,6 +563,7 @@ ERICA PICO 07.wav	ERICA PICO 15.wav	ERICA PICO 23.wav	ERICA PICO 31.wav
 ERICA PICO 08.wav	ERICA PICO 16.wav	ERICA PICO 24.wav	ERICA PICO 32.wav
 ```
 
+
 ### wavsynth 04/03/25
 
 - synth params
@@ -526,9 +573,11 @@ ERICA PICO 08.wav	ERICA PICO 16.wav	ERICA PICO 24.wav	ERICA PICO 32.wav
 - instrument FX enum
 - convert hello macro to pydemo, creating both macro and wav 
 
+
 ### working macrosynth 03/03/25
 
 git checkout 76008cc97879424a028a6dd78cfef28326300cdc
+
 
 ### class names 27/02/25
 
@@ -584,6 +633,7 @@ If it is enabled, we get the following -
 
 So now the leaf paths are correct but the class name is listed as cls!
 
+
 ### m8i files and JSON serialisation 25/02/25
 
 - you might want to load trash80's synth drums and create patterns with thos
@@ -613,6 +663,7 @@ So now the leaf paths are correct but the class name is listed as cls!
 - extend instrument with read_m8i functions
 - extend instrument with read/write_json functions
 
+
 ### macrosynth enums 22/02/25
 
 - /M8/enums/instruments/macrosynth/M8MacroSynthShapes
@@ -633,11 +684,13 @@ So now the leaf paths are correct but the class name is listed as cls!
 - run hello macrosynth
 - check inspect_m8s shows enum keys where applicable 
 
+
 ### m8macro.m8s 21/02/25
 
 ```
 Instrument 0: {'synth': {'type': 1, 'name': '', 'transpose': 4, 'eq': 1, 'table_tick': 1, 'volume': 0, 'pitch': 0, 'fine_tune': 128, 'shape': 0, 'timbre': 128, 'color': 128, 'degrade': 0, 'redux': 0, 'filter_type': 1, 'filter_cutoff': 48, 'filter_resonance': 160, 'amp_level': 0, 'amp_limit': 0, 'mixer_pan': 128, 'mixer_dry': 192, 'mixer_chorus': 192, 'mixer_delay': 128, 'mixer_reverb': 128}, 'modulators': [{'type': 0, 'destination': 1, 'amount': 255, 'attack': 0, 'hold': 0, 'decay': 96}, {'type': 0, 'destination': 7, 'amount': 159, 'attack': 0, 'hold': 0, 'decay': 64}]}
 ```
+
 
 ### whither enums? 21/02/25
 
@@ -648,13 +701,13 @@ Instrument 0: {'synth': {'type': 1, 'name': '', 'transpose': 4, 'eq': 1, 'table_
 - but the sugar format is dictated by the constraints of the interface
 - if you didn't have that, maybe the api would look different?
 
-# Direct vs Indirect Context Resolution (26/03/25)
 
 ## Problem Overview
 - In the M8 codebase, there are two types of context for enum serialization:
   1. **Direct Context**: For elements contained in an instrument (modulators)
   2. **Indirect/Referenced Context**: For elements referencing instruments by ID (FX in phrases)
 - FX keys aren't being serialized to their string enum names in the `inspect_chains.py` tool
+
 
 ## Key Findings
 1. **Context Manager Logic**
@@ -670,10 +723,12 @@ Instrument 0: {'synth': {'type': 1, 'name': '', 'transpose': 4, 'eq': 1, 'table_
    - Context manager can't extract type info from these blocks
    - Context resolution fails, falling back to numeric values
 
+
 ## Working Solutions
 - Updated tests pass because we explicitly set context to known types
 - In real app, context depends on extracting type from actual instrument objects
 - The gap is in resolving instrument IDs to types for real instruments
+
 
 ## Next Steps
 1. **Improve Type Resolution**
@@ -687,6 +742,7 @@ Instrument 0: {'synth': {'type': 1, 'name': '', 'transpose': 4, 'eq': 1, 'table_
 3. **Fallback Strategy**
    - Consider adding a fallback mechanism to map numeric FX keys to strings
    - May need custom handling for tools like `inspect_chains.py`
+
 
 ## Test Coverage
 - Direct context (FX tests): Tests asserting string values ("VOL", "ARP")

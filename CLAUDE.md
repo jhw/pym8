@@ -39,6 +39,11 @@
 - Check TODO.md for prioritized tasks
 - When completing a task, move it from its section to the "done" section in TODO.md
 
+## Notes Management
+- When adding new notes to NOTES.md, always add them at the top of the file
+- Include the current date in dd/mm/yyyy format in parentheses in the section header
+- Example: `## New Feature Implementation (26/03/2025)`
+
 ## Git Workflow
 - Always work in branch `claude-code`
 - Stage files incrementally in logical groups for substantial changes

@@ -1,6 +1,5 @@
 # short
 
-- Sort notes
 - Audit all serialization tests to ensure they assert against string enum values, not integers
 - Fix discrepancy between test and real-world FX key serialization (focus on M8Block handling)
 
@@ -27,6 +26,7 @@
 
 # done
 
+- Sort notes
 - Speech input support for Claude
 ✓ Rename concat_phrases.py to inspect_phrases.py
 ✓ Abstract ID-to-string conversion boilerplate code into utility functions in enum helpers
