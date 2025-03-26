@@ -299,8 +299,12 @@ if instrument_type_id is not None:
 This could be abstracted into utility functions in the enum helpers:
 - `get_instrument_type_from_id(type_id)` - Convert numeric ID to string name
 - `get_instrument_type_from_context()` - Get string name from current context
+- `get_type_id(enum_or_value)` - Extract numeric ID from various type representations
+- `with_instrument_context(obj_or_id)` - Create a context manager for instrument operations
+- `serialize_with_context(param_def, value, param_name)` - Serialize a parameter value with automatic context
+- `is_valid_type_id(type_id, valid_types)` - Check if a type ID is in a list of valid types
 
-This would reduce code duplication and make the conversion logic more maintainable. This kind of abstraction would be particularly valuable for frequently used conversions at API boundaries.
+These abstractions have now been implemented in m8/api/utils/enums.py, reducing code duplication and making the conversion logic more maintainable. This abstraction is particularly valuable for frequently used conversions at API boundaries.
 
 ## YAML Serialization Issue (26/03/25)
 

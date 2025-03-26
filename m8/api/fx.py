@@ -1,6 +1,8 @@
 from m8.api import M8ValidationError
-from m8.api.utils.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum
-from m8.api.utils.context import M8InstrumentContext
+from m8.api.utils.enums import (
+    EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum,
+    M8InstrumentContext, get_instrument_type_from_context, get_type_id, with_instrument_context
+)
 from m8.config import load_format_config
 
 # Load configuration
@@ -19,15 +21,10 @@ class M8FXTuple(EnumPropertyMixin):
     DEFAULT_VALUE = config["constants"]["default_value"]
     
     def __init__(self, key=EMPTY_KEY, value=DEFAULT_VALUE, instrument_type=None):
-        # Get instrument context if not explicitly provided
+        # Get instrument type from context if not explicitly provided
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for external API
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
             
         self._instrument_type = instrument_type
         self._data = bytearray([0, 0])  # Initialize with zeros
@@ -93,13 +90,8 @@ class M8FXTuple(EnumPropertyMixin):
         # Get instrument type from instance or context
         instrument_type = self._instrument_type
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for external API
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
             
         # If we have instrument type and there are enum mappings, convert to string
         if instrument_type is not None and "enums" in config["fields"]["key"]:
@@ -118,13 +110,8 @@ class M8FXTuple(EnumPropertyMixin):
         # Get instrument type from instance or context
         instrument_type = self._instrument_type
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for external API
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
             
         # Convert string enum to numeric value if needed
         if isinstance(value, str) and value != self.EMPTY_KEY and instrument_type is not None:
@@ -177,15 +164,10 @@ class M8FXTuples(list):
     def __init__(self, instrument_type=None):
         super().__init__()
         
-        # Get instrument context if not explicitly provided
+        # Get instrument type from context if not explicitly provided
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for external API
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
             
         self._instrument_type = instrument_type
         
@@ -195,15 +177,10 @@ class M8FXTuples(list):
     
     @classmethod
     def read(cls, data, instrument_type=None):
-        # Get instrument context if not explicitly provided
+        # Get instrument type from context if not explicitly provided
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for external API
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
             
         instance = cls.__new__(cls)  # Create instance without calling __init__
         list.__init__(instance)  # Initialize the list properly
@@ -220,13 +197,8 @@ class M8FXTuples(list):
         # Use existing instrument_type or get from context
         instrument_type = self._instrument_type
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for external API
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
         
         instance = self.__class__(instrument_type=instrument_type)
         instance.clear()  # Remove default items
@@ -255,26 +227,19 @@ class M8FXTuples(list):
         # Get instrument type from instance or context
         instrument_type = self._instrument_type
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type = context.get_instrument_type()
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
         
         # Only include non-empty tuples with their position index
         tuples = []
         for i, fx_tuple in enumerate(self):
             if not fx_tuple.is_empty():
                 # Use the instrument context for serialization
-                context = M8InstrumentContext.get_instance()
+                from m8.api.utils.enums import get_type_id, with_instrument_context
                 # Get type ID
-                if isinstance(instrument_type, int):
-                    instrument_type_id = instrument_type
-                elif hasattr(instrument_type, 'value'):
-                    instrument_type_id = instrument_type.value
-                else:
-                    # For string types, lookup the ID
-                    from m8.config import get_instrument_type_id
-                    instrument_type_id = get_instrument_type_id(instrument_type)
-                    
-                with context.with_instrument(instrument_type_id=instrument_type_id):
+                instrument_type_id = get_type_id(instrument_type)
+                
+                with with_instrument_context(instrument_type_id):
                     tuple_dict = fx_tuple.as_dict()
                     # Add index to track position
                     tuple_dict["index"] = i

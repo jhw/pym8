@@ -2,8 +2,9 @@ from m8.api import (
     M8Block, load_class, split_byte, join_nibbles, serialize_enum, deserialize_enum,
     deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
 )
-from m8.api.utils.enums import EnumPropertyMixin
-from m8.api.utils.context import M8InstrumentContext
+from m8.api.utils.enums import (
+    EnumPropertyMixin, M8InstrumentContext, get_instrument_type_from_context, get_type_id, with_instrument_context
+)
 from m8.enums import M8ModulatorType
 from m8.config import (
     load_format_config, get_modulator_types, get_modulator_type_id, 
@@ -349,16 +350,11 @@ class M8Modulator(EnumPropertyMixin):
         """Convert modulator to dictionary for serialization."""
         type_value = serialize_enum(self.type, 'modulator')
         
-        # Get instrument context if needed
+        # Get instrument type from context if needed
         instrument_type = self.instrument_type
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for serialization
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
         
         # Handle destination serialization
         dest_value = self.destination
@@ -392,15 +388,10 @@ class M8Modulator(EnumPropertyMixin):
         """Create a modulator from a dictionary."""
         mod_type = data["type"]
         
-        # Get instrument context if needed
+        # Get instrument type from context if needed
         if instrument_type is None:
-            context = M8InstrumentContext.get_instance()
-            instrument_type_id = context.get_instrument_type_id()
-            # Convert ID to string representation for serialization
-            if instrument_type_id is not None:
-                from m8.config import get_instrument_types
-                instrument_types = get_instrument_types()
-                instrument_type = instrument_types.get(instrument_type_id)
+            from m8.api.utils.enums import get_instrument_type_from_context
+            instrument_type = get_instrument_type_from_context()
         
         try:
             modulator_type = deserialize_enum(M8ModulatorType, mod_type, 'modulator')
