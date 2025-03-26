@@ -82,6 +82,25 @@ def get_enum_paths_for_instrument(enum_paths, instrument_type):
     if lookup_key in enum_paths:
         return enum_paths.get(lookup_key)
     
+    # TEMPORARY FIX: Hardcoded mapping for string instrument types
+    # This should be replaced with a more dynamic solution that gets this mapping from the config
+    instrument_id_map = {
+        "WAVSYNTH": "0x00",
+        "MACROSYNTH": "0x01", 
+        "SAMPLER": "0x02"
+    }
+    
+    if lookup_key in instrument_id_map:
+        mapped_id = instrument_id_map[lookup_key]
+        if mapped_id in enum_paths:
+            return enum_paths.get(mapped_id)
+    
+    # Try uppercase version
+    if lookup_key and lookup_key.upper() in instrument_id_map:
+        mapped_id = instrument_id_map[lookup_key.upper()]
+        if mapped_id in enum_paths:
+            return enum_paths.get(mapped_id)
+    
     # Try numeric conversion if possible
     if lookup_key and lookup_key.isdigit():
         # Try the numeric value directly

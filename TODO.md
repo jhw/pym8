@@ -1,6 +1,6 @@
 # short
 
-- Fix context manager issues with enum serialization (see "Context Manager Issues" in NOTES.md)
+- Replace temporary hardcoded instrument mapping in enum serialization with dynamic config-based solution
 
 # medium
 
@@ -34,6 +34,7 @@
 
 # done
 
+✓ Fix context manager issues with enum serialization (see "Context Manager Issues" in NOTES.md)
 ✓ Fix modulator destination enum serialization (see NOTES.md for details)
 ✓ Fix non_zero_destination_mods in example tests
 ✓ Enhance M8Modulator.is_empty() to consider OFF destination as empty
