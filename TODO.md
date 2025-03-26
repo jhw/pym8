@@ -1,6 +1,6 @@
 # short
 
-- Rip out debug code and check test suite speed
+- Reduce logging verbosity in enums.py to improve test performance
 - Rendering of FX- only phrases
 - Move enums to m8/core, utils to m8/utils
 - Investigate inspect_chains.py context manager warnings
