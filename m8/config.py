@@ -161,6 +161,10 @@ def get_modulator_types():
 
 def get_modulator_type_id(modulator_type):
     """Retrieves type ID for a modulator from configuration."""
+    # If it's None, return None
+    if modulator_type is None:
+        return None
+        
     # If it's already an integer, just return it
     if isinstance(modulator_type, int):
         return modulator_type
@@ -175,16 +179,16 @@ def get_modulator_type_id(modulator_type):
             return int(type_id, 16)
         return type_id
     
-    if 'modulators' in config and 'types' in config['modulators'] and lookup_type in config['modulators']['types']:
-        type_id = config['modulators']['types'][lookup_type]['id']
-        if isinstance(type_id, str) and type_id.startswith('0x'):
-            return int(type_id, 16)
-        return type_id
+    # No fallback lookup needed
         
     raise ValueError(f"Type ID for modulator '{modulator_type}' not found in configuration")
 
 def get_instrument_type_id(instrument_type):
     """Retrieves type ID for an instrument from configuration."""
+    # If it's None, return None
+    if instrument_type is None:
+        return None
+        
     # If it's already an integer, just return it
     if isinstance(instrument_type, int):
         return instrument_type
@@ -200,12 +204,7 @@ def get_instrument_type_id(instrument_type):
             return int(type_id, 16)
         return type_id
     
-    if ('instruments' in config and 'types' in config['instruments'] and 
-        lookup_type in config['instruments']['types']):
-        type_id = config['instruments']['types'][lookup_type]['type_id']
-        if isinstance(type_id, str) and type_id.startswith('0x'):
-            return int(type_id, 16)
-        return type_id
+    # No fallback lookup needed
         
     raise ValueError(f"Type ID for instrument '{instrument_type}' not found in configuration")
 

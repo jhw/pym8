@@ -126,7 +126,12 @@ class M8ModulatorParams:
         instrument_type = self._instrument_type
         if instrument_type is None:
             context = M8InstrumentContext.get_instance()
-            instrument_type = context.get_instrument_type()
+            instrument_type_id = context.get_instrument_type_id()
+            # Convert ID to string representation for serialization
+            if instrument_type_id is not None:
+                from m8.config import get_instrument_types
+                instrument_types = get_instrument_types()
+                instrument_type = instrument_types.get(instrument_type_id)
         
         for param_name, param_def in self._param_defs.items():
             value = getattr(self, param_name)
@@ -145,7 +150,12 @@ class M8ModulatorParams:
         # Get instrument context if needed
         if instrument_type is None:
             context = M8InstrumentContext.get_instance()
-            instrument_type = context.get_instrument_type()
+            instrument_type_id = context.get_instrument_type_id()
+            # Convert ID to string representation for serialization
+            if instrument_type_id is not None:
+                from m8.config import get_instrument_types
+                instrument_types = get_instrument_types()
+                instrument_type = instrument_types.get(instrument_type_id)
             
         params = cls.from_config(modulator_type, instrument_type)
         
@@ -189,7 +199,12 @@ class M8Modulator(EnumPropertyMixin):
         # Get instrument context if not explicitly provided
         if instrument_type is None:
             context = M8InstrumentContext.get_instance()
-            instrument_type = context.get_instrument_type()
+            instrument_type_id = context.get_instrument_type_id()
+            # Convert ID to string representation for serialization
+            if instrument_type_id is not None:
+                from m8.config import get_instrument_types
+                instrument_types = get_instrument_types()
+                instrument_type = instrument_types.get(instrument_type_id)
         
         # Store instrument type for enum lookups
         self.instrument_type = instrument_type
@@ -338,7 +353,12 @@ class M8Modulator(EnumPropertyMixin):
         instrument_type = self.instrument_type
         if instrument_type is None:
             context = M8InstrumentContext.get_instance()
-            instrument_type = context.get_instrument_type()
+            instrument_type_id = context.get_instrument_type_id()
+            # Convert ID to string representation for serialization
+            if instrument_type_id is not None:
+                from m8.config import get_instrument_types
+                instrument_types = get_instrument_types()
+                instrument_type = instrument_types.get(instrument_type_id)
         
         # Handle destination serialization
         dest_value = self.destination
@@ -375,7 +395,12 @@ class M8Modulator(EnumPropertyMixin):
         # Get instrument context if needed
         if instrument_type is None:
             context = M8InstrumentContext.get_instance()
-            instrument_type = context.get_instrument_type()
+            instrument_type_id = context.get_instrument_type_id()
+            # Convert ID to string representation for serialization
+            if instrument_type_id is not None:
+                from m8.config import get_instrument_types
+                instrument_types = get_instrument_types()
+                instrument_type = instrument_types.get(instrument_type_id)
         
         try:
             modulator_type = deserialize_enum(M8ModulatorType, mod_type, 'modulator')

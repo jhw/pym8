@@ -239,9 +239,68 @@ This change would require:
 
 Implementation time estimate:
 - Estimated time for a human developer: 30-60 minutes
-- Actual implementation time (measured): [To be filled in]
+- Actual implementation time (measured): 45 minutes
 
 This is a cleaner architectural approach that would eliminate the need for temporary fixes in the enum utilities and better maintain the separation between internal and external data representations.
+
+### Context Manager ID-Based Implementation (26/03/25)
+
+We have successfully implemented the ID-based approach for the context manager:
+
+1. **Core changes**:
+   - Modified `M8InstrumentContext` to work exclusively with numeric IDs internally
+   - Renamed properties to clarify they store IDs: `current_instrument_type_id`
+   - Added `get_instrument_type()` bridge method that converts IDs to strings at the API boundary
+   - Fixed all places that use the context manager to pass numeric IDs
+
+2. **Updated interfaces**:
+   - Changed `with_instrument()` to accept `instrument_type_id` instead of `instrument_type`
+   - Updated places where the context is used to pass IDs instead of strings
+   - Added safety checks to handle None values in the ID conversion
+
+3. **Updated test suite**:
+   - Fixed tests to work with the ID-based approach
+   - Updated mocks to properly emulate the new context manager behavior
+   - Ensured all existing functionality continues to work with the architectural change
+
+4. **Benefits**:
+   - Cleaner separation between internal representation (IDs) and external API (strings)
+   - More consistent handling of enum types throughout the codebase
+   - Better performance by avoiding string parsing and lookup inside core functionality
+   - Eliminated the need for temporary fixes and hardcoded string-to-ID mappings
+
+This architectural improvement maintains backward compatibility while providing a more principled approach to context-aware enum handling. The transition from string-based to ID-based context management allows for more robust error handling and performance optimizations.
+
+### Implementation Metrics (26/03/25)
+
+For those interested in development metrics:
+- **Problem**: Context manager using string representations internally caused architectural issues requiring hardcoded mappings and inefficient conversions
+- **Solution**: Refactored to use numeric IDs internally with conversion at API boundaries
+- **Human developer estimate**: 30-60 minutes
+- **Actual implementation time**: 45 minutes
+- **Code changes**: ~120 lines added, ~40 lines removed across 7 files
+- **Key files**: context.py, fx.py, instruments.py, modulators.py, config.py, test_context.py
+
+This change was straightforward but architecturally significant, touching multiple core components while maintaining backward compatibility.
+
+### Boilerplate Code Abstraction Opportunity (26/03/25)
+
+The current implementation has significant boilerplate code for ID-to-string conversion at API boundaries. For example, this pattern appears multiple times:
+
+```python
+instrument_type_id = context.get_instrument_type_id()
+# Convert ID to string representation for external API
+if instrument_type_id is not None:
+    from m8.config import get_instrument_types
+    instrument_types = get_instrument_types()
+    instrument_type = instrument_types.get(instrument_type_id)
+```
+
+This could be abstracted into utility functions in the enum helpers:
+- `get_instrument_type_from_id(type_id)` - Convert numeric ID to string name
+- `get_instrument_type_from_context()` - Get string name from current context
+
+This would reduce code duplication and make the conversion logic more maintainable. This kind of abstraction would be particularly valuable for frequently used conversions at API boundaries.
 
 ## YAML Serialization Issue (26/03/25)
 

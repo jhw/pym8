@@ -82,24 +82,8 @@ def get_enum_paths_for_instrument(enum_paths, instrument_type):
     if lookup_key in enum_paths:
         return enum_paths.get(lookup_key)
     
-    # TEMPORARY FIX: Hardcoded mapping for string instrument types
-    # This should be replaced with a more dynamic solution that gets this mapping from the config
-    instrument_id_map = {
-        "WAVSYNTH": "0x00",
-        "MACROSYNTH": "0x01", 
-        "SAMPLER": "0x02"
-    }
-    
-    if lookup_key in instrument_id_map:
-        mapped_id = instrument_id_map[lookup_key]
-        if mapped_id in enum_paths:
-            return enum_paths.get(mapped_id)
-    
-    # Try uppercase version
-    if lookup_key and lookup_key.upper() in instrument_id_map:
-        mapped_id = instrument_id_map[lookup_key.upper()]
-        if mapped_id in enum_paths:
-            return enum_paths.get(mapped_id)
+    # With the improved context manager, string instrument types are 
+    # properly converted to IDs there, so we no longer need a hardcoded mapping here.
     
     # Try numeric conversion if possible
     if lookup_key and lookup_key.isdigit():
@@ -168,8 +152,30 @@ def serialize_param_enum_value(value, param_def, instrument_type=None, param_nam
     """Serialize a parameter value to its enum string representation."""
     if "enums" not in param_def:
         return value
-        
+    
+    # Handle string instrument types by getting their ID
+    instrument_type_id = None
+    if isinstance(instrument_type, str):
+        from m8.config import get_instrument_type_id
+        try:
+            instrument_type_id = get_instrument_type_id(instrument_type)
+        except ValueError:
+            pass
+    
+    # Try with the string type first
     enum_paths = get_enum_paths_for_instrument(param_def["enums"], instrument_type)
+    
+    # If that didn't work, try with the ID
+    if not enum_paths and instrument_type_id is not None:
+        enum_paths = get_enum_paths_for_instrument(param_def["enums"], instrument_type_id)
+    
+    if not enum_paths:
+        # Last resort: Try direct hex format
+        if instrument_type_id is not None:
+            hex_key = f"0x{instrument_type_id:02x}"
+            if isinstance(param_def["enums"], dict) and hex_key in param_def["enums"]:
+                enum_paths = param_def["enums"][hex_key]
+    
     if not enum_paths:
         return value
         
@@ -197,13 +203,35 @@ def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=N
     if not isinstance(value, str):
         return value
     
-    enum_paths = get_enum_paths_for_instrument(enum_paths, instrument_type)
-    if not enum_paths:
+    # Handle string instrument types by getting their ID
+    instrument_type_id = None
+    if isinstance(instrument_type, str):
+        from m8.config import get_instrument_type_id
+        try:
+            instrument_type_id = get_instrument_type_id(instrument_type)
+        except ValueError:
+            pass
+    
+    # Try with the string type first
+    enum_paths_resolved = get_enum_paths_for_instrument(enum_paths, instrument_type)
+    
+    # If that didn't work, try with the ID
+    if not enum_paths_resolved and instrument_type_id is not None:
+        enum_paths_resolved = get_enum_paths_for_instrument(enum_paths, instrument_type_id)
+    
+    if not enum_paths_resolved:
+        # Last resort: Try direct hex format
+        if instrument_type_id is not None and isinstance(enum_paths, dict):
+            hex_key = f"0x{instrument_type_id:02x}"
+            if hex_key in enum_paths:
+                enum_paths_resolved = enum_paths[hex_key]
+    
+    if not enum_paths_resolved:
         logger = logging.getLogger(__name__)
         logger.warning(f"No enum defined for instrument type {instrument_type} parameter {param_name}")
         return value
     
-    enum_classes = load_enum_classes(enum_paths, param_name)
+    enum_classes = load_enum_classes(enum_paths_resolved, param_name)
     
     if enum_classes:
         # Try each enum class to find a match
@@ -234,13 +262,35 @@ def ensure_enum_int_value(value, enum_paths, instrument_type=None, param_name=No
     
     from m8.api import M8EnumValueError
     
-    enum_paths = get_enum_paths_for_instrument(enum_paths, instrument_type)
-    if not enum_paths:
+    # Handle string instrument types by getting their ID
+    instrument_type_id = None
+    if isinstance(instrument_type, str):
+        from m8.config import get_instrument_type_id
+        try:
+            instrument_type_id = get_instrument_type_id(instrument_type)
+        except ValueError:
+            pass
+    
+    # Try with the string type first
+    enum_paths_resolved = get_enum_paths_for_instrument(enum_paths, instrument_type)
+    
+    # If that didn't work, try with the ID
+    if not enum_paths_resolved and instrument_type_id is not None:
+        enum_paths_resolved = get_enum_paths_for_instrument(enum_paths, instrument_type_id)
+    
+    if not enum_paths_resolved:
+        # Last resort: Try direct hex format
+        if instrument_type_id is not None and isinstance(enum_paths, dict):
+            hex_key = f"0x{instrument_type_id:02x}"
+            if hex_key in enum_paths:
+                enum_paths_resolved = enum_paths[hex_key]
+    
+    if not enum_paths_resolved:
         logger = logging.getLogger(__name__)
         logger.warning(f"No enum defined for instrument type {instrument_type}")
         return value
     
-    enum_classes = load_enum_classes(enum_paths)
+    enum_classes = load_enum_classes(enum_paths_resolved)
     
     for enum_class in enum_classes:
         try:

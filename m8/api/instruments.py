@@ -337,7 +337,9 @@ class M8Instrument(EnumPropertyMixin):
         
         # Read modulators with instrument context
         context = M8InstrumentContext.get_instance()
-        with context.with_instrument(instrument_type=self.instrument_type):
+        # Get the numeric type ID for the context
+        type_id = self.type.value if hasattr(self.type, 'value') else self.type
+        with context.with_instrument(instrument_type_id=type_id):
             self.modulators = M8Modulators.read(data[self.modulators_offset:])
             
             # Set instrument_type on each modulator for backward compatibility
@@ -453,7 +455,9 @@ class M8Instrument(EnumPropertyMixin):
         
         # Set the instrument context for the modulator
         context = M8InstrumentContext.get_instance()
-        with context.with_instrument(instrument_type=self.instrument_type):
+        # Get the numeric type ID for the context
+        type_id = self.type.value if hasattr(self.type, 'value') else self.type
+        with context.with_instrument(instrument_type_id=type_id):
             # If the modulator has no instrument_type set, it will use the context
             if modulator.instrument_type is None:
                 modulator.instrument_type = self.instrument_type
@@ -469,7 +473,9 @@ class M8Instrument(EnumPropertyMixin):
         
         # Set the instrument context for the modulator
         context = M8InstrumentContext.get_instance()
-        with context.with_instrument(instrument_type=self.instrument_type):
+        # Get the numeric type ID for the context
+        type_id = self.type.value if hasattr(self.type, 'value') else self.type
+        with context.with_instrument(instrument_type_id=type_id):
             # If the modulator has no instrument_type set, it will use the context
             if modulator.instrument_type is None:
                 modulator.instrument_type = self.instrument_type
@@ -500,7 +506,9 @@ class M8Instrument(EnumPropertyMixin):
             
         # Add modulators with instrument context
         context = M8InstrumentContext.get_instance()
-        with context.with_instrument(instrument_type=self.instrument_type):
+        # Get the numeric type ID for the context
+        type_id = self.type.value if hasattr(self.type, 'value') else self.type
+        with context.with_instrument(instrument_type_id=type_id):
             result["modulators"] = self.modulators.as_list()
         
         return result
@@ -538,9 +546,9 @@ class M8Instrument(EnumPropertyMixin):
             if "modulators" in data:
                 # Set up instrument context for modulators
                 context = M8InstrumentContext.get_instance()
-                with context.with_instrument(instrument_type=instrument.instrument_type):
-                    # Pass the instrument type ID for backward compatibility
-                    type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
+                # Get the numeric type ID for the context
+                type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
+                with context.with_instrument(instrument_type_id=type_id):
                     instrument.modulators = M8Modulators.from_list(data["modulators"], type_id)
             
             return instrument

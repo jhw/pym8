@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import MagicMock, patch
-
 from m8.api.utils.context import M8InstrumentContext, _InstrumentContextBlock
 
 class TestM8InstrumentContext(unittest.TestCase):
@@ -28,99 +27,107 @@ class TestM8InstrumentContext(unittest.TestCase):
         self.context.set_project(mock_project)
         self.assertEqual(self.context.project, mock_project)
         
-    def test_get_instrument_type_with_explicit_id(self):
-        """Test getting instrument type using an explicit ID."""
+    def test_get_instrument_type_id_with_explicit_id(self):
+        """Test getting instrument type ID using an explicit ID."""
         # Set up a mock project with instruments
         mock_project = MagicMock()
         mock_instrument = MagicMock()
-        mock_instrument.instrument_type = "MACROSYNTH"
-        mock_project.instruments = [mock_instrument]
         
+        # Set up a better mock
+        mock_instrument.configure_mock(**{
+            'type.value': 1,
+            'instrument_type_id': 1
+        })
+        
+        mock_project.instruments = [mock_instrument]
+                
         self.context.set_project(mock_project)
         
         # Test with valid ID
-        self.assertEqual(self.context.get_instrument_type(0), "MACROSYNTH")
+        self.assertEqual(self.context.get_instrument_type_id(0), 1)
         
         # Test with invalid ID
-        self.assertIsNone(self.context.get_instrument_type(1))
+        self.assertIsNone(self.context.get_instrument_type_id(1))
         
-    def test_get_instrument_type_from_current_context(self):
-        """Test getting instrument type from current context."""
-        # Set current instrument type directly
-        self.context.current_instrument_type = "WAVSYNTH"
-        self.assertEqual(self.context.get_instrument_type(), "WAVSYNTH")
+    def test_get_instrument_type_id_from_current_context(self):
+        """Test getting instrument type ID from current context."""
+        # Set current instrument type ID directly
+        self.context.current_instrument_type_id = 1  # MACROSYNTH ID
+        self.assertEqual(self.context.get_instrument_type_id(), 1)
         
-        # Set current instrument ID
-        self.context.current_instrument_type = None
-        mock_project = MagicMock()
-        mock_instrument = MagicMock()
-        mock_instrument.instrument_type = "SAMPLER"
-        mock_project.instruments = [mock_instrument]
-        
-        self.context.set_project(mock_project)
-        self.context.current_instrument_id = 0
-        
-        self.assertEqual(self.context.get_instrument_type(), "SAMPLER")
+    def test_get_instrument_type(self):
+        """Test the get_instrument_type bridge method."""
+        # Mock the get_instrument_types config function
+        with patch('m8.config.get_instrument_types') as mock_get_types:
+            mock_get_types.return_value = {0: "WAVSYNTH", 1: "MACROSYNTH", 2: "SAMPLER"}
+            
+            # Test with type ID set
+            self.context.current_instrument_type_id = 1
+            self.assertEqual(self.context.get_instrument_type(), "MACROSYNTH")
+            
+            # Test with no type ID set
+            self.context.current_instrument_type_id = None
+            self.assertIsNone(self.context.get_instrument_type())
         
     def test_with_instrument_context_manager(self):
         """Test the with_instrument context manager."""
         # Initial state
         self.assertIsNone(self.context.current_instrument_id)
-        self.assertIsNone(self.context.current_instrument_type)
+        self.assertIsNone(self.context.current_instrument_type_id)
         
         # Enter context with ID
         with self.context.with_instrument(instrument_id=42):
             self.assertEqual(self.context.current_instrument_id, 42)
-            self.assertIsNone(self.context.current_instrument_type)
+            self.assertIsNone(self.context.current_instrument_type_id)
             
         # Context should be restored after block
         self.assertIsNone(self.context.current_instrument_id)
-        self.assertIsNone(self.context.current_instrument_type)
+        self.assertIsNone(self.context.current_instrument_type_id)
         
-        # Enter context with type
-        with self.context.with_instrument(instrument_type="MACROSYNTH"):
+        # Enter context with type ID
+        with self.context.with_instrument(instrument_type_id=1):
             self.assertIsNone(self.context.current_instrument_id)
-            self.assertEqual(self.context.current_instrument_type, "MACROSYNTH")
+            self.assertEqual(self.context.current_instrument_type_id, 1)
             
         # Context should be restored
         self.assertIsNone(self.context.current_instrument_id)
-        self.assertIsNone(self.context.current_instrument_type)
+        self.assertIsNone(self.context.current_instrument_type_id)
         
     def test_nested_context_blocks(self):
         """Test that nested context blocks work correctly."""
         # Set up initial context
         self.context.current_instrument_id = 1
-        self.context.current_instrument_type = "WAVSYNTH"
+        self.context.current_instrument_type_id = 0  # WAVSYNTH ID
         
         # First nested block - only set instrument_id
         with self.context.with_instrument(instrument_id=2):
             self.assertEqual(self.context.current_instrument_id, 2)
-            # The current_instrument_type should be preserved in this case
-            self.assertEqual(self.context.current_instrument_type, "WAVSYNTH")
+            # The current_instrument_type_id should be preserved
+            self.assertEqual(self.context.current_instrument_type_id, 0)
             
-            # Second nested block - only set instrument_type
-            with self.context.with_instrument(instrument_type="MACROSYNTH"):
+            # Second nested block - only set instrument_type_id
+            with self.context.with_instrument(instrument_type_id=1):
                 self.assertEqual(self.context.current_instrument_id, 2)
-                self.assertEqual(self.context.current_instrument_type, "MACROSYNTH")
+                self.assertEqual(self.context.current_instrument_type_id, 1)
                 
             # Back to first block
             self.assertEqual(self.context.current_instrument_id, 2)
-            self.assertEqual(self.context.current_instrument_type, "WAVSYNTH")
+            self.assertEqual(self.context.current_instrument_type_id, 0)
             
         # Back to original context
         self.assertEqual(self.context.current_instrument_id, 1)
-        self.assertEqual(self.context.current_instrument_type, "WAVSYNTH")
+        self.assertEqual(self.context.current_instrument_type_id, 0)
         
     def test_clear_context(self):
         """Test clearing the context."""
         self.context.current_instrument_id = 5
-        self.context.current_instrument_type = "SAMPLER"
+        self.context.current_instrument_type_id = 2  # SAMPLER ID
         self.context.project = MagicMock()
         
         self.context.clear()
         
         self.assertIsNone(self.context.current_instrument_id)
-        self.assertIsNone(self.context.current_instrument_type)
+        self.assertIsNone(self.context.current_instrument_type_id)
         self.assertIsNone(self.context.project)
 
 class TestInstrumentContextBlock(unittest.TestCase):
@@ -130,19 +137,19 @@ class TestInstrumentContextBlock(unittest.TestCase):
         """Set up a fresh context block for testing."""
         self.context_manager = MagicMock()
         self.context_manager.current_instrument_id = None
-        self.context_manager.current_instrument_type = None
+        self.context_manager.current_instrument_type_id = None
         
     def test_enter_exit(self):
         """Test entering and exiting the context block."""
         # Set up initial state
         self.context_manager.current_instrument_id = 1
-        self.context_manager.current_instrument_type = "WAVSYNTH"
+        self.context_manager.current_instrument_type_id = 0  # WAVSYNTH ID
         
-        # Create block
+        # Create block with direct ID values
         block = _InstrumentContextBlock(
             self.context_manager, 
             instrument_id=2, 
-            instrument_type="MACROSYNTH"
+            instrument_type_id=1
         )
         
         # Enter the block
@@ -150,7 +157,7 @@ class TestInstrumentContextBlock(unittest.TestCase):
         
         # Check context was updated
         self.assertEqual(self.context_manager.current_instrument_id, 2)
-        self.assertEqual(self.context_manager.current_instrument_type, "MACROSYNTH")
+        self.assertEqual(self.context_manager.current_instrument_type_id, 1)
         self.assertEqual(result, self.context_manager)
         
         # Exit the block
@@ -158,7 +165,7 @@ class TestInstrumentContextBlock(unittest.TestCase):
         
         # Check context was restored
         self.assertEqual(self.context_manager.current_instrument_id, 1)
-        self.assertEqual(self.context_manager.current_instrument_type, "WAVSYNTH")
+        self.assertEqual(self.context_manager.current_instrument_type_id, 0)
 
 
 if __name__ == '__main__':
