@@ -20,6 +20,15 @@ def hex_dump(data, width=16):
 
 def display_chain(project, chain, chain_idx, output_format):
     if output_format == "yaml":
+        # NOTE: This attempt to fix FX serialization doesn't work yet
+        # There appears to be a deeper issue with context lifecycle management
+        # Despite setting project on context manager here, FX keys still appear as 
+        # numeric values instead of string enums (e.g., "7" instead of "VOL")
+        # TODO: Investigate context propagation between project load and serialization
+        from m8.api.utils.enums import M8InstrumentContext
+        context = M8InstrumentContext.get_instance()
+        context.set_project(project)
+        
         chain_dict = chain.as_dict()
         chain_dict["index"] = chain_idx
         

@@ -1,7 +1,30 @@
+## Context Lifecycle Management Issues (26/03/2025)
+
+After investigating issues with FX key serialization in inspect_chains.py, we've found a deeper problem with context lifecycle management:
+
+1. **Project Setup vs. Serialization**: 
+   - Project correctly sets up context in both `read()` and `read_from_file()` methods
+   - Despite this, FX keys appear as numeric values instead of string enums during serialization
+
+2. **Context Chain Breaking**:
+   - Something is breaking the context chain between project load time and serialization
+   - Explicitly setting context right before serialization in inspect_chains.py doesn't fix the issue
+   - This suggests either context state is being lost or not properly maintaining its connection to the project
+
+3. **Test vs. Real Usage Discrepancy**:
+   - Tests pass because they explicitly set up context right before serialization
+   - Real tool usage fails because it relies on the context set during project loading
+
+4. **Next Steps**:
+   - Investigate how context propagates between project load and phrase/FX serialization
+   - Check if the context singleton is being reset somewhere between loading and usage
+   - Consider more robust context handling that isn't dependent on singleton state being maintained
+
+The fix is likely more involved than simply refreshing the context before serialization, pointing to a more fundamental issue in how context is managed across the serialization process.
+
 ## Enum Implementation Design Decision (28/03/25)
 
 The codebase uses two complementary patterns for enum handling that align with the different requirements of their respective class types:
-
 
 ### Context Manager Issues (28/03/25)
 
