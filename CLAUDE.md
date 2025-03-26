@@ -45,7 +45,6 @@
 - Example: `## New Feature Implementation (26/03/2025)`
 
 ## Git Workflow
-- Always work in branch `claude-code`
 - Stage files incrementally in logical groups for substantial changes
 - Always test before staging
 - Always ask before committing

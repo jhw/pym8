@@ -1,16 +1,16 @@
 # short
 
-- Fx (GENBASS.m8s) test
+- Rip out debug code and check test suite speed
+- Rendering of FX- only phrases
 - Move enums to m8/core, utils to m8/utils
 - Investigate inspect_chains.py context manager warnings
 
 # medium
 
-- Audit all remaining serialization tests to ensure they assert against string enum values, not integers
-
 - TODO.md >> github project
-- Sampler slices
 - 5.0.2
+
+- Sampler slices
 - FMsynth
 - Hypersynth
 - Tables
@@ -29,6 +29,7 @@
 
 # done
 
+- Added test for FX values using GENBASS.m8s
 - Modified inspect_xxx scripts to output integers as hex values in YAML
 - Fixed context manager FX key serialization issue in inspect_chains.py
 - Improved M8Block type detection for getting instrument types
