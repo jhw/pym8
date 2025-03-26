@@ -19,16 +19,7 @@ class ChainBaker:
         self.selected_blocks = []
     
     def identify_chain_blocks(self, song):
-        """
-        Find square blocks of chain IDs in the song matrix.
-        
-        Args:
-            song: M8SongMatrix to analyze
-            
-        Returns:
-            List of (start_row, block) tuples, where block is a list of rows
-            and each row is a list of (col_idx, chain_id) tuples
-        """
+        """Find square blocks of chain IDs in the song matrix."""
         blocks = []
         current_block = []
         current_block_start_row = 0
@@ -93,12 +84,7 @@ class ChainBaker:
         return len(block), first_row_len
     
     def prompt_for_blocks(self):
-        """
-        Ask user to select blocks for processing.
-        
-        Returns:
-            List of selected (start_row, block) tuples
-        """
+        """Ask user to select blocks for processing."""
         selected_blocks = []
         
         print(f"Found {len(self.blocks)} chain blocks:")
@@ -132,29 +118,11 @@ class ChainBaker:
     
     @staticmethod
     def calculate_new_id(row, col):
-        """
-        Calculate chain ID from row/column position.
-        
-        Args:
-            row: Row position (0-9)
-            col: Column position (0-25)
-            
-        Returns:
-            Chain ID value
-        """
+        """Calculate chain ID from row/column position."""
         return (col * 10) + row
     
     def bake_chain_block(self, block_data, target_row):
-        """
-        Convert a block of chains into consolidated new chains.
-        
-        Args:
-            block_data: Tuple of (start_row, block)
-            target_row: Row in which to place the new chains
-            
-        Returns:
-            List of new chain IDs
-        """
+        """Convert a block of chains into consolidated new chains."""
         start_row, block = block_data
         rows, cols = self.validate_block_is_square(block)
         
@@ -200,12 +168,7 @@ class ChainBaker:
         return new_chain_ids
     
     def bake_chains(self):
-        """
-        Process and combine chains in the project.
-        
-        Returns:
-            Updated M8Project
-        """
+        """Process and combine chains in the project."""
         # Identify chain blocks if not already done
         if not self.blocks:
             self.identify_chain_blocks(self.project.song)

@@ -494,16 +494,7 @@ class EnumPropertyMixin:
 # Utility functions to abstract common boilerplate patterns
 
 def get_instrument_type_from_id(type_id):
-    """Convert numeric instrument type ID to string name.
-    
-    This abstracts the common pattern of converting an instrument type ID to its string representation.
-    
-    Args:
-        type_id: The numeric instrument type ID to convert
-        
-    Returns:
-        The string representation of the instrument type, or None if not found
-    """
+    """Convert numeric instrument type ID to string name."""
     if type_id is None:
         return None
         
@@ -512,30 +503,13 @@ def get_instrument_type_from_id(type_id):
     return instrument_types.get(type_id)
     
 def get_instrument_type_from_context():
-    """Get instrument type string from the current context.
-    
-    This abstracts the common pattern of retrieving the current instrument type ID from context
-    and converting it to its string representation.
-    
-    Returns:
-        The string representation of the current instrument type, or None if not available
-    """
+    """Get instrument type string from the current context."""
     context = M8InstrumentContext.get_instance()
     instrument_type_id = context.get_instrument_type_id()
     return get_instrument_type_from_id(instrument_type_id)
 
 def get_type_id(enum_or_value):
-    """Extract numeric ID from various type representations.
-    
-    This abstracts the common pattern of extracting a numeric ID from enum objects,
-    enum values, or direct integer values.
-    
-    Args:
-        enum_or_value: An enum instance, enum value, or integer
-        
-    Returns:
-        The numeric ID value or None if not determinable
-    """
+    """Extract numeric ID from various type representations."""
     if enum_or_value is None:
         return None
         
@@ -558,16 +532,7 @@ def get_type_id(enum_or_value):
     return None
 
 def with_instrument_context(obj_or_id=None):
-    """Create a context manager for instrument operations.
-    
-    This abstracts the common pattern of setting up a context block for an instrument.
-    
-    Args:
-        obj_or_id: Either an instrument object, instrument ID, or instrument type ID
-        
-    Returns:
-        A context manager block that sets the instrument context
-    """
+    """Create a context manager for instrument operations."""
     context = M8InstrumentContext.get_instance()
     
     # Handle different input types
@@ -590,19 +555,7 @@ def with_instrument_context(obj_or_id=None):
     return context.with_instrument(instrument_id=instrument_id, instrument_type_id=instrument_type_id)
 
 def serialize_with_context(param_def, value, param_name=None):
-    """Serialize a parameter value with automatic context handling.
-    
-    This abstracts the common pattern of getting the instrument context when needed
-    and using it to serialize a parameter value.
-    
-    Args:
-        param_def: Parameter definition from config
-        value: The parameter value to serialize
-        param_name: Optional parameter name for logging
-        
-    Returns:
-        The serialized value (with enum string conversion if applicable)
-    """
+    """Serialize a parameter value with automatic context handling."""
     if "enums" not in param_def:
         return value
         
@@ -612,17 +565,7 @@ def serialize_with_context(param_def, value, param_name=None):
     return serialize_param_enum_value(value, param_def, instrument_type, param_name)
 
 def is_valid_type_id(type_id, valid_types):
-    """Check if a type ID is valid.
-    
-    This abstracts the common pattern of checking if a type ID is in a list of valid types.
-    
-    Args:
-        type_id: The type ID to check
-        valid_types: A dictionary or list of valid types
-        
-    Returns:
-        True if the type ID is valid, False otherwise
-    """
+    """Check if a type ID is valid."""
     if type_id is None:
         return False
         

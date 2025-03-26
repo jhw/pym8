@@ -18,7 +18,7 @@ logger = logging.getLogger()
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from m8.api.instruments import M8Instrument
-from m8.api.utils.context import M8InstrumentContext
+from m8.api.utils.enums import M8InstrumentContext
 from m8.api.modulators import M8Modulator
 from m8.config import get_modulator_type_field_def
 from m8.api.utils.enums import get_enum_paths_for_instrument, load_enum_classes, serialize_param_enum_value

@@ -1,7 +1,6 @@
 from m8.api import M8ValidationError, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
-from m8.api.utils.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum
-from m8.api.utils.context import M8InstrumentContext
+from m8.api.utils.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum, M8InstrumentContext
 from m8.config import load_format_config
 
 # Load configuration

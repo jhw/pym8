@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from m8.api.utils.context import M8InstrumentContext, _InstrumentContextBlock
+from m8.api.utils.enums import M8InstrumentContext, _InstrumentContextBlock
 
 class TestM8InstrumentContext(unittest.TestCase):
     """Test the M8InstrumentContext singleton class."""

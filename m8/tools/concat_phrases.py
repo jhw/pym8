@@ -21,21 +21,7 @@ class PhrasesConcatenator:
         self.output_project = None
     
     def find_m8s_files(self, directory, pattern=None):
-        """
-        Get a list of .m8s files in the specified directory, optionally filtering by pattern.
-        
-        Args:
-            directory: Path to search for M8 project files
-            pattern: Optional regex pattern to filter filenames
-            
-        Returns:
-            List of absolute paths to M8 project files
-            
-        Raises:
-            FileNotFoundError: If directory doesn't exist
-            NotADirectoryError: If path is not a directory
-            ValueError: If regex pattern is invalid
-        """
+        """Get a list of .m8s files in the specified directory, optionally filtering by pattern."""
         if not os.path.exists(directory):
             raise FileNotFoundError(f"Input directory does not exist: {directory}")
             
@@ -93,18 +79,7 @@ class PhrasesConcatenator:
         return selected_files
     
     def load_projects(self, file_paths):
-        """
-        Load M8 projects from given file paths.
-        
-        Args:
-            file_paths: List of paths to M8 project files
-            
-        Returns:
-            List of loaded M8Project objects
-            
-        Raises:
-            ValueError: If a project doesn't have one-to-one chain structure
-        """
+        """Load M8 projects from given file paths."""
         self.projects = []
         
         for file_path in file_paths:
@@ -122,31 +97,11 @@ class PhrasesConcatenator:
     
     @staticmethod
     def calculate_new_id(base_id, row, col):
-        """
-        Calculate new ID based on the M8 row/column pattern.
-        In M8, tens digit = column, ones digit = row.
-        
-        Args:
-            base_id: Original ID (optional, not used in default implementation)
-            row: Row position (0-9)
-            col: Column position (0-25)
-            
-        Returns:
-            New ID value
-        """
+        """Calculate new ID based on the M8 row/column pattern."""
         return (col * 10) + row
     
     def concatenate(self):
-        """
-        Concatenate loaded projects with one-to-one chain structure.
-        Projects are arranged vertically in the output.
-        
-        Returns:
-            The concatenated M8Project
-            
-        Raises:
-            ValueError: If no projects to concatenate
-        """
+        """Concatenate loaded projects with one-to-one chain structure."""
         if not self.projects:
             raise ValueError("No projects to concatenate")
         
