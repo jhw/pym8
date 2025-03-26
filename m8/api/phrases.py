@@ -89,6 +89,28 @@ class M8PhraseStep(EnumPropertyMixin):
         return (self.note == self.EMPTY_NOTE and
                 self.velocity == self.EMPTY_VELOCITY and
                 self.instrument == self.EMPTY_INSTRUMENT)
+                
+    def is_complete(self):
+        """Check if this phrase step is complete.
+        
+        A step is considered complete if:
+        1. It's empty (all fields are empty), or
+        2. It has both a note, velocity and instrument set, and all FX tuples are complete
+        
+        This helps identify incomplete steps where some required fields are set but others aren't.
+        """
+        # If the step is completely empty, it's considered complete
+        if self.is_empty():
+            return True
+            
+        # For non-empty steps, check all required fields are set
+        has_note = self.note != self.EMPTY_NOTE
+        has_velocity = self.velocity != self.EMPTY_VELOCITY
+        has_instrument = self.instrument != self.EMPTY_INSTRUMENT
+        fx_complete = self.fx.is_complete()
+        
+        # All FX must be complete, and if there's a note, velocity and instrument must be set too
+        return fx_complete and (not has_note or (has_velocity and has_instrument))
 
     def write(self):
         buffer = bytearray(self._data)
@@ -299,6 +321,17 @@ class M8Phrase(list):
     
     def is_empty(self):
         return all(step.is_empty() for step in self)
+        
+    def is_complete(self):
+        """Check if all steps in this phrase are complete.
+        
+        A phrase is considered complete if all of its steps are complete.
+        This helps identify phrases with incomplete steps that might cause issues.
+        """
+        if self.is_empty():
+            return True
+            
+        return all(step.is_complete() for step in self)
     
     def write(self):
         result = bytearray()
@@ -412,6 +445,17 @@ class M8Phrases(list):
     
     def is_empty(self):
         return all(phrase.is_empty() for phrase in self)
+        
+    def is_complete(self):
+        """Check if all phrases in this collection are complete.
+        
+        The phrases collection is considered complete if all non-empty phrases are complete.
+        This helps catch any issues with incomplete phrases in the project.
+        """
+        if self.is_empty():
+            return True
+            
+        return all(phrase.is_empty() or phrase.is_complete() for phrase in self)
     
     def write(self):
         result = bytearray()

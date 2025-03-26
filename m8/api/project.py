@@ -154,7 +154,6 @@ class M8Project:
         return instance
         
     def validate_references(self):
-        """Validates references consistency between song, chains, phrases, and instruments."""
         # Song -> Chains validation
         self.song.validate_references_chains(self.chains)
         
@@ -163,6 +162,8 @@ class M8Project:
         
         # Phrases -> Instruments validation
         self.phrases.validate_references_instruments(self.instruments)
+        
+        return True
         
     def validate_one_to_one_chains(self):
         """Validates chains have one phrase matching their own ID."""
@@ -183,6 +184,40 @@ class M8Project:
                 if str(instrument.version) != str(self.version):
                     return False
                     
+        return True
+        
+    def validate(self, check_one_to_one=False):
+        # Run all validations, return False if any check fails
+        try:
+            # Check reference integrity
+            if not self.validate_references():
+                return False
+                
+            # Optional check for one-to-one chain pattern
+            if check_one_to_one and not self.validate_one_to_one_chains():
+                return False
+                
+            # Check version consistency
+            if not self.validate_versions():
+                return False
+                
+            # Check component completeness
+            if not self.validate_completeness():
+                return False
+                
+            # All checks passed
+            return True
+        except Exception:
+            # Any validation error means validation failed
+            return False
+        
+    def validate_completeness(self):
+        # Check phrases completeness
+        if self.phrases is not None and not self.phrases.is_complete():
+            return False
+            
+        # Additional chain and instrument validation can be added here
+        
         return True
     
     def write(self) -> bytes:

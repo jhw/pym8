@@ -1,3 +1,31 @@
+## Project-level Validation System (26/03/2025)
+
+Added a comprehensive project validation system with multiple checks:
+
+1. **Component Completeness**:
+   - Added `is_complete()` methods to FX tuples, phrases, and other components
+   - FX tuples are complete if their key is set (non-empty)
+   - Phrase steps are complete if they're empty OR have all required fields (note, velocity, instrument)
+   - Each class optimizes validation by checking emptiness first
+   
+2. **Unified Validation**:
+   - Added `validate()` method to M8Project that performs all validation checks:
+     - Reference integrity (validate_references)
+     - Optional one-to-one chain pattern (via check_one_to_one parameter)
+     - Version consistency (validate_versions)
+     - Component completeness (validate_completeness)
+   - All validation methods return consistent boolean results
+   
+3. **Implementation Details**:
+   - Each component is responsible for its own validation logic
+   - Empty components are automatically considered complete
+   - Methods short-circuit when possible for better performance
+   
+4. **Benefits**:
+   - Provides consistent validation interface across the project
+   - Helps catch data integrity issues before they cause problems
+   - Maintains clean class boundaries and responsibilities
+
 ## Improved Phrase Emptiness and JSON Serialization (26/03/2025)
 
 The phrase emptiness checking and JSON serialization have been improved:

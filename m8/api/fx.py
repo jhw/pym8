@@ -77,6 +77,15 @@ class M8FXTuple(EnumPropertyMixin):
         4. It maintains separation between emptiness checks and validity checks
         """
         return self._data[self.KEY_OFFSET] == self.EMPTY_KEY
+        
+    def is_complete(self):
+        """Check if this FX tuple is complete.
+        
+        An FX tuple is considered complete if both key and value are set.
+        If the key is empty (0xFF), the tuple is considered incomplete as no effect is selected.
+        If the key is set but value is not customized (still at default), it's still considered complete.
+        """
+        return self._data[self.KEY_OFFSET] != self.EMPTY_KEY
     
     @property
     def key(self):
@@ -215,6 +224,18 @@ class M8FXTuples(list):
     
     def is_empty(self):
         return all(fx_tuple.is_empty() for fx_tuple in self)
+        
+    def is_complete(self):
+        """Check if all non-empty FX tuples are complete.
+        
+        The FX collection is considered complete if every non-empty tuple is complete.
+        This helps catch cases where an FX key is set but no value is specified.
+        """
+        if self.is_empty():
+            return True
+            
+        # For each tuple, either it's empty or it's complete
+        return all(fx_tuple.is_empty() or fx_tuple.is_complete() for fx_tuple in self)
     
     def write(self):
         result = bytearray()

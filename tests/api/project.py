@@ -320,6 +320,41 @@ class TestM8Project(unittest.TestCase):
         cloned_project.metadata.name = "Modified Clone"
         self.assertEqual(self.project.metadata.name, "Test Project")
         self.assertEqual(cloned_project.metadata.name, "Modified Clone")
+        
+    def test_validate(self):
+        # Create a clean project - should pass validation
+        project = M8Project()
+        project.metadata = M8Metadata(name="Test Project")
+        project.song = M8SongMatrix()
+        project.chains = M8Chains()
+        project.phrases = M8Phrases()
+        project.instruments = M8Instruments()
+        
+        # Valid projects should pass validation
+        self.assertTrue(project.validate())
+        
+        # One-to-one validation is off by default
+        # Let's create a chain that doesn't follow one-to-one pattern
+        from m8.api.chains import M8Chain
+        chain0 = M8Chain()
+        chain0[0].phrase = 5  # Chain 0 references phrase 5 (not 0)
+        project.chains[0] = chain0
+        
+        # Validation should still pass with default parameters
+        self.assertTrue(project.validate())
+        
+        # But fail when check_one_to_one is enabled
+        self.assertFalse(project.validate(check_one_to_one=True))
+        
+        # Create an incomplete project (use a real-world example)
+        from m8.api.phrases import M8PhraseStep
+        # Create a phrase step with a note but no velocity/instrument
+        incomplete_step = M8PhraseStep(note="C_6")
+        project.phrases[0][0] = incomplete_step
+        
+        # Validation should fail regardless of one-to-one setting
+        self.assertFalse(project.validate())
+        self.assertFalse(project.validate(check_one_to_one=True))
 
 
 if __name__ == '__main__':

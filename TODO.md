@@ -1,16 +1,17 @@
 # short
 
-- is_complete()
+- validation to return meaningful messages
 
 # medium
 
-- TODO.md >> github project
-- 5.0.2
-
-- Sampler slices
 - FMsynth
+- Sampler slices
 - Hypersynth
 - Tables
+
+- TODO.md >> github project
+
+- 5.0.2
 
 # beats
 
@@ -26,6 +27,8 @@
 
 # done
 
+- Added project-level validation system with unified validate() method
+- Added is_complete() methods to FX and Phrase classes
 - Investigate inspect_chains.py context manager warnings
 - Improved phrase emptiness check to consider non-empty FX
 - Updated JSON serialization for phrases to use sparse representation

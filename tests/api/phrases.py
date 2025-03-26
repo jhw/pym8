@@ -161,6 +161,35 @@ class TestM8PhraseStep(unittest.TestCase):
         # Modify FX
         step.fx[0] = M8FXTuple(key=10, value=20)
         self.assertFalse(step.is_empty())
+        
+    def test_is_complete(self):
+        # Test is_complete method
+        step = M8PhraseStep()
+        # Empty step is complete
+        self.assertTrue(step.is_complete())
+        
+        # Step with just a note is incomplete (missing velocity and instrument)
+        step.note = "C_6"
+        self.assertFalse(step.is_complete())
+        
+        # Step with note and velocity is incomplete (missing instrument)
+        step.velocity = 100
+        self.assertFalse(step.is_complete())
+        
+        # Step with note, velocity, and instrument is complete
+        step.instrument = 5
+        self.assertTrue(step.is_complete())
+        
+        # Reset to empty
+        step = M8PhraseStep()
+        
+        # Step with just FX is complete (FX-only step)
+        step.fx[0] = M8FXTuple(key=10, value=20)
+        self.assertTrue(step.is_complete())
+        
+        # Step with note and FX but no velocity/instrument is incomplete
+        step.note = "C_6"
+        self.assertFalse(step.is_complete())
     
     def test_clone(self):
         # Test clone method
@@ -525,6 +554,25 @@ class TestM8Phrase(unittest.TestCase):
         # Reset to empty
         phrase[0] = M8PhraseStep()
         self.assertTrue(phrase.is_empty())
+        
+    def test_is_complete(self):
+        # Test is_complete method
+        phrase = M8Phrase()
+        # Empty phrase is complete
+        self.assertTrue(phrase.is_complete())
+        
+        # Phrase with complete step is complete
+        phrase[0] = M8PhraseStep(note="C_6", velocity=100, instrument=5)
+        self.assertTrue(phrase.is_complete())
+        
+        # Phrase with incomplete step is incomplete
+        phrase[1] = M8PhraseStep(note="C_6")  # Missing velocity and instrument
+        self.assertFalse(phrase.is_complete())
+        
+        # Fix the incomplete step
+        phrase[1].velocity = 100
+        phrase[1].instrument = 3
+        self.assertTrue(phrase.is_complete())
     
     def test_clone(self):
         # Test clone method
@@ -867,6 +915,26 @@ class TestM8Phrases(unittest.TestCase):
         # Reset to empty
         phrases[0][0] = M8PhraseStep()
         self.assertTrue(phrases.is_empty())
+        
+    def test_is_complete(self):
+        # Test is_complete method
+        phrases = M8Phrases()
+        # Empty phrases collection is complete
+        self.assertTrue(phrases.is_complete())
+        
+        # Phrases with complete steps are complete
+        phrases[0][0] = M8PhraseStep(note="C_6", velocity=100, instrument=5)
+        phrases[1][3] = M8PhraseStep(note="C_7", velocity=80, instrument=3)
+        self.assertTrue(phrases.is_complete())
+        
+        # Phrases with incomplete step is incomplete
+        phrases[2][0] = M8PhraseStep(note="C_6")  # Missing velocity and instrument
+        self.assertFalse(phrases.is_complete())
+        
+        # Fix the incomplete step
+        phrases[2][0].velocity = 100
+        phrases[2][0].instrument = 3
+        self.assertTrue(phrases.is_complete())
     
     def test_clone(self):
         # Test clone method

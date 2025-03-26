@@ -112,6 +112,22 @@ class TestM8FXTuple(unittest.TestCase):
         # Value shouldn't affect emptiness
         fx_tuple.value = 50
         self.assertTrue(fx_tuple.is_empty())
+        
+    def test_is_complete(self):
+        # Test is_complete method
+        fx_tuple = M8FXTuple(instrument_type=M8InstrumentType.WAVSYNTH)
+        # Empty tuple is not complete because key isn't set
+        self.assertFalse(fx_tuple.is_complete())
+        
+        # Tuple with key set is complete
+        fx_tuple.key = "VOL"
+        self.assertTrue(fx_tuple.is_complete())
+        
+        # Tuple is complete regardless of value
+        fx_tuple.value = 0
+        self.assertTrue(fx_tuple.is_complete())
+        fx_tuple.value = 50
+        self.assertTrue(fx_tuple.is_complete())
     
     def test_as_dict(self):
         # Test as_dict method with enum values
@@ -243,6 +259,31 @@ class TestM8FXTuples(unittest.TestCase):
         # Reset to empty
         fx_tuples[0] = M8FXTuple(instrument_type=M8InstrumentType.WAVSYNTH)
         self.assertTrue(fx_tuples.is_empty())
+        
+    def test_is_complete(self):
+        # Create a custom test class that inherits from M8FXTuple but overrides is_complete
+        class MockIncompleteM8FXTuple(M8FXTuple):
+            def is_empty(self):
+                return False  # Always non-empty
+                
+            def is_complete(self):
+                return False  # Always incomplete
+        
+        # Test the normal case first
+        fx_tuples = M8FXTuples(instrument_type=M8InstrumentType.WAVSYNTH)
+        # Empty tuples collection is complete since there are no non-empty tuples
+        self.assertTrue(fx_tuples.is_complete())
+        
+        # Add a complete tuple (with key)
+        fx_tuples[0] = M8FXTuple(key="VOL", value=20, instrument_type=M8InstrumentType.WAVSYNTH)
+        self.assertTrue(fx_tuples.is_complete())
+        
+        # Test with our mock incomplete tuple
+        fx_tuples = M8FXTuples(instrument_type=M8InstrumentType.WAVSYNTH)
+        fx_tuples[0] = MockIncompleteM8FXTuple()
+        
+        # Now verify the collection is incomplete
+        self.assertFalse(fx_tuples.is_complete())
     
     def test_clone(self):
         # Test clone method
