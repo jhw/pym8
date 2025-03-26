@@ -217,6 +217,31 @@ After implementing the instrument context manager system, we discovered issues w
    - Update all enum utility functions to properly fall back to the context manager
    - Make sure M8Modulators.as_list() passes context to each modulator
    - Add context-aware overrides to tools that need enum string representations
+   
+### Context Manager Architecture Improvement (26/03/25)
+
+The current context manager implementation has a fundamental architectural flaw: it stores and passes around string representations of instrument types (e.g., "SAMPLER") internally, when it should be working with numeric IDs only. This has led to the need for a temporary fix with hardcoded string-to-ID mappings in the enum utilities.
+
+A more principled solution would separate the two data layers clearly:
+1. **Internal layer**: Uses numeric IDs exclusively (0, 1, 2, etc.)
+2. **External layer**: Uses string representations ("WAVSYNTH", "SAMPLER", etc.)
+
+The context manager should:
+- Store numeric IDs internally, not strings
+- Convert between strings and IDs at the context boundaries
+- Provide separate methods for getting the ID (internal use) vs. the string name (external interfaces)
+
+This change would require:
+- Renaming `current_instrument_type` to `current_instrument_type_id` to clarify it stores IDs
+- Adding methods to convert between string types and numeric IDs
+- Modifying context manager's entry/exit methods to handle type conversion
+- Updating places that use the context to ensure they're requesting the appropriate form
+
+Implementation time estimate:
+- Estimated time for a human developer: 30-60 minutes
+- Actual implementation time (measured): [To be filled in]
+
+This is a cleaner architectural approach that would eliminate the need for temporary fixes in the enum utilities and better maintain the separation between internal and external data representations.
 
 ## YAML Serialization Issue (26/03/25)
 
