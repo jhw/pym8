@@ -647,3 +647,48 @@ Instrument 0: {'synth': {'type': 1, 'name': '', 'transpose': 4, 'eq': 1, 'table_
 - as no- one can remember the underlying ints
 - but the sugar format is dictated by the constraints of the interface
 - if you didn't have that, maybe the api would look different?
+
+# Direct vs Indirect Context Resolution (26/03/25)
+
+## Problem Overview
+- In the M8 codebase, there are two types of context for enum serialization:
+  1. **Direct Context**: For elements contained in an instrument (modulators)
+  2. **Indirect/Referenced Context**: For elements referencing instruments by ID (FX in phrases)
+- FX keys aren't being serialized to their string enum names in the `inspect_chains.py` tool
+
+## Key Findings
+1. **Context Manager Logic**
+   - Added specialized methods for different context paths: `with_contained_context`, `with_referenced_context`
+   - Fixed `with_referenced_context` to properly resolve instrument type IDs from IDs
+
+2. **Tests vs. Reality**
+   - Tests now consistently assert that FX keys serialize to strings with proper context
+   - But `inspect_chains.py` still shows numeric FX keys with real M8 files
+
+3. **Root Cause Hypothesis: M8Block**
+   - Real instruments in M8 files may be `M8Block` instances which lack type properties
+   - Context manager can't extract type info from these blocks
+   - Context resolution fails, falling back to numeric values
+
+## Working Solutions
+- Updated tests pass because we explicitly set context to known types
+- In real app, context depends on extracting type from actual instrument objects
+- The gap is in resolving instrument IDs to types for real instruments
+
+## Next Steps
+1. **Improve Type Resolution**
+   - Add special handling for M8Block in the `get_instrument_type_id` method
+   - Either provide default type values or trace where type should be located
+
+2. **Fix Context Propagation**
+   - Ensure project is correctly set on context manager
+   - Ensure types are properly extracted from real instruments
+
+3. **Fallback Strategy**
+   - Consider adding a fallback mechanism to map numeric FX keys to strings
+   - May need custom handling for tools like `inspect_chains.py`
+
+## Test Coverage
+- Direct context (FX tests): Tests asserting string values ("VOL", "ARP")
+- Indirect context (Phrase tests): Now assert string values when context available
+- Explicit test for string FX enum serialization (`test_as_dict_with_instrument_context`)

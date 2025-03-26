@@ -56,6 +56,11 @@ class M8Project:
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
         instance.instruments = M8Instruments.read(data[OFFSETS["instruments"]:])
 
+        # This handles the case when read() is called directly without read_from_file()
+        from m8.api.utils.enums import M8InstrumentContext
+        context = M8InstrumentContext.get_instance()
+        context.set_project(instance)
+
         return instance
 
     # Instrument methods
@@ -199,7 +204,14 @@ class M8Project:
     @staticmethod
     def read_from_file(filename: str):
         with open(filename, "rb") as f:
-            return M8Project.read(f.read())
+            project = M8Project.read(f.read())
+            
+        # Set the project on the context manager for proper enum resolution
+        from m8.api.utils.enums import M8InstrumentContext
+        context = M8InstrumentContext.get_instance()
+        context.set_project(project)
+        
+        return project
 
     @classmethod
     def initialise(cls, template_name: str = "DEFAULT401"):
@@ -214,6 +226,7 @@ class M8Project:
             try:
                 with importlib.resources.path('m8.templates', template_filename) as template_path:
                     if os.path.exists(template_path):
+                        # Will automatically set the project on the context manager
                         return cls.read_from_file(str(template_path))
             except (ImportError, ModuleNotFoundError, FileNotFoundError):
                 pass

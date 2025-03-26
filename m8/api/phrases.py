@@ -208,8 +208,8 @@ class M8PhraseStep(EnumPropertyMixin):
         
         # Serialize FX with instrument context if there's a valid instrument reference
         if instrument_id != self.EMPTY_INSTRUMENT:
-            context = M8InstrumentContext.get_instance()
-            with context.with_instrument(instrument_id=instrument_id):
+            from m8.api.utils.enums import with_referenced_context
+            with with_referenced_context(instrument_id):
                 fx_list = self.fx.as_list()
         else:
             fx_list = self.fx.as_list()
@@ -236,8 +236,8 @@ class M8PhraseStep(EnumPropertyMixin):
             
             # Use instrument context if there's a valid instrument reference
             if instrument_id != cls.EMPTY_INSTRUMENT:
-                context = M8InstrumentContext.get_instance()
-                with context.with_instrument(instrument_id=instrument_id):
+                from m8.api.utils.enums import with_referenced_context
+                with with_referenced_context(instrument_id):
                     instance.fx = M8FXTuples.from_list(data["fx"])
             else:
                 instance.fx = M8FXTuples.from_list(data["fx"])

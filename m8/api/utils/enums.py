@@ -94,16 +94,33 @@ class M8InstrumentContext:
             return instrument_types.get(type_id)
         return None
         
-    def with_instrument(self, instrument_id=None, instrument_type_id=None):
-        """Create a context block for operations with a specific instrument.
-        
-        Args:
-            instrument_id: Optional instrument ID to use in the context block
-            instrument_type_id: Optional explicit instrument type ID to use
+    def with_contained_context(self, instrument_or_type):
+        if hasattr(instrument_or_type, 'type'):
+            type_id = get_type_id(instrument_or_type.type)
+        elif hasattr(instrument_or_type, 'instrument_type'):
+            type_id = get_type_id(instrument_or_type.instrument_type)
+        else:
+            type_id = get_type_id(instrument_or_type)
             
-        Returns:
-            A context manager block that sets the instrument context
-        """
+        return self.with_instrument(instrument_type_id=type_id)
+    
+    def with_referenced_context(self, instrument_id):
+        if instrument_id is None or instrument_id == 0xFF:
+            return self.with_instrument(instrument_type_id=None)
+        
+        # Look up the instrument type ID from the instrument ID
+        type_id = self.get_instrument_type_id(instrument_id)
+            
+        # Set both the ID and the resolved type ID
+        return self.with_instrument(instrument_id=instrument_id, instrument_type_id=type_id)
+    
+    def with_phrase_step_context(self, step):
+        if not hasattr(step, 'instrument') or step.instrument == 0xFF:
+            return self.with_instrument(instrument_type_id=None)
+            
+        return self.with_referenced_context(step.instrument)
+        
+    def with_instrument(self, instrument_id=None, instrument_type_id=None):
         return _InstrumentContextBlock(self, instrument_id, instrument_type_id)
         
     def clear(self):
@@ -491,6 +508,40 @@ class EnumPropertyMixin:
         
         return value
 
+def with_contained_context(instrument_or_type):
+    context = M8InstrumentContext.get_instance()
+    return context.with_contained_context(instrument_or_type)
+    
+def with_referenced_context(instrument_id):
+    context = M8InstrumentContext.get_instance()
+    return context.with_referenced_context(instrument_id)
+    
+def with_phrase_step_context(step):
+    context = M8InstrumentContext.get_instance()
+    return context.with_phrase_step_context(step)
+
+def with_instrument_context(obj_or_id=None):
+    context = M8InstrumentContext.get_instance()
+    
+    # Handle different input types
+    instrument_id = None
+    instrument_type_id = None
+    
+    if obj_or_id is None:
+        # Use current context
+        pass
+    elif hasattr(obj_or_id, 'instrument_type'):
+        # It's an instrument object
+        instrument_type_id = get_type_id(obj_or_id.instrument_type)
+    elif hasattr(obj_or_id, 'type'):
+        # It's an instrument object with 'type' field
+        instrument_type_id = get_type_id(obj_or_id.type)
+    else:
+        # Assume it's an ID
+        instrument_type_id = get_type_id(obj_or_id)
+        
+    return context.with_instrument(instrument_id=instrument_id, instrument_type_id=instrument_type_id)
+
 # Utility functions to abstract common boilerplate patterns
 
 def get_instrument_type_from_id(type_id):
@@ -530,29 +581,6 @@ def get_type_id(enum_or_value):
             return None
             
     return None
-
-def with_instrument_context(obj_or_id=None):
-    """Create a context manager for instrument operations."""
-    context = M8InstrumentContext.get_instance()
-    
-    # Handle different input types
-    instrument_id = None
-    instrument_type_id = None
-    
-    if obj_or_id is None:
-        # Use current context
-        pass
-    elif hasattr(obj_or_id, 'instrument_type'):
-        # It's an instrument object
-        instrument_type_id = get_type_id(obj_or_id.instrument_type)
-    elif hasattr(obj_or_id, 'type'):
-        # It's an instrument object with 'type' field
-        instrument_type_id = get_type_id(obj_or_id.type)
-    else:
-        # Assume it's an ID
-        instrument_type_id = get_type_id(obj_or_id)
-        
-    return context.with_instrument(instrument_id=instrument_id, instrument_type_id=instrument_type_id)
 
 def serialize_with_context(param_def, value, param_name=None):
     """Serialize a parameter value with automatic context handling."""

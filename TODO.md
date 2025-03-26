@@ -1,39 +1,34 @@
 # short
 
-- Concat phrases script
+- Sort notes
+- Audit all serialization tests to ensure they assert against string enum values, not integers
+- Fix discrepancy between test and real-world FX key serialization (focus on M8Block handling)
 
 # medium
 
 - TODO.md >> github project
-- Add speech input support for Claude
-- sampler slices
+- Sampler slices
 - 5.0.2
-- fmsynth
-- hypersynth
-- tables
+- FMsynth
+- Hypersynth
+- Tables
 
 # beats
 
-- revoke chains model in favour of phrases only
-- check reverb_send, chorus_send refs
+- Revoke chains model in favour of phrases only
+- Check reverb_send, chorus_send refs
 
 # roadmap
 
-- eq
-- midi
-- grooves
-- scales
-- enum improvements (see "Enum Implementation Design Decision" in NOTES.md)
-
-# thoughts
-
-- get rid of enums?
-  - tempting but they are likely useful
-- screenshot >>> textract?
-  - not precise enough and not worth automating
+- Eq
+- Midi
+- Grooves
+- Scales
 
 # done
 
+- Speech input support for Claude
+✓ Rename concat_phrases.py to inspect_phrases.py
 ✓ Abstract ID-to-string conversion boilerplate code into utility functions in enum helpers
 ✓ Create helper methods for common enum conversion patterns
 ✓ Implement ID-based approach for context manager (see "Context Manager ID-Based Implementation" in NOTES.md)

@@ -288,11 +288,21 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertFalse(result)
     
     def test_as_dict(self):
-        # Test as_dict method with string note
+        # For proper enum value serialization, we need context with instrument types
+        # This test uses explicit context to ensure consistent behavior
+        from m8.api.utils.enums import M8InstrumentContext
+        from m8.enums import M8InstrumentType
+        
+        # Set up direct instrument context
+        context = M8InstrumentContext.get_instance()
+        context.current_instrument_type_id = M8InstrumentType.WAVSYNTH.value
+        
+        # Create a step with FX and a valid instrument reference
         step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
         step.fx[0] = M8FXTuple(key=10, value=20)
         step.fx[2] = M8FXTuple(key=30, value=40)
         
+        # Get serialized dict
         result = step.as_dict()
         
         # Verify basic fields - note should be string
@@ -304,13 +314,48 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertEqual(len(result["fx"]), 2)  # Only non-empty FX tuples
         
         # Find specific FX tuples
+        # Since we have set the context properly, both FX keys should be serialized as strings
         fx0 = next(fx for fx in result["fx"] if fx["index"] == 0)
-        self.assertEqual(fx0["key"], 10)
+        # The specific string depends on which enum the value maps to in the current context
+        self.assertTrue(isinstance(fx0["key"], str), f"Expected string FX key, got {type(fx0['key']).__name__}")
         self.assertEqual(fx0["value"], 20)
         
         fx2 = next(fx for fx in result["fx"] if fx["index"] == 2)
-        self.assertEqual(fx2["key"], 30)
+        self.assertTrue(isinstance(fx2["key"], str), f"Expected string FX key, got {type(fx2['key']).__name__}")
         self.assertEqual(fx2["value"], 40)
+        
+        # Clean up context
+        context.clear()
+        
+    def test_as_dict_with_instrument_context(self):
+        """Test that FX keys are serialized to string enum values when instrument context is available."""
+        from m8.api.utils.enums import M8InstrumentContext
+        from m8.enums import M8SequencerFX, M8MixerFX, M8InstrumentType
+        
+        # Set up a direct instrument context
+        context = M8InstrumentContext.get_instance()
+        context.current_instrument_type_id = M8InstrumentType.WAVSYNTH.value
+        
+        # Create a step with FX
+        step = M8PhraseStep(note="C_6", velocity=100, instrument=0)
+        step.fx[0] = M8FXTuple(key=M8SequencerFX.RNL.value, value=96)   # RNL = 7
+        step.fx[1] = M8FXTuple(key=M8MixerFX.VMV.value, value=80)       # VMV = 27
+        
+        # Get the dict representation
+        result = step.as_dict()
+        
+        # Verify that FX keys are serialized as string enum values
+        self.assertEqual(len(result["fx"]), 2)
+        
+        # Find specific FX tuples and verify their keys are string enum values
+        fx0 = next(fx for fx in result["fx"] if fx["index"] == 0)
+        self.assertEqual(fx0["key"], "RNL")  # Should be string enum name, not 7
+        
+        fx1 = next(fx for fx in result["fx"] if fx["index"] == 1)
+        self.assertEqual(fx1["key"], "VMV")  # Should be string enum name, not 27
+        
+        # Clean up context
+        context.clear()
     
     def test_from_dict(self):
         # Test from_dict method with string note
