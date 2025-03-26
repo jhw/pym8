@@ -290,7 +290,7 @@ class TestM8PhraseStep(unittest.TestCase):
     def test_as_dict(self):
         # For proper enum value serialization, we need context with instrument types
         # This test uses explicit context to ensure consistent behavior
-        from m8.api.utils.enums import M8InstrumentContext
+        from m8.core.enums import M8InstrumentContext
         from m8.enums import M8InstrumentType
         
         # Set up direct instrument context
@@ -329,7 +329,7 @@ class TestM8PhraseStep(unittest.TestCase):
         
     def test_as_dict_with_instrument_context(self):
         """Test that FX keys are serialized to string enum values when instrument context is available."""
-        from m8.api.utils.enums import M8InstrumentContext
+        from m8.core.enums import M8InstrumentContext
         from m8.enums import M8SequencerFX, M8MixerFX, M8InstrumentType
         
         # Set up a direct instrument context

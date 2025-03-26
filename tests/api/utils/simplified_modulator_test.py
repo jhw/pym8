@@ -1,6 +1,6 @@
 import unittest
 from m8.api.modulators import M8Modulator
-from m8.api.utils.enums import serialize_enum, deserialize_enum
+from m8.core.enums import serialize_enum, deserialize_enum
 from m8.enums.wavsynth import M8WavSynthModDestinations
 from m8.enums.macrosynth import M8MacroSynthModDestinations
 from m8.enums.sampler import M8SamplerModDestinations

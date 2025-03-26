@@ -1,8 +1,6 @@
 # short
 
-- Reduce logging verbosity in enums.py to improve test performance
 - Rendering of FX- only phrases
-- Move enums to m8/core, utils to m8/utils
 - Investigate inspect_chains.py context manager warnings
 
 # medium
@@ -29,6 +27,7 @@
 
 # done
 
+- Move enums to m8/core, utils to m8/utils
 - Added test for FX values using GENBASS.m8s
 - Modified inspect_xxx scripts to output integers as hex values in YAML
 - Fixed context manager FX key serialization issue in inspect_chains.py

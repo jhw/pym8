@@ -2,7 +2,7 @@ from m8.api import (
     M8Block, load_class, split_byte, join_nibbles, serialize_enum, deserialize_enum,
     deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
 )
-from m8.api.utils.enums import (
+from m8.core.enums import (
     EnumPropertyMixin, M8InstrumentContext, get_instrument_type_from_context, get_type_id, with_instrument_context
 )
 from m8.enums import M8ModulatorType
@@ -353,7 +353,7 @@ class M8Modulator(EnumPropertyMixin):
         # Get instrument type from context if needed
         instrument_type = self.instrument_type
         if instrument_type is None:
-            from m8.api.utils.enums import get_instrument_type_from_context
+            from m8.core.enums import get_instrument_type_from_context
             instrument_type = get_instrument_type_from_context()
         
         # Handle destination serialization
@@ -390,7 +390,7 @@ class M8Modulator(EnumPropertyMixin):
         
         # Get instrument type from context if needed
         if instrument_type is None:
-            from m8.api.utils.enums import get_instrument_type_from_context
+            from m8.core.enums import get_instrument_type_from_context
             instrument_type = get_instrument_type_from_context()
         
         try:

@@ -1,7 +1,7 @@
 import unittest
 from enum import IntEnum
 
-from m8.api.utils.enums import (
+from m8.core.enums import (
     serialize_enum, deserialize_enum,
     get_enum_paths_for_instrument, load_enum_classes,
     serialize_param_enum_value, deserialize_param_enum,

@@ -25,7 +25,7 @@ def display_chain(project, chain, chain_idx, output_format):
         logger = logging.getLogger("inspect_chains")
         logger.debug("Setting up context for chain serialization")
         
-        from m8.api.utils.enums import M8InstrumentContext, serialize_param_enum_value
+        from m8.core.enums import M8InstrumentContext, serialize_param_enum_value
         from m8.config import load_format_config
         
         # Get the context manager

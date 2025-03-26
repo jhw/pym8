@@ -10,7 +10,7 @@ from m8.api.utils.string_utils import (
 from m8.api.utils.json_utils import (
     M8JSONEncoder, m8_json_decoder, json_dumps, json_loads
 )
-from m8.api.utils.enums import (
+from m8.core.enums import (
     serialize_enum, deserialize_enum,
     get_enum_paths_for_instrument, load_enum_classes,
     serialize_param_enum_value, deserialize_param_enum,

@@ -1,7 +1,7 @@
 # m8/api/instruments.py
 from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
-from m8.api.utils.enums import EnumPropertyMixin, M8InstrumentContext
+from m8.core.enums import EnumPropertyMixin, M8InstrumentContext
 from m8.api.version import M8Version
 from enum import Enum, auto
 from m8.enums import M8InstrumentType
