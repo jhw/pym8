@@ -39,12 +39,16 @@ class M8InstrumentContext:
         
     def __init__(self):
         """Initialize a new instrument context manager."""
+        import logging
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug("Initializing M8InstrumentContext")
         self.project = None
         self.current_instrument_id = None
         self.current_instrument_type_id = None
         
     def set_project(self, project):
         """Set the current project context."""
+        self.logger.debug(f"Setting project on context manager: {project}")
         self.project = project
         
     def get_instrument_type_id(self, instrument_id=None):
@@ -56,25 +60,78 @@ class M8InstrumentContext:
         Returns:
             The instrument type ID or None if not available.
         """
+        self.logger.debug(f"get_instrument_type_id called with instrument_id={instrument_id}")
+        self.logger.debug(f"Current context state: project={self.project is not None}, "
+                        f"current_instrument_id={self.current_instrument_id}, "
+                        f"current_instrument_type_id={self.current_instrument_type_id}")
+        
         # If explicit instrument ID is provided, look it up
         if instrument_id is not None:
+            self.logger.debug(f"Looking up instrument type for ID: {instrument_id}")
             if self.project and 0 <= instrument_id < len(self.project.instruments):
                 instrument = self.project.instruments[instrument_id]
+                self.logger.debug(f"Found instrument: {instrument}, class: {instrument.__class__.__name__}")
+                
                 # Get the numeric ID from the instrument
                 if hasattr(instrument, 'instrument_type_id'):
-                    return instrument.instrument_type_id
+                    result = instrument.instrument_type_id
+                    self.logger.debug(f"Found instrument_type_id: {result}")
+                    return result
                 # If it just has instrument_type
                 elif hasattr(instrument, 'instrument_type'):
                     type_val = getattr(instrument, 'instrument_type')
+                    self.logger.debug(f"Found instrument_type: {type_val}, type: {type(type_val)}")
+                    
                     # If it's an enum, get its value
                     if hasattr(type_val, 'value'):
-                        return type_val.value
+                        result = type_val.value
+                        self.logger.debug(f"Extracted enum value: {result}")
+                        return result
                     # If it's already a numeric ID
                     elif isinstance(type_val, int):
+                        self.logger.debug(f"Using numeric instrument_type: {type_val}")
                         return type_val
                     # String values should be converted before reaching here
+                    elif isinstance(type_val, str):
+                        self.logger.debug(f"Found string instrument_type: {type_val}, attempting conversion")
+                        from m8.config import get_instrument_type_id
+                        try:
+                            result = get_instrument_type_id(type_val)
+                            self.logger.debug(f"Converted string to ID: {result}")
+                            return result
+                        except ValueError:
+                            self.logger.warning(f"Failed to convert string instrument_type: {type_val}")
+                else:
+                    self.logger.warning(f"Instrument doesn't have instrument_type or instrument_type_id attributes")
+                    self.logger.debug(f"Available attributes: {dir(instrument)}")
+                    
+                    # Special handling for M8Block
+                    if instrument.__class__.__name__ == 'M8Block':
+                        self.logger.debug("Attempting to extract type from M8Block")
+                        # Check if this is an instrument block with a type field
+                        if hasattr(instrument, 'data') and len(instrument.data) > 0:
+                            # For M8 instruments, the type is usually stored in the first byte
+                            # 0 = WAVSYNTH, 1 = MACROSYNTH, 2 = SAMPLER
+                            potential_type = instrument.data[0]
+                            # Only use if it's a valid value and not an empty indicator (0xFF)
+                            if potential_type not in (0xFF, None) and potential_type < 3:
+                                self.logger.debug(f"Extracted potential type from data: {potential_type}")
+                                return potential_type
+                            else:
+                                self.logger.debug(f"Block has first byte {potential_type}, but it doesn't look like a valid instrument type")
+                        
+                        # Try to detect sampler instruments specifically - they have a distinct pattern
+                        # in their data with specific byte signatures
+                        if hasattr(instrument, 'data') and len(instrument.data) >= 22:
+                            # Check for sampler signature: byte 16-17 contains sample data length
+                            if instrument.data[0] == 2:  # Type 2 = SAMPLER
+                                self.logger.debug("Block matches SAMPLER signature")
+                                return 2
+            else:
+                self.logger.warning(f"Instrument ID {instrument_id} not found in project or project is None")
         
         # Otherwise use current context
+        self.logger.debug(f"Using current context instrument type ID: {self.current_instrument_type_id}")
         return self.current_instrument_type_id
     
     def get_instrument_type(self):
@@ -148,6 +205,13 @@ class _InstrumentContextBlock:
         
     def __enter__(self):
         """Enter the context block, setting instrument context."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.debug(f"Entering context block with ID={self.instrument_id}, type_id={self.instrument_type_id}")
+        logger.debug(f"Before: context.current_instrument_id={self.manager.current_instrument_id}, "
+                   f"context.current_instrument_type_id={self.manager.current_instrument_type_id}")
+        
         self.previous_id = self.manager.current_instrument_id
         self.previous_type_id = self.manager.current_instrument_type_id
         
@@ -159,12 +223,25 @@ class _InstrumentContextBlock:
         if self.instrument_type_id is not None:
             self.manager.current_instrument_type_id = self.instrument_type_id
         
+        logger.debug(f"After: context.current_instrument_id={self.manager.current_instrument_id}, "
+                   f"context.current_instrument_type_id={self.manager.current_instrument_type_id}")
+        
         return self.manager
         
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit the context block, restoring previous context."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.debug(f"Exiting context block, restoring ID={self.previous_id}, type_id={self.previous_type_id}")
+        logger.debug(f"Before restore: context.current_instrument_id={self.manager.current_instrument_id}, "
+                   f"context.current_instrument_type_id={self.manager.current_instrument_type_id}")
+        
         self.manager.current_instrument_id = self.previous_id
         self.manager.current_instrument_type_id = self.previous_type_id
+        
+        logger.debug(f"After restore: context.current_instrument_id={self.manager.current_instrument_id}, "
+                   f"context.current_instrument_type_id={self.manager.current_instrument_type_id}")
 
 # Main enum functions
 
@@ -305,50 +382,149 @@ def load_enum_classes(enum_paths, log_context=None):
 
 def serialize_param_enum_value(value, param_def, instrument_type=None, param_name=None):
     """Serialize a parameter value to its enum string representation."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.debug(f"Serializing param enum value: value={value}, param_name={param_name}, "
+               f"instrument_type={instrument_type}")
+    
     if "enums" not in param_def:
+        logger.debug(f"No enums in param_def, returning original value: {value}")
         return value
     
-    # Handle string instrument types by getting their ID
+    # For special param types like FX keys, we could add config-based fallbacks here in the future
+    # But we'll rely on proper context propagation instead of hardcoding values
+    
+    # Initialize instrument_type_id variable
     instrument_type_id = None
-    if isinstance(instrument_type, str):
-        from m8.config import get_instrument_type_id
-        try:
-            instrument_type_id = get_instrument_type_id(instrument_type)
-        except ValueError:
-            pass
     
-    # Try with the string type first
-    enum_paths = get_enum_paths_for_instrument(param_def["enums"], instrument_type)
+    # Try to get instrument_type from context if not provided
+    if instrument_type is None:
+        context = M8InstrumentContext.get_instance()
+        
+        # Get the instrument type ID first to ensure we have the raw ID
+        type_id = context.get_instrument_type_id()
+        if type_id is not None:
+            # Convert the ID to a string instrument type for lookup
+            inst_type = get_instrument_type_from_id(type_id)
+            if inst_type:
+                logger.info(f"Using instrument type from context: {inst_type} (ID: {type_id})")
+                instrument_type = inst_type
+                instrument_type_id = type_id
+            else:
+                # Use the ID directly
+                logger.info(f"Using instrument type ID from context: {type_id}")
+                instrument_type_id = type_id
+                instrument_type = None
+        else:
+            # Check if context has a type string directly
+            inst_type = context.get_instrument_type()
+            if inst_type:
+                logger.info(f"Using instrument type string from context: {inst_type}")
+                instrument_type = inst_type
+                # Also get the ID for later use
+                from m8.config import get_instrument_type_id
+                try:
+                    instrument_type_id = get_instrument_type_id(inst_type)
+                except ValueError:
+                    instrument_type_id = None
+            else:
+                logger.warning("No instrument_type provided and none found in context")
+                # For FX fields, use SAMPLER as a fallback since it's most common
+                if param_name == 'key':
+                    logger.info("Using SAMPLER as fallback for FX serialization")
+                    instrument_type = "SAMPLER"
+                    instrument_type_id = 2  # SAMPLER ID
+    else:
+        # Extract ID from provided instrument_type
+        instrument_type_id = None
+        if isinstance(instrument_type, str):
+            logger.info(f"Converting string instrument_type to ID: {instrument_type}")
+            from m8.config import get_instrument_type_id
+            try:
+                instrument_type_id = get_instrument_type_id(instrument_type)
+                logger.info(f"Converted to ID: {instrument_type_id}")
+            except ValueError:
+                logger.warning(f"Failed to convert string instrument_type to ID: {instrument_type}")
+        elif isinstance(instrument_type, int):
+            instrument_type_id = instrument_type
     
-    # If that didn't work, try with the ID
+    # Try multiple approaches to find enum paths, starting with most direct
+    
+    # 1. Try direct raw ID lookup in hex format
+    enum_paths = None
+    if instrument_type_id is not None:
+        hex_key = f"0x{instrument_type_id:02x}"
+        logger.info(f"Trying hex key format: {hex_key}")
+        if isinstance(param_def["enums"], dict) and hex_key in param_def["enums"]:
+            enum_paths = param_def["enums"][hex_key]
+            logger.info(f"Found enum paths with hex key: {enum_paths}")
+    
+    # 2. Try with the ID directly
     if not enum_paths and instrument_type_id is not None:
+        logger.info(f"Trying with ID directly: {instrument_type_id}")
+        if isinstance(param_def["enums"], dict) and instrument_type_id in param_def["enums"]:
+            enum_paths = param_def["enums"][instrument_type_id]
+            logger.info(f"Found enum paths with direct ID: {enum_paths}")
+    
+    # 3. Try with the string type
+    if not enum_paths and instrument_type is not None:
+        logger.info(f"Trying with string type: {instrument_type}")
+        if isinstance(param_def["enums"], dict) and instrument_type in param_def["enums"]:
+            enum_paths = param_def["enums"][instrument_type]
+            logger.info(f"Found enum paths with string type: {enum_paths}")
+    
+    # 4. Advanced lookup with helper function
+    if not enum_paths:
+        logger.info(f"Using helper function with {instrument_type}")
+        enum_paths = get_enum_paths_for_instrument(param_def["enums"], instrument_type)
+        logger.info(f"Got enum_paths: {enum_paths}")
+    
+    # 5. Try advanced lookup with ID if string lookup failed
+    if not enum_paths and instrument_type_id is not None:
+        logger.info(f"Using helper function with ID: {instrument_type_id}")
         enum_paths = get_enum_paths_for_instrument(param_def["enums"], instrument_type_id)
+        logger.info(f"Got enum_paths: {enum_paths}")
     
-    if not enum_paths:
-        # Last resort: Try direct hex format
-        if instrument_type_id is not None:
-            hex_key = f"0x{instrument_type_id:02x}"
-            if isinstance(param_def["enums"], dict) and hex_key in param_def["enums"]:
-                enum_paths = param_def["enums"][hex_key]
+    # 6. If all else fails, check if there's a single entry that applies to all instrument types
+    if not enum_paths and isinstance(param_def["enums"], list):
+        logger.info("Using generic enum paths (applies to all instruments)")
+        enum_paths = param_def["enums"]
+        logger.info(f"Got enum_paths: {enum_paths}")
     
+    # No paths found, return original value
     if not enum_paths:
+        logger.warning(f"No enum paths found, returning original value: {value}")
         return value
-        
+    
+    # Load enum classes
+    logger.info(f"Loading enum classes for paths: {enum_paths}")
     enum_classes = load_enum_classes(enum_paths, param_name)
+    logger.info(f"Loaded enum classes: {enum_classes}")
+    
     if not enum_classes:
+        logger.warning(f"No enum classes found for paths: {enum_paths}")
         return value
-        
+    
+    # Value is already an enum object, return its name
     if hasattr(value, 'name'):
+        logger.info(f"Value is already an enum object, returning name: {value.name}")
         return value.name
-        
+    
+    # Value is an integer, look up its enum name
     if isinstance(value, int):
+        logger.info(f"Value is an integer: {value}, looking up enum name")
         for enum_class in enum_classes:
             try:
                 enum_value = enum_class(value)
+                logger.info(f"Found enum {enum_value} with name {enum_value.name}")
                 return enum_value.name
             except ValueError:
+                logger.info(f"Value {value} not found in enum class {enum_class.__name__}")
                 continue
-                
+    
+    # Couldn't convert the value, return it as-is
+    logger.warning(f"Could not convert value {value} to enum name, returning as-is")
     return value
 
 def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=None):

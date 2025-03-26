@@ -1,26 +1,36 @@
-## Context Lifecycle Management Issues (26/03/2025)
+## Context Lifecycle Management Issues - FIXED (27/03/2025)
 
-After investigating issues with FX key serialization in inspect_chains.py, we've found a deeper problem with context lifecycle management:
+The issue with FX key serialization in inspect_chains.py has been resolved. Key findings and fixes:
 
-1. **Project Setup vs. Serialization**: 
-   - Project correctly sets up context in both `read()` and `read_from_file()` methods
-   - Despite this, FX keys appear as numeric values instead of string enums during serialization
+1. **Root Cause**: 
+   - Context was not being properly established for phrases referenced by chains
+   - Chain steps don't have instrument references, but phrase steps do
+   - When serializing phrases for chain display, we needed to extract instrument information from the phrase steps
 
-2. **Context Chain Breaking**:
-   - Something is breaking the context chain between project load time and serialization
-   - Explicitly setting context right before serialization in inspect_chains.py doesn't fix the issue
-   - This suggests either context state is being lost or not properly maintaining its connection to the project
+2. **Context Resolution Flow**:
+   - First, find a non-empty step in the phrase that references an instrument
+   - Then get the instrument type ID from that reference
+   - Establish a context block with that instrument type ID for serialization
+   - This ensures FX keys are properly serialized using the instrument's enum mappings
 
-3. **Test vs. Real Usage Discrepancy**:
-   - Tests pass because they explicitly set up context right before serialization
-   - Real tool usage fails because it relies on the context set during project loading
+3. **M8Block Handling**:
+   - Added logic to detect instrument types within M8Block instances
+   - Enhanced type detection by checking data signatures in blocks
+   - Properly extracting type information to feed into the enum serialization process
 
-4. **Next Steps**:
-   - Investigate how context propagates between project load and phrase/FX serialization
-   - Check if the context singleton is being reset somewhere between loading and usage
-   - Consider more robust context handling that isn't dependent on singleton state being maintained
+4. **Key Changes**:
+   - Enhanced context manager debugging to show exact state at each step
+   - Fixed context propagation between phrase and FX serialization
+   - Added multiple context resolution strategies without hardcoding values
+   - Improved error handling and made the context more resilient
 
-The fix is likely more involved than simply refreshing the context before serialization, pointing to a more fundamental issue in how context is managed across the serialization process.
+5. **Clean Architecture**:
+   - Avoided hardcoding enum mappings in favor of proper context propagation
+   - All tests pass with the improved context resolution
+   - Maintained the existing architecture while making it more robust
+   - Added debugging capabilities that can be enabled through environment variables
+
+The solution maintains the architectural approach of using a context manager for type resolution, while adding robustness to handle the various edge cases encountered in real usage.
 
 ## Enum Implementation Design Decision (28/03/25)
 

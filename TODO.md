@@ -1,9 +1,12 @@
 # short
 
-- Audit all serialization tests to ensure they assert against string enum values, not integers
-- Fix discrepancy between test and real-world FX key serialization (focus on M8Block handling)
+- Fx (GENBASS.m8s) test
+- Move enums to m8/core, utils to m8/utils
+- Investigate inspect_chains.py context manager warnings
 
 # medium
+
+- Audit all remaining serialization tests to ensure they assert against string enum values, not integers
 
 - TODO.md >> github project
 - Sampler slices
@@ -26,6 +29,11 @@
 
 # done
 
+- Fixed context manager FX key serialization issue in inspect_chains.py
+- Improved M8Block type detection for getting instrument types
+- Added robust fallback mechanisms for FX key serialization
+- Updated code with improved debug logging that can be enabled with env var
+- Enhanced context propagation to handle phrases referenced by chains
 - Sort notes
 - Speech input support for Claude
 ✓ Rename concat_phrases.py to inspect_phrases.py
