@@ -1,14 +1,12 @@
 # short
 
-- Abstract ID-to-string conversion boilerplate code into utility functions in enum helpers
-- Create helper methods for common enum conversion patterns
+- Concat phrases script
 
 # medium
 
 - TODO.md >> github project
 - Add speech input support for Claude
 - sampler slices
-- fx example
 - 5.0.2
 - fmsynth
 - hypersynth
@@ -36,6 +34,8 @@
 
 # done
 
+✓ Abstract ID-to-string conversion boilerplate code into utility functions in enum helpers
+✓ Create helper methods for common enum conversion patterns
 ✓ Implement ID-based approach for context manager (see "Context Manager ID-Based Implementation" in NOTES.md)
 ✓ Fix context manager issues with enum serialization (see "Context Manager Issues" in NOTES.md)
 ✓ Fix modulator destination enum serialization (see NOTES.md for details)
