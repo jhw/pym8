@@ -1,5 +1,6 @@
 # short
 
+- inspect_xxx scripts to output ints as hex
 - Fx (GENBASS.m8s) test
 - Move enums to m8/core, utils to m8/utils
 - Investigate inspect_chains.py context manager warnings
