@@ -1,7 +1,6 @@
 # short
 
-- Rendering of FX- only phrases
-- Investigate inspect_chains.py context manager warnings
+- is_complete()
 
 # medium
 
@@ -27,6 +26,9 @@
 
 # done
 
+- Investigate inspect_chains.py context manager warnings
+- Improved phrase emptiness check to consider non-empty FX
+- Updated JSON serialization for phrases to use sparse representation
 - Move enums to m8/core, utils to m8/utils
 - Added test for FX values using GENBASS.m8s
 - Modified inspect_xxx scripts to output integers as hex values in YAML

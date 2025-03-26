@@ -1,3 +1,25 @@
+## Improved Phrase Emptiness and JSON Serialization (26/03/2025)
+
+The phrase emptiness checking and JSON serialization have been improved:
+
+1. **Phrase Emptiness Logic**:
+   - Previously, a phrase step was considered empty only if note, velocity, instrument, and FX were all empty
+   - Now, a step is considered non-empty if either:
+     - It has a non-empty note/velocity/instrument
+     - It has non-empty FX, even with an empty note
+
+2. **Sparse JSON Representation**:
+   - Empty fields (note=0xFF, velocity=0xFF, instrument=0xFF) are now omitted from JSON
+   - This creates a more compact representation that only includes meaningful values
+   - `from_dict` method now handles missing fields by defaulting to empty values
+   - FX list is always included for consistency
+
+3. **Benefits**:
+   - More accurate representation of how the M8 tracker handles phrases
+   - Smaller JSON files for sparse phrases
+   - Better handling of FX-only steps
+   - Makes it clearer which fields have meaningful values
+
 ## Context Lifecycle Management Issues - FIXED (27/03/2025)
 
 The issue with FX key serialization in inspect_chains.py has been resolved. Key findings and fixes:

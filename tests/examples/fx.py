@@ -46,14 +46,18 @@ class TestFXMapping(unittest.TestCase):
         self.assertEqual(steps[0]['instrument'], 0, 
                          "First step should reference instrument 0")
         
-        # Other steps should be empty notes but with FX
+        # Other steps should have empty notes but with FX
+        # With our sparse representation, empty fields shouldn't be in the dict
         for i in range(1, 5):
-            self.assertEqual(steps[i]['note'], 0xFF, 
-                             f"Step {i} should have empty note")
-            self.assertEqual(steps[i]['velocity'], 0xFF, 
-                             f"Step {i} should have empty velocity")
-            self.assertEqual(steps[i]['instrument'], 0xFF, 
-                             f"Step {i} should have empty instrument")
+            self.assertNotIn('note', steps[i], 
+                             f"Step {i} should not have 'note' field when empty")
+            self.assertNotIn('velocity', steps[i], 
+                             f"Step {i} should not have 'velocity' field when empty")
+            self.assertNotIn('instrument', steps[i], 
+                             f"Step {i} should not have 'instrument' field when empty")
+            # But should have FX
+            self.assertIn('fx', steps[i], 
+                          f"Step {i} should have 'fx' field")
     
     def test_fx_in_first_step(self):
         """Verify the first step has the expected FX"""

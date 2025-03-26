@@ -76,11 +76,19 @@ class M8PhraseStep(EnumPropertyMixin):
         2. It's more performant by avoiding enum lookups
         3. It's less coupled to enum implementations
         4. It maintains separation between emptiness checks and validity checks
+        
+        A step is considered non-empty if it either:
+        - Contains a non-empty note value
+        - Contains non-empty FX, even with an empty note
         """
+        # If FX is non-empty, the step is non-empty even with an empty note
+        if not self.fx.is_empty():
+            return False
+            
+        # If FX is empty, check if note/velocity/instrument are all empty
         return (self.note == self.EMPTY_NOTE and
                 self.velocity == self.EMPTY_VELOCITY and
-                self.instrument == self.EMPTY_INSTRUMENT and
-                self.fx.is_empty())
+                self.instrument == self.EMPTY_INSTRUMENT)
 
     def write(self):
         buffer = bytearray(self._data)
@@ -214,30 +222,42 @@ class M8PhraseStep(EnumPropertyMixin):
         else:
             fx_list = self.fx.as_list()
         
-        result = {
-            "note": self.note,
-            "velocity": self.velocity,
-            "instrument": instrument_id,
-            "fx": fx_list
-        }
+        result = {}
+        
+        # Only include non-empty fields (FF values are considered empty)
+        if self.note != self.EMPTY_NOTE:
+            result["note"] = self.note
+            
+        if self.velocity != self.EMPTY_VELOCITY:
+            result["velocity"] = self.velocity
+            
+        if instrument_id != self.EMPTY_INSTRUMENT:
+            result["instrument"] = instrument_id
+            
+        # Always include FX list even if empty, for consistency
+        result["fx"] = fx_list
+        
         return result
 
     @classmethod
     def from_dict(cls, data):
+        # Get default values for optional fields
+        note = data.get("note", cls.EMPTY_NOTE)
+        velocity = data.get("velocity", cls.EMPTY_VELOCITY)
+        instrument = data.get("instrument", cls.EMPTY_INSTRUMENT)
+        
         instance = cls(
-            note=data["note"],
-            velocity=data["velocity"],
-            instrument=data["instrument"]
+            note=note,
+            velocity=velocity,
+            instrument=instrument
         )
     
         # Deserialize FX using the FXTuples' from_list method, with instrument context
         if "fx" in data:
-            instrument_id = data["instrument"]
-            
             # Use instrument context if there's a valid instrument reference
-            if instrument_id != cls.EMPTY_INSTRUMENT:
+            if instrument != cls.EMPTY_INSTRUMENT:
                 from m8.core.enums import with_referenced_context
-                with with_referenced_context(instrument_id):
+                with with_referenced_context(instrument):
                     instance.fx = M8FXTuples.from_list(data["fx"])
             else:
                 instance.fx = M8FXTuples.from_list(data["fx"])
