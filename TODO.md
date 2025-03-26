@@ -1,6 +1,5 @@
 # short
 
-- inspect_xxx scripts to output ints as hex
 - Fx (GENBASS.m8s) test
 - Move enums to m8/core, utils to m8/utils
 - Investigate inspect_chains.py context manager warnings
@@ -30,6 +29,7 @@
 
 # done
 
+- Modified inspect_xxx scripts to output integers as hex values in YAML
 - Fixed context manager FX key serialization issue in inspect_chains.py
 - Improved M8Block type detection for getting instrument types
 - Added robust fallback mechanisms for FX key serialization

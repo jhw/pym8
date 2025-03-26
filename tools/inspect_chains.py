@@ -126,6 +126,16 @@ def display_chain(project, chain, chain_idx, output_format):
             "referenced_phrases": phrases
         }
         
+        # Custom representer function to format integers as hex
+        def represent_int_as_hex(dumper, data):
+            if isinstance(data, int):
+                # Format as 0xNN
+                return dumper.represent_scalar('tag:yaml.org,2002:str', f"0x{data:02X}")
+            return dumper.represent_scalar('tag:yaml.org,2002:int', str(data))
+            
+        # Add the representer to the YAML dumper
+        yaml.add_representer(int, represent_int_as_hex)
+        
         print(yaml.dump(result, sort_keys=False, default_flow_style=False))
     else:
         raw_data = chain.write()

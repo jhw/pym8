@@ -21,8 +21,19 @@ def hex_dump(data, width=16):
 
 def display_instrument(instrument, index, output_format):
     if output_format == "yaml":
-        # Convert to dict and output as YAML
+        # Convert to dict and output as YAML with integers as hex
         instrument_dict = instrument.as_dict()
+        
+        # Custom representer function to format integers as hex
+        def represent_int_as_hex(dumper, data):
+            if isinstance(data, int):
+                # Format as 0xNN
+                return dumper.represent_scalar('tag:yaml.org,2002:str', f"0x{data:02X}")
+            return dumper.represent_scalar('tag:yaml.org,2002:int', str(data))
+            
+        # Add the representer to the YAML dumper
+        yaml.add_representer(int, represent_int_as_hex)
+        
         print(yaml.dump(instrument_dict, sort_keys=False, default_flow_style=False))
     else:  # bytes format
         # Get raw binary data
