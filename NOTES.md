@@ -1,3 +1,247 @@
+## Structured Key-Value Extension Mechanism (28/03/2025)
+
+This design outlines a flexible extension mechanism for handling structured key-value collections across different components (FX, FMSYNTH parameters, etc.).
+
+### Problem Statement
+
+We've identified a common pattern across both FX and FMSYNTH parameters: structured key-value pairs that need to be serialized/deserialized consistently while maintaining their conceptual grouping. The challenge is to create a clean abstraction that works with our existing format_config system.
+
+### Extension Mechanism Design
+
+#### 1. Base Collection Class
+
+```python
+class KeyValueCollection:
+    """Base class for collections of key-value pairs with consistent serialization."""
+    
+    def __init__(self, pairs=None):
+        """Initialize with optional list of (key, value) tuples."""
+        self.pairs = pairs or []
+    
+    def get_pair(self, index):
+        """Get key-value pair at index, or default if out of range."""
+        if 0 <= index < len(self.pairs):
+            return self.pairs[index]
+        return (0, 0)  # Default empty pair
+        
+    def set_pair(self, index, key, value):
+        """Set key-value pair at index with validation."""
+        # Implement validation logic here
+        while len(self.pairs) <= index:
+            self.pairs.append((0, 0))
+        self.pairs[index] = (key, value)
+        
+    def as_list(self):
+        """Convert to list representation for serialization."""
+        return self.pairs
+        
+    @classmethod
+    def from_list(cls, pair_list):
+        """Create instance from list of pairs."""
+        return cls(pair_list)
+```
+
+#### 2. Serialization/Deserialization Adapter
+
+```python
+class KeyValueAdapter:
+    """Adapter for transforming between flat field storage and structured collections."""
+    
+    def __init__(self, collection_class, prefix, count, enum_class=None):
+        self.collection_class = collection_class
+        self.prefix = prefix
+        self.count = count
+        self.enum_class = enum_class
+    
+    def deserialize(self, obj):
+        """Extract from flat fields into structured collection."""
+        pairs = []
+        for i in range(1, self.count + 1):
+            key = getattr(obj, f"{self.prefix}{i}_key", 0)
+            value = getattr(obj, f"{self.prefix}{i}_value", 0)
+            
+            # Handle enum conversion if needed
+            if self.enum_class and isinstance(key, int):
+                from m8.core.enums import get_enum_context
+                with get_enum_context():
+                    try:
+                        key = self.enum_class(key)
+                    except ValueError:
+                        pass  # Keep as int if not a valid enum value
+                        
+            pairs.append((key, value))
+        return self.collection_class(pairs)
+    
+    def serialize(self, collection, obj):
+        """Store structured collection into flat fields."""
+        for i in range(1, self.count + 1):
+            if i <= len(collection.pairs):
+                key, value = collection.pairs[i-1]
+                
+                # Convert enum to int for storage
+                if hasattr(key, 'value'):
+                    key = key.value
+                    
+            else:
+                key, value = 0, 0
+                
+            setattr(obj, f"{self.prefix}{i}_key", key)
+            setattr(obj, f"{self.prefix}{i}_value", value)
+```
+
+#### 3. Registration System
+
+```python
+class ExtensionRegistry:
+    """Registry for extension adapters."""
+    
+    _registry = {}
+    
+    @classmethod
+    def register(cls, target_class, field_name, adapter):
+        """Register an adapter for a specific class and field."""
+        if target_class not in cls._registry:
+            cls._registry[target_class] = {}
+        cls._registry[target_class][field_name] = adapter
+    
+    @classmethod
+    def get_adapter(cls, target_class, field_name):
+        """Get adapter for a class and field if registered."""
+        return cls._registry.get(target_class, {}).get(field_name)
+    
+    @classmethod
+    def apply_extensions(cls, obj):
+        """Apply all registered extensions for an object's class."""
+        for field_name, adapter in cls._registry.get(type(obj), {}).items():
+            # Create the collection
+            collection = adapter.deserialize(obj)
+            # Set it as an attribute
+            setattr(obj, field_name, collection)
+    
+    @classmethod
+    def save_extensions(cls, obj):
+        """Save all registered extensions back to flat fields."""
+        for field_name, adapter in cls._registry.get(type(obj), {}).items():
+            collection = getattr(obj, field_name, None)
+            if collection:
+                adapter.serialize(collection, obj)
+```
+
+### Usage Examples
+
+#### 1. Defining a Wave Collection for FMSYNTH
+
+```python
+# 1. Define specialized collection with appropriate validation
+class WaveCollection(KeyValueCollection):
+    def set_pair(self, index, key, value):
+        """Add FMSYNTH-specific validation."""
+        # Validate against WaveShape enum
+        from m8.enums.wavsynth import WaveShape
+        if isinstance(key, int) and not isinstance(key, WaveShape):
+            key = WaveShape(key)
+        super().set_pair(index, key, value)
+
+# 2. Register the extension
+ExtensionRegistry.register(
+    FMSynth,
+    'waves',
+    KeyValueAdapter(
+        collection_class=WaveCollection,
+        prefix='wave',
+        count=4,
+        enum_class=WaveShape
+    )
+)
+```
+
+#### 2. Integrating with FMSYNTH Class
+
+```python
+class FMSynth(M8Instrument):
+    def __init__(self, **kwargs):
+        # Extract structured representation if provided
+        if 'waves' in kwargs:
+            waves = kwargs.pop('waves')
+            # Convert to flat fields for storage
+            for i, (key, value) in enumerate(waves.pairs, 1):
+                kwargs[f'wave{i}_key'] = key
+                kwargs[f'wave{i}_value'] = value
+                
+        # Initialize with standard fields
+        super().__init__(**kwargs)
+        
+        # Apply extensions after initialization
+        ExtensionRegistry.apply_extensions(self)
+    
+    def as_dict(self):
+        """Save extensions before serializing."""
+        ExtensionRegistry.save_extensions(self)
+        return super().as_dict()
+    
+    @classmethod
+    def with_waves(cls, wave_tuples, **kwargs):
+        """Convenience constructor for wave parameters."""
+        return cls(waves=WaveCollection(wave_tuples), **kwargs)
+```
+
+#### 3. Using the API
+
+```python
+# Using structured API
+synth = FMSynth(
+    waves=WaveCollection([
+        (WaveShape.SINE, 64),
+        (WaveShape.TRIANGLE, 32),
+        (WaveShape.SQUARE, 48),
+        (WaveShape.SAW, 55)
+    ]),
+    # other parameters...
+)
+
+# Using flat field API (still works)
+synth = FMSynth(
+    wave1_key=WaveShape.SINE.value, wave1_value=64,
+    wave2_key=WaveShape.TRIANGLE.value, wave2_value=32,
+    # other parameters...
+)
+
+# Direct access to structured collection
+synth.waves.set_pair(0, WaveShape.PULSE, 75)
+key, value = synth.waves.get_pair(2)
+```
+
+### Integration with File Reading/Writing
+
+The extension mechanism works seamlessly with existing file I/O:
+
+1. **File Reading**:
+   - Parse binary data into flat fields normally
+   - After creating the object, call `ExtensionRegistry.apply_extensions(obj)`
+   - This populates the structured collections based on flat fields
+
+2. **File Writing**:
+   - Before writing, call `ExtensionRegistry.save_extensions(obj)`
+   - This updates the flat fields from the structured collections
+   - Then write the flat fields to binary as usual
+
+### Benefits
+
+1. **Clean, Intuitive API**: Provides a natural interface for working with conceptually grouped data
+2. **Backward Compatibility**: Maintains compatibility with existing format_config system and binary formats
+3. **Flexible Implementation**: Can be applied selectively to specific classes and fields
+4. **Maintainable Structure**: Centralizes the serialization/deserialization logic
+5. **Type Safety**: Maintains enum support and proper type conversions
+
+### Implementation Considerations
+
+1. **Gradual Adoption**: Apply first to FMSYNTH, then selectively to other classes
+2. **Configuration Options**: Consider adding format_config.yaml support for marking fields as collections
+3. **Property Getters/Setters**: For advanced use cases, these could be added to automatically sync with flat fields
+4. **Validation Hooks**: Add callbacks for custom validation during serialization/deserialization
+
+This pattern creates a clean layer on top of the existing flat field storage while providing a structured, object-oriented API that better represents the conceptual model.
+
 ## Test Directory Structure Alignment (27/03/2025)
 
 Aligned the test directory structure to properly mirror the main codebase:
