@@ -1,6 +1,5 @@
 # short
 
-- Migrate M8Block, M8UnknownTypeError and load_class from m8/api/__init__.py to m8/core/__init__.py
 - Update tests directory structure to mirror new m8 structure, particularly with respect to core and core/utils
 - FMsynth inspection
 
@@ -28,6 +27,7 @@
 
 # done
 
+- Migrate M8Block, M8UnknownTypeError and load_class from m8/api/__init__.py to m8/core/__init__.py
 - Move M8ValidationResult to core/validation.py
 - Move utility modules from api/utils to core/utils
 - Move M8EnumValueError to core/enums.py to fix circular imports

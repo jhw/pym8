@@ -17,11 +17,6 @@ from m8.core.enums import (
     ensure_enum_int_value, clear_enum_cache
 )
 
-# exceptions
-from m8.core.validation import M8ValidationResult
-    
-# ValueError removed in favor of ValidationResult approach
-
 class M8UnknownTypeError(Exception):
     """Exception raised when an unknown instrument or modulator type is encountered."""
     pass
