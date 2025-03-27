@@ -1,3 +1,26 @@
+## Move M8ValidationResult to core/validation.py (27/03/2025)
+
+Continued the architectural cleanup by moving validation functionality to the core layer:
+
+1. **New Validation Module**:
+   - Created dedicated `m8/core/validation.py` module
+   - Moved `M8ValidationResult` class from `m8/api/__init__.py`
+   - Centralized validation functionality in a clear location
+
+2. **Implementation**:
+   - Updated import references throughout the codebase
+   - Created a script to automate the migration process
+   - Fixed import statements in all affected files
+   - All tests pass with the new structure
+
+3. **Benefits**:
+   - Completes the separation of core functionality from API layers
+   - Provides a dedicated location for validation-related code
+   - Better aligns with the architecture started by moving enums and utils to core
+   - Reduces coupling between modules
+
+This is the last step in a series of architectural refactorings that have improved the codebase organization by properly separating core functionality from API-specific code.
+
 ## Move Utility Modules to core/utils (27/03/2025)
 
 Restructured the codebase to improve architectural organization:

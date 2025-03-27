@@ -26,6 +26,7 @@
 
 # done
 
+- Move M8ValidationResult to core/validation.py
 - Move utility modules from api/utils to core/utils
 - Move M8EnumValueError to core/enums.py to fix circular imports
 - Improved project validation with M8ValidationResult class for better error reporting
