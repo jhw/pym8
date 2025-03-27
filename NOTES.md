@@ -1,3 +1,25 @@
+## Move Utility Modules to core/utils (27/03/2025)
+
+Restructured the codebase to improve architectural organization:
+
+1. **Moved Utility Modules**:
+   - Relocated all utility modules from `m8/api/utils` to `m8/core/utils`
+   - Includes bit manipulation, string handling, and JSON serialization utilities
+   - Created backward-compatibility redirects to maintain API stability
+
+2. **Architectural Improvements**:
+   - Better separation of core functionality from API layers
+   - Aligns with the recent move of enums to the core package
+   - Places foundational utilities alongside other core components
+   - Reduces potential for circular dependencies
+
+3. **Implementation**:
+   - Created `dev/move_utils_package.py` script to automate the process
+   - Updated import references throughout the codebase
+   - All tests pass with the new structure
+
+This change completes the reorganization of low-level utilities into the core package, creating a cleaner and more maintainable architecture.
+
 ## Move M8EnumValueError to core/enums.py (27/03/2025)
 
 Fixed an architectural issue by moving the `M8EnumValueError` exception from `m8/api/__init__.py` to `m8/core/enums.py`:
