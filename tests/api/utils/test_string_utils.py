@@ -1,5 +1,5 @@
 import unittest
-from m8.api.utils.string_utils import read_fixed_string, write_fixed_string
+from m8.core.utils.string_utils import read_fixed_string, write_fixed_string
 
 class TestStringUtils(unittest.TestCase):
     def test_read_fixed_string(self):

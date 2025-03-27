@@ -1,6 +1,6 @@
 import unittest
 import json
-from m8.api.utils.json_utils import M8JSONEncoder, m8_json_decoder, json_dumps, json_loads
+from m8.core.utils.json_utils import M8JSONEncoder, m8_json_decoder, json_dumps, json_loads
 
 class TestJSONUtils(unittest.TestCase):
     def test_m8_json_encoder(self):
