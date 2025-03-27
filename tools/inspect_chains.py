@@ -164,7 +164,8 @@ def main():
         return 1
     
     if not args.file_path.lower().endswith(".m8s"):
-        print(f"Warning: File {args.file_path} does not have .m8s extension", file=sys.stderr)
+        print(f"Error: File {args.file_path} does not have .m8s extension", file=sys.stderr)
+        return 1
     
     try:
         project = M8Project.read_from_file(args.file_path)

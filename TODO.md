@@ -1,11 +1,11 @@
 # short
 
-- validation debug
+- validation debugging
 
+- FMsynth inspection
 
 # medium
 
-- FMsynth
 - Sampler slices
 - Hypersynth
 - Tables
