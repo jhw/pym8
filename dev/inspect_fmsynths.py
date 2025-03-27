@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """
-Script to inspect FMSYNTHS m8i files for sample paths.
-Iterates through all m8i files in the directory and checks if they contain sample paths.
-Extracts the following parameter bytes:
+Script to inspect FMSYNTHS m8i files.
+Iterates through all m8i files in the directory and extracts parameter bytes:
 - 1 byte at offset 0x18+13-5 as algo
 - 4 bytes before 0x18+13 as shapes (hex)
 - 8 bytes from offset 0x18+13 as params 1 (decimal integers)
@@ -14,10 +13,6 @@ import os
 import sys
 import struct
 from pathlib import Path
-
-# Sample path starts at offset 0x5B for these instruments
-SAMPLE_PATH_OFFSET = 0x5B  # Offset of "S" in "Samples/" in the CLAP example
-SAMPLE_PATH_LENGTH = 48   # Length for the path (restricted to reasonable length)
 
 def hexdump(data, offset, length=64):
     """Generate a hexdump of the data starting at offset"""
@@ -73,6 +68,14 @@ def read_instrument_file(file_path):
     # Calculate offset for params1
     params1_offset = 0x18 + 13  # Adding 13 to the offset
     
+    # Extract instrument ID byte (18 bytes prior to algo)
+    inst_id_offset = params1_offset - 5 - 18  # 18 bytes before algo
+    if inst_id_offset >= 0 and inst_id_offset < len(data):
+        inst_id_byte = data[inst_id_offset]
+        inst_id_hex = f"{inst_id_byte:02X}"
+    else:
+        inst_id_hex = "??"
+    
     # Extract 1 byte before shapes for algo
     algo_offset = params1_offset - 5  # 5 bytes before params1 (1 before shapes)
     algo_byte = data[algo_offset:algo_offset+1]
@@ -98,39 +101,17 @@ def read_instrument_file(file_path):
     params3_bytes = data[params3_offset:params3_offset+4]
     params3_hex = " ".join([f"{b:02X}" for b in params3_bytes])
     
-    # Find any sample path in the file
-    sample_path = ""
-    sample_path_offset = -1
-    
-    # Look for the string "Samples" anywhere in the file
-    for i in range(len(data) - 7):
-        if data[i:i+7] == b'Samples':
-            sample_path_offset = i
-            break
-            
-    # If we found a sample path, extract it
-    if sample_path_offset >= 0:
-        # Extract the full path up to a null terminator or max length
-        for i in range(sample_path_offset, min(sample_path_offset + SAMPLE_PATH_LENGTH, len(data))):
-            if i >= len(data) or data[i] == 0:
-                break
-            # Only include printable ASCII characters
-            if 32 <= data[i] <= 126:
-                sample_path += chr(data[i])
-    
     return {
         'type_id': instrument_type_id,
         'name': instrument_name,
         'version': version_str,
+        'inst_id': inst_id_hex,
         'algo': algo_hex,
         'shapes': shapes_hex,
         'params1': params1_hex,
         'params2': params2_hex,
         'params3': params3_hex,
-        'sample_path': sample_path,
-        'sample_path_offset': sample_path_offset,
-        'file_size': len(data),
-        'has_sample_path': bool(sample_path)
+        'file_size': len(data)
     }
 
 def main():
@@ -146,9 +127,9 @@ def main():
         print(f"Error: Directory {base_dir} does not exist")
         return 1
     
-    print("\nInspecting FMSYNTHS instruments for sample paths\n")
-    print(f"{'File Name':<20} {'Algo':<6} {'Shapes':<15} {'Params 1':<25} {'Params 2':<25} {'Params 3':<15} {'Sample Path':<10}")
-    print("-" * 118)
+    print("\nInspecting FMSYNTHS instruments\n")
+    print(f"{'File Name':<20} {'ID':<4} {'Algo':<6} {'Shapes':<15} {'Params 1':<25} {'Params 2':<25} {'Params 3':<15}")
+    print("-" * 110)
     
     # Find all m8i files in the directory
     m8i_files = list(base_dir.glob("**/*.m8i"))
@@ -158,58 +139,50 @@ def main():
         return 0
     
     # Process each file
-    sample_count = 0
-    instruments_with_samples = []
+    filtered_files = []
     
     for m8i_file in sorted(m8i_files):
-        with open(m8i_file, 'rb') as f:
-            data = f.read()
-            
         info = read_instrument_file(m8i_file)
         if not info:
             print(f"Error reading {m8i_file.name}")
             continue
         
-        # Print the information
-        sample_path = info['sample_path']
-        if sample_path:
-            sample_count += 1
-            instruments_with_samples.append((m8i_file, info, data))
-            
-        # Show True/False for sample path
-        has_sample = "True" if info['has_sample_path'] else "False"
-            
-        print(f"{m8i_file.name:<20} {info['algo']:<6} {info['shapes']:<15} {info['params1']:<25} {info['params2']:<25} {info['params3']:<15} {has_sample:<10}")
+        # Only show instruments with ID 0x04
+        if info['inst_id'] == "04":
+            filtered_files.append((m8i_file, info))
+            print(f"{m8i_file.name:<20} {info['inst_id']:<4} {info['algo']:<6} {info['shapes']:<15} {info['params1']:<25} {info['params2']:<25} {info['params3']:<15}")
     
     # Print detailed analysis if requested
-    if detailed and instruments_with_samples:
+    if detailed and filtered_files:
         print("\n" + "=" * 80)
-        print("DETAILED ANALYSIS OF INSTRUMENTS WITH SAMPLE PATHS")
+        print("DETAILED ANALYSIS")
         print("=" * 80)
         
-        for m8i_file, info, data in instruments_with_samples:
+        for m8i_file, info in filtered_files:
+            with open(m8i_file, 'rb') as f:
+                data = f.read()
+                
             print(f"\nFile: {m8i_file.name}")
             print(f"Instrument Name: {info['name']}")
             print(f"Type ID: 0x{info['type_id']:02X} ({info['type_id']})")
             print(f"Version: {info['version']}")
+            print(f"Instrument ID: {info['inst_id']}")
             print(f"Algo: {info['algo']}")
             print(f"Shapes: {info['shapes']}")
             print(f"Params 1: {info['params1']}")
             print(f"Params 2: {info['params2']}")
             print(f"Params 3: {info['params3']}")
-            print(f"Sample Path: {info['sample_path']}")
-            print(f"Sample Path Offset: 0x{info['sample_path_offset']:02X}")
             
-            # Calculate context before and after sample path
-            context_start = max(0, info['sample_path_offset'] - 32)
+            # Calculate context for parameter area
+            params1_offset = 0x18 + 13
+            context_start = max(0, params1_offset - 8)
             print(f"\nHex dump from offset 0x{context_start:02X}:")
-            print(hexdump(data, context_start, 128))
+            print(hexdump(data, context_start, 64))
             print("")
     
     # Print summary
-    print("\nSummary:")
-    print(f"Total instruments: {len(m8i_files)}")
-    print(f"Instruments with sample paths: {sample_count}")
+    print(f"\nTotal instruments: {len(m8i_files)}")
+    print(f"Instruments with ID 0x04: {len(filtered_files)}")
     
     return 0
 
