@@ -1,8 +1,12 @@
 # short
 
+- FM algo attribute names (m8-files)
+- FM enums (m8-files)
+- FM instrument config
+- FM example test
+
 # medium
 
-- FMsynth
 - Sampler slices
 - Hypersynth
 - Tables
@@ -25,6 +29,7 @@
 
 # done
 
+- FM custom serialization layer with params analysis
 - Update tests directory structure to mirror new m8 structure, particularly with respect to core and core/utils
 - Migrate M8Block, M8UnknownTypeError and load_class from m8/api/__init__.py to m8/core/__init__.py
 - Move M8ValidationResult to core/validation.py
