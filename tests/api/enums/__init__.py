@@ -1,8 +1,8 @@
 import unittest
 import logging
-from m8.api import M8EnumValueError
 from m8.enums import M8FilterTypes, M8LimitTypes
 from m8.api import deserialize_enum, deserialize_param_enum, ensure_enum_int_value
+from m8.core.enums import M8EnumValueError
 from m8.api.instruments import M8InstrumentParams
 
 class TestEnumErrorHandling(unittest.TestCase):

@@ -9,6 +9,37 @@ resolving instrument-specific enums.
 import importlib
 import logging
 
+
+class M8EnumValueError(Exception):
+    """Exception raised when an invalid enum value is encountered."""
+    def __init__(self, message, enum_class=None, value=None, param_name=None, instrument_type=None):
+        self.enum_class = enum_class
+        self.value = value
+        self.param_name = param_name
+        self.instrument_type = instrument_type
+        
+        # Build detailed error message if components are provided
+        if enum_class and value is not None:
+            class_name = enum_class.__name__ if hasattr(enum_class, '__name__') else str(enum_class)
+            details = []
+            
+            if param_name:
+                details.append(f"parameter '{param_name}'")
+            if instrument_type:
+                details.append(f"instrument type '{instrument_type}'")
+                
+            context = f" for {' '.join(details)}" if details else ""
+            
+            valid_values = [f"{e.name} ({e.value})" for e in enum_class] if hasattr(enum_class, '__iter__') else []
+            valid_values_str = ', '.join(valid_values[:10])
+            if len(valid_values) > 10:
+                valid_values_str += ", ..."
+                
+            enum_message = f"Invalid value '{value}' for enum {class_name}{context}. Valid values: {valid_values_str}"
+            super().__init__(enum_message)
+        else:
+            super().__init__(message)
+
 # Global enum class cache
 _ENUM_CLASS_CACHE = {}
 
@@ -257,8 +288,6 @@ def serialize_enum(enum_value, log_prefix=None):
 
 def deserialize_enum(enum_class, value, log_prefix=None):
     """Convert a string enum name or numeric value to enum value."""
-    from m8.api import M8EnumValueError
-    
     if isinstance(value, str):
         try:
             return enum_class[value].value
@@ -529,8 +558,6 @@ def serialize_param_enum_value(value, param_def, instrument_type=None, param_nam
 
 def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=None):
     """Convert parameter string enum name to numeric value."""
-    from m8.api import M8EnumValueError
-    
     if not isinstance(value, str):
         return value
     
@@ -590,8 +617,6 @@ def ensure_enum_int_value(value, enum_paths, instrument_type=None, param_name=No
     """Convert a value to integer enum value if it's a string enum name."""
     if not isinstance(value, str):
         return value
-    
-    from m8.api import M8EnumValueError
     
     # Handle string instrument types by getting their ID
     instrument_type_id = None

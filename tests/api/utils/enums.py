@@ -9,7 +9,7 @@ from m8.core.enums import (
     get_enum_names, get_enum_values,
     enum_name_to_value, enum_value_to_name
 )
-from m8.api import M8EnumValueError
+from m8.core.enums import M8EnumValueError
 
 # Test enum classes
 class TestEnum(IntEnum):

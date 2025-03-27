@@ -65,35 +65,7 @@ class M8UnknownTypeError(Exception):
     """Exception raised when an unknown instrument or modulator type is encountered."""
     pass
 
-class M8EnumValueError(Exception):
-    """Exception raised when an invalid enum value is encountered."""
-    def __init__(self, message, enum_class=None, value=None, param_name=None, instrument_type=None):
-        self.enum_class = enum_class
-        self.value = value
-        self.param_name = param_name
-        self.instrument_type = instrument_type
-        
-        # Build detailed error message if components are provided
-        if enum_class and value is not None:
-            class_name = enum_class.__name__ if hasattr(enum_class, '__name__') else str(enum_class)
-            details = []
-            
-            if param_name:
-                details.append(f"parameter '{param_name}'")
-            if instrument_type:
-                details.append(f"instrument type '{instrument_type}'")
-                
-            context = f" for {' '.join(details)}" if details else ""
-            
-            valid_values = [f"{e.name} ({e.value})" for e in enum_class] if hasattr(enum_class, '__iter__') else []
-            valid_values_str = ', '.join(valid_values[:10])
-            if len(valid_values) > 10:
-                valid_values_str += ", ..."
-                
-            enum_message = f"Invalid value '{value}' for enum {class_name}{context}. Valid values: {valid_values_str}"
-            super().__init__(enum_message)
-        else:
-            super().__init__(message)
+
 
 # default class
 
