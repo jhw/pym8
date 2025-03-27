@@ -2,11 +2,7 @@
 import argparse
 import os
 import sys
-import yaml
-
-from m8.api.instruments import M8Instrument
 from m8.config import get_offset
-
 
 def hex_dump(data, width=16):
     """Prints data in a readable hex dump format."""
@@ -18,36 +14,31 @@ def hex_dump(data, width=16):
         result.append(f"{i:08X}  {hex_values:<{width * 3}} |{ascii_values}|")
     return "\n".join(result)
 
+def read_fixed_string(data, offset, length):
+    """Read a fixed-length string from binary data and trim trailing nulls."""
+    string_bytes = data[offset:offset + length]
+    # Trim null bytes
+    null_pos = string_bytes.find(0)
+    if null_pos != -1:
+        string_bytes = string_bytes[:null_pos]
+    return string_bytes.decode('utf-8', errors='replace')
 
-def display_instrument(instrument, output_format):
-    if output_format == "yaml":
-        # Convert to dict and output as YAML with integers as hex
-        instrument_dict = instrument.as_dict()
-        
-        # Custom representer function to format integers as hex
-        def represent_int_as_hex(dumper, data):
-            if isinstance(data, int):
-                # Format as 0xNN
-                return dumper.represent_scalar('tag:yaml.org,2002:str', f"0x{data:02X}")
-            return dumper.represent_scalar('tag:yaml.org,2002:int', str(data))
-            
-        # Add the representer to the YAML dumper
-        yaml.add_representer(int, represent_int_as_hex)
-        
-        print(yaml.dump(instrument_dict, sort_keys=False, default_flow_style=False))
-    else:  # bytes format
-        # Get raw binary data
-        raw_data = instrument.write()
-        print(f"Instrument: {instrument.name} (Type: {instrument.type})")
-        print(f"Raw binary data ({len(raw_data)} bytes):")
-        print(hex_dump(raw_data))
-
+def display_instrument_info(data):
+    """Display basic instrument info without using the M8Instrument class."""
+    # Instrument type is at offset 0
+    type_id = data[0]
+    
+    # Name is at offset 1, length 12 bytes
+    name = read_fixed_string(data, 1, 12)
+    
+    print(f"Instrument Type ID: 0x{type_id:02X} ({type_id})")
+    print(f"Instrument Name: {name}")
+    print(f"Raw binary data ({len(data)} bytes):")
+    print(hex_dump(data))
 
 def main():
     parser = argparse.ArgumentParser(description="Dump a single M8 instrument file (.m8i)")
     parser.add_argument("file_path", help="Path to the M8 instrument file (.m8i)")
-    parser.add_argument("--format", "-f", choices=["yaml", "bytes"], default="yaml", 
-                        help="Output format (yaml or bytes, default: yaml)")
     
     args = parser.parse_args()
     
@@ -62,18 +53,24 @@ def main():
         return 1
     
     try:
-        # Load instrument from file
-        instrument = M8Instrument.read_from_file(args.file_path)
+        # Read the entire file
+        with open(args.file_path, "rb") as f:
+            file_data = f.read()
+            
+        # Get the metadata offset (where the instrument data starts)
+        metadata_offset = get_offset("metadata")
         
-        # Display the instrument based on format
-        display_instrument(instrument, args.format)
+        # Extract instrument data starting from metadata offset
+        instrument_data = file_data[metadata_offset:]
+        
+        # Display the instrument info
+        display_instrument_info(instrument_data)
         
         return 0
         
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())
