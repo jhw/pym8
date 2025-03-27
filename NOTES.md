@@ -39,33 +39,40 @@ This approach would better integrate with GitHub workflow while maintaining the 
 
 ### Recommended Incremental Migration Path
 
-For a smooth transition from file-based management to GitHub tools, the following incremental approach is recommended:
+For a smooth transition from file-based management to GitHub tools, the following refined approach recognizes that not all TODO items are issues:
 
-1. **Set up the Project board first**
-   - Create a new GitHub Project with columns matching TODO.md sections
-   - Configure custom fields for priority, type, and other attributes
-   - This establishes the organizational structure without requiring full migration
+1. **Set up GitHub Project board structure**
+   - Create a new GitHub Project with appropriate views (board, table, roadmap)
+   - Set up custom fields for categorization (feature, bug, architecture, etc.)
+   - Configure priority fields and other relevant attributes
 
-2. **Migrate high-priority TODO items to issues**
-   - Start with "Short" priority items
-   - Create detailed issues with appropriate labels
-   - Add these issues to the project board
-   - Continue with medium and long-term items as time permits
+2. **Analyze and categorize current TODO items**
+   - Review each TODO item individually to determine its proper classification:
+     - Specific bugs or small tasks → GitHub Issues
+     - Larger features (e.g., "Sampler slices", "Hypersynth") → Project roadmap items
+     - General areas of work → Project epics or milestones
+   - This critical analysis ensures items are migrated to the appropriate format
 
-3. **Create the Wiki structure**
+3. **Migrate items based on their classification**
+   - Create GitHub Issues for specific actionable tasks
+   - Add larger features directly to the Project as roadmap items
+   - Group related items under milestones or epics
+   - Tag each with appropriate priority and categorization
+
+4. **Create Wiki structure for documentation**
    - Set up the initial hierarchy for technical documentation
-   - Create main section pages that mirror major topics
+   - Create main section pages that mirror major implementation areas
 
-4. **Move critical NOTES content to Wiki pages**
+5. **Move NOTES content to Wiki pages**
    - Prioritize migration of recent architectural decisions
-   - Transfer implementation notes for active development areas
-   - Add cross-references between Wiki pages and related issues
+   - Transfer implementation notes with focus on ongoing development areas
+   - Link Wiki pages to relevant issues and project items
 
-5. **Update README with links to new resources**
+6. **Update README with links to new resources**
    - Add links to the Project board and Wiki
    - Update contribution guidelines to reference the new workflow
 
-This approach allows for gradual adoption while maintaining productivity, with both systems coexisting during the transition period.
+This approach allows for nuanced migration where each item is placed in its most appropriate location in the GitHub ecosystem, preserving the distinctions between specific tasks and broader roadmap features.
 
 ## Move M8ValidationResult to core/validation.py (27/03/2025)
 
