@@ -28,6 +28,16 @@
   - See `tools/fix_case.py` for an example of how to use it
 - For general code refactoring that requires complex pattern matching, always use these tools rather than manual edits
 
+## Migration Scripts
+- For architectural refactoring that involves moving code between modules, create a script in the `migrations/` directory
+- Name scripts descriptively with a `move_` prefix (e.g., `migrations/move_validation_result.py`)
+- Migration scripts should:
+  1. Move code elements from source to destination
+  2. Update all import references throughout the codebase
+  3. Include validation to ensure the migration worked correctly 
+  4. Print clear status messages for each step
+- Run tests after executing migration scripts to verify functionality
+
 ## Testing Workflow
 1. All tests live in the /tests directory mirroring the m8 directory structure
 2. For changes to m8/api/foo.py, look for corresponding tests in tests/api/foo.py
