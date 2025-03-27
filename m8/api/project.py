@@ -1,4 +1,4 @@
-from m8.api import M8Block, json_dumps, json_loads
+from m8.api import M8Block, M8ValidationResult, json_dumps, json_loads
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.metadata import M8Metadata
@@ -153,72 +153,110 @@ class M8Project:
             
         return instance
         
-    def validate_references(self):
-        # Song -> Chains validation
-        self.song.validate_references_chains(self.chains)
+    def validate_references(self, result=None):
+        """Validate all references between components."""
+        if result is None:
+            result = M8ValidationResult(context="project.references")
+            
+        try:
+            # Song -> Chains validation
+            self.song.validate_references_chains(self.chains)
+        except ValueError as e:
+            result.add_error(str(e), "song")
+            
+        try:
+            # Chains -> Phrases validation
+            self.chains.validate_references_phrases(self.phrases)
+        except ValueError as e:
+            result.add_error(str(e), "chains")
+            
+        try:
+            # Phrases -> Instruments validation
+            self.phrases.validate_references_instruments(self.instruments)
+        except ValueError as e:
+            result.add_error(str(e), "phrases")
+            
+        return result
         
-        # Chains -> Phrases validation
-        self.chains.validate_references_phrases(self.phrases)
-        
-        # Phrases -> Instruments validation
-        self.phrases.validate_references_instruments(self.instruments)
-        
-        return True
-        
-    def validate_one_to_one_chains(self):
+    def validate_one_to_one_chains(self, result=None):
         """Validates chains have one phrase matching their own ID."""
+        if result is None:
+            result = M8ValidationResult(context="project.one_to_one")
+            
         for chain_idx, chain in enumerate(self.chains):
             if not chain.is_empty():
-                if not chain.validate_one_to_one_pattern(chain_idx):
-                    return False
+                chain_result = chain.validate_one_to_one_pattern(chain_idx)
+                if not chain_result.valid:
+                    result.merge(chain_result, f"chain[{chain_idx}]")
                     
-        return True
+        return result
         
-    def validate_versions(self):
+    def validate_versions(self, result=None):
         """Validates that all instruments have the same version as the project."""
-        if not hasattr(self, 'instruments') or self.instruments is None:
-            return True
+        if result is None:
+            result = M8ValidationResult(context="project.versions")
             
-        for instrument in self.instruments:
+        if not hasattr(self, 'instruments') or self.instruments is None:
+            return result
+            
+        for instr_idx, instrument in enumerate(self.instruments):
             if hasattr(instrument, 'version') and not isinstance(instrument, M8Block):
                 if str(instrument.version) != str(self.version):
-                    return False
+                    result.add_error(
+                        f"Instrument has version {instrument.version} but project has version {self.version}",
+                        f"instrument[{instr_idx}]"
+                    )
                     
-        return True
+        return result
         
-    def validate(self, check_one_to_one=False):
-        # Run all validations, return False if any check fails
-        try:
-            # Check reference integrity
-            if not self.validate_references():
-                return False
-                
-            # Optional check for one-to-one chain pattern
-            if check_one_to_one and not self.validate_one_to_one_chains():
-                return False
-                
-            # Check version consistency
-            if not self.validate_versions():
-                return False
-                
-            # Check component completeness
-            if not self.validate_completeness():
-                return False
-                
-            # All checks passed
-            return True
-        except Exception:
-            # Any validation error means validation failed
-            return False
+    def validate(self, check_one_to_one=False, raise_on_error=True, log_errors=False):
+        """Validate the entire project.
         
-    def validate_completeness(self):
+        Args:
+            check_one_to_one: Whether to check for one-to-one chain patterns
+            raise_on_error: Whether to raise an exception if validation fails
+            log_errors: Whether to log validation errors via the logger
+            
+        Returns:
+            M8ValidationResult: Result object containing validation status and errors
+            
+        Raises:
+            ValueError: If validation fails and raise_on_error is True
+        """
+        # Create master validation result
+        result = M8ValidationResult(context="project")
+        
+        # Run all validations and collect results
+        result.merge(self.validate_references(), "references")
+        
+        if check_one_to_one:
+            result.merge(self.validate_one_to_one_chains(), "one_to_one")
+        
+        result.merge(self.validate_versions(), "versions")
+        result.merge(self.validate_completeness(), "completeness")
+        
+        # Handle logging if requested
+        if log_errors:
+            result.log_errors(logger)
+            
+        # Optionally raise exception
+        if raise_on_error:
+            result.raise_if_invalid()
+            
+        return result
+        
+    def validate_completeness(self, result=None):
+        """Validate that all required components are complete."""
+        if result is None:
+            result = M8ValidationResult(context="project.completeness")
+            
         # Check phrases completeness
         if self.phrases is not None and not self.phrases.is_complete():
-            return False
+            result.add_error("Phrases are incomplete", "phrases")
             
         # Additional chain and instrument validation can be added here
         
-        return True
+        return result
     
     def write(self) -> bytes:
         output = bytearray(self.data)

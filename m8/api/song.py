@@ -1,4 +1,4 @@
-from m8.api import M8ValidationError
+from m8.api import M8ValidationResult
 from m8.config import load_format_config
 
 # Load configuration
@@ -57,7 +57,10 @@ class M8SongRow:
     def write(self):
         return bytes(self._data)
     
-    def validate_references_chains(self, chains):
+    def validate_references_chains(self, chains, result=None):
+        if result is None:
+            result = M8ValidationResult(context="song_row.chains")
+            
         if not self.is_empty():
             for col_idx in range(COL_COUNT):
                 chain_idx = self[col_idx]
@@ -65,10 +68,13 @@ class M8SongRow:
                     chain_idx >= len(chains) or 
                     chains[chain_idx].is_empty()
                 ):
-                    raise M8ValidationError(
+                    result.add_error(
                         f"Column {col_idx} references non-existent or empty "
-                        f"chain {chain_idx}"
+                        f"chain {chain_idx}",
+                        f"col[{col_idx}]"
                     )
+                    
+        return result
     
     def as_dict(self):
         # Only include non-blank chain references
@@ -141,12 +147,17 @@ class M8SongMatrix(list):
             result.extend(row_data)
         return bytes(result)
     
-    def validate_references_chains(self, chains):
+    def validate_references_chains(self, chains, result=None):
+        if result is None:
+            result = M8ValidationResult(context="song_matrix.chains")
+            
         for row_idx, row in enumerate(self):
-            try:
-                row.validate_references_chains(chains)
-            except M8ValidationError as e:
-                raise M8ValidationError(f"Row {row_idx}: {str(e)}") from e
+            row_result = row.validate_references_chains(chains)
+            if not row_result.valid:
+                # Merge errors with the proper context
+                result.merge(row_result, f"row[{row_idx}]")
+                
+        return result
     
     def as_list(self):
         # Only include non-empty rows for sparse representation

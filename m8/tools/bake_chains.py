@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 
+from m8.api import M8ValidationResult
 from m8.api.project import M8Project
 from m8.api.chains import M8Chain, M8ChainStep
 from m8.api.song import M8SongRow
@@ -231,8 +232,9 @@ class ChainBaker:
             self.project = M8Project.read_from_file(file_path)
             
             # Validate project has one-to-one chains
-            if not self.project.validate_one_to_one_chains():
-                raise ValueError("Project does not have one-to-one chain structure")
+            result = self.project.validate_one_to_one_chains()
+            if not result.valid:
+                raise ValueError("Project does not have one-to-one chain structure: " + "\n".join(result.errors))
                 
             return self.project
             

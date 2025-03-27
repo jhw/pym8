@@ -4,7 +4,7 @@ from m8.api.phrases import (
     STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT
 )
 from m8.api.fx import M8FXTuple, M8FXTuples
-from m8.api import M8ValidationError, M8Block
+from m8.api import M8ValidationResult, M8Block
 from m8.enums import M8Notes
 
 class TestM8PhraseStep(unittest.TestCase):
@@ -615,23 +615,27 @@ class TestM8Phrase(unittest.TestCase):
         phrase = M8Phrase()
         phrase[0] = M8PhraseStep(note=60, velocity=100, instrument=5)
         phrase[3] = M8PhraseStep(note=72, velocity=80, instrument=3)
-        phrase.validate_references_instruments(mock_instruments)  # Should not raise
+        result = phrase.validate_references_instruments(mock_instruments)
+        self.assertTrue(result.valid)
         
         # Test case 2: Reference to non-existent instrument
         phrase = M8Phrase()
         phrase[0] = M8PhraseStep(note="C_6", velocity=100, instrument=20)  # Instrument 20 doesn't exist
-        with self.assertRaises(M8ValidationError):
-            phrase.validate_references_instruments(mock_instruments)
+        result = phrase.validate_references_instruments(mock_instruments)
+        self.assertFalse(result.valid)
+        self.assertTrue(any("non-existent" in err.lower() for err in result.errors))
         
         # Test case 3: Reference to empty instrument (M8Block)
         phrase = M8Phrase()
         phrase[0] = M8PhraseStep(note="C_6", velocity=100, instrument=10)  # Instrument 10 is an M8Block
-        with self.assertRaises(M8ValidationError):
-            phrase.validate_references_instruments(mock_instruments)
+        result = phrase.validate_references_instruments(mock_instruments)
+        self.assertFalse(result.valid)
+        self.assertTrue(any("empty" in err.lower() for err in result.errors))
         
         # Test case 4: Empty phrase should be valid
         phrase = M8Phrase()
-        phrase.validate_references_instruments([])  # Should not raise
+        result = phrase.validate_references_instruments([])
+        self.assertTrue(result.valid)
     
     def test_available_step_slot(self):
         # Test available_step_slot property
@@ -963,13 +967,15 @@ class TestM8Phrases(unittest.TestCase):
         phrases = M8Phrases()
         phrases[0][0] = M8PhraseStep(note=60, velocity=100, instrument=5)
         phrases[2][3] = M8PhraseStep(note=72, velocity=80, instrument=3)
-        phrases.validate_references_instruments(mock_instruments)  # Should not raise
+        result = phrases.validate_references_instruments(mock_instruments)
+        self.assertTrue(result.valid)
         
         # Test case 2: Reference to non-existent instrument
         phrases = M8Phrases()
         phrases[0][0] = M8PhraseStep(note=60, velocity=100, instrument=20)  # Instrument 20 doesn't exist
-        with self.assertRaises(M8ValidationError):
-            phrases.validate_references_instruments(mock_instruments)
+        result = phrases.validate_references_instruments(mock_instruments)
+        self.assertFalse(result.valid)
+        self.assertTrue(any("non-existent" in err.lower() for err in result.errors))
     
     def test_as_list(self):
         # Test as_list method

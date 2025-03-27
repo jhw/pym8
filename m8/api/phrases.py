@@ -1,4 +1,4 @@
-from m8.api import M8ValidationError, M8Block
+from m8.api import M8ValidationResult, M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
 from m8.core.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum, M8InstrumentContext
 from m8.config import load_format_config
@@ -345,17 +345,23 @@ class M8Phrase(list):
             result.extend(step_data)
         return bytes(result)
 
-    def validate_references_instruments(self, instruments):
+    def validate_references_instruments(self, instruments, result=None):
+        if result is None:
+            result = M8ValidationResult(context="phrase.instruments")
+            
         if not self.is_empty():
             for step_idx, step in enumerate(self):
                 if step.instrument != M8PhraseStep.EMPTY_INSTRUMENT and (
                     step.instrument >= len(instruments) or
                     isinstance(instruments[step.instrument], M8Block)
                 ):
-                    raise M8ValidationError(
+                    result.add_error(
                         f"Step {step_idx} references non-existent or empty "
-                        f"instrument {step.instrument}"
+                        f"instrument {step.instrument}",
+                        f"step[{step_idx}]"
                     )
+                    
+        return result
     
     @property
     def available_step_slot(self):
@@ -469,12 +475,17 @@ class M8Phrases(list):
             result.extend(phrase_data)
         return bytes(result)
 
-    def validate_references_instruments(self, instruments):
+    def validate_references_instruments(self, instruments, result=None):
+        if result is None:
+            result = M8ValidationResult(context="phrases.instruments")
+            
         for phrase_idx, phrase in enumerate(self):
-            try:
-                phrase.validate_references_instruments(instruments)
-            except M8ValidationError as e:
-                raise M8ValidationError(f"Phrase {phrase_idx}: {str(e)}") from e
+            phrase_result = phrase.validate_references_instruments(instruments)
+            if not phrase_result.valid:
+                # Merge errors with the proper context
+                result.merge(phrase_result, f"phrase[{phrase_idx}]")
+                
+        return result
     
     def as_list(self):
         # Only include non-empty phrases with position indices

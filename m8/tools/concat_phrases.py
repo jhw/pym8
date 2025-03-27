@@ -4,6 +4,7 @@ import os
 import re
 import sys
 
+from m8.api import M8ValidationResult
 from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument, M8Instruments
 from m8.api.chains import M8Chain, M8Chains
@@ -117,8 +118,9 @@ class PhrasesConcatenator:
         # Process each project
         for project_index, project in enumerate(self.projects):
             # Validate project has one-to-one chains
-            if not project.validate_one_to_one_chains():
-                raise ValueError(f"Project {project_index} does not have one-to-one chain structure")
+            result = project.validate_one_to_one_chains()
+            if not result.valid:
+                raise ValueError(f"Project {project_index} does not have one-to-one chain structure: {', '.join(result.errors)}")
             
             # Process instruments
             for orig_inst_idx, instrument in enumerate(project.instruments):

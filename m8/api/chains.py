@@ -1,4 +1,4 @@
-from m8.api import M8ValidationError
+from m8.api import M8ValidationResult
 from m8.config import load_format_config
 
 # Load configuration
@@ -120,30 +120,43 @@ class M8Chain(list):
             result.extend(step_data)
         return bytes(result)
     
-    def validate_references_phrases(self, phrases):
+    def validate_references_phrases(self, phrases, result=None):
+        if result is None:
+            result = M8ValidationResult(context="chain.phrases")
+            
         if not self.is_empty():
             for step_idx, step in enumerate(self):
                 if step.phrase != M8ChainStep.EMPTY_PHRASE and (
                     step.phrase >= len(phrases)
                 ):
-                    raise M8ValidationError(
+                    result.add_error(
                         f"Chain step {step_idx} references non-existent or empty "
-                        f"phrase {step.phrase}"
+                        f"phrase {step.phrase}", 
+                        f"step[{step_idx}]"
                     )
                     
-    def validate_one_to_one_pattern(self, chain_idx):
+        return result
+                    
+    def validate_one_to_one_pattern(self, chain_idx, result=None):
         """Validates this chain follows the one-to-one pattern."""
+        if result is None:
+            result = M8ValidationResult(context="chain.one_to_one")
+            
         # Rule 1: Only the first step should have a phrase
         valid_first_step = self[0].phrase != M8ChainStep.EMPTY_PHRASE
+        if not valid_first_step:
+            result.add_error(f"Chain {chain_idx} must have a phrase in first step")
         
         # Rule 2: All other steps must be empty
-        all_other_steps_empty = all(step.phrase == M8ChainStep.EMPTY_PHRASE for step in self[1:])
+        for i, step in enumerate(self[1:], start=1):
+            if step.phrase != M8ChainStep.EMPTY_PHRASE:
+                result.add_error(f"Chain {chain_idx}, step {i} must be empty in one-to-one pattern")
         
         # Rule 3: The phrase ID must match the chain ID
-        phrase_matches_chain_id = self[0].phrase == chain_idx
+        if valid_first_step and self[0].phrase != chain_idx:
+            result.add_error(f"Chain {chain_idx} should reference phrase {chain_idx}, not {self[0].phrase}")
         
-        # All conditions must be met
-        return valid_first_step and all_other_steps_empty and phrase_matches_chain_id
+        return result
     
     @property
     def available_step_slot(self):
@@ -240,12 +253,17 @@ class M8Chains(list):
             result.extend(chain_data)
         return bytes(result)
     
-    def validate_references_phrases(self, phrases):
+    def validate_references_phrases(self, phrases, result=None):
+        if result is None:
+            result = M8ValidationResult(context="chains.phrases")
+            
         for chain_idx, chain in enumerate(self):
-            try:
-                chain.validate_references_phrases(phrases)
-            except M8ValidationError as e:
-                raise M8ValidationError(f"Chain {chain_idx}: {str(e)}") from e
+            chain_result = chain.validate_references_phrases(phrases)
+            if not chain_result.valid:
+                # Merge errors with the proper context
+                result.merge(chain_result, f"chain[{chain_idx}]")
+                
+        return result
     
     def as_list(self):
         # Only include non-empty chains with position indices

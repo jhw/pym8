@@ -47,13 +47,17 @@ class TestM8Version(unittest.TestCase):
         slot = project.add_instrument(instrument)
         
         # Version validation should pass
-        self.assertTrue(project.validate_versions())
+        result = project.validate_versions()
+        self.assertTrue(result.valid)
+        self.assertEqual(len(result.errors), 0)
         
         # Manually change instrument version
         project.instruments[slot].version = M8Version(4, 0, 1)
         
         # Now validation should fail
-        self.assertFalse(project.validate_versions())
+        result = project.validate_versions()
+        self.assertFalse(result.valid)
+        self.assertTrue(any(["version" in err.lower() for err in result.errors]))
         
     def test_file_operations_with_version(self):
         """Test that version is preserved when reading/writing files."""

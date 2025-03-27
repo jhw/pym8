@@ -131,7 +131,6 @@ class TestM8Project(unittest.TestCase):
             self.project.add_chain(M8Chain())
     
     def test_validate_references(self):
-        from m8.api import M8ValidationError
         from m8.api.chains import M8ChainStep
         from m8.api.chains import M8Chain
         
@@ -146,13 +145,15 @@ class TestM8Project(unittest.TestCase):
         # Set a valid phrase reference (within range)
         test_chain[0].phrase = 5
         # Should pass validation
-        test_chain.validate_references_phrases(test_phrases)
+        result = test_chain.validate_references_phrases(test_phrases)
+        self.assertTrue(result.valid)
         
         # Set an invalid phrase reference (out of range but not EMPTY_PHRASE)
         test_chain[0].phrase = 100  # Way outside the range of test_phrases
-        # Should fail validation
-        with self.assertRaises(M8ValidationError):
-            test_chain.validate_references_phrases(test_phrases)
+        # Should fail validation but return result
+        result = test_chain.validate_references_phrases(test_phrases)
+        self.assertFalse(result.valid)
+        self.assertTrue(any("references non-existent" in err for err in result.errors))
             
     def test_validate_one_to_one_chains(self):
         from m8.api.chains import M8ChainStep, M8Chain
@@ -172,16 +173,22 @@ class TestM8Project(unittest.TestCase):
         project.chains[1] = chain1
         
         # Should validate successfully
-        self.assertTrue(project.validate_one_to_one_chains())
+        result = project.validate_one_to_one_chains()
+        self.assertTrue(result.valid)
+        self.assertEqual(len(result.errors), 0)
         
         # Now break the pattern in chain 1 by using a different phrase ID
         project.chains[1][0].phrase = 5
-        self.assertFalse(project.validate_one_to_one_chains())
+        result = project.validate_one_to_one_chains()
+        self.assertFalse(result.valid)
+        self.assertTrue(any("chain" in err.lower() for err in result.errors))
         
         # Fix chain 1 but add a second phrase reference in chain 0
         project.chains[1][0].phrase = 1
         project.chains[0][1].phrase = 2
-        self.assertFalse(project.validate_one_to_one_chains())
+        result = project.validate_one_to_one_chains()
+        self.assertFalse(result.valid)
+        self.assertTrue(any("chain" in err.lower() for err in result.errors))
     
     def test_write_read_file(self):
         # Skip this test if we don't have the template file
@@ -330,8 +337,10 @@ class TestM8Project(unittest.TestCase):
         project.phrases = M8Phrases()
         project.instruments = M8Instruments()
         
-        # Valid projects should pass validation
-        self.assertTrue(project.validate())
+        # Valid projects should pass validation and return a valid result
+        result = project.validate(raise_on_error=False)
+        self.assertTrue(result.valid)
+        self.assertEqual(len(result.errors), 0)
         
         # One-to-one validation is off by default
         # Let's create a chain that doesn't follow one-to-one pattern
@@ -341,10 +350,13 @@ class TestM8Project(unittest.TestCase):
         project.chains[0] = chain0
         
         # Validation should still pass with default parameters
-        self.assertTrue(project.validate())
+        result = project.validate(raise_on_error=False)
+        self.assertTrue(result.valid)
         
         # But fail when check_one_to_one is enabled
-        self.assertFalse(project.validate(check_one_to_one=True))
+        result = project.validate(check_one_to_one=True, raise_on_error=False)
+        self.assertFalse(result.valid)
+        self.assertTrue(any("reference" in err.lower() for err in result.errors))
         
         # Create an incomplete project (use a real-world example)
         from m8.api.phrases import M8PhraseStep
@@ -352,9 +364,25 @@ class TestM8Project(unittest.TestCase):
         incomplete_step = M8PhraseStep(note="C_6")
         project.phrases[0][0] = incomplete_step
         
-        # Validation should fail regardless of one-to-one setting
-        self.assertFalse(project.validate())
-        self.assertFalse(project.validate(check_one_to_one=True))
+        # Validation should fail and raise exception by default
+        with self.assertRaises(ValueError):
+            project.validate()
+            
+        # When raise_on_error is False, it returns result object
+        result = project.validate(raise_on_error=False)
+        self.assertFalse(result.valid)
+        
+        # Should contain at least one error
+        self.assertGreater(len(result.errors), 0)
+        
+        # Test with one-to-one enabled
+        result = project.validate(check_one_to_one=True, raise_on_error=False)
+        self.assertFalse(result.valid)
+        
+        # Should contain both incompleteness and one-to-one errors
+        has_completeness_error = any("incomplete" in err.lower() for err in result.errors)
+        has_reference_error = any("reference" in err.lower() for err in result.errors)
+        self.assertTrue(has_completeness_error and has_reference_error)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,5 @@
 # short
 
-- validation debugging
-
 - FMsynth inspection
 
 # medium
@@ -28,6 +26,7 @@
 
 # done
 
+- Improved project validation with M8ValidationResult class for better error reporting
 - Added project-level validation system with unified validate() method
 - Added is_complete() methods to FX and Phrase classes
 - Investigate inspect_chains.py context manager warnings
