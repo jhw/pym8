@@ -1,3 +1,25 @@
+## Test Code Reorganization (27/03/2025)
+
+Reorganized the enum tests to better match the codebase structure:
+
+1. **New Structure**:
+   - Created `tests/core/enums/` directory to mirror the structure of the main codebase
+   - Moved tests from `tests/api/utils/enums.py` and `tests/api/enums/__init__.py` to the new location
+   - Split tests into logical files: `test_basic_functions.py`, `test_instrument_enum_functions.py`, `test_parameter_enum_functions.py`, and `test_enum_property_mixin.py`
+
+2. **Implementation**:
+   - Created a migration script (`migrations/move_enum_tests.py`) to handle the cleanup
+   - Script removes old files after confirming new tests are in place
+   - All tests continue to pass after restructuring
+
+3. **Benefits**:
+   - Tests now properly mirror the main codebase structure (`m8/core/enums.py`)
+   - Improved organization makes it easier to find relevant tests
+   - Separated different types of enum functionality into logical files
+   - Better logical separation of test cases by functionality
+
+This completes a series of architecture improvements where code was moved from the API layer to the core layer, with tests now properly following the same structure.
+
 ## GitHub Project Management Discussion (27/03/2025)
 
 The current NOTES.md and TODO.md approach works well for simplicity, but GitHub Projects with Issues would offer significant advantages:

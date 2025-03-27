@@ -4,6 +4,27 @@ from m8.enums import M8FilterTypes, M8LimitTypes
 from m8.api import deserialize_enum, deserialize_param_enum, ensure_enum_int_value
 from m8.core.enums import M8EnumValueError
 from m8.api.instruments import M8InstrumentParams
+from tests.core.enums import TestEnum, TestFilterType, TestLimitType
+
+class TestEnumFunctions(unittest.TestCase):
+    def test_serialize_enum(self):
+        # Test with enum instance
+        enum_value = TestEnum.VALUE_ONE
+        self.assertEqual(serialize_enum(enum_value), "VALUE_ONE")
+        
+        # Test with non-enum value
+        self.assertEqual(serialize_enum(5), 5)
+    
+    def test_deserialize_enum(self):
+        # Test with string enum name
+        self.assertEqual(deserialize_enum(TestEnum, "VALUE_TWO"), 2)
+        
+        # Test with numeric value
+        self.assertEqual(deserialize_enum(TestEnum, 3), 3)
+        
+        # Test with invalid string
+        with self.assertRaises(M8EnumValueError):
+            deserialize_enum(TestEnum, "INVALID_VALUE")
 
 class TestEnumErrorHandling(unittest.TestCase):
     """Test that invalid enum values raise M8EnumValueError."""
@@ -44,3 +65,27 @@ class TestEnumErrorHandling(unittest.TestCase):
         params = M8InstrumentParams.from_config("WAVSYNTH", filter=99)
         # From format_config.yaml, 'filter' is the field name
         self.assertEqual(getattr(params, "filter"), 99)
+
+class TestUtilityFunctions(unittest.TestCase):
+    def test_get_enum_names(self):
+        names = get_enum_names(TestFilterType)
+        self.assertEqual(names, ["OFF", "LOWPASS", "HIGHPASS", "BANDPASS"])
+    
+    def test_get_enum_values(self):
+        values = get_enum_values(TestFilterType)
+        self.assertEqual(values, [0, 1, 2, 3])
+    
+    def test_enum_name_to_value(self):
+        self.assertEqual(enum_name_to_value(TestFilterType, "HIGHPASS"), 2)
+        
+        with self.assertRaises(KeyError):
+            enum_name_to_value(TestFilterType, "INVALID")
+    
+    def test_enum_value_to_name(self):
+        self.assertEqual(enum_value_to_name(TestFilterType, 1), "LOWPASS")
+        
+        with self.assertRaises(ValueError):
+            enum_value_to_name(TestFilterType, 99)
+
+if __name__ == '__main__':
+    unittest.main()
