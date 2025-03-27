@@ -1,5 +1,5 @@
-from m8.api import M8ValidationResult
 from m8.config import load_format_config
+from m8.core.validation import M8ValidationResult
 
 # Load configuration
 config = load_format_config()["chains"]

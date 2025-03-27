@@ -1,6 +1,6 @@
 import unittest
 from m8.api.song import M8SongRow, M8SongMatrix, COL_COUNT, ROW_COUNT
-from m8.api import M8ValidationResult
+from m8.core.validation import M8ValidationResult
 
 class TestM8SongRow(unittest.TestCase):
     def test_read_from_binary(self):

@@ -1,7 +1,8 @@
-from m8.api import M8ValidationResult, M8Block
+from m8.api import M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
 from m8.core.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum, M8InstrumentContext
 from m8.config import load_format_config
+from m8.core.validation import M8ValidationResult
 
 # Load configuration
 config = load_format_config()["phrases"]

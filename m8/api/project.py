@@ -1,4 +1,4 @@
-from m8.api import M8Block, M8ValidationResult, json_dumps, json_loads
+from m8.api import M8Block, json_dumps, json_loads
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.metadata import M8Metadata
@@ -6,6 +6,7 @@ from m8.api.phrases import M8Phrases
 from m8.api.song import M8SongMatrix
 from m8.api.version import M8Version
 from m8.config import get_offset
+from m8.core.validation import M8ValidationResult
 import logging
 
 # Set up logging

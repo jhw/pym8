@@ -3,7 +3,7 @@ from m8.api.chains import (
     M8ChainStep, M8Chain, M8Chains,
     STEP_BLOCK_SIZE, STEP_COUNT, CHAIN_BLOCK_SIZE, CHAIN_COUNT
 )
-from m8.api import M8ValidationResult
+from m8.core.validation import M8ValidationResult
 
 class TestM8ChainStep(unittest.TestCase):
     def test_read_from_binary(self):

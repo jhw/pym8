@@ -4,7 +4,7 @@ import tempfile
 import shutil
 from unittest.mock import patch, MagicMock
 
-from m8.api import M8ValidationResult
+from m8.core.validation import M8ValidationResult
 from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument
 from m8.api.chains import M8Chain, M8ChainStep

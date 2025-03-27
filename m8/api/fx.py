@@ -1,4 +1,3 @@
-from m8.api import M8ValidationResult
 from m8.core.enums import (
     EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum,
     M8InstrumentContext, get_instrument_type_from_context, get_type_id, with_instrument_context

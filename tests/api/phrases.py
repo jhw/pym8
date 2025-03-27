@@ -4,7 +4,8 @@ from m8.api.phrases import (
     STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT
 )
 from m8.api.fx import M8FXTuple, M8FXTuples
-from m8.api import M8ValidationResult, M8Block
+from m8.api import M8Block
+from m8.core.validation import M8ValidationResult
 from m8.enums import M8Notes
 
 class TestM8PhraseStep(unittest.TestCase):
