@@ -2,11 +2,12 @@
 """
 Script to inspect FMSYNTHS m8i files.
 Iterates through all m8i files in the directory and extracts parameter bytes:
-- 1 byte at offset 0x18+13-5 as algo
-- 4 bytes before 0x18+13 as shapes (hex)
-- 8 bytes from offset 0x18+13 as params 1 (decimal integers)
-- 8 bytes after params 1 as params 2 (hex)
-- 4 bytes after params 2 as params 3 (hex)
+- Instrument ID is the base offset
+- Algo is located 18 bytes after the instrument ID
+- Shapes are the 4 bytes after algo
+- Params 1 are the 8 bytes after shapes (decimal integers)
+- Params 2 are the 8 bytes after params 1 (hex)
+- Params 3 are the 4 bytes after params 2 (hex)
 """
 
 import os
@@ -47,9 +48,6 @@ def read_instrument_file(file_path):
     with open(file_path, 'rb') as f:
         data = f.read()
     
-    if len(data) < 0x18 + 13 + 20:  # Need at least 0x18 + 13 - 5 + 8 + 8 + 4 bytes for algo, shapes, params1, params2, and params3
-        return None
-    
     # Read instrument type ID
     instrument_type_id = data[0]
     
@@ -65,39 +63,55 @@ def read_instrument_file(file_path):
         if 32 <= data[i] <= 126:  # Printable ASCII
             version_str += chr(data[i])
     
-    # Calculate offset for params1
-    params1_offset = 0x18 + 13  # Adding 13 to the offset
+    # Find instrument ID byte offset
+    # The original calculation was: params1_offset - 5 - 18
+    # Where params1_offset was 0x18 + 13, so that's 0x18 + 13 - 5 - 18 = 0x0E
+    inst_id_offset = 0x0E  # Base offset for instrument ID
     
-    # Extract instrument ID byte (18 bytes prior to algo)
-    inst_id_offset = params1_offset - 5 - 18  # 18 bytes before algo
-    if inst_id_offset >= 0 and inst_id_offset < len(data):
-        inst_id_byte = data[inst_id_offset]
-        inst_id_hex = f"{inst_id_byte:02X}"
-    else:
-        inst_id_hex = "??"
+    if inst_id_offset >= len(data):
+        return None  # File is too small
     
-    # Extract 1 byte before shapes for algo
-    algo_offset = params1_offset - 5  # 5 bytes before params1 (1 before shapes)
-    algo_byte = data[algo_offset:algo_offset+1]
-    algo_hex = f"{algo_byte[0]:02X}"
+    inst_id_byte = data[inst_id_offset]
+    inst_id_hex = f"{inst_id_byte:02X}"
     
-    # Extract 4 bytes before params1 for shapes
-    shapes_offset = params1_offset - 4  # 4 bytes before params1
+    # From instrument ID, calculate all other offsets
+    algo_offset = inst_id_offset + 18  # 18 bytes after instrument ID
+    if algo_offset >= len(data):
+        return None  # File is too small
+    
+    algo_byte = data[algo_offset]
+    algo_hex = f"{algo_byte:02X}"
+    
+    # Shapes are 4 bytes right after algo
+    shapes_offset = algo_offset + 1
+    if shapes_offset + 4 > len(data):
+        return None  # File is too small
+    
     shapes_bytes = data[shapes_offset:shapes_offset+4]
     shapes_hex = " ".join([f"{b:02X}" for b in shapes_bytes])
     
-    # Extract 8 bytes at offset 0x18+13 for params1
+    # Params 1 are 8 bytes after shapes
+    params1_offset = shapes_offset + 4
+    if params1_offset + 8 > len(data):
+        return None  # File is too small
+    
     params1_bytes = data[params1_offset:params1_offset+8]
     # Format as integers with 2-figure formatting
     params1_hex = " ".join([f"{b:02d}" for b in params1_bytes])
     
-    # Extract 8 bytes after params1 for params2
-    params2_offset = params1_offset + 8  # Right after params1
+    # Params 2 are 8 bytes after params1
+    params2_offset = params1_offset + 8
+    if params2_offset + 8 > len(data):
+        return None  # File is too small
+    
     params2_bytes = data[params2_offset:params2_offset+8]
     params2_hex = " ".join([f"{b:02X}" for b in params2_bytes])
     
-    # Extract 4 bytes after params2 for params3
-    params3_offset = params2_offset + 8  # Right after params2
+    # Params 3 are 4 bytes after params2
+    params3_offset = params2_offset + 8
+    if params3_offset + 4 > len(data):
+        return None  # File is too small
+    
     params3_bytes = data[params3_offset:params3_offset+4]
     params3_hex = " ".join([f"{b:02X}" for b in params3_bytes])
     
@@ -111,7 +125,11 @@ def read_instrument_file(file_path):
         'params1': params1_hex,
         'params2': params2_hex,
         'params3': params3_hex,
-        'file_size': len(data)
+        'file_size': len(data),
+        'inst_id_offset': inst_id_offset,
+        'algo_offset': algo_offset,
+        'shapes_offset': shapes_offset,
+        'params1_offset': params1_offset
     }
 
 def main():
@@ -173,11 +191,16 @@ def main():
             print(f"Params 2: {info['params2']}")
             print(f"Params 3: {info['params3']}")
             
-            # Calculate context for parameter area
-            params1_offset = 0x18 + 13
-            context_start = max(0, params1_offset - 8)
-            print(f"\nHex dump from offset 0x{context_start:02X}:")
-            print(hexdump(data, context_start, 64))
+            # Show hexdump from before the instrument ID through all the parameters
+            context_start = max(0, info['inst_id_offset'] - 4)  # Start 4 bytes before instrument ID
+            context_length = (info['params1_offset'] - context_start) + 20  # Include params1, params2, and params3
+            print(f"\nHex dump from instrument ID area (offset 0x{context_start:02X}):")
+            print(hexdump(data, context_start, context_length))
+            
+            # Also show hexdump specifically of the instrument ID
+            print(f"\nInstrument ID at offset 0x{info['inst_id_offset']:02X}:")
+            inst_id_context_start = max(0, info['inst_id_offset'] - 2)
+            print(hexdump(data, inst_id_context_start, 6))
             print("")
     
     # Print summary
