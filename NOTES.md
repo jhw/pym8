@@ -1,3 +1,22 @@
+## Move M8EnumValueError to core/enums.py (27/03/2025)
+
+Fixed an architectural issue by moving the `M8EnumValueError` exception from `m8/api/__init__.py` to `m8/core/enums.py`:
+
+1. **Improved Architecture**:
+   - Placed exception definition where it's primarily used
+   - Eliminated circular import dependencies between modules
+   - Better consistency with the codebase's design principles
+
+2. **Automation**:
+   - Created `dev/move_enum_exception.py` utility script to automate the change
+   - Script handles extracting, moving, and updating all import references
+   - All tests pass after the migration
+
+3. **Benefits**:
+   - Cleaner module boundaries and responsibilities
+   - Better maintainability and reduced coupling
+   - No changes to API behavior or functionality
+
 ## Improved Project Validation with M8ValidationResult (27/03/2025)
 
 Rationalized the validation system to provide better error reporting and debugging:
