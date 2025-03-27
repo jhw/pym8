@@ -1,5 +1,6 @@
 # short
 
+- Migrate M8Block, M8UnknownTypeError and load_class from m8/api/__init__.py to m8/core/__init__.py
 - FMsynth inspection
 
 # medium
