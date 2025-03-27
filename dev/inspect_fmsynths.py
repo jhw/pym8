@@ -4,10 +4,12 @@ Script to inspect FMSYNTHS m8i files.
 Iterates through all m8i files in the directory and extracts parameter bytes:
 - Instrument ID is the base offset
 - Algo is located 18 bytes after the instrument ID
-- Shapes are the 4 bytes after algo
-- Params 1 are the 8 bytes after shapes (decimal integers)
+- Params 0 are the 4 bytes after algo (hex)
+- Params 1 are the 8 bytes after params 0 (decimal integers)
+  Note: Params 1 is perfect for FM ratios which are rendered in base 10
 - Params 2 are the 8 bytes after params 1 (hex)
 - Params 3 are the 8 bytes after params 2 (hex)
+- Params 4 are the 4 bytes after params 3 (hex)
 """
 
 import os
@@ -82,16 +84,16 @@ def read_instrument_file(file_path):
     algo_byte = data[algo_offset]
     algo_hex = f"{algo_byte:02X}"
     
-    # Shapes are 4 bytes right after algo
-    shapes_offset = algo_offset + 1
-    if shapes_offset + 4 > len(data):
+    # Params 0 are 4 bytes right after algo
+    params0_offset = algo_offset + 1
+    if params0_offset + 4 > len(data):
         return None  # File is too small
     
-    shapes_bytes = data[shapes_offset:shapes_offset+4]
-    shapes_hex = " ".join([f"{b:02X}" for b in shapes_bytes])
+    params0_bytes = data[params0_offset:params0_offset+4]
+    params0_hex = " ".join([f"{b:02X}" for b in params0_bytes])
     
-    # Params 1 are 8 bytes after shapes
-    params1_offset = shapes_offset + 4
+    # Params 1 are 8 bytes after params0
+    params1_offset = params0_offset + 4
     if params1_offset + 8 > len(data):
         return None  # File is too small
     
@@ -115,21 +117,31 @@ def read_instrument_file(file_path):
     params3_bytes = data[params3_offset:params3_offset+8]
     params3_hex = " ".join([f"{b:02X}" for b in params3_bytes])
     
+    # Params 4 are 4 bytes after params3
+    params4_offset = params3_offset + 8
+    if params4_offset + 4 > len(data):
+        params4_hex = "?? ?? ?? ??"  # If file is too small, show unknown values
+    else:
+        params4_bytes = data[params4_offset:params4_offset+4]
+        params4_hex = " ".join([f"{b:02X}" for b in params4_bytes])
+    
     return {
         'type_id': instrument_type_id,
         'name': instrument_name,
         'version': version_str,
         'inst_id': inst_id_hex,
         'algo': algo_hex,
-        'shapes': shapes_hex,
+        'params0': params0_hex,
         'params1': params1_hex,
         'params2': params2_hex,
         'params3': params3_hex,
+        'params4': params4_hex,
         'file_size': len(data),
         'inst_id_offset': inst_id_offset,
         'algo_offset': algo_offset,
-        'shapes_offset': shapes_offset,
-        'params1_offset': params1_offset
+        'params0_offset': params0_offset,
+        'params1_offset': params1_offset,
+        'params4_offset': params4_offset
     }
 
 def main():
@@ -146,8 +158,8 @@ def main():
         return 1
     
     print("\nInspecting FMSYNTHS instruments\n")
-    print(f"{'File Name':<20} {'ID':<4} {'Algo':<6} {'Shapes':<15} {'Params 1':<25} {'Params 2':<25} {'Params 3':<25}")
-    print("-" * 120)
+    print(f"{'File Name':<20} {'ID':<4} {'Algo':<6} {'Params 0':<15} {'Params 1':<25} {'Params 2':<25} {'Params 3':<25} {'Params 4':<15}")
+    print("-" * 135)
     
     # Find all m8i files in the directory
     m8i_files = list(base_dir.glob("**/*.m8i"))
@@ -168,7 +180,7 @@ def main():
         # Only show instruments with ID 0x04
         if info['inst_id'] == "04":
             filtered_files.append((m8i_file, info))
-            print(f"{m8i_file.name:<20} {info['inst_id']:<4} {info['algo']:<6} {info['shapes']:<15} {info['params1']:<25} {info['params2']:<25} {info['params3']:<25}")
+            print(f"{m8i_file.name:<20} {info['inst_id']:<4} {info['algo']:<6} {info['params0']:<15} {info['params1']:<25} {info['params2']:<25} {info['params3']:<25} {info['params4']:<15}")
     
     # Print detailed analysis if requested
     if detailed and filtered_files:
@@ -186,14 +198,15 @@ def main():
             print(f"Version: {info['version']}")
             print(f"Instrument ID: {info['inst_id']}")
             print(f"Algo: {info['algo']}")
-            print(f"Shapes: {info['shapes']}")
+            print(f"Params 0: {info['params0']}")
             print(f"Params 1: {info['params1']}")
             print(f"Params 2: {info['params2']}")
             print(f"Params 3: {info['params3']}")
+            print(f"Params 4: {info['params4']}")
             
             # Show hexdump from before the instrument ID through all the parameters
             context_start = max(0, info['inst_id_offset'] - 4)  # Start 4 bytes before instrument ID
-            context_length = (info['params1_offset'] - context_start) + 24  # Include params1, params2, and params3
+            context_length = (info['params1_offset'] - context_start) + 28  # Include params1, params2, params3, and params4
             print(f"\nHex dump from instrument ID area (offset 0x{context_start:02X}):")
             print(hexdump(data, context_start, context_length))
             
