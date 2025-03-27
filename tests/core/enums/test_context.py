@@ -1,4 +1,5 @@
 import unittest
+from tests.core.enums.test_logging_config import *  # Import to suppress context warnings
 from unittest.mock import MagicMock, patch
 from m8.core.enums import M8InstrumentContext, _InstrumentContextBlock
 

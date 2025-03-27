@@ -1,4 +1,5 @@
 import unittest
+from tests.core.enums.test_logging_config import *  # Import to suppress context warnings
 from m8.core.enums import EnumPropertyMixin
 from tests.core.enums import TestFilterType, TestLimitType
 

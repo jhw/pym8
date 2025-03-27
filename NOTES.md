@@ -1,3 +1,43 @@
+## Test Directory Structure Alignment (27/03/2025)
+
+Aligned the test directory structure to properly mirror the main codebase:
+
+1. **Tests/Core/Utils Migration**:
+   - Moved tests from `tests/api/utils` to `tests/core/utils` to match `m8/core/utils`
+   - Includes test_bit_utils.py, test_string_utils.py, and test_json_utils.py
+   - All tests continue to pass after the migration
+   - Created a migration script for maintainable, repeatable process
+
+2. **Benefits**:
+   - Test structure now properly mirrors codebase structure 
+   - Easier navigation between source code and corresponding tests
+   - Better consistency with architecture where utilities are part of core
+
+This completes the suite of architecture improvements where all tests properly follow the corresponding source code structure, making the codebase easier to navigate and maintain.
+
+## Improved Enum Context Warning Management (27/03/2025)
+
+Improved the logging behavior in the enum module to reduce noise in test output:
+
+1. **Log Level Changes**:
+   - Changed "No instrument_type provided and none found in context" from WARNING to DEBUG level
+   - Adjusted other common enum-related messages to use DEBUG instead of WARNING
+   - Maintained ERROR level for actual error conditions
+
+2. **Implementation**:
+   - Modified m8/core/enums.py to use appropriate log levels for different message types
+   - This approach is more comprehensive than the previous test-level logging configuration
+   - Messages that represent normal operation now use DEBUG level
+   - Only true errors remain at WARNING/ERROR levels
+
+3. **Benefits**:
+   - Cleaner test output with less noise from expected conditions
+   - Better distinction between real problems and normal operation conditions
+   - No need for test-specific logging configuration in most cases
+   - More maintainable logging strategy for the long term
+
+This change complements the previous work in reorganizing the enum tests, ensuring a clean test output that focuses on actual issues rather than expected operational messages.
+
 ## Test Code Reorganization (27/03/2025)
 
 Reorganized the enum tests to better match the codebase structure:

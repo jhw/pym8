@@ -1,4 +1,5 @@
 import unittest
+from tests.core.enums.test_logging_config import *  # Import to suppress context warnings
 from m8.api.instruments import M8Instrument
 from m8.enums.wavsynth import M8WavSynthShapes
 from m8.enums.macrosynth import M8MacroSynthShapes

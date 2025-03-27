@@ -1,4 +1,5 @@
 import unittest
+from tests.core.enums.test_logging_config import *  # Import to suppress context warnings
 from m8.enums import M8FilterTypes, M8LimitTypes
 from m8.core.enums import (
     serialize_param_enum_value, 

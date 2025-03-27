@@ -458,7 +458,7 @@ def serialize_param_enum_value(value, param_def, instrument_type=None, param_nam
                 except ValueError:
                     instrument_type_id = None
             else:
-                logger.warning("No instrument_type provided and none found in context")
+                logger.debug("No instrument_type provided and none found in context")
                 # For FX fields, use SAMPLER as a fallback since it's most common
                 if param_name == 'key':
                     logger.info("Using SAMPLER as fallback for FX serialization")
@@ -523,7 +523,7 @@ def serialize_param_enum_value(value, param_def, instrument_type=None, param_nam
     
     # No paths found, return original value
     if not enum_paths:
-        logger.warning(f"No enum paths found, returning original value: {value}")
+        logger.debug(f"No enum paths found, returning original value: {value}")
         return value
     
     # Load enum classes
@@ -553,7 +553,7 @@ def serialize_param_enum_value(value, param_def, instrument_type=None, param_nam
                 continue
     
     # Couldn't convert the value, return it as-is
-    logger.warning(f"Could not convert value {value} to enum name, returning as-is")
+    logger.debug(f"Could not convert value {value} to enum name, returning as-is")
     return value
 
 def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=None):
@@ -586,7 +586,7 @@ def deserialize_param_enum(enum_paths, value, param_name=None, instrument_type=N
     
     if not enum_paths_resolved:
         logger = logging.getLogger(__name__)
-        logger.warning(f"No enum defined for instrument type {instrument_type} parameter {param_name}")
+        logger.debug(f"No enum defined for instrument type {instrument_type} parameter {param_name}")
         return value
     
     enum_classes = load_enum_classes(enum_paths_resolved, param_name)
@@ -643,7 +643,7 @@ def ensure_enum_int_value(value, enum_paths, instrument_type=None, param_name=No
     
     if not enum_paths_resolved:
         logger = logging.getLogger(__name__)
-        logger.warning(f"No enum defined for instrument type {instrument_type}")
+        logger.debug(f"No enum defined for instrument type {instrument_type}")
         return value
     
     enum_classes = load_enum_classes(enum_paths_resolved)

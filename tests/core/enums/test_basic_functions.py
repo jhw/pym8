@@ -2,9 +2,10 @@ import unittest
 import logging
 from m8.enums import M8FilterTypes, M8LimitTypes
 from m8.api import deserialize_enum, deserialize_param_enum, ensure_enum_int_value
-from m8.core.enums import M8EnumValueError
+from m8.core.enums import M8EnumValueError, serialize_enum, get_enum_names, get_enum_values, enum_name_to_value, enum_value_to_name
 from m8.api.instruments import M8InstrumentParams
 from tests.core.enums import TestEnum, TestFilterType, TestLimitType
+from tests.core.enums.test_logging_config import *  # Import to suppress context warnings
 
 class TestEnumFunctions(unittest.TestCase):
     def test_serialize_enum(self):

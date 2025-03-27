@@ -1,5 +1,7 @@
 import unittest
 from enum import IntEnum
+# Import logging configuration to suppress context warnings
+from tests.core.enums.test_logging_config import *
 
 from m8.core.enums import (
     serialize_enum, deserialize_enum,
