@@ -1,3 +1,42 @@
+## GitHub Project Management Discussion (27/03/2025)
+
+The current NOTES.md and TODO.md approach works well for simplicity, but GitHub Projects with Issues would offer significant advantages:
+
+### Benefits of Moving to GitHub Projects + Issues
+
+1. **Better Organization**
+   - Kanban boards with customizable columns (Todo, In Progress, Done)
+   - Priority labels and custom fields
+   - Filtering and search capabilities
+
+2. **Enhanced Collaboration**
+   - Assignees for tasks
+   - Comments and discussions on specific issues
+   - Notifications for updates
+
+3. **Progress Tracking**
+   - Visual progress indicators
+   - Timeline views
+   - Burndown charts
+
+4. **Integration with Development**
+   - Direct linking between issues and pull requests
+   - Auto-close issues via commit messages
+   - Reference issues in commits
+
+5. **Documentation**
+   - GitHub Issues maintain a history of decisions
+   - Closed issues serve as documentation of completed work
+   - Better searchability of past decisions
+
+For optimal workflow, I'd recommend:
+- GitHub Project board for high-level roadmap management
+- GitHub Issues for individual tasks/features
+- Keep minimal README.md for quick setup/reference
+- Consider GitHub Wiki for extensive documentation
+
+This approach would better integrate with GitHub workflow while maintaining the same organizational structure currently in TODO.md.
+
 ## Move M8ValidationResult to core/validation.py (27/03/2025)
 
 Continued the architectural cleanup by moving validation functionality to the core layer:
