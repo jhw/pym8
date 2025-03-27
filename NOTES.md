@@ -37,6 +37,36 @@ For optimal workflow, I'd recommend:
 
 This approach would better integrate with GitHub workflow while maintaining the same organizational structure currently in TODO.md.
 
+### Recommended Incremental Migration Path
+
+For a smooth transition from file-based management to GitHub tools, the following incremental approach is recommended:
+
+1. **Set up the Project board first**
+   - Create a new GitHub Project with columns matching TODO.md sections
+   - Configure custom fields for priority, type, and other attributes
+   - This establishes the organizational structure without requiring full migration
+
+2. **Migrate high-priority TODO items to issues**
+   - Start with "Short" priority items
+   - Create detailed issues with appropriate labels
+   - Add these issues to the project board
+   - Continue with medium and long-term items as time permits
+
+3. **Create the Wiki structure**
+   - Set up the initial hierarchy for technical documentation
+   - Create main section pages that mirror major topics
+
+4. **Move critical NOTES content to Wiki pages**
+   - Prioritize migration of recent architectural decisions
+   - Transfer implementation notes for active development areas
+   - Add cross-references between Wiki pages and related issues
+
+5. **Update README with links to new resources**
+   - Add links to the Project board and Wiki
+   - Update contribution guidelines to reference the new workflow
+
+This approach allows for gradual adoption while maintaining productivity, with both systems coexisting during the transition period.
+
 ## Move M8ValidationResult to core/validation.py (27/03/2025)
 
 Continued the architectural cleanup by moving validation functionality to the core layer:
