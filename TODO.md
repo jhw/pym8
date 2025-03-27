@@ -1,6 +1,7 @@
 # short
 
 - Migrate M8Block, M8UnknownTypeError and load_class from m8/api/__init__.py to m8/core/__init__.py
+- Update tests directory structure to mirror new m8 structure, particularly with respect to core and core/utils
 - FMsynth inspection
 
 # medium
