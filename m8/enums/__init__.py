@@ -26,6 +26,14 @@ def generate_notes_enum():
 M8Notes = generate_notes_enum()
 
 class M8InstrumentType(IntEnum):
+    # Instrument types in the M8 tracker.
+    # 
+    # This enum is the single source of truth for instrument type IDs and is used
+    # to generate the instrument type mappings used throughout the codebase.
+    # Instrument types in the M8 tracker.
+    # 
+    # This enum is the single source of truth for instrument type IDs and is used
+    # to generate the instrument type mappings used throughout the codebase.
     WAVSYNTH = 0x00
     MACROSYNTH = 0x01
     SAMPLER = 0x02

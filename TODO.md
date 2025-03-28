@@ -1,6 +1,6 @@
 # short [fmsynth]
 
-- duplication of instrument id map in enums/__init__.py and type_id_map in format config yaml
+- address enum and format_config.yaml duplication (see NOTES.md "Configuration-Enum Duplication Analysis")
 
 - example test
 
@@ -10,8 +10,6 @@
 
 # medium
 
-- clean up format_config.yaml
-  - type_id_map?
 
 - Sampler slices
 - Hypersynth
@@ -35,6 +33,7 @@
 
 # done
 
+- duplication of instrument id map in enums/__init__.py and type_id_map in format config yaml
 - mod destinations enum
 - fx enum
 - shape/wave enum

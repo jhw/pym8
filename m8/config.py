@@ -1,5 +1,6 @@
 import os
 import yaml
+from m8.enums import M8InstrumentType
 from functools import lru_cache
 
 @lru_cache(maxsize=1)
@@ -184,7 +185,7 @@ def get_modulator_type_id(modulator_type):
     raise ValueError(f"Type ID for modulator '{modulator_type}' not found in configuration")
 
 def get_instrument_type_id(instrument_type):
-    """Retrieves type ID for an instrument from configuration."""
+    # Retrieves type ID for an instrument from M8InstrumentType enum or config
     # If it's None, return None
     if instrument_type is None:
         return None
@@ -193,20 +194,26 @@ def get_instrument_type_id(instrument_type):
     if isinstance(instrument_type, int):
         return instrument_type
         
-    # Handle string type names
-    config = load_format_config()
-    
-    # Use the type as provided without case conversion
-    if ('instruments' in config and 'types' in config['instruments'] and 
-        instrument_type in config['instruments']['types']):
-        type_id = config['instruments']['types'][instrument_type]['type_id']
-        if isinstance(type_id, str) and type_id.startswith('0x'):
-            return int(type_id, 16)
-        return type_id
-    
-    # No fallback lookup needed
+    # Try to get from the enum if it's a string
+    if isinstance(instrument_type, str):
+        # First check if it's a name in the M8InstrumentType enum
+        try:
+            return M8InstrumentType[instrument_type].value
+        except KeyError:
+            pass
+            
+        # If not in enum, look in config as fallback
+        config = load_format_config()
         
-    raise ValueError(f"Type ID for instrument '{instrument_type}' not found in configuration")
+        # Use the type as provided without case conversion
+        if ('instruments' in config and 'types' in config['instruments'] and 
+            instrument_type in config['instruments']['types']):
+            type_id = config['instruments']['types'][instrument_type]['type_id']
+            if isinstance(type_id, str) and type_id.startswith('0x'):
+                return int(type_id, 16)
+            return type_id
+    
+    raise ValueError(f"Type ID for instrument '{instrument_type}' not found in enum or configuration")
 
 def get_instrument_modulators_offset(instrument_type=None):
     """Retrieves modulators offset for instruments from configuration."""
@@ -216,26 +223,9 @@ def get_instrument_modulators_offset(instrument_type=None):
     raise ValueError("Modulators offset not found in instruments configuration")
 
 def get_instrument_types():
-    """Returns a dictionary of instrument type IDs to type names from configuration."""
-    config = load_format_config()
-    result = {}
-    
-    if 'instruments' in config and 'types' in config['instruments']:
-        for instr_type, instr_config in config['instruments']['types'].items():
-            # Skip non-instrument sections
-            if isinstance(instr_config, dict) and 'type_id' in instr_config:
-                type_id = instr_config['type_id']
-                # Convert hex strings to integers
-                if isinstance(type_id, str) and type_id.startswith('0x'):
-                    type_id = int(type_id, 16)
-                result[type_id] = instr_type
-    
-    # Also add entries from type_id_map if it exists
-    if 'instruments' in config and 'type_id_map' in config['instruments']:
-        # This doesn't include instrument type names but could be useful in the future
-        pass
-            
-    return result
+    # Returns a dictionary of instrument type IDs to type names from configuration
+    # Generate directly from the enum for a single source of truth
+    return {member.value: member.name for member in M8InstrumentType}
 
 def get_instrument_common_offsets():
     """Retrieves common parameter offsets for instruments from configuration."""
@@ -298,3 +288,6 @@ def get_modulator_type_field_def(modulator_type, field_name):
             if 'fields' in mod_data and field_name in mod_data['fields']:
                 return mod_data['fields'][field_name]
     return None
+def generate_instrument_type_id_map():
+    # Generates the instrument type_id_map from the M8InstrumentType enum
+    return {member.value: member.name for member in M8InstrumentType}

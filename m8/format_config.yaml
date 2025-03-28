@@ -1,385 +1,379 @@
 chains:
   constants:
-    default_transpose: 0x0
-    empty_phrase: 0xff
-  count: 0x80
+    default_transpose: 0
+    empty_phrase: 255
+  count: 128
   fields:
     phrase:
-      default: 0xff
-      offset: 0x0
+      default: 255
+      offset: 0
     transpose:
-      offset: 0x1
-  offset: 0x9a5e
-  step_count: 0x10
-  step_size: 0x2
+      offset: 1
+  offset: 39518
+  step_count: 16
+  step_size: 2
 effect_settings:
-  offset: 0x1a5c1
+  offset: 107969
 eq:
-  offset: 0x1ad5e
+  offset: 109918
 fx:
-  block_count: 0x3
-  block_size: 0x2
+  block_count: 3
+  block_size: 2
   constants:
-    default_value: 0x0
-    empty_key: 0xff
+    default_value: 0
+    empty_key: 255
   fields:
     key:
-      default: 0xff
-      offset: 0x0
+      default: 255
       enums:
-        # Instrument-specific FX enums (including common ones for each type)
-        '0x00':  # WAVSYNTH
-          - m8.enums.wavsynth.M8WavSynthFX
-          - m8.enums.M8SequencerFX
-          - m8.enums.M8MixerFX
-          - m8.enums.M8ModulatorFX
-        '0x01':  # MACROSYNTH
-          - m8.enums.macrosynth.M8MacroSynthFX
-          - m8.enums.M8SequencerFX
-          - m8.enums.M8MixerFX
-          - m8.enums.M8ModulatorFX
-        '0x02':  # SAMPLER
-          - m8.enums.sampler.M8SamplerFX
-          - m8.enums.M8SequencerFX
-          - m8.enums.M8MixerFX
-          - m8.enums.M8ModulatorFX
-        '0x04':  # FMSYNTH
-          - m8.enums.fmsynth.M8FMSynthFX
-          - m8.enums.M8SequencerFX
-          - m8.enums.M8MixerFX
-          - m8.enums.M8ModulatorFX
+        '0x00':
+        - m8.enums.wavsynth.M8WavSynthFX
+        - m8.enums.M8SequencerFX
+        - m8.enums.M8MixerFX
+        - m8.enums.M8ModulatorFX
+        '0x01':
+        - m8.enums.macrosynth.M8MacroSynthFX
+        - m8.enums.M8SequencerFX
+        - m8.enums.M8MixerFX
+        - m8.enums.M8ModulatorFX
+        '0x02':
+        - m8.enums.sampler.M8SamplerFX
+        - m8.enums.M8SequencerFX
+        - m8.enums.M8MixerFX
+        - m8.enums.M8ModulatorFX
+        '0x04':
+        - m8.enums.fmsynth.M8FMSynthFX
+        - m8.enums.M8SequencerFX
+        - m8.enums.M8MixerFX
+        - m8.enums.M8ModulatorFX
+      offset: 0
     value:
-      offset: 0x1
+      offset: 1
 groove:
-  offset: 0xee
+  offset: 238
 instruments:
-  block_size: 0xd7
+  block_size: 215
   common_fields:
     finetune:
-      default: 0x80
-      offset: 0x11
+      default: 128
+      offset: 17
     name:
       default: ' '
-      offset: 0x1
-      size: 0xc
+      offset: 1
+      size: 12
       type: STRING
     name_length:
-      offset: 0xc
+      offset: 12
     pitch:
-      offset: 0x10
+      offset: 16
     table_tick:
-      default: 0x1
-      offset: 0xe
+      default: 1
+      offset: 14
     transpose_eq:
       components:
         eq:
-          default: 0x1
-          nibble: 0x2
+          default: 1
+          nibble: 2
         transpose:
-          default: 0x4
-          nibble: 0x1
-      offset: 0xd
+          default: 4
+          nibble: 1
+      offset: 13
       type: UINT4_2
     type:
-      offset: 0x0
+      offset: 0
     volume:
-      offset: 0xf
-  count: 0x80
-  modulators_offset: 0x3f
-  offset: 0x13a3e
+      offset: 15
+  count: 128
+  modulators_offset: 63
+  offset: 80446
   param_types:
-    STRING: 0x2
-    UINT8: 0x1
-  type_id_map:
-    0: WAVSYNTH
-    1: MACROSYNTH
-    2: SAMPLER
-    4: FMSYNTH
+    STRING: 2
+    UINT8: 1
   types:
     FMSYNTH:
       params:
         algo:
           enums:
           - m8.enums.fmsynth.M8FMSynthAlgos
-          offset: 0x12
+          offset: 18
+        amp:
+          offset: 51
+        chorus:
+          offset: 55
+        cutoff:
+          default: 255
+          offset: 49
+        delay:
+          offset: 56
+        dry:
+          default: 192
+          offset: 54
+        feedback1:
+          offset: 32
+        feedback2:
+          offset: 34
+        feedback3:
+          offset: 36
+        feedback4:
+          offset: 38
+        filter:
+          offset: 48
+        level1:
+          offset: 31
+        level2:
+          offset: 33
+        level3:
+          offset: 35
+        level4:
+          offset: 37
+        limit:
+          offset: 52
+        mod_1:
+          offset: 47
+        mod_2:
+          offset: 48
+        mod_3:
+          offset: 49
+        mod_4:
+          offset: 50
+        mod_a1:
+          offset: 39
+        mod_a2:
+          offset: 41
+        mod_a3:
+          offset: 43
+        mod_a4:
+          offset: 45
+        mod_b1:
+          offset: 40
+        mod_b2:
+          offset: 42
+        mod_b3:
+          offset: 44
+        mod_b4:
+          offset: 46
+        pan:
+          default: 128
+          offset: 53
+        ratio1:
+          offset: 23
+        ratio2:
+          offset: 25
+        ratio3:
+          offset: 27
+        ratio4:
+          offset: 29
+        ratio_fine1:
+          offset: 24
+        ratio_fine2:
+          offset: 26
+        ratio_fine3:
+          offset: 28
+        ratio_fine4:
+          offset: 30
+        res:
+          offset: 50
+        reverb:
+          offset: 57
         shape1:
           enums:
           - m8.enums.fmsynth.M8FMSynthShapes
-          offset: 0x13
+          offset: 19
         shape2:
           enums:
           - m8.enums.fmsynth.M8FMSynthShapes
-          offset: 0x14
+          offset: 20
         shape3:
           enums:
           - m8.enums.fmsynth.M8FMSynthShapes
-          offset: 0x15
+          offset: 21
         shape4:
           enums:
           - m8.enums.fmsynth.M8FMSynthShapes
-          offset: 0x16
-        ratio1:
-          offset: 0x17
-        ratio_fine1:
-          offset: 0x18
-        ratio2:
-          offset: 0x19
-        ratio_fine2:
-          offset: 0x1a
-        ratio3:
-          offset: 0x1b
-        ratio_fine3:
-          offset: 0x1c
-        ratio4:
-          offset: 0x1d
-        ratio_fine4:
-          offset: 0x1e
-        level1:
-          offset: 0x1f
-        feedback1:
-          offset: 0x20
-        level2:
-          offset: 0x21
-        feedback2:
-          offset: 0x22
-        level3:
-          offset: 0x23
-        feedback3:
-          offset: 0x24
-        level4:
-          offset: 0x25
-        feedback4:
-          offset: 0x26
-        mod_a1:
-          offset: 0x27
-        mod_b1:
-          offset: 0x28
-        mod_a2:
-          offset: 0x29
-        mod_b2:
-          offset: 0x2a
-        mod_a3:
-          offset: 0x2b
-        mod_b3:
-          offset: 0x2c
-        mod_a4:
-          offset: 0x2d
-        mod_b4:
-          offset: 0x2e
-        mod_1:
-          offset: 0x2f
-        mod_2:
-          offset: 0x30
-        mod_3:
-          offset: 0x31
-        mod_4:
-          offset: 0x32
-        amp:
-          offset: 0x33
-        chorus:
-          offset: 0x37
-        cutoff:
-          default: 0xff
-          offset: 0x31
-        delay:
-          offset: 0x38
-        dry:
-          default: 0xc0
-          offset: 0x36
-        filter:
-          offset: 0x30
-        limit:
-          offset: 0x34
-        pan:
-          default: 0x80
-          offset: 0x35
-        res:
-          offset: 0x32
-        reverb:
-          offset: 0x39
-      type_id: 0x4
+          offset: 22
+      type_id: 4
     MACROSYNTH:
       params:
         amp:
-          offset: 0x1a
+          offset: 26
         chorus:
-          offset: 0x1e
+          offset: 30
         color:
-          default: 0x80
-          offset: 0x14
+          default: 128
+          offset: 20
         cutoff:
-          default: 0xff
-          offset: 0x18
+          default: 255
+          offset: 24
         degrade:
-          offset: 0x15
+          offset: 21
         delay:
-          offset: 0x1f
+          offset: 31
         dry:
-          default: 0xc0
-          offset: 0x1d
+          default: 192
+          offset: 29
         filter:
           enums:
           - m8.enums.M8FilterTypes
-          offset: 0x17
+          offset: 23
         limit:
           enums:
           - m8.enums.M8LimitTypes
-          offset: 0x1b
+          offset: 27
         pan:
-          default: 0x80
-          offset: 0x1c
+          default: 128
+          offset: 28
         redux:
-          offset: 0x16
+          offset: 22
         res:
-          offset: 0x19
+          offset: 25
         reverb:
-          offset: 0x20
+          offset: 32
         shape:
           enums:
           - m8.enums.macrosynth.M8MacroSynthShapes
-          offset: 0x12
+          offset: 18
         timbre:
-          default: 0x80
-          offset: 0x13
-      type_id: 0x1
+          default: 128
+          offset: 19
+      type_id: 1
     SAMPLER:
       params:
         amp:
-          offset: 0x1b
+          offset: 27
         chorus:
-          offset: 0x1f
+          offset: 31
         cutoff:
-          default: 0xff
-          offset: 0x19
+          default: 255
+          offset: 25
         degrade:
-          offset: 0x17
+          offset: 23
         delay:
-          offset: 0x20
+          offset: 32
         dry:
-          default: 0xc0
-          offset: 0x1e
+          default: 192
+          offset: 30
         filter:
           enums:
           - m8.enums.M8FilterTypes
-          offset: 0x18
+          offset: 24
         length:
-          default: 0xff
-          offset: 0x16
+          default: 255
+          offset: 22
         limit:
           enums:
           - m8.enums.M8LimitTypes
-          offset: 0x1c
+          offset: 28
         loop_start:
-          offset: 0x15
+          offset: 21
         pan:
-          default: 0x80
-          offset: 0x1d
+          default: 128
+          offset: 29
         play_mode:
           enums:
           - m8.enums.sampler.M8SamplerPlayMode
-          offset: 0x12
+          offset: 18
         res:
-          offset: 0x1a
+          offset: 26
         reverb:
-          offset: 0x21
+          offset: 33
         slice:
-          offset: 0x13
+          offset: 19
         start:
-          offset: 0x14
+          offset: 20
       sample_path:
         default: ''
-        offset: 0x57
-        size: 0x80
+        offset: 87
+        size: 128
         type: STRING
-      type_id: 0x2
+      type_id: 2
     WAVSYNTH:
       params:
         amp:
-          offset: 0x1a
+          offset: 26
         chorus:
-          offset: 0x1e
+          offset: 30
         cutoff:
-          default: 0xff
-          offset: 0x18
+          default: 255
+          offset: 24
         delay:
-          offset: 0x1f
+          offset: 31
         dry:
-          default: 0xc0
-          offset: 0x1d
+          default: 192
+          offset: 29
         filter:
           enums:
           - m8.enums.M8FilterTypes
-          offset: 0x17
+          offset: 23
         limit:
           enums:
           - m8.enums.M8LimitTypes
-          offset: 0x1b
+          offset: 27
         mult:
-          default: 0x80
-          offset: 0x14
+          default: 128
+          offset: 20
         pan:
-          default: 0x80
-          offset: 0x1c
+          default: 128
+          offset: 28
         res:
-          offset: 0x19
+          offset: 25
         reverb:
-          offset: 0x20
+          offset: 32
         scan:
-          offset: 0x16
+          offset: 22
         shape:
           enums:
           - m8.enums.wavsynth.M8WavSynthShapes
-          offset: 0x12
+          offset: 18
         size:
-          default: 0x80
-          offset: 0x13
+          default: 128
+          offset: 19
         warp:
-          offset: 0x15
-      type_id: 0x0
+          offset: 21
+      type_id: 0
 metadata:
-  block_size: 0x93
+  block_size: 147
   fields:
     directory:
       default: /Songs/
-      offset: 0x0
-      size: 0x80
+      offset: 0
+      size: 128
       type: STRING
     key:
-      offset: 0x92
+      offset: 146
     name:
       default: HELLO
-      offset: 0x86
-      size: 0xc
+      offset: 134
+      size: 12
       type: STRING
     quantize:
-      offset: 0x85
+      offset: 133
     tempo:
       default: 120.0
-      offset: 0x81
-      size: 0x4
+      offset: 129
+      size: 4
       type: FLOAT
     transpose:
-      offset: 0x80
-  offset: 0xe
+      offset: 128
+  offset: 14
 midi_mapping:
-  offset: 0x1a5fe
+  offset: 108030
 modulators:
-  block_size: 0x6
+  block_size: 6
   constants:
-    default_amount: 0xff
-    empty_destination: 0x0
-  count: 0x4
+    default_amount: 255
+    empty_destination: 0
+  count: 4
   default_config:
-  - 0x0
-  - 0x0
-  - 0x3
-  - 0x3
+  - 0
+  - 0
+  - 3
+  - 3
   fields:
     amount:
-      default: 0xff
-      offset: 0x1
+      default: 255
+      offset: 1
     type_dest_byte:
-      offset: 0x0
+      offset: 0
   type_id_map:
     0: m8.api.modulators.M8AHDEnvelope
     1: m8.api.modulators.M8ADSREnvelope
@@ -391,13 +385,13 @@ modulators:
     ADSR_ENVELOPE:
       fields:
         amount:
-          default: 0xff
-          offset: 0x1
+          default: 255
+          offset: 1
         attack:
-          offset: 0x2
+          offset: 2
         decay:
-          default: 0x80
-          offset: 0x3
+          default: 128
+          offset: 3
         destination:
           enums:
             '0x00':
@@ -408,25 +402,25 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
-          nibble: 0x1
-          offset: 0x0
+          nibble: 1
+          offset: 0
         release:
-          default: 0x80
-          offset: 0x5
+          default: 128
+          offset: 5
         sustain:
-          default: 0x80
-          offset: 0x4
-      id: 0x1
+          default: 128
+          offset: 4
+      id: 1
     AHD_ENVELOPE:
       fields:
         amount:
-          default: 0xff
-          offset: 0x1
+          default: 255
+          offset: 1
         attack:
-          offset: 0x2
+          offset: 2
         decay:
-          default: 0x80
-          offset: 0x4
+          default: 128
+          offset: 4
         destination:
           enums:
             '0x00':
@@ -437,22 +431,22 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
-          nibble: 0x1
-          offset: 0x0
+          nibble: 1
+          offset: 0
         hold:
-          offset: 0x3
-      id: 0x0
+          offset: 3
+      id: 0
     DRUM_ENVELOPE:
       fields:
         amount:
-          default: 0xff
-          offset: 0x1
+          default: 255
+          offset: 1
         body:
-          default: 0x10
-          offset: 0x3
+          default: 16
+          offset: 3
         decay:
-          default: 0x80
-          offset: 0x4
+          default: 128
+          offset: 4
         destination:
           enums:
             '0x00':
@@ -463,16 +457,16 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
-          nibble: 0x1
-          offset: 0x0
+          nibble: 1
+          offset: 0
         peak:
-          offset: 0x2
-      id: 0x2
+          offset: 2
+      id: 2
     LFO:
       fields:
         amount:
-          default: 0xff
-          offset: 0x1
+          default: 255
+          offset: 1
         destination:
           enums:
             '0x00':
@@ -483,21 +477,21 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
-          nibble: 0x1
-          offset: 0x0
+          nibble: 1
+          offset: 0
         frequency:
-          default: 0x10
-          offset: 0x4
+          default: 16
+          offset: 4
         oscillator:
-          offset: 0x2
+          offset: 2
         trigger:
-          offset: 0x3
-      id: 0x3
+          offset: 3
+      id: 3
     TRACKING_ENVELOPE:
       fields:
         amount:
-          default: 0xff
-          offset: 0x1
+          default: 255
+          offset: 1
         destination:
           enums:
             '0x00':
@@ -508,26 +502,26 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
-          nibble: 0x1
-          offset: 0x0
+          nibble: 1
+          offset: 0
         high_value:
-          default: 0x7f
-          offset: 0x4
+          default: 127
+          offset: 4
         low_value:
-          offset: 0x3
+          offset: 3
         source:
-          offset: 0x2
-      id: 0x5
+          offset: 2
+      id: 5
     TRIGGER_ENVELOPE:
       fields:
         amount:
-          default: 0xff
-          offset: 0x1
+          default: 255
+          offset: 1
         attack:
-          offset: 0x2
+          offset: 2
         decay:
-          default: 0x40
-          offset: 0x4
+          default: 64
+          offset: 4
         destination:
           enums:
             '0x00':
@@ -538,47 +532,47 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
-          nibble: 0x1
-          offset: 0x0
+          nibble: 1
+          offset: 0
         hold:
-          offset: 0x3
+          offset: 3
         source:
-          offset: 0x5
-      id: 0x4
+          offset: 5
+      id: 4
 phrases:
   constants:
-    base_data_size: 0x3
-    empty_instrument: 0xff
-    empty_note: 0xff
-    empty_velocity: 0xff
-  count: 0xff
+    base_data_size: 3
+    empty_instrument: 255
+    empty_note: 255
+    empty_velocity: 255
+  count: 255
   fields:
     fx:
-      offset: 0x3
-      size: 0x6
+      offset: 3
+      size: 6
     instrument:
-      default: 0xff
-      offset: 0x2
+      default: 255
+      offset: 2
     note:
-      default: 0xff
-      offset: 0x0
+      default: 255
       enums:
-        - m8.enums.M8Notes
+      - m8.enums.M8Notes
+      offset: 0
     velocity:
-      default: 0xff
-      offset: 0x1
-  offset: 0xaee
-  step_count: 0x10
-  step_size: 0x9
+      default: 255
+      offset: 1
+  offset: 2798
+  step_count: 16
+  step_size: 9
 scale:
-  offset: 0x1aa7e
+  offset: 109182
 song:
-  col_count: 0x8
+  col_count: 8
   constants:
-    empty_chain: 0xff
-  offset: 0x2ee
-  row_count: 0xff
+    empty_chain: 255
+  offset: 750
+  row_count: 255
 table:
-  offset: 0xba3e
+  offset: 47678
 version:
-  offset: 0xa
+  offset: 10

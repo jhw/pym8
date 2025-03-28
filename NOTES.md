@@ -1,4 +1,69 @@
 
+## Configuration-Enum Duplication Analysis (28/03/2025)
+
+I've analyzed the codebase and found several instances of duplication between enum definitions and the format_config.yaml configuration. This creates potential maintenance issues where changes must be made in multiple places to maintain consistency.
+
+### Identified Duplications
+
+1. **Modulator Type Definitions**:
+   - `M8ModulatorType` enum in `m8/enums/__init__.py` defines type IDs (0-5)
+   - `modulators.type_id_map` in `format_config.yaml` maps the same IDs to class paths
+   - Additionally, each modulator type section in the YAML has its own `id` field
+
+2. **Filter Types**:
+   - `M8FilterTypes` enum in `m8/enums/__init__.py` defines filter types
+   - Referenced in `format_config.yaml` for various instruments
+   - No direct duplication, but potentially redundant configuration
+
+3. **Limit Types**:
+   - `M8LimitTypes` enum in `m8/enums/__init__.py` defines limit types
+   - Referenced in `format_config.yaml` for various instruments
+   - Similar to filter types, no direct duplication but related configuration
+
+4. **FX Enums**:
+   - Various FX enum classes (`M8SequencerFX`, `M8MixerFX`, etc.) defined in enums
+   - Referenced in `format_config.yaml` for various instruments
+   - The configuration maps instrument types to relevant enum classes
+
+### Source of Truth Determination
+
+For each duplication, we need to determine which source should be the "source of truth":
+
+1. **For types (instrument/modulator)**:
+   - Enums should be the source of truth for type IDs and names
+   - Config should reference these rather than redefining them
+   - Already implemented for instrument types, can use as a model for modulator types
+
+2. **For fields (filter/limit types, modulator destinations)**:
+   - Enums are best for defining the values and names
+   - Config should define where these fields exist in the binary format
+   - Current approach of referencing enum classes in config is appropriate
+
+### Refactoring Strategy
+
+1. **Source of Truth Consolidation**:
+   - Make all enums the source of truth for their respective values
+   - Update config.py to generate mappings from enums rather than reading from YAML
+   - Simplify YAML to reference enums rather than duplicating values
+
+2. **Code Generation**:
+   - Consider adding build-time validation or generation to ensure consistency
+   - Could generate certain parts of format_config.yaml from the enum definitions
+   - Would provide compile-time checks for compatibility
+
+3. **Incremental Approach**:
+   - Start with modulator types (similar to the completed instrument types)
+   - Create a migration script for each duplication point
+   - Update code incrementally to reduce risks
+
+### Proposed Migration Order
+
+1. Modulator types (highest priority - direct duplication)
+2. Per-modulator type IDs in YAML (can be derived from modulator types)
+3. Examine remaining YAML structure for potential consolidation
+
+This approach should reduce maintenance burden by making the codebase more DRY, with each piece of information defined in exactly one place.
+
 ## FMSYNTH Configuration Added (28/03/2025)
 
 Added basic FMSYNTH instrument configuration:
