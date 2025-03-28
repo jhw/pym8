@@ -56,14 +56,14 @@ class TestFMSynthMapping(unittest.TestCase):
             'mod_2': 0,               # 0x00
             'mod_3': 96,              # 0x60
             'mod_4': 0,               # 0x00
-            'mod_a1': 0,              # 0x00
-            'mod_a2': 2,              # 0x02
-            'mod_a3': 2,              # 0x02
-            'mod_a4': 3,              # 0x03
-            'mod_b1': 0,              # 0x00
-            'mod_b2': 5,              # 0x05
-            'mod_b3': 5,              # 0x05
-            'mod_b4': 2,              # 0x02
+            'mod_a1': 0,              # 0x00 (not an enum value)
+            'mod_a2': 'LEV2',         # 0x02 (LEV2 from M8FMSynthModABValues)
+            'mod_a3': 'LEV2',         # 0x02 (LEV2 from M8FMSynthModABValues)
+            'mod_a4': 'LEV3',         # 0x03 (LEV3 from M8FMSynthModABValues)
+            'mod_b1': 0,              # 0x00 (not an enum value)
+            'mod_b2': 'RAT1',         # 0x05 (RAT1 from M8FMSynthModABValues)
+            'mod_b3': 'RAT1',         # 0x05 (RAT1 from M8FMSynthModABValues)
+            'mod_b4': 'LEV2',         # 0x02 (LEV2 from M8FMSynthModABValues)
             'pan': 128,               # 0x80
             'ratio1': 8,              # 0x08
             'ratio2': 1,              # 0x01

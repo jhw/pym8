@@ -52,6 +52,24 @@ class M8FMSynthModDestinations(IntEnum):
     MOD_BOTH = 0x0D
     MOD_BINV = 0x0E
     
+class M8FMSynthModABValues(IntEnum):
+    LEV1 = 0x01
+    LEV2 = 0x02
+    LEV3 = 0x03
+    LEV4 = 0x04
+    RAT1 = 0x05
+    RAT2 = 0x06
+    RAT3 = 0x07
+    RAT4 = 0x08
+    PIT1 = 0x09
+    PIT2 = 0x0A
+    PIT3 = 0x0B
+    PIT4 = 0x0C
+    FBK1 = 0x0D
+    FBK2 = 0x0E
+    FBK3 = 0x0F
+    FBK4 = 0x10
+
 class M8FMSynthShapes(IntEnum):
     SIN = 0x00
     SW2 = 0x01

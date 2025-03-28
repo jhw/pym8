@@ -1,10 +1,8 @@
 # short [fmsynth]
 
-- mod_a/b enums >> LEV1-4, RAT1-4, PIT1-4, FBK1-4
-  
-- subclass
-- operator (de)serialisation
-- ratio(_fine) base 10 rendering
+- fmsynth subclass
+- operator group serialisation/deserialisation
+- ratio/ratio_fine base 10 rendering
 
 # medium
 
@@ -30,6 +28,7 @@
 
 # done
 
+- mod_a/b enums >> LEV1-4, RAT1-4, PIT1-4, FBK1-4
 - add FMSYNTH example test
 - add config validation to ensure consistency between enums and YAML configuration
 - address enum and format_config.yaml duplication (modulator types)

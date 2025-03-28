@@ -141,20 +141,36 @@ instruments:
         mod_4:
           offset: 50
         mod_a1:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 39
         mod_a2:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 40
         mod_a3:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 41
         mod_a4:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 42
         mod_b1:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 43
         mod_b2:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 44
         mod_b3:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 45
         mod_b4:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthModABValues
           offset: 46
         pan:
           default: 128

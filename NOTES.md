@@ -1,4 +1,15 @@
 
+## FMSYNTH ModAB Values Enum (28/03/2025)
+
+Added a new enum `M8FMSynthModABValues` to represent the possible values for FMSYNTH's mod_a1-4 and mod_b1-4 parameters. These parameters control how operators are modulated in the FM synthesis algorithm. The enum includes the following values:
+
+- LEV1-4: Operator level modulation
+- RAT1-4: Operator ratio modulation
+- PIT1-4: Operator pitch modulation
+- FBK1-4: Operator feedback modulation
+
+Added mappings in format_config.yaml to use this enum for all mod_a and mod_b parameters in FMSYNTH instruments. Also updated the FMSYNTH test to use these enum values.
+
 ## FMSYNTH Offset Fix (28/03/2025)
 
 Fixed issues with the FMSYNTH parameter mapping in format_config.yaml. There were several overlapping offsets:
