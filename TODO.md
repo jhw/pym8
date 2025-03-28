@@ -1,6 +1,5 @@
 # short [fmsynth]
 
-- fmsynth subclass
 - operator group serialisation/deserialisation
 - ratio/ratio_fine base 10 rendering
 
@@ -8,10 +7,9 @@
 
 - Sampler slices
 - Hypersynth
-
 - TODO.md >> github project
-
 - 5.0.2
+- Examples
 
 # beats
 
@@ -28,6 +26,7 @@
 
 # done
 
+- fmsynth subclass
 - mod_a/b enums >> LEV1-4, RAT1-4, PIT1-4, FBK1-4
 - add FMSYNTH example test
 - add config validation to ensure consistency between enums and YAML configuration

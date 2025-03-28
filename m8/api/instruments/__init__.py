@@ -1,4 +1,4 @@
-# m8/api/instruments.py
+# m8/api/instruments/__init__.py
 from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
 from m8.core.enums import EnumPropertyMixin, M8InstrumentContext
@@ -203,7 +203,7 @@ class M8InstrumentParams(EnumPropertyMixin):
         return params
 
 class M8Instrument(EnumPropertyMixin):
-    """Unified instrument class for all M8 instrument types."""
+    """Base instrument class for all M8 instrument types."""
     
     # Get common parameter offsets from config
     common_offsets = get_instrument_common_offsets()
@@ -518,41 +518,8 @@ class M8Instrument(EnumPropertyMixin):
         # Get the instrument type
         instr_type = data["type"]
         
-        # Create a new instrument with the appropriate type
-        # Handle both enum name strings and integer type IDs
-        try:
-            logger = logging.getLogger(__name__)
-            
-            instrument_type = deserialize_enum(M8InstrumentType, instr_type, 'instrument')
-            instrument = cls(instrument_type=instrument_type)
-            
-            # Set common parameters
-            for key in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune"]:
-                if key in data:
-                    setattr(instrument, key, data[key])
-            
-            # Get type ID for enum handling
-            type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
-            
-            # Create params object and set parameters
-            # We'll use from_dict to properly handle string enum values
-            param_data = {k: v for k, v in data.items() 
-                          if k not in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune", "type", "modulators"]}
-            
-            instrument.params = M8InstrumentParams.from_dict(instrument.instrument_type, param_data, type_id)
-            
-            # Set modulators
-            if "modulators" in data:
-                # Set up instrument context for modulators
-                context = M8InstrumentContext.get_instance()
-                # Get the numeric type ID for the context
-                type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
-                with context.with_instrument(instrument_type_id=type_id):
-                    instrument.modulators = M8Modulators.from_list(data["modulators"], type_id)
-            
-            return instrument
-        except (ValueError, KeyError) as e:
-            raise ValueError(f"Invalid instrument type: {instr_type}. Error: {str(e)}")
+        # Use factory function to create the appropriate instrument subclass
+        return create_instrument_from_dict(data)
 
     def is_empty(self):
         """Check if instrument is empty (has default values only)."""
@@ -574,8 +541,9 @@ class M8Instrument(EnumPropertyMixin):
         instr_type = data[cls.TYPE_OFFSET]
         
         if instr_type in INSTRUMENT_TYPES:
-            # Create a new instrument with the type from the data
-            instrument = cls(instrument_type=instr_type)
+            # Use factory function to create the appropriate instrument subclass
+            instrument_type = INSTRUMENT_TYPES[instr_type]
+            instrument = create_instrument(instrument_type)
             
             # Read all parameters
             instrument._read_parameters(data)
@@ -662,7 +630,7 @@ class M8Instruments(list):
             instr_type = block_data[0]
             try:
                 if instr_type in INSTRUMENT_TYPES:
-                    # Read using the base class read method
+                    # Read using the appropriate instrument subclass
                     instance.append(M8Instrument.read(block_data))
                 else:
                     # Default to M8Block for empty slots (all zeros)
@@ -748,10 +716,87 @@ class M8Instruments(list):
                 if 0 <= index < BLOCK_COUNT:
                     # Remove index field before passing to from_dict
                     instr_dict = {k: v for k, v in instr_data.items() if k != "index"}
-                    instance[index] = M8Instrument.from_dict(instr_dict)
+                    instance[index] = create_instrument_from_dict(instr_dict)
         
         return instance
 
-# No backward compatibility needed per project preferences
+# Factory function to create instrument instances based on type
+def create_instrument(instrument_type=None, **kwargs):
+    """Create an appropriate instrument subclass instance based on type."""
+    from m8.api.instruments.fmsynth import M8FMSynth
+    from m8.api.instruments.macrosynth import M8MacroSynth
+    from m8.api.instruments.wavsynth import M8WavSynth
+    from m8.api.instruments.sampler import M8Sampler
+    
+    # Map instrument types to their respective classes
+    instrument_classes = {
+        "FMSYNTH": M8FMSynth,
+        "MACROSYNTH": M8MacroSynth,
+        "WAVSYNTH": M8WavSynth,
+        "SAMPLER": M8Sampler
+    }
+    
+    # Get the instrument type string
+    if instrument_type is None:
+        instrument_type = "WAVSYNTH"  # Default
+    elif isinstance(instrument_type, int):
+        if instrument_type in INSTRUMENT_TYPES:
+            instrument_type = INSTRUMENT_TYPES[instrument_type]
+        else:
+            raise ValueError(f"Unknown instrument type ID: {instrument_type}")
+    elif isinstance(instrument_type, M8InstrumentType):
+        instrument_type = INSTRUMENT_TYPES[instrument_type.value]
+    
+    # Create the appropriate subclass
+    if instrument_type in instrument_classes:
+        return instrument_classes[instrument_type](**kwargs)
+    else:
+        # Fallback to base class
+        return M8Instrument(instrument_type=instrument_type, **kwargs)
 
-# No instrument-specific subclasses needed - M8Instrument handles all types
+def create_instrument_from_dict(data):
+    """Create an appropriate instrument subclass from a dictionary."""
+    # Get the instrument type
+    instr_type = data["type"]
+    
+    if isinstance(instr_type, str):
+        # Create the appropriate instrument based on type string
+        instrument = create_instrument(instr_type)
+    else:
+        # Handle numeric type ID
+        try:
+            instrument_type = deserialize_enum(M8InstrumentType, instr_type, 'instrument')
+            instrument = create_instrument(instrument_type)
+        except (ValueError, KeyError) as e:
+            raise ValueError(f"Invalid instrument type: {instr_type}. Error: {str(e)}")
+    
+    # Set common parameters
+    for key in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune"]:
+        if key in data:
+            setattr(instrument, key, data[key])
+    
+    # Get type ID for enum handling
+    type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
+    
+    # Create params object and set parameters
+    param_data = {k: v for k, v in data.items() 
+                  if k not in ["name", "transpose", "eq", "table_tick", "volume", "pitch", "finetune", "type", "modulators"]}
+    
+    instrument.params = M8InstrumentParams.from_dict(instrument.instrument_type, param_data, type_id)
+    
+    # Set modulators
+    if "modulators" in data:
+        # Set up instrument context for modulators
+        context = M8InstrumentContext.get_instance()
+        # Get the numeric type ID for the context
+        type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
+        with context.with_instrument(instrument_type_id=type_id):
+            instrument.modulators = M8Modulators.from_list(data["modulators"], type_id)
+    
+    return instrument
+
+# Import subclasses for direct access
+from m8.api.instruments.fmsynth import M8FMSynth
+from m8.api.instruments.macrosynth import M8MacroSynth
+from m8.api.instruments.wavsynth import M8WavSynth
+from m8.api.instruments.sampler import M8Sampler
