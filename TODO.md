@@ -1,7 +1,6 @@
 # short [fmsynth]
 
-- mod_a/b enums
-  - 05 / 1 > RAT mapping
+- mod_a/b enums >> LEV1-4, RAT1-4, PIT1-4, FBK1-4
   
 - subclass
 - operator (de)serialisation
