@@ -1,5 +1,6 @@
 # short [fmsynth]
 
+- re- check fmsynth test
 - operator group serialisation/deserialisation
 - ratio/ratio_fine base 10 rendering
 
