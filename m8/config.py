@@ -326,6 +326,40 @@ def validate_config():
                         f"Invalid instrument type ID: {type_id} for {instrument_type}",
                         "instruments.types"
                     )
+            
+            # Check for duplicated or overlapping offsets in params
+            if 'params' in instrument_config:
+                validate_field_offsets(
+                    instrument_config['params'], 
+                    f"instruments.types.{instrument_type}.params",
+                    result
+                )
+    
+    # Check common fields for duplicated or overlapping offsets
+    if 'instruments' in config and 'common_fields' in config['instruments']:
+        validate_field_offsets(
+            config['instruments']['common_fields'], 
+            "instruments.common_fields",
+            result
+        )
+    
+    # Check for duplicated or overlapping offsets in modulators
+    if 'modulators' in config and 'types' in config['modulators']:
+        for mod_type, mod_config in config['modulators']['types'].items():
+            if 'fields' in mod_config:
+                validate_field_offsets(
+                    mod_config['fields'], 
+                    f"modulators.types.{mod_type}.fields",
+                    result
+                )
+    
+    # Check for duplicated or overlapping offsets in modulator fields
+    if 'modulators' in config and 'fields' in config['modulators']:
+        validate_field_offsets(
+            config['modulators']['fields'], 
+            "modulators.fields",
+            result
+        )
     
     # Check FX enums mappings
     if 'fx' in config and 'fields' in config['fx'] and 'key' in config['fx']['fields'] and 'enums' in config['fx']['fields']['key']:
@@ -342,6 +376,14 @@ def validate_config():
                     f"Invalid instrument ID in FX enums mapping: {instrument_id_str}",
                     "fx.fields.key.enums"
                 )
+    
+    # Check for duplicated or overlapping offsets in fx fields
+    if 'fx' in config and 'fields' in config['fx']:
+        validate_field_offsets(
+            config['fx']['fields'], 
+            "fx.fields",
+            result
+        )
     
     # Check modulator destination enums
     if 'modulators' in config and 'types' in config['modulators']:
@@ -387,3 +429,46 @@ def validate_config():
                 )
     
     return result
+
+def validate_field_offsets(fields, context_path, result):
+    """
+    Validates field offsets to ensure they are not duplicated or overlapping.
+    
+    Args:
+        fields: Dictionary of field definitions
+        context_path: The path in the config for error reporting
+        result: M8ValidationResult to add errors to
+    """
+    if not isinstance(fields, dict):
+        return
+    
+    # Extract field info: name, offset, and size
+    field_info = []
+    for field_name, field_def in fields.items():
+        if isinstance(field_def, dict) and 'offset' in field_def:
+            offset = field_def['offset']
+            # Default size is 1 if not specified
+            size = field_def.get('size', 1)
+            field_info.append((field_name, offset, size))
+    
+    # Sort by offset
+    field_info.sort(key=lambda x: x[1])
+    
+    # Check for duplicates and overlaps
+    for i in range(len(field_info) - 1):
+        current_name, current_offset, current_size = field_info[i]
+        next_name, next_offset, next_size = field_info[i + 1]
+        
+        # Check for duplicate offsets
+        if current_offset == next_offset:
+            result.add_error(
+                f"Duplicate offset: '{current_name}' and '{next_name}' both have offset {current_offset}",
+                context_path
+            )
+        
+        # Check for overlapping fields
+        elif current_offset + current_size > next_offset:
+            result.add_error(
+                f"Overlapping fields: '{current_name}' (offset {current_offset}, size {current_size}) overlaps with '{next_name}' (offset {next_offset})",
+                context_path
+            )

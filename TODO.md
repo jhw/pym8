@@ -8,7 +8,6 @@
 
 - Sampler slices
 - Hypersynth
-- Tables
 
 - TODO.md >> github project
 
@@ -21,6 +20,7 @@
 
 # roadmap
 
+- Tables
 - Eq
 - Midi
 - Grooves
