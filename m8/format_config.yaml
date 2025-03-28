@@ -43,6 +43,11 @@ fx:
           - m8.enums.M8SequencerFX
           - m8.enums.M8MixerFX
           - m8.enums.M8ModulatorFX
+        '0x04':  # FMSYNTH
+          - m8.enums.fmsynth.M8FMSynthFX
+          - m8.enums.M8SequencerFX
+          - m8.enums.M8MixerFX
+          - m8.enums.M8ModulatorFX
     value:
       offset: 0x1
 groove:
@@ -86,10 +91,113 @@ instruments:
     STRING: 0x2
     UINT8: 0x1
   type_id_map:
-    0: m8.api.instruments.M8WavSynthInstrument
-    1: m8.api.instruments.M8MacroSynthInstrument
-    2: m8.api.instruments.M8SamplerInstrument
+    0: WAVSYNTH
+    1: MACROSYNTH
+    2: SAMPLER
+    4: FMSYNTH
   types:
+    FMSYNTH:
+      params:
+        algo:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthAlgos
+          offset: 0x12
+        shape1:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthShapes
+          offset: 0x13
+        shape2:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthShapes
+          offset: 0x14
+        shape3:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthShapes
+          offset: 0x15
+        shape4:
+          enums:
+          - m8.enums.fmsynth.M8FMSynthShapes
+          offset: 0x16
+        ratio1:
+          offset: 0x17
+        ratio_fine1:
+          offset: 0x18
+        ratio2:
+          offset: 0x19
+        ratio_fine2:
+          offset: 0x1a
+        ratio3:
+          offset: 0x1b
+        ratio_fine3:
+          offset: 0x1c
+        ratio4:
+          offset: 0x1d
+        ratio_fine4:
+          offset: 0x1e
+        level1:
+          offset: 0x1f
+        feedback1:
+          offset: 0x20
+        level2:
+          offset: 0x21
+        feedback2:
+          offset: 0x22
+        level3:
+          offset: 0x23
+        feedback3:
+          offset: 0x24
+        level4:
+          offset: 0x25
+        feedback4:
+          offset: 0x26
+        mod_a1:
+          offset: 0x27
+        mod_b1:
+          offset: 0x28
+        mod_a2:
+          offset: 0x29
+        mod_b2:
+          offset: 0x2a
+        mod_a3:
+          offset: 0x2b
+        mod_b3:
+          offset: 0x2c
+        mod_a4:
+          offset: 0x2d
+        mod_b4:
+          offset: 0x2e
+        mod_1:
+          offset: 0x2f
+        mod_2:
+          offset: 0x30
+        mod_3:
+          offset: 0x31
+        mod_4:
+          offset: 0x32
+        amp:
+          offset: 0x33
+        chorus:
+          offset: 0x37
+        cutoff:
+          default: 0xff
+          offset: 0x31
+        delay:
+          offset: 0x38
+        dry:
+          default: 0xc0
+          offset: 0x36
+        filter:
+          offset: 0x30
+        limit:
+          offset: 0x34
+        pan:
+          default: 0x80
+          offset: 0x35
+        res:
+          offset: 0x32
+        reverb:
+          offset: 0x39
+      type_id: 0x4
     MACROSYNTH:
       params:
         amp:
@@ -298,6 +406,8 @@ modulators:
             - m8.enums.macrosynth.M8MacroSynthModDestinations
             '0x02':
             - m8.enums.sampler.M8SamplerModDestinations
+            '0x04':
+            - m8.enums.fmsynth.M8FMSynthModDestinations
           nibble: 0x1
           offset: 0x0
         release:
@@ -325,6 +435,8 @@ modulators:
             - m8.enums.macrosynth.M8MacroSynthModDestinations
             '0x02':
             - m8.enums.sampler.M8SamplerModDestinations
+            '0x04':
+            - m8.enums.fmsynth.M8FMSynthModDestinations
           nibble: 0x1
           offset: 0x0
         hold:
@@ -349,6 +461,8 @@ modulators:
             - m8.enums.macrosynth.M8MacroSynthModDestinations
             '0x02':
             - m8.enums.sampler.M8SamplerModDestinations
+            '0x04':
+            - m8.enums.fmsynth.M8FMSynthModDestinations
           nibble: 0x1
           offset: 0x0
         peak:
@@ -367,6 +481,8 @@ modulators:
             - m8.enums.macrosynth.M8MacroSynthModDestinations
             '0x02':
             - m8.enums.sampler.M8SamplerModDestinations
+            '0x04':
+            - m8.enums.fmsynth.M8FMSynthModDestinations
           nibble: 0x1
           offset: 0x0
         frequency:
@@ -390,6 +506,8 @@ modulators:
             - m8.enums.macrosynth.M8MacroSynthModDestinations
             '0x02':
             - m8.enums.sampler.M8SamplerModDestinations
+            '0x04':
+            - m8.enums.fmsynth.M8FMSynthModDestinations
           nibble: 0x1
           offset: 0x0
         high_value:
@@ -418,6 +536,8 @@ modulators:
             - m8.enums.macrosynth.M8MacroSynthModDestinations
             '0x02':
             - m8.enums.sampler.M8SamplerModDestinations
+            '0x04':
+            - m8.enums.fmsynth.M8FMSynthModDestinations
           nibble: 0x1
           offset: 0x0
         hold:

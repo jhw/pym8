@@ -753,3 +753,5 @@ class M8Instruments(list):
         return instance
 
 # No backward compatibility needed per project preferences
+
+# No instrument-specific subclasses needed - M8Instrument handles all types

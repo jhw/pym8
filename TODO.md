@@ -1,11 +1,15 @@
-# short
+# short [fmsynth]
 
-- FM algo attribute names (m8-files)
-- FM enums (m8-files)
-- FM instrument config
-- FM example test
+- example test
+
+- subclass
+- operator (de)serialisation
+- ratio(_fine) base 10 rendering
 
 # medium
+
+- clean up format_config.yaml
+  - type_id_map?
 
 - Sampler slices
 - Hypersynth
@@ -29,6 +33,12 @@
 
 # done
 
+- mod destinations enum
+- fx enum
+- shape/wave enum
+- algo enum
+- FM instrument config
+- FM algo attribute names (m8-files)
 - FM custom serialization layer with params analysis
 - Update tests directory structure to mirror new m8 structure, particularly with respect to core and core/utils
 - Migrate M8Block, M8UnknownTypeError and load_class from m8/api/__init__.py to m8/core/__init__.py

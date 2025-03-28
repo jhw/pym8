@@ -1,3 +1,28 @@
+
+## FMSYNTH Configuration Added (28/03/2025)
+
+Added basic FMSYNTH instrument configuration:
+- Added as instrument type 0x04 in format_config.yaml
+- Configured with fields following the structure in dev/inspect_fmsynths.py
+- Parameter layout:
+  - algo (offset 0x12): Main algorithm selector (in the same position as shape for other synths)
+  - shape1-4 (offsets 0x13-0x16): Shape parameters for each operator
+  - ratio1-4 and ratio_fine1-4 (offsets 0x17-0x1e): Frequency ratios and fine tuning for each operator
+  - level1-4 and feedback1-4 (offsets 0x1f-0x26): Level and feedback amounts for each operator
+  - mod_a1-4 and mod_b1-4 (offsets 0x27-0x2e): Modulation amounts for each operator
+  - mod_1-4 (offsets 0x2f-0x32): Modulation settings
+  - Common parameters: filter, cutoff, resonance, amp, limit, pan, dry, chorus, delay, reverb
+- All parameters currently configured as plain UINT8 with no enums defined yet
+- Simplified the type_id_map to use strings instead of class references
+- Removed unnecessary instrument subclasses that were using the old architecture
+- Updated modulators configuration to support FMSYNTH (empty enum arrays for now)
+
+Next steps:
+- Create tests for the new FMSYNTH instrument type
+- Define enums for the various FM parameters once we understand the value ranges
+- Add sample serialization/deserialization code
+- Create example scripts demonstrating FMSYNTH usage
+
 ## Structured Key-Value Extension Mechanism (28/03/2025)
 
 This design outlines a flexible extension mechanism for handling structured key-value collections across different components (FX, FMSYNTH parameters, etc.).
