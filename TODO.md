@@ -1,5 +1,7 @@
 # short [fmsynth]
 
+- duplication of instrument id map in enums/__init__.py and type_id_map in format config yaml
+
 - example test
 
 - subclass

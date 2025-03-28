@@ -29,6 +29,7 @@ class M8InstrumentType(IntEnum):
     WAVSYNTH = 0x00
     MACROSYNTH = 0x01
     SAMPLER = 0x02
+    FMSYNTH = 0x04
     
     @classmethod
     def from_id(cls, type_id):
