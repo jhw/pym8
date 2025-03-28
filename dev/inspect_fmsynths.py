@@ -148,9 +148,11 @@ def main():
     """Main function to inspect FMSYNTHS directory"""
     if len(sys.argv) < 2:
         print("Usage: python inspect_fmsynths.py <FMSYNTHS_directory> [--detailed]")
-        return 1
+        print("Default directory: ~/m8/DW01 Synthdrums")
+        base_dir = Path.home() / "m8" / "DW01 Synthdrums"
+    else:
+        base_dir = Path(sys.argv[1])
     
-    base_dir = Path(sys.argv[1])
     detailed = "--detailed" in sys.argv
     
     if not base_dir.exists():

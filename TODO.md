@@ -1,13 +1,13 @@
 # short [fmsynth]
 
-- example test
-
+- mod_a/b enums
+  - 05 / 1 > RAT mapping
+  
 - subclass
 - operator (de)serialisation
 - ratio(_fine) base 10 rendering
 
 # medium
-
 
 - Sampler slices
 - Hypersynth
@@ -31,6 +31,7 @@
 
 # done
 
+- add FMSYNTH example test
 - add config validation to ensure consistency between enums and YAML configuration
 - address enum and format_config.yaml duplication (modulator types)
 - duplication of instrument id map in enums/__init__.py and type_id_map in format config yaml

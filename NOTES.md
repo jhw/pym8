@@ -1,4 +1,16 @@
 
+## FMSYNTH Offset Fix (28/03/2025)
+
+Fixed issues with the FMSYNTH parameter mapping in format_config.yaml. There were several overlapping offsets:
+
+1. mod_2 (48) overlapped with filter (48)
+2. mod_3 (49) overlapped with cutoff (49) 
+3. mod_4 (50) overlapped with res (50)
+
+Created a migration script (fix_fmsynth_param_offsets.py) to update the offsets for parameters after mod_4. Also added proper enum mappings for filter and limit parameters that were missing, ensuring FMSYNTH uses the same M8FilterTypes and M8LimitTypes enums as other instrument types.
+
+Added a new test (tests/examples/fmsynth.py) to validate that FMSYNTH instruments can be properly loaded from .m8i files.
+
 ## Configuration-Enum Duplication Analysis (28/03/2025)
 
 I've analyzed the codebase and found several instances of duplication between enum definitions and the format_config.yaml configuration. This creates potential maintenance issues where changes must be made in multiple places to maintain consistency.
