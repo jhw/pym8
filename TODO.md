@@ -31,6 +31,7 @@
 
 # done
 
+- add config validation to ensure consistency between enums and YAML configuration
 - address enum and format_config.yaml duplication (modulator types)
 - duplication of instrument id map in enums/__init__.py and type_id_map in format config yaml
 - mod destinations enum

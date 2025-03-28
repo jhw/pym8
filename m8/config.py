@@ -4,7 +4,7 @@ from m8.enums import M8InstrumentType, M8ModulatorType
 from functools import lru_cache
 
 @lru_cache(maxsize=1)
-def load_format_config():
+def load_format_config(validate=False):
     """Loads M8 format configuration from YAML with caching to avoid disk reads."""
     config_path = os.path.join(os.path.dirname(__file__), 'format_config.yaml')
     with open(config_path, 'r') as config_file:
@@ -12,6 +12,13 @@ def load_format_config():
         
     # Apply defaults to field definitions
     config = _apply_field_defaults(config)
+    
+    # Validate if requested - separate to avoid circular imports
+    if validate:
+        result = validate_config()
+        if not result.valid:
+            result.raise_if_invalid()
+            
     return config
 
 def _apply_field_defaults(config):
@@ -290,3 +297,93 @@ def generate_instrument_type_id_map():
 def generate_modulator_type_id_map():
     # Generates the modulator type_id_map from the M8ModulatorType enum
     return {member.value: member.name for member in M8ModulatorType}
+
+def validate_config():
+    from m8.core.validation import M8ValidationResult
+    
+    # Create a validation result
+    result = M8ValidationResult(context="config")
+    
+    # Load the configuration
+    config = load_format_config()
+    
+    # Get valid IDs from enums
+    valid_instrument_ids = {member.value for member in M8InstrumentType}
+    valid_modulator_ids = {member.value for member in M8ModulatorType}
+    
+    # Check instrument types in config
+    if 'instruments' in config and 'types' in config['instruments']:
+        for instrument_type, instrument_config in config['instruments']['types'].items():
+            if 'type_id' in instrument_config:
+                type_id = instrument_config['type_id']
+                
+                # Convert hex strings to int if needed
+                if isinstance(type_id, str) and type_id.startswith('0x'):
+                    type_id = int(type_id, 16)
+                
+                if type_id not in valid_instrument_ids:
+                    result.add_error(
+                        f"Invalid instrument type ID: {type_id} for {instrument_type}",
+                        "instruments.types"
+                    )
+    
+    # Check FX enums mappings
+    if 'fx' in config and 'fields' in config['fx'] and 'key' in config['fx']['fields'] and 'enums' in config['fx']['fields']['key']:
+        fx_enums = config['fx']['fields']['key']['enums']
+        for instrument_id_str in fx_enums:
+            # Convert hex strings to int
+            if instrument_id_str.startswith('0x'):
+                instrument_id = int(instrument_id_str, 16)
+            else:
+                instrument_id = int(instrument_id_str)
+                
+            if instrument_id not in valid_instrument_ids:
+                result.add_error(
+                    f"Invalid instrument ID in FX enums mapping: {instrument_id_str}",
+                    "fx.fields.key.enums"
+                )
+    
+    # Check modulator destination enums
+    if 'modulators' in config and 'types' in config['modulators']:
+        for mod_type, mod_config in config['modulators']['types'].items():
+            if 'fields' in mod_config and 'destination' in mod_config['fields'] and 'enums' in mod_config['fields']['destination']:
+                dest_enums = mod_config['fields']['destination']['enums']
+                for instrument_id_str in dest_enums:
+                    # Convert hex strings to int
+                    if instrument_id_str.startswith('0x'):
+                        instrument_id = int(instrument_id_str, 16)
+                    else:
+                        instrument_id = int(instrument_id_str)
+                        
+                    if instrument_id not in valid_instrument_ids:
+                        result.add_error(
+                            f"Invalid instrument ID in modulator destination enums: {instrument_id_str}",
+                            f"modulators.types.{mod_type}.fields.destination.enums"
+                        )
+    
+    # Check modulator types
+    if 'modulators' in config and 'types' in config['modulators']:
+        for mod_type, mod_config in config['modulators']['types'].items():
+            if 'id' in mod_config:
+                type_id = mod_config['id']
+                
+                # Convert hex strings to int if needed
+                if isinstance(type_id, str) and type_id.startswith('0x'):
+                    type_id = int(type_id, 16)
+                
+                if type_id not in valid_modulator_ids:
+                    result.add_error(
+                        f"Invalid modulator type ID: {type_id} for {mod_type}",
+                        "modulators.types"
+                    )
+    
+    # Check default_config
+    if 'modulators' in config and 'default_config' in config['modulators']:
+        for i, mod_type_id in enumerate(config['modulators']['default_config']):
+            if mod_type_id not in valid_modulator_ids:
+                result.add_error(
+                    f"Invalid modulator type ID in default_config[{i}]: {mod_type_id}",
+                    "modulators.default_config"
+                )
+    
+    return result
