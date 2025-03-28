@@ -48,6 +48,10 @@ class M8InstrumentType(IntEnum):
             return None
 
 class M8ModulatorType(IntEnum):
+    # Modulator types in the M8 tracker.
+    # 
+    # This enum is the single source of truth for modulator type IDs and is used
+    # to generate the modulator type mappings used throughout the codebase.
     AHD_ENVELOPE = 0x00
     ADSR_ENVELOPE = 0x01
     DRUM_ENVELOPE = 0x02

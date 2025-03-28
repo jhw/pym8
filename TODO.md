@@ -1,7 +1,5 @@
 # short [fmsynth]
 
-- address enum and format_config.yaml duplication (see NOTES.md "Configuration-Enum Duplication Analysis")
-
 - example test
 
 - subclass
@@ -33,6 +31,7 @@
 
 # done
 
+- address enum and format_config.yaml duplication (modulator types)
 - duplication of instrument id map in enums/__init__.py and type_id_map in format config yaml
 - mod destinations enum
 - fx enum

@@ -37,6 +37,7 @@
   3. Include validation to ensure the migration worked correctly 
   4. Print clear status messages for each step
 - Run tests after executing migration scripts to verify functionality
+- **IMPORTANT**: All temporary validation scripts, utilities, and migration tools should be placed in the `migrations/` directory unless explicitly stated otherwise
 
 ## Testing Workflow
 1. All tests live in the /tests directory mirroring the m8 directory structure
