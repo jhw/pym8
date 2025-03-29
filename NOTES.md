@@ -10,6 +10,20 @@ Fixed the issue with enum conversion in the FMSynth operator abstraction. The pr
 
 This fix maintains transparency between the operator abstraction and the underlying parameter system, ensuring that enum conversions happen properly in both directions without requiring special handling in the operator class itself.
 
+### Why FMSynth Needs Special Enum Handling
+
+The special enum handling in the FMSynth subclass is necessary due to its unique operator-based abstraction layer. While the parent class (M8Instrument) already handles enum conversion for parameters correctly, the FMSynth adds a second layer of abstraction with its operator objects.
+
+During deserialization, this creates a specific sequence of events:
+
+1. String enum values are added to the dictionary that will be deserialized
+2. Parent class converts these string values to integers for the params object 
+3. The FMSynth subclass constructs operator objects from these params
+
+The issue occurs because there's a gap between when the parent class handles the conversion and when the operator objects are created. By the time we map parameters to operators, we may encounter unconverted string values if they came directly from the dictionary's operators array.
+
+This solution ensures proper enum conversion regardless of the source of the values (either from the params object after parent conversion or directly from the operator dictionaries), maintaining the clean separation between the operator abstraction and the underlying parameter system.
+
 ## FMSynth Operator Abstraction Layer (29/03/2025)
 
 Added an operator-based abstraction layer to the FMSynth instrument. This allows for a more intuitive interface when working with FM synthesis:
