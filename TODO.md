@@ -1,25 +1,15 @@
 # short [fmsynth]
 
 - ratio/ratio_fine base 10 rendering
-- review/audit all tests to ensure they consistently test against integer values for internal enum representation
+
+- Sampler slices
 
 # medium
 
-- Sampler slices
 - Hypersynth
-
-# done
-
-- fix failing test in tests/examples/fmsynth.py (_test_serialize_deserialize) - need to handle enum conversion for FMOperator string→int values
-- fix enum conversion architecture - update M8InstrumentParams.from_dict() to convert string enum values to integers during deserialization, eliminating need for special handling in subclasses
 - TODO.md >> github project
 - 5.0.2
 - Examples
-
-# beats
-
-- Revoke chains model in favour of phrases only
-- Check reverb_send, chorus_send refs
 
 # roadmap
 
@@ -33,7 +23,8 @@
 - Themes?
 
 # done
-
+- fix failing test in tests/examples/fmsynth.py (_test_serialize_deserialize) - need to handle enum conversion for FMOperator string→int values
+- fix enum conversion architecture - update M8InstrumentParams.from_dict() to convert string enum values to integers during deserialization, eliminating need for special handling in subclasses
 - operator-based abstraction for FM Synth parameters
 - fmsynth subclass
 - mod_a/b enums >> LEV1-4, RAT1-4, PIT1-4, FBK1-4 
