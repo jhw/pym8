@@ -352,49 +352,33 @@ instruments:
       type_id: 0
     HYPERSYNTH:
       params:
-        shape:
-          enums:
-          - m8.enums.hypersynth.M8HyperSynthShapes
-          offset: 18
-        harmonics:
-          default: 128
-          offset: 19
-        mix:
-          default: 128
-          offset: 20
-        morph:
-          default: 0
-          offset: 21
-        spread:
-          default: 0
-          offset: 22
         filter:
           enums:
           - m8.enums.M8FilterTypes
-          offset: 23
+          offset: 18
         cutoff:
           default: 255
-          offset: 24
+          offset: 19
         res:
-          offset: 25
+          offset: 20
         amp:
-          offset: 26
+          offset: 21
         limit:
           enums:
           - m8.enums.M8LimitTypes
-          offset: 27
+          offset: 22
         pan:
           default: 128
-          offset: 28
+          offset: 23
         dry:
           default: 192
-          offset: 29
+          offset: 24
         chorus:
-          offset: 30
+          offset: 25
         delay:
-          offset: 31
+          offset: 26
         reverb:
-          offset: 32
+          offset: 27
       type_id: 5
 metadata:
   block_size: 147
