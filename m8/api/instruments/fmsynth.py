@@ -8,10 +8,11 @@ import importlib
 class FMOperator:
     """A single FM operator group with its parameters."""
     
-    def __init__(self, shape=0, ratio=0, level=0, feedback=0, mod_a=0, mod_b=0):
+    def __init__(self, shape=0, ratio=0, ratio_fine=0, level=0, feedback=0, mod_a=0, mod_b=0):
         """Initialize a new FM operator with the given parameters."""
         self.shape = shape
         self.ratio = ratio
+        self.ratio_fine = ratio_fine
         self.level = level
         self.feedback = feedback
         self.mod_a = mod_a
@@ -22,6 +23,7 @@ class FMOperator:
         return {
             "shape": self.shape,
             "ratio": self.ratio,
+            "ratio_fine": self.ratio_fine,
             "level": self.level,
             "feedback": self.feedback,
             "mod_a": self.mod_a,
@@ -34,6 +36,7 @@ class FMOperator:
         return cls(
             shape=data.get("shape", 0),
             ratio=data.get("ratio", 0),
+            ratio_fine=data.get("ratio_fine", 0),
             level=data.get("level", 0),
             feedback=data.get("feedback", 0),
             mod_a=data.get("mod_a", 0),
@@ -70,6 +73,7 @@ class M8FMSynth(M8Instrument):
             # Map operator parameters to underlying params
             setattr(self.params, f"shape{idx}", op.shape)
             setattr(self.params, f"ratio{idx}", op.ratio)
+            setattr(self.params, f"ratio_fine{idx}", op.ratio_fine)
             setattr(self.params, f"level{idx}", op.level)
             setattr(self.params, f"feedback{idx}", op.feedback)
             setattr(self.params, f"mod_a{idx}", op.mod_a)
@@ -84,6 +88,7 @@ class M8FMSynth(M8Instrument):
             # Get values from params
             shape = getattr(self.params, f"shape{idx}", 0)
             ratio = getattr(self.params, f"ratio{idx}", 0)
+            ratio_fine = getattr(self.params, f"ratio_fine{idx}", 0)
             level = getattr(self.params, f"level{idx}", 0)
             feedback = getattr(self.params, f"feedback{idx}", 0)
             mod_a = getattr(self.params, f"mod_a{idx}", 0)
@@ -93,6 +98,7 @@ class M8FMSynth(M8Instrument):
             self._operators[i] = FMOperator(
                 shape=shape,
                 ratio=ratio,
+                ratio_fine=ratio_fine,
                 level=level,
                 feedback=feedback,
                 mod_a=mod_a,
@@ -138,6 +144,7 @@ class M8FMSynth(M8Instrument):
             op_dict = {
                 "shape": result.get(f"shape{idx}"),
                 "ratio": result.get(f"ratio{idx}"),
+                "ratio_fine": result.get(f"ratio_fine{idx}"),
                 "level": result.get(f"level{idx}"),
                 "feedback": result.get(f"feedback{idx}"),
                 "mod_a": result.get(f"mod_a{idx}"),
@@ -177,6 +184,8 @@ class M8FMSynth(M8Instrument):
                     data_copy[f"shape{idx}"] = op_data["shape"]
                 if "ratio" in op_data:
                     data_copy[f"ratio{idx}"] = op_data["ratio"]
+                if "ratio_fine" in op_data:
+                    data_copy[f"ratio_fine{idx}"] = op_data["ratio_fine"]
                 if "level" in op_data:
                     data_copy[f"level{idx}"] = op_data["level"]
                 if "feedback" in op_data:
