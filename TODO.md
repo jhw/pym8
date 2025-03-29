@@ -1,11 +1,11 @@
 # short [fmsynth]
 
 - ratio/ratio_fine base 10 rendering
-- fix enum conversion architecture - update M8InstrumentParams.from_dict() to convert string enum values to integers during deserialization, eliminating need for special handling in subclasses
 
 # done
 
 - fix failing test in tests/examples/fmsynth.py (_test_serialize_deserialize) - need to handle enum conversion for FMOperator string→int values
+- fix enum conversion architecture - update M8InstrumentParams.from_dict() to convert string enum values to integers during deserialization, eliminating need for special handling in subclasses
 
 # medium
 

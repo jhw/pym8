@@ -255,8 +255,15 @@ class TestM8MacroSynthParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("MACROSYNTH", data)
         
-        # With EnumPropertyMixin, string enum values are now preserved
+        # String enum values are now converted to integers
         expected_values = data.copy()
+        # Update expected enum values for proper internal representation
+        if "shape" in expected_values and expected_values["shape"] == "MORPH":
+            expected_values["shape"] = 1  # MORPH enum value
+        if "filter" in expected_values and expected_values["filter"] == "HIGHPASS":
+            expected_values["filter"] = 2  # HIGHPASS enum value  
+        if "limit" in expected_values and expected_values["limit"] == "FOLD":
+            expected_values["limit"] = 2  # FOLD enum value
         
         # Check values
         for key, value in expected_values.items():

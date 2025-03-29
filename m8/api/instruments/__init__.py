@@ -194,9 +194,11 @@ class M8InstrumentParams(EnumPropertyMixin):
             if param_name in data:
                 value = data[param_name]
                 
-                # Handle enum parameters with simplified approach
+                # Handle enum parameters
                 param_def = params._param_defs[param_name]
-                # We preserve string enum values without conversion
+                if "enums" in param_def and isinstance(value, str):
+                    # Convert string enum values to integers for consistency
+                    value = deserialize_param_enum(param_def["enums"], value, param_name, instrument_type)
                 
                 setattr(params, param_name, value)
             
