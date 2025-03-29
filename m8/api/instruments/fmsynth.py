@@ -1,7 +1,7 @@
 # m8/api/instruments/fmsynth.py
 from m8.api.instruments import M8Instrument
 from m8.core.enums import EnumPropertyMixin
-from m8.api import ensure_enum_int_value, serialize_param_enum_value
+from m8.api import ensure_enum_int_value, serialize_param_enum_value, deserialize_param_enum
 from m8.config import load_format_config
 import importlib
 
@@ -88,6 +88,27 @@ class M8FMSynth(M8Instrument):
             feedback = getattr(self.params, f"feedback{idx}", 0)
             mod_a = getattr(self.params, f"mod_a{idx}", 0)
             mod_b = getattr(self.params, f"mod_b{idx}", 0)
+            
+            # Check if any values are string enum values and need conversion
+            # This happens during deserialization if the operator values haven't been converted yet
+            if isinstance(shape, str) or isinstance(mod_a, str) or isinstance(mod_b, str):
+                # Get the parameter definitions which contain enum info
+                param_defs = self.params._param_defs
+                
+                # Convert shape if it's a string
+                if isinstance(shape, str) and f"shape{idx}" in param_defs and "enums" in param_defs[f"shape{idx}"]:
+                    enum_path = param_defs[f"shape{idx}"]["enums"]
+                    shape = deserialize_param_enum(enum_path, shape, f"shape{idx}", self.instrument_type)
+                
+                # Convert mod_a if it's a string
+                if isinstance(mod_a, str) and f"mod_a{idx}" in param_defs and "enums" in param_defs[f"mod_a{idx}"]:
+                    enum_path = param_defs[f"mod_a{idx}"]["enums"]
+                    mod_a = deserialize_param_enum(enum_path, mod_a, f"mod_a{idx}", self.instrument_type)
+                
+                # Convert mod_b if it's a string
+                if isinstance(mod_b, str) and f"mod_b{idx}" in param_defs and "enums" in param_defs[f"mod_b{idx}"]:
+                    enum_path = param_defs[f"mod_b{idx}"]["enums"]
+                    mod_b = deserialize_param_enum(enum_path, mod_b, f"mod_b{idx}", self.instrument_type)
             
             # Update operator
             self._operators[i] = FMOperator(

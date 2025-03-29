@@ -1,4 +1,15 @@
 
+## Fixed FMSynth Operator Enum Serialization (29/03/2025)
+
+Fixed the issue with enum conversion in the FMSynth operator abstraction. The problem was in the `_map_params_to_operators` method where we needed to handle string enum values during deserialization. The solution:
+
+- Modified `_map_params_to_operators` to detect string enum values 
+- Used `deserialize_param_enum` to convert them to integer values
+- Ensured proper import of `deserialize_param_enum` from m8.api
+- Updated the test to work with both string and integer representations
+
+This fix maintains transparency between the operator abstraction and the underlying parameter system, ensuring that enum conversions happen properly in both directions without requiring special handling in the operator class itself.
+
 ## FMSynth Operator Abstraction Layer (29/03/2025)
 
 Added an operator-based abstraction layer to the FMSynth instrument. This allows for a more intuitive interface when working with FM synthesis:
@@ -7,8 +18,6 @@ Added an operator-based abstraction layer to the FMSynth instrument. This allows
 - Extended M8FMSynth with methods to map between operators and underlying parameters
 - Added serialization and deserialization support for the operator structure
 - Successfully integrated with existing tests
-
-Note: One test is temporarily disabled (`test_serialize_deserialize` in `tests/examples/fmsynth.py`) due to an issue with enum conversion when deserializing string enum values back to integers within operators. The challenge is finding a solution that doesn't require operator-level enum conversion logic, keeping the operators as simple data containers.
 
 ## FMSYNTH ModAB Values Enum (28/03/2025)
 

@@ -1,7 +1,10 @@
 # short [fmsynth]
 
-- fix failing test in tests/examples/fmsynth.py (_test_serialize_deserialize) - need to handle enum conversion for FMOperator string→int values
 - ratio/ratio_fine base 10 rendering
+
+# done
+
+- fix failing test in tests/examples/fmsynth.py (_test_serialize_deserialize) - need to handle enum conversion for FMOperator string→int values
 
 # medium
 
