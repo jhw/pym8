@@ -1,4 +1,22 @@
 
+## M8Version Byte Order Fix (29/03/2025)
+
+Fixed the byte order issue in `M8Version` class. The version bytes in M8 files are stored in a non-intuitive order:
+
+- First byte: patch version
+- Second byte: major version 
+- Third byte: minor version
+- Fourth byte: always zero
+
+However, we want to represent the version in our API as major.minor.patch for usability and conventional versioning format. The fix involved:
+
+1. Updated the `read()` method to map file bytes to the correct semantic version components
+2. Updated the `write()` method to ensure bytes are written in the file's expected order
+3. Created a `dump_version.py` tool to extract and display version information from M8 files
+4. Added proper comments to clarify the mapping between file representation and API representation
+
+This ensures all version information is properly displayed as major.minor.patch (e.g., 4.0.1) even though the file storage is in a different order. All tests pass with this updated implementation.
+
 ## Enum Conversion Architecture Issue (29/03/2025)
 
 After implementing the operator-based abstraction layer in FMSynth, I discovered a fundamental inconsistency in our enum handling architecture. The problem involves the serialization/deserialization cycle and how enum values are converted between string representations (in dictionaries) and integer values (in objects).

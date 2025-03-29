@@ -13,22 +13,28 @@ class M8Version:
     @classmethod
     def read(cls, data):
         """Read version information from data buffer."""
-        # Read format: [major].[minor].[patch]
+        # File bytes are stored as [patch].[major].[minor].[zero]
+        # but we want to represent it as [major].[minor].[patch]
         instance = cls()
         
         # Typically 4 bytes, but read safely
         if len(data) >= 1:
-            instance.major = data[0]
+            # File's first byte is patch
+            instance.patch = data[0]
         if len(data) >= 2:
-            instance.minor = data[1]
+            # File's second byte is major
+            instance.major = data[1]
         if len(data) >= 3:
-            instance.patch = data[2]
+            # File's third byte is minor
+            instance.minor = data[2]
             
         return instance
         
     def write(self):
         """Convert version to binary data."""
-        return bytes([self.major, self.minor, self.patch, 0]) # Typically 4 bytes
+        # We store as [patch].[major].[minor].[zero] in the file
+        # even though we represent it as [major].[minor].[patch] in the code
+        return bytes([self.patch, self.major, self.minor, 0]) # Typically 4 bytes
     
     def __str__(self):
         """String representation as major.minor.patch."""
