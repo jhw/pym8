@@ -1,7 +1,6 @@
 # short [fmsynth]
 
-- re- check fmsynth test
-- operator group serialisation/deserialisation
+- fix failing test in tests/examples/fmsynth.py (_test_serialize_deserialize) - need to handle enum conversion for FMOperator string→int values
 - ratio/ratio_fine base 10 rendering
 
 # medium
@@ -19,16 +18,20 @@
 
 # roadmap
 
+- Midi Out instrument
+- External instrument
+- Midi controller mapping
 - Tables
 - Eq
-- Midi
 - Grooves
 - Scales
+- Themes?
 
 # done
 
+- operator-based abstraction for FM Synth parameters
 - fmsynth subclass
-- mod_a/b enums >> LEV1-4, RAT1-4, PIT1-4, FBK1-4
+- mod_a/b enums >> LEV1-4, RAT1-4, PIT1-4, FBK1-4 
 - add FMSYNTH example test
 - add config validation to ensure consistency between enums and YAML configuration
 - address enum and format_config.yaml duplication (modulator types)
