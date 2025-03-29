@@ -1,11 +1,11 @@
-# short
+# short [hypersynth]
 
-- Sampler slices
+- where are filter/cutoff/res/etc params in data?
 
 # medium
 
-- TODO.md >> github project
 - 5.0.2
+- TODO.md >> github project
 - Examples
 
 # roadmap
