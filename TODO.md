@@ -1,4 +1,4 @@
-# short [fmsynth]
+# short
 
 - Sampler slices
 
