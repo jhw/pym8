@@ -1,4 +1,53 @@
 
+## Enum Conversion Architecture Issue (29/03/2025)
+
+After implementing the operator-based abstraction layer in FMSynth, I discovered a fundamental inconsistency in our enum handling architecture. The problem involves the serialization/deserialization cycle and how enum values are converted between string representations (in dictionaries) and integer values (in objects).
+
+### Current Architecture Problem
+
+The key architectural issue is:
+
+1. During **serialization** (`as_dict()`), the `M8InstrumentParams` class correctly converts integer enum values to strings
+2. During **deserialization** (`from_dict()`), it doesn't convert them back to integers - string values are preserved as-is
+
+This asymmetry creates inconsistent behavior, particularly noticeable with abstractions like FMSynth's operators. The current workaround requires special enum conversion code in the `_map_params_to_operators()` method of the FMSynth class, which is a code smell.
+
+### Root Cause Analysis
+
+Specifically, in `M8InstrumentParams.from_dict()` there's a comment:
+```python
+# We preserve string enum values without conversion
+```
+
+But this breaks the symmetry of serialization/deserialization and creates a "timing gap" where:
+1. String enum values are extracted from the dictionary
+2. Parameters are set with these unconverted strings
+3. FMSynth tries to build operators from parameters, encountering strings instead of expected integers
+
+### Proper Solution
+
+The clean architectural solution is to fix the issue at its root in `M8InstrumentParams.from_dict()`:
+
+```python
+# Current approach
+param_def = params._param_defs[param_name]
+# We preserve string enum values without conversion
+setattr(params, param_name, value)
+
+# Proper approach
+param_def = params._param_defs[param_name]
+if "enums" in param_def and isinstance(value, str):
+    # Convert string enum values to integers
+    value = deserialize_param_enum(param_def["enums"], value, param_name, instrument_type)
+setattr(params, param_name, value)
+```
+
+This would ensure string enums are converted to integers at the parameter level, making the special handling in FMSynth unnecessary. It would complete the proper pattern:
+1. Integer enums → string representations (serialization)
+2. String representations → integer enums (deserialization)
+
+This solution would maintain clean separation of concerns, with enum conversion happening at the parameter level rather than in subclasses.
+
 ## Fixed FMSynth Operator Enum Serialization (29/03/2025)
 
 Fixed the issue with enum conversion in the FMSynth operator abstraction. The problem was in the `_map_params_to_operators` method where we needed to handle string enum values during deserialization. The solution:
