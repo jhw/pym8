@@ -1,6 +1,7 @@
 # short [fmsynth]
 
 - ratio/ratio_fine base 10 rendering
+- improve FMSynth enum handling timing - consider refactoring deserializer to eliminate the gap between param conversion and operator creation
 
 # done
 
