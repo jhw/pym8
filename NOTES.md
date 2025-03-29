@@ -1,4 +1,32 @@
 
+## HyperSynth Instrument Implementation (30/03/2025)
+
+Implemented a new instrument type "HyperSynth" (ID 0x05) to extend the M8 synthesizer family. This implementation includes:
+
+1. **Core Class Implementation**:
+   - Added `M8HyperSynth` class with appropriate initialization and serialization support
+   - Implemented instrument-specific parameter handling following the existing pattern
+   - Added proper factory registration for HyperSynth creation
+
+2. **Enum Support**:
+   - Created `M8HyperSynthShapes` enum (SIN, SAW, SQR, TRI, etc.)
+   - Created `M8HyperSynthFX` enum for FX parameters (VOL, PIT, etc.)
+   - Created `M8HyperSynthModDestinations` enum for modulation targets
+   - Added proper registration in format_config.yaml
+
+3. **Configuration**:
+   - Added HYPERSYNTH section to format_config.yaml
+   - Defined parameters with appropriate offsets and defaults
+   - Integrated with the global M8InstrumentType enum
+
+4. **Testing**:
+   - Created comprehensive test suite in tests/api/instruments/hypersynth.py
+   - Tests cover parameter initialization, serialization/deserialization, binary read/write
+   - Fixed issues with expected pitch value (0x20) in test_write
+   - Ensured all tests pass for the new instrument type
+
+The implementation follows the pattern established by existing instruments while adding the specific parameters and behaviors needed for the HyperSynth. This extends the library's capabilities to work with M8 files containing this instrument type.
+
 ## M8Version Byte Order Fix (29/03/2025)
 
 Fixed the byte order issue in `M8Version` class. The version bytes in M8 files are stored in a non-intuitive order:

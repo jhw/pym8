@@ -726,6 +726,7 @@ class M8Instruments(list):
 def create_instrument(instrument_type=None, **kwargs):
     """Create an appropriate instrument subclass instance based on type."""
     from m8.api.instruments.fmsynth import M8FMSynth
+    from m8.api.instruments.hypersynth import M8HyperSynth
     from m8.api.instruments.macrosynth import M8MacroSynth
     from m8.api.instruments.wavsynth import M8WavSynth
     from m8.api.instruments.sampler import M8Sampler
@@ -733,6 +734,7 @@ def create_instrument(instrument_type=None, **kwargs):
     # Map instrument types to their respective classes
     instrument_classes = {
         "FMSYNTH": M8FMSynth,
+        "HYPERSYNTH": M8HyperSynth,
         "MACROSYNTH": M8MacroSynth,
         "WAVSYNTH": M8WavSynth,
         "SAMPLER": M8Sampler
@@ -799,6 +801,7 @@ def create_instrument_from_dict(data):
 
 # Import subclasses for direct access
 from m8.api.instruments.fmsynth import M8FMSynth
+from m8.api.instruments.hypersynth import M8HyperSynth
 from m8.api.instruments.macrosynth import M8MacroSynth
 from m8.api.instruments.wavsynth import M8WavSynth
 from m8.api.instruments.sampler import M8Sampler

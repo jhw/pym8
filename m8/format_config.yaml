@@ -350,6 +350,52 @@ instruments:
         warp:
           offset: 21
       type_id: 0
+    HYPERSYNTH:
+      params:
+        shape:
+          enums:
+          - m8.enums.hypersynth.M8HyperSynthShapes
+          offset: 18
+        harmonics:
+          default: 128
+          offset: 19
+        mix:
+          default: 128
+          offset: 20
+        morph:
+          default: 0
+          offset: 21
+        spread:
+          default: 0
+          offset: 22
+        filter:
+          enums:
+          - m8.enums.M8FilterTypes
+          offset: 23
+        cutoff:
+          default: 255
+          offset: 24
+        res:
+          offset: 25
+        amp:
+          offset: 26
+        limit:
+          enums:
+          - m8.enums.M8LimitTypes
+          offset: 27
+        pan:
+          default: 128
+          offset: 28
+        dry:
+          default: 192
+          offset: 29
+        chorus:
+          offset: 30
+        delay:
+          offset: 31
+        reverb:
+          offset: 32
+      type_id: 5
 metadata:
   block_size: 147
   fields:
@@ -422,6 +468,8 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
+            '0x05':
+            - m8.enums.hypersynth.M8HyperSynthModDestinations
           nibble: 1
           offset: 0
         release:
@@ -451,6 +499,8 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
+            '0x05':
+            - m8.enums.hypersynth.M8HyperSynthModDestinations
           nibble: 1
           offset: 0
         hold:
@@ -477,6 +527,8 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
+            '0x05':
+            - m8.enums.hypersynth.M8HyperSynthModDestinations
           nibble: 1
           offset: 0
         peak:
@@ -497,6 +549,8 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
+            '0x05':
+            - m8.enums.hypersynth.M8HyperSynthModDestinations
           nibble: 1
           offset: 0
         frequency:
@@ -522,6 +576,8 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
+            '0x05':
+            - m8.enums.hypersynth.M8HyperSynthModDestinations
           nibble: 1
           offset: 0
         high_value:
@@ -552,6 +608,8 @@ modulators:
             - m8.enums.sampler.M8SamplerModDestinations
             '0x04':
             - m8.enums.fmsynth.M8FMSynthModDestinations
+            '0x05':
+            - m8.enums.hypersynth.M8HyperSynthModDestinations
           nibble: 1
           offset: 0
         hold:
