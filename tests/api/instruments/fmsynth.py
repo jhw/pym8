@@ -11,7 +11,7 @@ class TestM8FMSynthParams(unittest.TestCase):
         # Check defaults for key parameters
         self.assertEqual(params.algo, 0x0)  # A_B_C_D
         self.assertEqual(params.shape1, 0x0)  # SIN
-        self.assertEqual(params.ratio1, 0x0)
+        self.assertEqual(params.ratio1, 0)
         self.assertEqual(params.level1, 0x0)
         self.assertEqual(params.feedback1, 0x0)
         self.assertEqual(params.filter, 0x0)
@@ -59,7 +59,7 @@ class TestM8FMSynthParams(unittest.TestCase):
         # Check values
         self.assertEqual(params.algo, 0x02)
         self.assertEqual(params.shape1, 0x06)
-        self.assertEqual(params.ratio1, 0x08)
+        self.assertEqual(params.ratio1, 8)
         self.assertEqual(params.level1, 0xF0)
         self.assertEqual(params.feedback1, 0x10)
         self.assertEqual(params.filter, 0x02)
@@ -94,7 +94,7 @@ class TestM8FMSynthParams(unittest.TestCase):
         # Check key parameter values
         self.assertEqual(params.algo, 0x02)
         self.assertEqual(params.shape1, 0x06)
-        self.assertEqual(params.ratio1, 0x08)
+        self.assertEqual(params.ratio1, 8)
         self.assertEqual(params.level1, 0xF0)
         self.assertEqual(params.feedback1, 0x10)
         self.assertEqual(params.filter, 0x02)
@@ -124,7 +124,7 @@ class TestM8FMSynthParams(unittest.TestCase):
         # Check key parameters
         self.assertEqual(binary[18], 0x02)  # algo
         self.assertEqual(binary[19], 0x06)  # shape1
-        self.assertEqual(binary[23], 0x08)  # ratio1
+        self.assertEqual(binary[23], 8)  # ratio1
         self.assertEqual(binary[31], 0xF0)  # level1
         self.assertEqual(binary[32], 0x10)  # feedback1
         self.assertEqual(binary[51], 0x02)  # filter
@@ -190,7 +190,7 @@ class TestM8FMSynthParams(unittest.TestCase):
         result = params.as_dict()
         
         # Check non-enum values
-        self.assertEqual(result["ratio1"], 0x08)
+        self.assertEqual(result["ratio1"], 8)
         self.assertEqual(result["level1"], 0xF0)
         self.assertEqual(result["feedback1"], 0x10)
         self.assertEqual(result["cutoff"], 0xE0)
@@ -345,22 +345,22 @@ class TestM8FMSynthInstrument(unittest.TestCase):
         
         # Check operators were mapped to underlying params
         self.assertEqual(synth.params.shape1, 0x06)
-        self.assertEqual(synth.params.ratio1, 0x08)
+        self.assertEqual(synth.params.ratio1, 8)
         self.assertEqual(synth.params.level1, 0xF0)
         self.assertEqual(synth.params.feedback1, 0x10)
         
         self.assertEqual(synth.params.shape2, 0x07)
-        self.assertEqual(synth.params.ratio2, 0x09)
+        self.assertEqual(synth.params.ratio2, 9)
         self.assertEqual(synth.params.level2, 0xE0)
         self.assertEqual(synth.params.feedback2, 0x20)
         
         self.assertEqual(synth.params.shape3, 0x08)
-        self.assertEqual(synth.params.ratio3, 0x0A)
+        self.assertEqual(synth.params.ratio3, 10)
         self.assertEqual(synth.params.level3, 0xD0)
         self.assertEqual(synth.params.feedback3, 0x30)
         
         self.assertEqual(synth.params.shape4, 0x09)
-        self.assertEqual(synth.params.ratio4, 0x0B)
+        self.assertEqual(synth.params.ratio4, 11)
         self.assertEqual(synth.params.level4, 0xC0)
         self.assertEqual(synth.params.feedback4, 0x40)
     
@@ -375,7 +375,7 @@ class TestM8FMSynthInstrument(unittest.TestCase):
         
         # Get parameters to check initial values
         self.assertEqual(synth.params.shape1, 0x06)
-        self.assertEqual(synth.params.ratio1, 0x08)
+        self.assertEqual(synth.params.ratio1, 8)
         self.assertEqual(synth.params.level1, 0xF0)
         self.assertEqual(synth.params.feedback1, 0x10)
         
@@ -400,22 +400,22 @@ class TestM8FMSynthInstrument(unittest.TestCase):
         
         # Check params were updated
         self.assertEqual(synth.params.shape1, 0x01)
-        self.assertEqual(synth.params.ratio1, 0x01)
+        self.assertEqual(synth.params.ratio1, 1)
         self.assertEqual(synth.params.level1, 0x11)
         self.assertEqual(synth.params.feedback1, 0x21)
         
         self.assertEqual(synth.params.shape2, 0x02)
-        self.assertEqual(synth.params.ratio2, 0x02)
+        self.assertEqual(synth.params.ratio2, 2)
         self.assertEqual(synth.params.level2, 0x12)
         self.assertEqual(synth.params.feedback2, 0x22)
         
         self.assertEqual(synth.params.shape3, 0x03)
-        self.assertEqual(synth.params.ratio3, 0x03)
+        self.assertEqual(synth.params.ratio3, 3)
         self.assertEqual(synth.params.level3, 0x13)
         self.assertEqual(synth.params.feedback3, 0x23)
         
         self.assertEqual(synth.params.shape4, 0x04)
-        self.assertEqual(synth.params.ratio4, 0x04)
+        self.assertEqual(synth.params.ratio4, 4)
         self.assertEqual(synth.params.level4, 0x14)
         self.assertEqual(synth.params.feedback4, 0x24)
     
@@ -507,12 +507,12 @@ class TestM8FMSynthInstrument(unittest.TestCase):
         
         # In the dictionary, operators have serialized enum values as strings
         self.assertEqual(result["operators"][0]["shape"], "TRI")
-        self.assertEqual(result["operators"][0]["ratio"], 0x08)
+        self.assertEqual(result["operators"][0]["ratio"], 8)
         self.assertEqual(result["operators"][0]["level"], 0xF0)
         self.assertEqual(result["operators"][0]["feedback"], 0x10)
         
         self.assertEqual(result["operators"][1]["shape"], "SAW")
-        self.assertEqual(result["operators"][1]["ratio"], 0x09)
+        self.assertEqual(result["operators"][1]["ratio"], 9)
         self.assertEqual(result["operators"][1]["level"], 0xE0)
         self.assertEqual(result["operators"][1]["feedback"], 0x20)
     
@@ -642,10 +642,10 @@ class TestM8FMSynthInstrument(unittest.TestCase):
         self.assertEqual(binary[21], 0x08)  # shape3
         self.assertEqual(binary[22], 0x09)  # shape4
         
-        self.assertEqual(binary[23], 0x08)  # ratio1
-        self.assertEqual(binary[25], 0x09)  # ratio2
-        self.assertEqual(binary[27], 0x0A)  # ratio3
-        self.assertEqual(binary[29], 0x0B)  # ratio4
+        self.assertEqual(binary[23], 8)  # ratio1
+        self.assertEqual(binary[25], 9)  # ratio2
+        self.assertEqual(binary[27], 10)  # ratio3
+        self.assertEqual(binary[29], 11)  # ratio4
         
         self.assertEqual(binary[31], 0xF0)  # level1
         self.assertEqual(binary[32], 0x10)  # feedback1

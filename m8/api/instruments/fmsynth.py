@@ -22,8 +22,8 @@ class FMOperator:
         """Convert operator to dictionary for serialization."""
         return {
             "shape": self.shape,
-            "ratio": self.ratio,
-            "ratio_fine": self.ratio_fine,
+            "ratio": int(self.ratio),  # Present as base-10 integer for user-friendliness
+            "ratio_fine": int(self.ratio_fine),  # Present as base-10 integer for user-friendliness
             "level": self.level,
             "feedback": self.feedback,
             "mod_a": self.mod_a,
@@ -134,6 +134,14 @@ class M8FMSynth(M8Instrument):
         # Get base dictionary from parent which already has all param conversions
         result = super().as_dict()
         
+        # Special case for FMSYNTH: convert ratio and ratio_fine to base-10 representation
+        # This matches how the M8 device displays these values
+        for i in range(1, 5):  # For operators 1-4
+            if f"ratio{i}" in result:
+                result[f"ratio{i}"] = int(result[f"ratio{i}"])
+            if f"ratio_fine{i}" in result:
+                result[f"ratio_fine{i}"] = int(result[f"ratio_fine{i}"])
+        
         # Create operators array with values from parameters
         operators = []
         for i in range(4):
@@ -143,8 +151,8 @@ class M8FMSynth(M8Instrument):
             # This avoids duplicating enum conversion logic
             op_dict = {
                 "shape": result.get(f"shape{idx}"),
-                "ratio": result.get(f"ratio{idx}"),
-                "ratio_fine": result.get(f"ratio_fine{idx}"),
+                "ratio": int(result.get(f"ratio{idx}", 0)),  # Present as base-10 integer
+                "ratio_fine": int(result.get(f"ratio_fine{idx}", 0)),  # Present as base-10 integer
                 "level": result.get(f"level{idx}"),
                 "feedback": result.get(f"feedback{idx}"),
                 "mod_a": result.get(f"mod_a{idx}"),

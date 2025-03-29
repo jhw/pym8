@@ -1,7 +1,5 @@
 # short [fmsynth]
 
-- ratio/ratio_fine base 10 rendering
-
 - Sampler slices
 
 # medium
