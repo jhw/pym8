@@ -1,9 +1,10 @@
-# short [hypersynth]
+# short 
 
-- where are filter/cutoff/res/etc params in data?
+- Hypersynth mapping
 
 # medium
 
+- Sampler slices
 - 5.0.2
 - TODO.md >> github project
 - Examples
@@ -21,6 +22,7 @@
 
 # done
 
+- where are filter/cutoff/res/etc params in data?
 - Implement HyperSynth instrument type (ID 0x05)
 - add ratio fine
 - fix failing test in tests/examples/fmsynth.py (_test_serialize_deserialize) - need to handle enum conversion for FMOperator string→int values
