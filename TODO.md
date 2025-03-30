@@ -1,6 +1,5 @@
 # short [Hypersynth]
 
-- Examples test
 - Custom notes (de)serialisers
 
 # medium
@@ -23,6 +22,7 @@
 
 # done
 
+- Add HyperSynth example test with fixture validation
 - Rationalise instrument test files (HyperSynth, FMSynth, WavSynth, Sampler, MacroSynth)
 - where are filter/cutoff/res/etc params in data?
 - Implement HyperSynth instrument type (ID 0x05)
