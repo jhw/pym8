@@ -1,6 +1,5 @@
 # short [Hypersynth]
 
-- Rationalise instrument test
 - Examples test
 - Custom notes (de)serialisers
 
@@ -24,6 +23,7 @@
 
 # done
 
+- Rationalise instrument test files (HyperSynth, FMSynth, WavSynth, Sampler, MacroSynth)
 - where are filter/cutoff/res/etc params in data?
 - Implement HyperSynth instrument type (ID 0x05)
 - add ratio fine
