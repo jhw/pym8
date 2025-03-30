@@ -51,16 +51,16 @@ class TestM8HyperSynthParams(unittest.TestCase):
         binary_data = bytearray([0] * 100)  # Create a buffer large enough
         
         # Set values at the exact offsets from the YAML config
-        binary_data[18] = 0x02  # filter (offset 18)
-        binary_data[19] = 0xE0  # cutoff (offset 19)
-        binary_data[20] = 0x30  # res (offset 20)
-        binary_data[21] = 0x40  # amp (offset 21)
-        binary_data[22] = 0x01  # limit (offset 22)
-        binary_data[23] = 0x60  # pan (offset 23)
-        binary_data[24] = 0xB0  # dry (offset 24)
-        binary_data[25] = 0x70  # chorus (offset 25)
-        binary_data[26] = 0x80  # delay (offset 26)
-        binary_data[27] = 0x90  # reverb (offset 27)
+        binary_data[30] = 0x02  # filter (offset 30)
+        binary_data[31] = 0xE0  # cutoff (offset 31)
+        binary_data[32] = 0x30  # res (offset 32)
+        binary_data[33] = 0x40  # amp (offset 33)
+        binary_data[34] = 0x01  # limit (offset 34)
+        binary_data[35] = 0x60  # pan (offset 35)
+        binary_data[36] = 0xB0  # dry (offset 36)
+        binary_data[37] = 0x70  # chorus (offset 37)
+        binary_data[38] = 0x80  # delay (offset 38)
+        binary_data[39] = 0x90  # reverb (offset 39)
         
         # Create params and read from binary
         params = M8InstrumentParams.from_config("HYPERSYNTH")
@@ -97,20 +97,20 @@ class TestM8HyperSynthParams(unittest.TestCase):
         binary = params.write()
         
         # Check binary has sufficient size
-        min_size = 28  # Should at least include up to reverb at offset 27
+        min_size = 40  # Should at least include up to reverb at offset 39
         self.assertGreaterEqual(len(binary), min_size)
         
         # Check key parameters
-        self.assertEqual(binary[18], 0x02)  # filter
-        self.assertEqual(binary[19], 0xE0)  # cutoff
-        self.assertEqual(binary[20], 0x30)  # res
-        self.assertEqual(binary[21], 0x40)  # amp
-        self.assertEqual(binary[22], 0x01)  # limit
-        self.assertEqual(binary[23], 0x60)  # pan
-        self.assertEqual(binary[24], 0xB0)  # dry
-        self.assertEqual(binary[25], 0x70)  # chorus
-        self.assertEqual(binary[26], 0x80)  # delay
-        self.assertEqual(binary[27], 0x90)  # reverb
+        self.assertEqual(binary[30], 0x02)  # filter
+        self.assertEqual(binary[31], 0xE0)  # cutoff
+        self.assertEqual(binary[32], 0x30)  # res
+        self.assertEqual(binary[33], 0x40)  # amp
+        self.assertEqual(binary[34], 0x01)  # limit
+        self.assertEqual(binary[35], 0x60)  # pan
+        self.assertEqual(binary[36], 0xB0)  # dry
+        self.assertEqual(binary[37], 0x70)  # chorus
+        self.assertEqual(binary[38], 0x80)  # delay
+        self.assertEqual(binary[39], 0x90)  # reverb
     
     def test_read_write_consistency(self):
         # Create original params
@@ -321,16 +321,18 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
             0x10,   # volume
             0x20,   # pitch
             0x90,   # finetune
-            0x02,   # filter (HIGHPASS)
-            0xE0,   # cutoff
-            0x30,   # res
-            0x40,   # amp
-            0x01,   # limit (SIN)
-            0x60,   # pan
-            0xB0,   # dry
-            0x70,   # chorus
-            0x80,   # delay
-            0x90    # reverb
+            # 12 placeholder bytes for the offset increase
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x02,   # filter (HIGHPASS) at offset 30
+            0xE0,   # cutoff at offset 31
+            0x30,   # res at offset 32
+            0x40,   # amp at offset 33
+            0x01,   # limit (SIN) at offset 34
+            0x60,   # pan at offset 35
+            0xB0,   # dry at offset 36
+            0x70,   # chorus at offset 37
+            0x80,   # delay at offset 38
+            0x90    # reverb at offset 39
         ])
         
         # Add additional parameter bytes
@@ -404,16 +406,16 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         self.assertEqual(binary[17], 0x90)  # finetune
         
         # Check instrument-specific parameters
-        self.assertEqual(binary[18], 0x02)  # filter (HIGHPASS)
-        self.assertEqual(binary[19], 0xE0)  # cutoff
-        self.assertEqual(binary[20], 0x30)  # res
-        self.assertEqual(binary[21], 0x40)  # amp
-        self.assertEqual(binary[22], 0x01)  # limit (SIN)
-        self.assertEqual(binary[23], 0x60)  # pan
-        self.assertEqual(binary[24], 0xB0)  # dry
-        self.assertEqual(binary[25], 0x70)  # chorus
-        self.assertEqual(binary[26], 0x80)  # delay
-        self.assertEqual(binary[27], 0x90)  # reverb
+        self.assertEqual(binary[30], 0x02)  # filter (HIGHPASS)
+        self.assertEqual(binary[31], 0xE0)  # cutoff
+        self.assertEqual(binary[32], 0x30)  # res
+        self.assertEqual(binary[33], 0x40)  # amp
+        self.assertEqual(binary[34], 0x01)  # limit (SIN)
+        self.assertEqual(binary[35], 0x60)  # pan
+        self.assertEqual(binary[36], 0xB0)  # dry
+        self.assertEqual(binary[37], 0x70)  # chorus
+        self.assertEqual(binary[38], 0x80)  # delay
+        self.assertEqual(binary[39], 0x90)  # reverb
     
     def test_add_modulator(self):
         # Create a HyperSynth
