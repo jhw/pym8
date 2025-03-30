@@ -382,12 +382,24 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         data = {"type": "HYPERSYNTH"}
         data.update(self.common_params)
         
-        # Add the HyperSynth-specific parameters
-        data.update(self.hypersynth_params)
+        # Add the HyperSynth-specific parameters (excluding note1-6 which will be in notes list)
+        hypersynth_params_no_notes = {k: v for k, v in self.hypersynth_params.items() 
+                                    if not k.startswith("note")}
+        data.update(hypersynth_params_no_notes)
         
         # Convert enum values to strings for the test
         data["filter"] = "HIGHPASS"
         data["limit"] = "SIN"
+        
+        # Add the notes list
+        data["notes"] = [
+            self.hypersynth_params["note1"],
+            self.hypersynth_params["note2"],
+            self.hypersynth_params["note3"],
+            self.hypersynth_params["note4"],
+            self.hypersynth_params["note5"],
+            self.hypersynth_params["note6"]
+        ]
         
         # Create from dict
         synth = M8HyperSynth.from_dict(data)
@@ -404,11 +416,28 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
             self.assertEqual(getattr(synth, param), expected,
                           f"Parameter {param} should be {expected}")
         
-        # Check hypersynth parameters (replacing the string enums with numeric values)
-        expected_params = dict(self.hypersynth_params)
-        for param, expected in expected_params.items():
+        # Check hypersynth parameters (excluding note1-6)
+        for param, expected in hypersynth_params_no_notes.items():
             self.assertEqual(getattr(synth.params, param), expected,
                           f"Parameter params.{param} should be {expected}")
+        
+        # Check notes were correctly expanded to note1-6
+        for i in range(1, 7):
+            note_param = f"note{i}"
+            expected = self.hypersynth_params[note_param]
+            self.assertEqual(getattr(synth.params, note_param), expected,
+                          f"Parameter params.{note_param} should be {expected}")
+        
+        # Check notes property
+        expected_notes = [
+            self.hypersynth_params["note1"],
+            self.hypersynth_params["note2"],
+            self.hypersynth_params["note3"],
+            self.hypersynth_params["note4"],
+            self.hypersynth_params["note5"],
+            self.hypersynth_params["note6"]
+        ]
+        self.assertEqual(synth.notes, expected_notes, "Notes property should match expected values")
     
     def test_as_dict(self):
         # Create synth with all parameters
@@ -425,8 +454,28 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         self.assertEqual(result["type"], "HYPERSYNTH")
         self.assertEqual(result["name"], self.common_params["name"])
         
-        # Check all parameters are in the dictionary with correct values
+        # Check notes list exists and has the right values
+        self.assertIn("notes", result)
+        expected_notes = [
+            self.hypersynth_params["note1"],
+            self.hypersynth_params["note2"],
+            self.hypersynth_params["note3"],
+            self.hypersynth_params["note4"],
+            self.hypersynth_params["note5"],
+            self.hypersynth_params["note6"]
+        ]
+        self.assertEqual(result["notes"], expected_notes)
+        
+        # Check individual note parameters do not exist in the dictionary
+        for i in range(1, 7):
+            self.assertNotIn(f"note{i}", result)
+        
+        # Check other parameters are in the dictionary with correct values
         for param, expected in all_params.items():
+            # Skip note params as they're handled separately
+            if param.startswith("note"):
+                continue
+                
             if param in self.enum_params:
                 # Check enum values are strings
                 self.assertIsInstance(result[param], str,
@@ -439,6 +488,35 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
                 # Check other values match what we set
                 self.assertEqual(result[param], expected,
                               f"Dictionary value for {param} should be {expected}")
+    
+    def test_notes_property(self):
+        # Test the notes property getter and setter
+        
+        # Create a HyperSynth with specific note values
+        note_values = [10, 20, 30, 40, 50, 60]
+        synth = M8HyperSynth(notes=note_values)
+        
+        # Check the individual note parameters were set correctly
+        for i, value in enumerate(note_values):
+            param_name = f"note{i+1}"
+            self.assertEqual(getattr(synth.params, param_name), value,
+                          f"Parameter {param_name} should be {value}")
+        
+        # Check the notes property returns the correct values
+        self.assertEqual(synth.notes, note_values)
+        
+        # Test setting the notes property
+        new_notes = [15, 25, 35, 45, 55, 65]
+        synth.notes = new_notes
+        
+        # Check the individual note parameters were updated
+        for i, value in enumerate(new_notes):
+            param_name = f"note{i+1}"
+            self.assertEqual(getattr(synth.params, param_name), value,
+                          f"Parameter {param_name} should be {value} after setting notes")
+        
+        # Check the notes property returns the updated values
+        self.assertEqual(synth.notes, new_notes)
     
     def test_binary_serialization(self):
         # Create synth with all parameters but use a shorter name

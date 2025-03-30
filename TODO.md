@@ -1,7 +1,5 @@
 # short [Hypersynth]
 
-- Custom notes (de)serialisers
-
 # medium
 
 - Sampler slices
@@ -22,6 +20,7 @@
 
 # done
 
+- Add custom serializers for HyperSynth notes, with 'notes' list property
 - Add HyperSynth example test with fixture validation
 - Rationalise instrument test files (HyperSynth, FMSynth, WavSynth, Sampler, MacroSynth)
 - where are filter/cutoff/res/etc params in data?

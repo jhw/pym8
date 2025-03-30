@@ -46,12 +46,6 @@ class TestHyperSynthMapping(unittest.TestCase):
             'dry': 192,            # 0xC0
             'filter': "LOWPASS",   # LOWPASS enum value
             'limit': "SIN",        # SIN enum value
-            'note1': 3,            # 0x03
-            'note2': 5,            # 0x05
-            'note3': 12,           # 0x0C
-            'note4': 14,           # 0x0E
-            'note5': 16,           # 0x10
-            'note6': 19,           # 0x13
             'pan': 128,            # 0x80
             'res': 208,            # 0xD0
             'reverb': 128,         # 0x80
@@ -62,6 +56,20 @@ class TestHyperSynthMapping(unittest.TestCase):
             'subosc': 112          # 0x70
         }
         
+        # Expected notes as a list
+        expected_notes = [3, 5, 12, 14, 16, 19]  # [0x03, 0x05, 0x0C, 0x0E, 0x10, 0x13]
+        
+        # Check notes field
+        self.assertIn('notes', self.instrument_dict, "Dictionary should have 'notes' field")
+        self.assertEqual(self.instrument_dict['notes'], expected_notes, 
+                      "Notes list doesn't match expected values")
+        
+        # Verify individual note fields don't exist
+        for i in range(1, 7):
+            self.assertNotIn(f'note{i}', self.instrument_dict, 
+                          f"Dictionary should not have 'note{i}' field")
+        
+        # Check all other fields
         for field, expected_value in expected_values.items():
             with self.subTest(field=field):
                 self.assertEqual(self.instrument_dict[field], expected_value, 
