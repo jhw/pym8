@@ -41,7 +41,8 @@ def main():
     
     # Check file extension
     if not args.file_path.lower().endswith(".m8i"):
-        print(f"Warning: File {args.file_path} does not have .m8i extension", file=sys.stderr)
+        print(f"Error: File {args.file_path} does not have .m8i extension", file=sys.stderr)
+        return 1
     
     try:
         # Load instrument directly from file
