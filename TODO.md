@@ -1,8 +1,10 @@
 # short [Hypersynth mapping]
 
-- Note fields
 - Chord and scale field
-
+- Hypersynth examples test
+- Custom notes (de)serialisers
+- Hypersynth examples test
+- Custom notes (de)serialisers
 
 # medium
 

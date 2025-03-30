@@ -234,6 +234,18 @@ instruments:
           enums:
           - m8.enums.M8LimitTypes
           offset: 34
+        note1:
+          offset: 19
+        note2:
+          offset: 20
+        note3:
+          offset: 21
+        note4:
+          offset: 22
+        note5:
+          offset: 23
+        note6:
+          offset: 24
         pan:
           default: 128
           offset: 35

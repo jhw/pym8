@@ -23,6 +23,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         self.assertEqual(params.swarm, 0x0)
         self.assertEqual(params.width, 0x0)
         self.assertEqual(params.subosc, 0x0)
+        self.assertEqual(params.note1, 0x0)
+        self.assertEqual(params.note2, 0x0)
+        self.assertEqual(params.note3, 0x0)
+        self.assertEqual(params.note4, 0x0)
+        self.assertEqual(params.note5, 0x0)
+        self.assertEqual(params.note6, 0x0)
         
     def test_new_hypersynth_params(self):
         # Test constructor with new HyperSynth params
@@ -107,6 +113,109 @@ class TestM8HyperSynthParams(unittest.TestCase):
         self.assertEqual(result["width"], 0x63)
         self.assertEqual(result["subosc"], 0x83)
         
+    def test_hypersynth_note_params(self):
+        # Test constructor with note HyperSynth params
+        params = M8InstrumentParams.from_config("HYPERSYNTH",
+            note1=0x31,
+            note2=0x32,
+            note3=0x33,
+            note4=0x34,
+            note5=0x35,
+            note6=0x36
+        )
+        
+        # Check values
+        self.assertEqual(params.note1, 0x31)
+        self.assertEqual(params.note2, 0x32)
+        self.assertEqual(params.note3, 0x33)
+        self.assertEqual(params.note4, 0x34)
+        self.assertEqual(params.note5, 0x35)
+        self.assertEqual(params.note6, 0x36)
+        
+        # Create test binary data with the new parameters
+        binary_data = bytearray([0] * 100)
+        
+        # Set values at the exact offsets from the YAML config
+        binary_data[19] = 0x41  # note1 at offset 19
+        binary_data[20] = 0x42  # note2 at offset 20
+        binary_data[21] = 0x43  # note3 at offset 21
+        binary_data[22] = 0x44  # note4 at offset 22
+        binary_data[23] = 0x45  # note5 at offset 23
+        binary_data[24] = 0x46  # note6 at offset 24
+        
+        # Create params and read from binary
+        params = M8InstrumentParams.from_config("HYPERSYNTH")
+        params.read(binary_data)
+        
+        # Check new parameter values
+        self.assertEqual(params.note1, 0x41)
+        self.assertEqual(params.note2, 0x42)
+        self.assertEqual(params.note3, 0x43)
+        self.assertEqual(params.note4, 0x44)
+        self.assertEqual(params.note5, 0x45)
+        self.assertEqual(params.note6, 0x46)
+        
+        # Test writing to binary
+        params = M8InstrumentParams.from_config("HYPERSYNTH",
+            note1=0x51,
+            note2=0x52,
+            note3=0x53,
+            note4=0x54,
+            note5=0x55,
+            note6=0x56
+        )
+        
+        # Write to binary
+        binary = params.write()
+        
+        # Check key parameters
+        self.assertEqual(binary[19], 0x51)  # note1
+        self.assertEqual(binary[20], 0x52)  # note2
+        self.assertEqual(binary[21], 0x53)  # note3
+        self.assertEqual(binary[22], 0x54)  # note4
+        self.assertEqual(binary[23], 0x55)  # note5
+        self.assertEqual(binary[24], 0x56)  # note6
+        
+        # Test read-write consistency
+        original = M8InstrumentParams.from_config("HYPERSYNTH",
+            note1=0x61,
+            note2=0x62,
+            note3=0x63,
+            note4=0x64,
+            note5=0x65,
+            note6=0x66
+        )
+        
+        binary = original.write()
+        deserialized = M8InstrumentParams.from_config("HYPERSYNTH")
+        deserialized.read(binary)
+        
+        self.assertEqual(deserialized.note1, original.note1)
+        self.assertEqual(deserialized.note2, original.note2)
+        self.assertEqual(deserialized.note3, original.note3)
+        self.assertEqual(deserialized.note4, original.note4)
+        self.assertEqual(deserialized.note5, original.note5)
+        self.assertEqual(deserialized.note6, original.note6)
+        
+        # Test dictionary representation
+        params = M8InstrumentParams.from_config("HYPERSYNTH",
+            note1=0x71,
+            note2=0x72,
+            note3=0x73,
+            note4=0x74,
+            note5=0x75,
+            note6=0x76
+        )
+        
+        result = params.as_dict()
+        
+        self.assertEqual(result["note1"], 0x71)
+        self.assertEqual(result["note2"], 0x72)
+        self.assertEqual(result["note3"], 0x73)
+        self.assertEqual(result["note4"], 0x74)
+        self.assertEqual(result["note5"], 0x75)
+        self.assertEqual(result["note6"], 0x76)
+        
         # Test with kwargs
         params = M8InstrumentParams.from_config("HYPERSYNTH",
             filter=0x02,  # HIGHPASS
@@ -138,6 +247,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         binary_data = bytearray([0] * 100)  # Create a buffer large enough
         
         # Set values at the exact offsets from the YAML config
+        binary_data[19] = 0xA1  # note1 (offset 19)
+        binary_data[20] = 0xA2  # note2 (offset 20)
+        binary_data[21] = 0xA3  # note3 (offset 21)
+        binary_data[22] = 0xA4  # note4 (offset 22)
+        binary_data[23] = 0xA5  # note5 (offset 23)
+        binary_data[24] = 0xA6  # note6 (offset 24)
         binary_data[26] = 0x1A  # shift (offset 26)
         binary_data[27] = 0x2A  # swarm (offset 27)
         binary_data[28] = 0x3A  # width (offset 28)
@@ -158,6 +273,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         params.read(binary_data)
         
         # Check key parameter values
+        self.assertEqual(params.note1, 0xA1)
+        self.assertEqual(params.note2, 0xA2)
+        self.assertEqual(params.note3, 0xA3)
+        self.assertEqual(params.note4, 0xA4)
+        self.assertEqual(params.note5, 0xA5)
+        self.assertEqual(params.note6, 0xA6)
         self.assertEqual(params.shift, 0x1A)
         self.assertEqual(params.swarm, 0x2A)
         self.assertEqual(params.width, 0x3A)
@@ -176,6 +297,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
     def test_write_to_binary(self):
         # Create params with specific values
         params = M8InstrumentParams.from_config("HYPERSYNTH",
+            note1=0xB1,
+            note2=0xB2,
+            note3=0xB3,
+            note4=0xB4,
+            note5=0xB5,
+            note6=0xB6,
             shift=0x15,
             swarm=0x25,
             width=0x35,
@@ -200,6 +327,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         self.assertGreaterEqual(len(binary), min_size)
         
         # Check key parameters
+        self.assertEqual(binary[19], 0xB1)  # note1
+        self.assertEqual(binary[20], 0xB2)  # note2
+        self.assertEqual(binary[21], 0xB3)  # note3
+        self.assertEqual(binary[22], 0xB4)  # note4
+        self.assertEqual(binary[23], 0xB5)  # note5
+        self.assertEqual(binary[24], 0xB6)  # note6
         self.assertEqual(binary[26], 0x15)  # shift
         self.assertEqual(binary[27], 0x25)  # swarm
         self.assertEqual(binary[28], 0x35)  # width
@@ -218,6 +351,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
     def test_read_write_consistency(self):
         # Create original params
         original = M8InstrumentParams.from_config("HYPERSYNTH",
+            note1=0xC1,
+            note2=0xC2,
+            note3=0xC3,
+            note4=0xC4,
+            note5=0xC5,
+            note6=0xC6,
             shift=0x16,
             swarm=0x26,
             width=0x36,
@@ -242,6 +381,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         deserialized.read(binary)
         
         # Check values match
+        self.assertEqual(deserialized.note1, original.note1)
+        self.assertEqual(deserialized.note2, original.note2)
+        self.assertEqual(deserialized.note3, original.note3)
+        self.assertEqual(deserialized.note4, original.note4)
+        self.assertEqual(deserialized.note5, original.note5)
+        self.assertEqual(deserialized.note6, original.note6)
         self.assertEqual(deserialized.shift, original.shift)
         self.assertEqual(deserialized.swarm, original.swarm)
         self.assertEqual(deserialized.width, original.width)
@@ -260,6 +405,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
     def test_as_dict(self):
         # Create params
         params = M8InstrumentParams.from_config("HYPERSYNTH",
+            note1=0xD1,
+            note2=0xD2,
+            note3=0xD3,
+            note4=0xD4,
+            note5=0xD5,
+            note6=0xD6,
             shift=0x17,
             swarm=0x27,
             width=0x37,
@@ -280,6 +431,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         result = params.as_dict()
         
         # Check non-enum values
+        self.assertEqual(result["note1"], 0xD1)
+        self.assertEqual(result["note2"], 0xD2)
+        self.assertEqual(result["note3"], 0xD3)
+        self.assertEqual(result["note4"], 0xD4)
+        self.assertEqual(result["note5"], 0xD5)
+        self.assertEqual(result["note6"], 0xD6)
         self.assertEqual(result["shift"], 0x17)
         self.assertEqual(result["swarm"], 0x27)
         self.assertEqual(result["width"], 0x37)
@@ -355,6 +512,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         data = {
             "type": "HYPERSYNTH",
             "name": "TestHyperSynth",
+            "note1": 0xE1,
+            "note2": 0xE2,
+            "note3": 0xE3,
+            "note4": 0xE4,
+            "note5": 0xE5,
+            "note6": 0xE6,
             "shift": 0x51,
             "swarm": 0x52,
             "width": 0x53,
@@ -383,6 +546,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         
         # Check parameters
         self.assertEqual(synth.name, "TestHyperSynth")
+        self.assertEqual(synth.params.note1, 0xE1)
+        self.assertEqual(synth.params.note2, 0xE2)
+        self.assertEqual(synth.params.note3, 0xE3)
+        self.assertEqual(synth.params.note4, 0xE4)
+        self.assertEqual(synth.params.note5, 0xE5)
+        self.assertEqual(synth.params.note6, 0xE6)
         self.assertEqual(synth.params.shift, 0x51)
         self.assertEqual(synth.params.swarm, 0x52)
         self.assertEqual(synth.params.width, 0x53)
@@ -402,6 +571,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         # Create synth with specific parameters
         synth = M8HyperSynth(
             name="TestHyperSynth",
+            note1=0xF1,
+            note2=0xF2,
+            note3=0xF3,
+            note4=0xF4,
+            note5=0xF5,
+            note6=0xF6,
             shift=0x61,
             swarm=0x62,
             width=0x63,
@@ -426,6 +601,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         self.assertEqual(result["name"], "TestHyperSynth")
         
         # Check instrument-specific parameters
+        self.assertEqual(result["note1"], 0xF1)
+        self.assertEqual(result["note2"], 0xF2)
+        self.assertEqual(result["note3"], 0xF3)
+        self.assertEqual(result["note4"], 0xF4)
+        self.assertEqual(result["note5"], 0xF5)
+        self.assertEqual(result["note6"], 0xF6)
         self.assertEqual(result["shift"], 0x61)
         self.assertEqual(result["swarm"], 0x62)
         self.assertEqual(result["width"], 0x63)
@@ -447,32 +628,41 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         # Create a HyperSynth
         synth = M8HyperSynth()
         
-        # Create test binary data
-        binary_data = bytearray([
-            0x05,   # type (HyperSynth)
-            0x54, 0x45, 0x53, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  # name "TEST"
-            0x42,   # transpose/eq (4/2)
-            0x02,   # table_tick
-            0x10,   # volume
-            0x20,   # pitch
-            0x90,   # finetune
-            # 8 placeholder bytes
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x55,   # shift at offset 26
-            0x56,   # swarm at offset 27
-            0x57,   # width at offset 28
-            0x58,   # subosc at offset 29
-            0x02,   # filter (HIGHPASS) at offset 30
-            0xE0,   # cutoff at offset 31
-            0x30,   # res at offset 32
-            0x40,   # amp at offset 33
-            0x01,   # limit (SIN) at offset 34
-            0x60,   # pan at offset 35
-            0xB0,   # dry at offset 36
-            0x70,   # chorus at offset 37
-            0x80,   # delay at offset 38
-            0x90    # reverb at offset 39
-        ])
+        # Create test binary data with fixed values
+        # Let's test this differently - set values in a way we know will work
+        binary_data = bytearray([0] * 100)  # Create a buffer large enough
+        
+        # Common parameters
+        binary_data[0] = 0x05   # type (HyperSynth)
+        for i, c in enumerate(b"TEST"):
+            binary_data[1 + i] = c  # name
+        binary_data[13] = 0x42  # transpose/eq
+        binary_data[14] = 0x02  # table_tick
+        binary_data[15] = 0x10  # volume
+        binary_data[16] = 0x20  # pitch
+        binary_data[17] = 0x90  # finetune
+        
+        # Set HyperSynth specific parameters
+        binary_data[19] = 0x10  # note1
+        binary_data[20] = 0x20  # note2
+        binary_data[21] = 0x30  # note3
+        binary_data[22] = 0x40  # note4
+        binary_data[23] = 0x50  # note5
+        binary_data[24] = 0x60  # note6
+        binary_data[26] = 0x70  # shift
+        binary_data[27] = 0x71  # swarm
+        binary_data[28] = 0x72  # width
+        binary_data[29] = 0x73  # subosc
+        binary_data[30] = 0x02  # filter
+        binary_data[31] = 0xE0  # cutoff
+        binary_data[32] = 0x30  # res
+        binary_data[33] = 0x40  # amp
+        binary_data[34] = 0x01  # limit
+        binary_data[35] = 0x60  # pan
+        binary_data[36] = 0xB0  # dry
+        binary_data[37] = 0x70  # chorus
+        binary_data[38] = 0x80  # delay
+        binary_data[39] = 0x90  # reverb
         
         # Add additional parameter bytes
         binary_data.extend([0] * (63 - len(binary_data)))  # Fill up to modulator offset
@@ -492,10 +682,16 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x90)
         
         # Check instrument-specific parameters
-        self.assertEqual(synth.params.shift, 0x55)
-        self.assertEqual(synth.params.swarm, 0x56)
-        self.assertEqual(synth.params.width, 0x57)
-        self.assertEqual(synth.params.subosc, 0x58)
+        self.assertEqual(synth.params.note1, 16)  # 0x10
+        self.assertEqual(synth.params.note2, 32)  # 0x20
+        self.assertEqual(synth.params.note3, 48)  # 0x30
+        self.assertEqual(synth.params.note4, 64)  # 0x40
+        self.assertEqual(synth.params.note5, 80)  # 0x50
+        self.assertEqual(synth.params.note6, 96)  # 0x60
+        self.assertEqual(synth.params.shift, 112)  # 0x70
+        self.assertEqual(synth.params.swarm, 113)  # 0x71
+        self.assertEqual(synth.params.width, 114)  # 0x72
+        self.assertEqual(synth.params.subosc, 115)  # 0x73
         self.assertEqual(synth.params.filter, 0x02)  # HIGHPASS
         self.assertEqual(synth.params.cutoff, 0xE0)
         self.assertEqual(synth.params.res, 0x30)
@@ -518,6 +714,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
             volume=0x10,
             pitch=0x20,  # Explicitly set pitch to match assertion
             finetune=0x90,
+            note1=0x19,
+            note2=0x29,
+            note3=0x39,
+            note4=0x49,
+            note5=0x59,
+            note6=0x69,
             shift=0x59,
             swarm=0x5A,
             width=0x5B,
@@ -553,6 +755,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         self.assertEqual(binary[17], 0x90)  # finetune
         
         # Check instrument-specific parameters
+        self.assertEqual(binary[19], 0x19)  # note1
+        self.assertEqual(binary[20], 0x29)  # note2
+        self.assertEqual(binary[21], 0x39)  # note3
+        self.assertEqual(binary[22], 0x49)  # note4
+        self.assertEqual(binary[23], 0x59)  # note5
+        self.assertEqual(binary[24], 0x69)  # note6
         self.assertEqual(binary[26], 0x59)  # shift
         self.assertEqual(binary[27], 0x5A)  # swarm
         self.assertEqual(binary[28], 0x5B)  # width
@@ -587,6 +795,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         # Create original synth
         original = M8HyperSynth(
             name="TEST",  # Using a shorter name to avoid truncation issues
+            note1=0x1A,
+            note2=0x2A,
+            note3=0x3A,
+            note4=0x4A,
+            note5=0x5A,
+            note6=0x6A,
             shift=0x5D,
             swarm=0x5E,
             width=0x5F,
@@ -616,6 +830,12 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         
         # Check values match
         self.assertEqual(deserialized.name, original.name)
+        self.assertEqual(deserialized.params.note1, original.params.note1)
+        self.assertEqual(deserialized.params.note2, original.params.note2)
+        self.assertEqual(deserialized.params.note3, original.params.note3)
+        self.assertEqual(deserialized.params.note4, original.params.note4)
+        self.assertEqual(deserialized.params.note5, original.params.note5)
+        self.assertEqual(deserialized.params.note6, original.params.note6)
         self.assertEqual(deserialized.params.shift, original.params.shift)
         self.assertEqual(deserialized.params.swarm, original.params.swarm)
         self.assertEqual(deserialized.params.width, original.params.width)
