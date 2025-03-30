@@ -241,6 +241,14 @@ instruments:
           offset: 32
         reverb:
           offset: 39
+        shift:
+          offset: 26
+        swarm:
+          offset: 27
+        width:
+          offset: 28
+        subosc:
+          offset: 29
       type_id: 5
     MACROSYNTH:
       params:

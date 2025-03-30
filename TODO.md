@@ -1,6 +1,8 @@
-# short 
+# short [Hypersynth mapping]
 
-- Hypersynth mapping
+- Note fields
+- Chord and scale field
+
 
 # medium
 
