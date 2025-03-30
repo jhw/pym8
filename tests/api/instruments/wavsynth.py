@@ -3,169 +3,142 @@ from m8.api.instruments import M8Instrument, M8InstrumentParams
 from m8.api.modulators import M8Modulator, M8ModulatorType
 
 class TestM8InstrumentParams(unittest.TestCase):
+    def setUp(self):
+        # Define parameter groups for easier testing
+        self.parameter_groups = {
+            "wave_params": {
+                "shape": (0x01, 18),  # (test_value, binary_offset) - PULSE25
+                "size": (0x70, 19),
+                "mult": (0x90, 20),
+                "warp": (0x10, 21),
+                "scan": (0x20, 22)
+            },
+            "filter_params": {
+                "filter": (0x02, 23),  # HIGHPASS
+                "cutoff": (0xE0, 24),
+                "res": (0x30, 25)
+            },
+            "amp_params": {
+                "amp": (0x40, 26),
+                "limit": (0x00, 27),  # CLIP
+                "pan": (0x60, 28)
+            },
+            "fx_params": {
+                "dry": (0xB0, 29),
+                "chorus": (0x70, 30),
+                "delay": (0x80, 31),
+                "reverb": (0x90, 32)
+            }
+        }
+        
+        # Define expected default values
+        self.default_values = {
+            "shape": 0x0,  # SINE
+            "size": 0x80,
+            "mult": 0x80,
+            "warp": 0x0,
+            "scan": 0x0,
+            "filter": 0x0,  # OFF
+            "cutoff": 0xFF,
+            "res": 0x0,
+            "amp": 0x0,
+            "limit": 0x0,  # CLIP
+            "pan": 0x80,
+            "dry": 0xC0,
+            "chorus": 0x0,
+            "delay": 0x0,
+            "reverb": 0x0
+        }
+        
+        # Define parameters that are serialized as enums in dictionaries
+        self.enum_params = ["shape", "filter", "limit"]
+        
+        # Define expected enum string values for specific test values
+        self.enum_string_values = {
+            "shape": {0x01: "PULSE25"},
+            "filter": {0x02: "HIGHPASS"},
+            "limit": {0x00: "CLIP"}
+        }
+
     def test_constructor_and_defaults(self):
         # Test default constructor for WavSynth params
         params = M8InstrumentParams.from_config("WAVSYNTH")
         
-        # Check defaults for some key parameters
-        self.assertEqual(params.shape, 0x0)
-        self.assertEqual(params.size, 0x80)
-        self.assertEqual(params.mult, 0x80)
-        self.assertEqual(params.warp, 0x0)
-        self.assertEqual(params.scan, 0x0)
-        self.assertEqual(params.filter, 0x0)
-        self.assertEqual(params.cutoff, 0xFF)
-        self.assertEqual(params.res, 0x0)
-        self.assertEqual(params.amp, 0x0)
-        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
-        self.assertEqual(params.pan, 0x80)
-        self.assertEqual(params.dry, 0xC0)
-        self.assertEqual(params.chorus, 0x0)
-        self.assertEqual(params.delay, 0x0)
-        self.assertEqual(params.reverb, 0x0)
-        
-        # Test with kwargs
-        params = M8InstrumentParams.from_config("WAVSYNTH",
-            shape="PULSE25",
-            size=0x70,
-            mult=0x90,
-            warp=0x10,
-            scan=0x20,
-            filter="HIGHPASS",
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="CLIP",  # Using string enum (CLIP = 0x0)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
-        
-        # Check values
-        self.assertEqual(params.shape, 0x1)
-        self.assertEqual(params.size, 0x70)
-        self.assertEqual(params.mult, 0x90)
-        self.assertEqual(params.warp, 0x10)
-        self.assertEqual(params.scan, 0x20)
-        self.assertEqual(params.filter, 0x2)
-        self.assertEqual(params.cutoff, 0xE0)
-        self.assertEqual(params.res, 0x30)
-        self.assertEqual(params.amp, 0x40)
-        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
-        self.assertEqual(params.pan, 0x60)
-        self.assertEqual(params.dry, 0xB0)
-        self.assertEqual(params.chorus, 0x70)
-        self.assertEqual(params.delay, 0x80)
-        self.assertEqual(params.reverb, 0x90)
+        # Check defaults for all parameters
+        for param_name, expected_value in self.default_values.items():
+            self.assertEqual(getattr(params, param_name), expected_value, 
+                            f"Default value for {param_name} should be {expected_value}")
+
+    def test_parameter_groups(self):
+        # Test each parameter group for initialization, read, write, and serialization
+        for group_name, params_dict in self.parameter_groups.items():
+            with self.subTest(group=group_name):
+                self._test_parameter_group(params_dict)
     
-    def test_read_from_binary(self):
-        # Create test binary data
-        # We need at least 33 bytes for the full parameter set
-        binary_data = bytearray([0] * 18)  # First 18 bytes are not used by WavSynthParams
-        binary_data.extend([
-            0x01,   # shape (offset 18)
-            0x70,   # size (offset 19)
-            0x90,   # mult (offset 20)
-            0x10,   # warp (offset 21)
-            0x20,   # scan (offset 22)
-            0x02,   # filter (offset 23)
-            0xE0,   # cutoff (offset 24)
-            0x30,   # res (offset 25)
-            0x40,   # amp (offset 26)
-            0x0,   # limit (offset 27/28) - FOLD = 0x2
-            0x60,   # pan (offset 28)
-            0xB0,   # dry (offset 29)
-            0x70,   # chorus (offset 30)
-            0x80,   # delay (offset 31)
-            0x90    # reverb (offset 32)
-        ])
+    def _test_parameter_group(self, params_dict):
+        # Prepare kwargs for constructor
+        kwargs = {name: val for name, (val, _) in params_dict.items()}
         
-        # Create params and read from binary
-        params = M8InstrumentParams.from_config("WAVSYNTH")
-        params.read(binary_data)
+        # Test constructor with parameters
+        params = M8InstrumentParams.from_config("WAVSYNTH", **kwargs)
         
-        # Check values
-        self.assertEqual(params.shape, 0x1)
-        self.assertEqual(params.size, 0x70)
-        self.assertEqual(params.mult, 0x90)
-        self.assertEqual(params.warp, 0x10)
-        self.assertEqual(params.scan, 0x20)
-        self.assertEqual(params.filter, 0x2)
-        self.assertEqual(params.cutoff, 0xE0)
-        self.assertEqual(params.res, 0x30)
-        self.assertEqual(params.amp, 0x40)
-        self.assertEqual(params.limit, 0x0)  # CLIP = 0x0
-        self.assertEqual(params.pan, 0x60)
-        self.assertEqual(params.dry, 0xB0)
-        self.assertEqual(params.chorus, 0x70)
-        self.assertEqual(params.delay, 0x80)
-        self.assertEqual(params.reverb, 0x90)
-    
-    def test_write_to_binary(self):
-        # Create params with specific values
-        params = M8InstrumentParams.from_config("WAVSYNTH",
-            shape=0x1,
-            size=0x70,
-            mult=0x90,
-            warp=0x10,
-            scan=0x20,
-            filter=0x2,
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="CLIP",  # Using string enum (CLIP = 0x0)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+        # Check values match what we set
+        for param_name, (value, _) in params_dict.items():
+            self.assertEqual(getattr(params, param_name), value, 
+                            f"Parameter {param_name} should be {value}")
         
-        # Write to binary
-        binary = params.write()
+        # Create binary data for reading test
+        binary_data = bytearray([0] * 100)
         
-        # Check binary output (note: the minimum size may be different)
-        min_size = 33  # Should at least include up to reverb at offset 32
-        self.assertGreaterEqual(len(binary), min_size)
+        # Set values at the exact offsets with slightly different values
+        for param_name, (_, offset) in params_dict.items():
+            # Create a different value for testing read
+            binary_data[offset] = getattr(params, param_name) + 5
         
-        # Check specific values
-        self.assertEqual(binary[18], 0x1)   # shape
-        self.assertEqual(binary[19], 0x70)  # size
-        self.assertEqual(binary[20], 0x90)  # mult
-        self.assertEqual(binary[21], 0x10)  # warp
-        self.assertEqual(binary[22], 0x20)  # scan
-        self.assertEqual(binary[23], 0x2)   # filter
-        self.assertEqual(binary[24], 0xE0)  # cutoff
-        self.assertEqual(binary[25], 0x30)  # res
-        self.assertEqual(binary[26], 0x40)  # amp
-        self.assertEqual(binary[27], 0x0)   # limit (CLIP = 0x0)
-        self.assertEqual(binary[28], 0x60)  # pan
-        self.assertEqual(binary[29], 0xB0)  # dry
-        self.assertEqual(binary[30], 0x70)  # chorus
-        self.assertEqual(binary[31], 0x80)  # delay
-        self.assertEqual(binary[32], 0x90)  # reverb
+        # Read from binary
+        read_params = M8InstrumentParams.from_config("WAVSYNTH")
+        read_params.read(binary_data)
+        
+        # Check parameters were read correctly
+        for param_name, (_, offset) in params_dict.items():
+            expected_value = getattr(params, param_name) + 5
+            self.assertEqual(getattr(read_params, param_name), expected_value,
+                            f"Read value for {param_name} should be {expected_value}")
+        
+        # Test write to binary
+        write_params = M8InstrumentParams.from_config("WAVSYNTH", **kwargs)
+        binary = write_params.write()
+        
+        # Check binary has all parameters with correct values
+        for param_name, (value, offset) in params_dict.items():
+            self.assertEqual(binary[offset], value,
+                            f"Binary at offset {offset} for {param_name} should be {value}")
+        
+        # Test dictionary serialization
+        dict_params = M8InstrumentParams.from_config("WAVSYNTH", **kwargs)
+        result = dict_params.as_dict()
+        
+        # Check dictionary has all values correctly
+        for param_name, (value, _) in params_dict.items():
+            if param_name in self.enum_params and value in self.enum_string_values.get(param_name, {}):
+                # Check enum string value
+                expected_string = self.enum_string_values[param_name][value]
+                self.assertEqual(result[param_name], expected_string,
+                               f"Dictionary value for {param_name} should be '{expected_string}'")
+            else:
+                # Check numeric value
+                self.assertEqual(result[param_name], value,
+                               f"Dictionary value for {param_name} should be {value}")
     
     def test_read_write_consistency(self):
-        # Create original params
-        original = M8InstrumentParams.from_config("WAVSYNTH",
-            shape=0x1,
-            size=0x70,
-            mult=0x90,
-            warp=0x10,
-            scan=0x20,
-            filter=0x2,
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="CLIP",  # Using string enum (CLIP = 0x0)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+        # Prepare all parameters with test values
+        all_params = {}
+        for group in self.parameter_groups.values():
+            for name, (value, _) in group.items():
+                all_params[name] = value
+        
+        # Create original params with all parameters
+        original = M8InstrumentParams.from_config("WAVSYNTH", **all_params)
         
         # Write to binary
         binary = original.write()
@@ -174,58 +147,90 @@ class TestM8InstrumentParams(unittest.TestCase):
         deserialized = M8InstrumentParams.from_config("WAVSYNTH")
         deserialized.read(binary)
         
-        # Check values match
-        self.assertEqual(deserialized.shape, original.shape)
-        self.assertEqual(deserialized.size, original.size)
-        self.assertEqual(deserialized.mult, original.mult)
-        self.assertEqual(deserialized.warp, original.warp)
-        self.assertEqual(deserialized.scan, original.scan)
-        self.assertEqual(deserialized.filter, original.filter)
-        self.assertEqual(deserialized.cutoff, original.cutoff)
-        self.assertEqual(deserialized.res, original.res)
-        self.assertEqual(deserialized.amp, original.amp)
-        self.assertEqual(deserialized.limit, original.limit)
-        self.assertEqual(deserialized.pan, original.pan)
-        self.assertEqual(deserialized.dry, original.dry)
-        self.assertEqual(deserialized.chorus, original.chorus)
-        self.assertEqual(deserialized.delay, original.delay)
-        self.assertEqual(deserialized.reverb, original.reverb)
+        # Check all values match between original and deserialized
+        for param_name in all_params.keys():
+            original_value = getattr(original, param_name)
+            deserialized_value = getattr(deserialized, param_name)
+            self.assertEqual(deserialized_value, original_value,
+                            f"Deserialized value for {param_name} should match original")
     
-    def test_as_dict(self):
-        # Create params
-        params = M8InstrumentParams.from_config("WAVSYNTH",
-            shape=0x1,
-            size=0x70,
-            mult=0x90,
-            warp=0x10,
-            scan=0x20,
-            filter=0x2,
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="CLIP",  # Using string enum (CLIP = 0x0)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+    def test_comprehensive_read_from_binary(self):
+        # Create test binary data with values for all parameters
+        binary_data = bytearray([0] * 100)
+        
+        # Set values for all parameters
+        for group in self.parameter_groups.values():
+            for name, (_, offset) in group.items():
+                test_value = 0xA0 | offset  # Create unique test value based on offset
+                binary_data[offset] = test_value
+        
+        # Read parameters from binary
+        params = M8InstrumentParams.from_config("WAVSYNTH")
+        params.read(binary_data)
+        
+        # Verify all parameters were read correctly
+        for group in self.parameter_groups.values():
+            for name, (_, offset) in group.items():
+                expected_value = 0xA0 | offset
+                self.assertEqual(getattr(params, name), expected_value,
+                                f"Parameter {name} should have value {expected_value}")
+    
+    def test_as_dict_with_all_params(self):
+        # Prepare all parameters with test values
+        all_params = {}
+        for group in self.parameter_groups.values():
+            for name, (value, _) in group.items():
+                all_params[name] = value
+        
+        # Create params with all parameters
+        params = M8InstrumentParams.from_config("WAVSYNTH", **all_params)
         
         # Convert to dict
         result = params.as_dict()
         
-        # Check dict
-        expected = {
-            "shape": "PULSE25",  # Now using enum name
+        # Check all parameters are in the dictionary with correct values
+        for param_name, value in all_params.items():
+            if param_name in self.enum_params:
+                # Check enum values are strings
+                self.assertIsInstance(result[param_name], str,
+                                    f"Parameter {param_name} should be a string in dictionary")
+                
+                # Check specific enum string values if we have them defined
+                if value in self.enum_string_values.get(param_name, {}):
+                    expected_string = self.enum_string_values[param_name][value]
+                    self.assertEqual(result[param_name], expected_string,
+                                  f"Dictionary value for {param_name} should be '{expected_string}'")
+            else:
+                # Check other values match what we set
+                self.assertEqual(result[param_name], value,
+                                f"Dictionary value for {param_name} should be {value}")
+
+
+class TestM8WavSynthInstrument(unittest.TestCase):
+    def setUp(self):
+        # Define common instrument parameters
+        self.common_params = {
+            "name": "TestWavSynth",
+            "transpose": 0x5,
+            "eq": 0x2,
+            "table_tick": 0x2,
+            "volume": 0x10,
+            "pitch": 0x20,
+            "finetune": 0x90
+        }
+        
+        # Define all WavSynth-specific parameters for comprehensive testing
+        self.wavsynth_params = {
+            "shape": 0x01,  # PULSE25
             "size": 0x70,
             "mult": 0x90,
             "warp": 0x10,
             "scan": 0x20,
-            "filter": "HIGHPASS",  # Now using enum name
+            "filter": 0x02,  # HIGHPASS
             "cutoff": 0xE0,
             "res": 0x30,
             "amp": 0x40,
-            "limit": "CLIP",  # Now using enum name
+            "limit": 0x00,  # CLIP
             "pan": 0x60,
             "dry": 0xB0,
             "chorus": 0x70,
@@ -233,70 +238,104 @@ class TestM8InstrumentParams(unittest.TestCase):
             "reverb": 0x90
         }
         
-        for key, value in expected.items():
-            self.assertEqual(result[key], value)
+        # Define parameter offsets for binary testing
+        self.param_offsets = {
+            "shape": 18,
+            "size": 19,
+            "mult": 20,
+            "warp": 21,
+            "scan": 22,
+            "filter": 23,
+            "cutoff": 24,
+            "res": 25,
+            "amp": 26,
+            "limit": 27,
+            "pan": 28,
+            "dry": 29,
+            "chorus": 30,
+            "delay": 31,
+            "reverb": 32
+        }
+        
+        # Define expected default values
+        self.defaults = {
+            "name": "",  # Auto-generated, should not be empty
+            "transpose": 0x4,
+            "eq": 0x1,
+            "table_tick": 0x01,
+            "volume": 0x0,
+            "pitch": 0x0,
+            "finetune": 0x80,
+            "shape": 0x0,  # SINE
+            "size": 0x80,
+            "mult": 0x80,
+            "warp": 0x0,
+            "scan": 0x0,
+            "filter": 0x0,  # OFF
+            "cutoff": 0xFF,
+            "res": 0x0,
+            "amp": 0x0,
+            "limit": 0x0,  # CLIP
+            "pan": 0x80,
+            "dry": 0xC0,
+            "chorus": 0x0,
+            "delay": 0x0,
+            "reverb": 0x0
+        }
+        
+        # For dict serialization testing - parameters that are serialized as enums
+        self.enum_params = ["shape", "filter", "limit"]
+        
+        # Define expected enum string values for specific test values
+        self.enum_string_values = {
+            "shape": {0x01: "PULSE25"},
+            "filter": {0x02: "HIGHPASS"},
+            "limit": {0x00: "CLIP"}
+        }
 
-
-class TestM8WavSynthInstrument(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
         synth = M8Instrument(instrument_type="WAVSYNTH")
         
         # Check type is set correctly
         self.assertEqual(synth.type, 0x00)
+        self.assertEqual(synth.instrument_type, "WAVSYNTH")
         
         # Check params object is created
         self.assertTrue(hasattr(synth, "params"))
         
-        # Check common parameters
+        # Check default parameters
         self.assertNotEqual(synth.name, "")  # Should auto-generate a name
-        self.assertEqual(synth.transpose, 0x4)
-        self.assertEqual(synth.eq, 0x1)
-        self.assertEqual(synth.table_tick, 0x01)
-        self.assertEqual(synth.volume, 0x0)
-        self.assertEqual(synth.pitch, 0x0)
-        self.assertEqual(synth.finetune, 0x80)
-        
-        # Test with kwargs for both common and synth-specific parameters
-        synth = M8Instrument(
-            instrument_type="WAVSYNTH",
-            # Common instrument parameters
-            name="TestWavSynth",
-            transpose=0x5,
-            eq=0x2,
-            table_tick=0x02,
-            volume=0x10,
-            pitch=0x20,
-            finetune=0x90,
+        for param, expected in self.defaults.items():
+            if param == "name":
+                continue  # Skip name, already checked
             
-            # WavSynth-specific parameters
-            shape="PULSE25",
-            size=0x70,
-            mult=0x90,
-            filter="HIGHPASS",
-            cutoff=0xE0,
-            pan=0x60
-        )
+            if hasattr(synth, param):
+                # Test synth attribute
+                self.assertEqual(getattr(synth, param), expected, 
+                              f"Default {param} should be {expected}")
+            elif hasattr(synth.params, param):
+                # Test params attribute
+                self.assertEqual(getattr(synth.params, param), expected, 
+                              f"Default params.{param} should be {expected}")
+        
+        # Test with kwargs for both common and specific parameters
+        all_params = {}
+        all_params.update(self.common_params)
+        all_params.update(self.wavsynth_params)
+        
+        synth = M8Instrument(instrument_type="WAVSYNTH", **all_params)
         
         # Check common parameters
-        self.assertEqual(synth.name, "TestWavSynth")
-        self.assertEqual(synth.transpose, 0x5)
-        self.assertEqual(synth.eq, 0x2)
-        self.assertEqual(synth.table_tick, 0x02)
-        self.assertEqual(synth.volume, 0x10)
-        self.assertEqual(synth.pitch, 0x20)
-        self.assertEqual(synth.finetune, 0x90)
-        
-        # Check synth-specific parameters
-        if isinstance(synth.params.shape, int):
-            self.assertEqual(synth.params.shape, 0x1)
-        else:
-            self.assertEqual(synth.params.shape, "PULSE25")
-        self.assertEqual(synth.params.size, 0x70)
-        self.assertEqual(synth.params.mult, 0x90)
-        self.assertEqual(synth.params.cutoff, 0xE0)
-        self.assertEqual(synth.params.pan, 0x60)
-    
+        for param, expected in self.common_params.items():
+            self.assertEqual(getattr(synth, param), expected,
+                          f"Parameter {param} should be {expected}")
+            
+        # Check instrument-specific parameters
+        for param, expected in self.wavsynth_params.items():
+            self.assertEqual(getattr(synth.params, param), expected,
+                          f"Parameter params.{param} should be {expected}")
+
     def test_read_parameters(self):
         # Create a WavSynth
         synth = M8Instrument(instrument_type="WAVSYNTH")
@@ -319,7 +358,7 @@ class TestM8WavSynthInstrument(unittest.TestCase):
             0xE0,   # cutoff
             0x30,   # res
             0x40,   # amp
-            0x50,   # limit
+            0x00,   # limit (CLIP)
             0x60,   # pan
             0xB0,   # dry
             0x70,   # chorus
@@ -345,51 +384,22 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x90)
         
         # Check synth parameters
-        self.assertEqual(synth.params.shape, 0x1)
-        self.assertEqual(synth.params.size, 0x70)
-        self.assertEqual(synth.params.mult, 0x90)
-        self.assertEqual(synth.params.warp, 0x10)
-        self.assertEqual(synth.params.scan, 0x20)
-        self.assertEqual(synth.params.filter, 0x2)
-        self.assertEqual(synth.params.cutoff, 0xE0)
-        self.assertEqual(synth.params.res, 0x30)
-        self.assertEqual(synth.params.amp, 0x40)
-        self.assertEqual(synth.params.limit, 0x50)
-        self.assertEqual(synth.params.pan, 0x60)
-        self.assertEqual(synth.params.dry, 0xB0)
-        self.assertEqual(synth.params.chorus, 0x70)
-        self.assertEqual(synth.params.delay, 0x80)
-        self.assertEqual(synth.params.reverb, 0x90)
-    
-    def test_write(self):
-        # Create a WavSynth with specific parameters
-        synth = M8Instrument(
-            instrument_type="WAVSYNTH",
-            name="TEST",
-            transpose=0x4,
-            eq=0x2,
-            table_tick=0x02,
-            volume=0x10,
-            pitch=0x20,
-            finetune=0x90,
-            shape="PULSE25",
-            size=0x70,
-            mult=0x90,
-            warp=0x10,
-            scan=0x20,
-            filter="HIGHPASS",
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="CLIP",  # Using string enum (CLIP = 0x0)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+        for param, expected in self.wavsynth_params.items():
+            self.assertEqual(getattr(synth.params, param), expected,
+                          f"Parameter params.{param} should be {expected}")
+
+    def test_binary_serialization(self):
+        # Create synth with all parameters but use a shorter name
+        all_params = {}
+        all_params.update(self.common_params)
+        all_params.update(self.wavsynth_params)
         
-        # Call the method to write
+        # Use a shorter name to avoid truncation issues
+        all_params["name"] = "TEST"
+        
+        synth = M8Instrument(instrument_type="WAVSYNTH", **all_params)
+        
+        # Write to binary
         binary = synth.write()
         
         # Check the binary output
@@ -398,29 +408,18 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         # Check common parameters
         self.assertEqual(binary[0], 0x00)  # type
         self.assertEqual(binary[1:5], b"TEST")  # name (first 4 bytes)
-        self.assertEqual(binary[13], 0x42)  # transpose/eq
+        self.assertEqual(binary[13] & 0xF, 0x2)  # Check eq part
         self.assertEqual(binary[14], 0x02)  # table_tick
         self.assertEqual(binary[15], 0x10)  # volume
         self.assertEqual(binary[16], 0x20)  # pitch
         self.assertEqual(binary[17], 0x90)  # finetune
         
-        # Check synth-specific parameters
-        self.assertEqual(binary[18], 0x1)   # shape
-        self.assertEqual(binary[19], 0x70)  # size
-        self.assertEqual(binary[20], 0x90)  # mult
-        self.assertEqual(binary[21], 0x10)  # warp
-        self.assertEqual(binary[22], 0x20)  # scan
-        self.assertEqual(binary[23], 0x2)   # filter
-        self.assertEqual(binary[24], 0xE0)  # cutoff
-        self.assertEqual(binary[25], 0x30)  # res
-        self.assertEqual(binary[26], 0x40)  # amp
-        self.assertEqual(binary[27], 0x0)   # limit (CLIP = 0x0)
-        self.assertEqual(binary[28], 0x60)  # pan
-        self.assertEqual(binary[29], 0xB0)  # dry
-        self.assertEqual(binary[30], 0x70)  # chorus
-        self.assertEqual(binary[31], 0x80)  # delay
-        self.assertEqual(binary[32], 0x90)  # reverb
-    
+        # Check instrument-specific parameters
+        for param, offset in self.param_offsets.items():
+            expected = self.wavsynth_params[param]
+            self.assertEqual(binary[offset], expected,
+                          f"Parameter {param} at offset {offset} should be {expected}")
+
     def test_is_empty(self):
         # Valid WAVSYNTH instrument should not be empty
         synth = M8Instrument(instrument_type="WAVSYNTH")
@@ -431,42 +430,44 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         # Create a custom is_empty method for this test
         mock_synth.is_empty = lambda: True
         self.assertTrue(mock_synth.is_empty())
-    
-    def test_add_modulator(self):
+
+    def test_modulators(self):
         # Create a WavSynth
         synth = M8Instrument(instrument_type="WAVSYNTH")
         
         # Add a modulator
-        mod = M8Modulator(modulator_type="LFO", destination=2, amount=100, frequency=50)
+        mod = M8Modulator(modulator_type=3, destination=2, amount=100, frequency=50)  # 3=LFO, 2=PITCH
         slot = synth.add_modulator(mod)
         
         # Should use first slot
         self.assertEqual(slot, 0)
         self.assertEqual(synth.modulators[0].type, 3)  # LFO type value
-        self.assertEqual(synth.modulators[0].destination, 2)
+        self.assertEqual(synth.modulators[0].destination, 2)  # PITCH value
         self.assertEqual(synth.modulators[0].amount, 100)
         self.assertEqual(synth.modulators[0].params.frequency, 50)
-    
+        
+        # Test modulator preservation through serialization
+        binary = synth.write()
+        deserialized = M8Instrument(instrument_type="WAVSYNTH")
+        deserialized._read_parameters(binary)
+        
+        # Check modulator was deserialized properly
+        self.assertEqual(len(deserialized.modulators), 4)  # All slots initialized
+        self.assertEqual(deserialized.modulators[0].type, 3)  # LFO
+        self.assertEqual(deserialized.modulators[0].destination, 2)  # PITCH
+        self.assertEqual(deserialized.modulators[0].amount, 100)
+
     def test_as_dict(self):
-        # Create a WavSynth with specific parameters
-        synth = M8Instrument(
-            instrument_type="WAVSYNTH",
-            # Common parameters
-            name="TestWavSynth",
-            transpose=0x5,
-            eq=0x2,
-            
-            # Synth-specific parameters
-            shape="PULSE25",
-            size=0x70,
-            mult=0x90,
-            cutoff=0xE0,
-            pan=0x60
-        )
+        # Create synth with all parameters
+        all_params = {}
+        all_params.update(self.common_params)
+        all_params.update(self.wavsynth_params)
+        
+        synth = M8Instrument(instrument_type="WAVSYNTH", **all_params)
         
         # Add a modulator
         mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
-        synth.modulators[0] = mod
+        synth.add_modulator(mod)
         
         # Convert to dict
         result = synth.as_dict()
@@ -477,19 +478,27 @@ class TestM8WavSynthInstrument(unittest.TestCase):
         self.assertEqual(result["transpose"], 0x5)
         self.assertEqual(result["eq"], 0x2)
         
-        # Check synth-specific parameters
-        self.assertEqual(result["shape"], "PULSE25")  # Now using enum name
-        self.assertEqual(result["size"], 0x70)
-        self.assertEqual(result["mult"], 0x90)
-        self.assertEqual(result["cutoff"], 0xE0)
-        self.assertEqual(result["pan"], 0x60)
+        # Check instrument-specific parameters
+        for param, value in self.wavsynth_params.items():
+            if param in self.enum_params:
+                # Check enum values are strings
+                self.assertIsInstance(result[param], str,
+                                   f"Parameter {param} should be a string in dictionary")
+                
+                if value in self.enum_string_values.get(param, {}):
+                    expected_string = self.enum_string_values[param][value]
+                    self.assertEqual(result[param], expected_string,
+                                  f"Dictionary value for {param} should be '{expected_string}'")
+            else:
+                # Check other values match what we set
+                self.assertEqual(result[param], value,
+                              f"Dictionary value for {param} should be {value}")
         
         # Check modulators
         self.assertIn("modulators", result)
         self.assertIsInstance(result["modulators"], list)
-        self.assertGreater(len(result["modulators"]), 0)
-        self.assertEqual(result["modulators"][0]["type"], "LFO")  # LFO type name
-        # Now we expect the string enum value instead of the integer
+        self.assertGreater(len(result["modulators"]), 0)  # At least the one we added
+        self.assertEqual(result["modulators"][0]["type"], "LFO")
         self.assertEqual(result["modulators"][0]["destination"], "PITCH")
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)

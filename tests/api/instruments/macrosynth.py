@@ -3,165 +3,141 @@ from m8.api.instruments import M8InstrumentParams, M8Instrument
 from m8.api.modulators import M8Modulator, M8ModulatorType
 
 class TestM8MacroSynthParams(unittest.TestCase):
+    def setUp(self):
+        # Define parameter groups for easier testing
+        self.parameter_groups = {
+            "wave_params": {
+                "shape": (0x01, 18),  # (test_value, binary_offset) - MORPH
+                "timbre": (0x70, 19),
+                "color": (0x90, 20),
+                "degrade": (0x10, 21),
+                "redux": (0x20, 22)
+            },
+            "filter_params": {
+                "filter": (0x02, 23),  # HIGHPASS
+                "cutoff": (0xE0, 24),
+                "res": (0x30, 25)
+            },
+            "amp_params": {
+                "amp": (0x40, 26),
+                "limit": (0x02, 27),  # FOLD
+                "pan": (0x60, 28)
+            },
+            "fx_params": {
+                "dry": (0xB0, 29),
+                "chorus": (0x70, 30),
+                "delay": (0x80, 31),
+                "reverb": (0x90, 32)
+            }
+        }
+        
+        # Define expected default values
+        self.default_values = {
+            "shape": 0x0,
+            "timbre": 0x80,
+            "color": 0x80,
+            "degrade": 0x0,
+            "redux": 0x0,
+            "filter": 0x0,
+            "cutoff": 0xFF,
+            "res": 0x0,
+            "amp": 0x0,
+            "limit": 0x0,  # Default is CLIP = 0x0
+            "pan": 0x80,
+            "dry": 0xC0,
+            "chorus": 0x0,
+            "delay": 0x0,
+            "reverb": 0x0
+        }
+        
+        # Define parameters that are serialized as enums in dictionaries
+        self.enum_params = ["shape", "filter", "limit"]
+        
+        # Define expected enum string values for specific test values
+        self.enum_string_values = {
+            "shape": {0x01: "MORPH"},
+            "filter": {0x02: "HIGHPASS"},
+            "limit": {0x02: "FOLD"}
+        }
+        
+        # Create a flattened test values dict for convenience
+        self.test_values = {}
+        for group, params in self.parameter_groups.items():
+            for param, (value, _) in params.items():
+                self.test_values[param] = value
+    
     def test_constructor_and_defaults(self):
         # Test default constructor
         params = M8InstrumentParams.from_config("MACROSYNTH")
         
         # Check defaults for key parameters
-        self.assertEqual(params.shape, 0x0)
-        self.assertEqual(params.timbre, 0x80)
-        self.assertEqual(params.color, 0x80)
-        self.assertEqual(params.degrade, 0x0)
-        self.assertEqual(params.redux, 0x0)
-        self.assertEqual(params.filter, 0x0)
-        self.assertEqual(params.cutoff, 0xFF)
-        self.assertEqual(params.res, 0x0)
-        self.assertEqual(params.amp, 0x0)
-        self.assertEqual(params.limit, 0x0)  # Default is CLIP = 0x0
-        self.assertEqual(params.pan, 0x80)
-        self.assertEqual(params.dry, 0xC0)
-        self.assertEqual(params.chorus, 0x0)
-        self.assertEqual(params.delay, 0x0)
-        self.assertEqual(params.reverb, 0x0)
+        for param, expected in self.default_values.items():
+            self.assertEqual(getattr(params, param), expected, 
+                          f"Default for {param} should be {expected}")
         
         # Test with kwargs
-        params = M8InstrumentParams.from_config("MACROSYNTH",
-            shape="MORPH",  # Using string enum value
-            timbre=0x70,
-            color=0x90,
-            degrade=0x10,
-            redux=0x20,
-            filter="HIGHPASS",  # Using string enum value
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="FOLD",  # Using string enum value (FOLD = 0x2)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+        test_kwargs = {param: value for param, value in self.test_values.items()}
+        # Convert enum values to string representation for test
+        for param in self.enum_params:
+            value = test_kwargs[param]
+            test_kwargs[param] = self.enum_string_values[param][value]
+        
+        params = M8InstrumentParams.from_config("MACROSYNTH", **test_kwargs)
         
         # Check values
-        self.assertEqual(params.shape, 0x1)
-        self.assertEqual(params.timbre, 0x70)
-        self.assertEqual(params.color, 0x90)
-        self.assertEqual(params.degrade, 0x10)
-        self.assertEqual(params.redux, 0x20)
-        self.assertEqual(params.filter, 0x2)
-        self.assertEqual(params.cutoff, 0xE0)
-        self.assertEqual(params.res, 0x30)
-        self.assertEqual(params.amp, 0x40)
-        self.assertEqual(params.limit, 0x2)  # FOLD = 0x2
-        self.assertEqual(params.pan, 0x60)
-        self.assertEqual(params.dry, 0xB0)
-        self.assertEqual(params.chorus, 0x70)
-        self.assertEqual(params.delay, 0x80)
-        self.assertEqual(params.reverb, 0x90)
+        for param, expected in self.test_values.items():
+            self.assertEqual(getattr(params, param), expected,
+                          f"Parameter {param} should be {expected}")
     
     def test_read_from_binary(self):
         # Create test binary data
-        # We need at least 33 bytes for the full parameter set
         binary_data = bytearray([0] * 18)  # First 18 bytes are not used by MacroSynthParams
-        binary_data.extend([
-            0x01,   # shape (offset 18)
-            0x70,   # timbre (offset 19)
-            0x90,   # color (offset 20)
-            0x10,   # degrade (offset 21)
-            0x20,   # redux (offset 22)
-            0x02,   # filter (offset 23)
-            0xE0,   # cutoff (offset 24)
-            0x30,   # res (offset 25)
-            0x40,   # amp (offset 26)
-            0x2,   # limit (offset 27/28) - FOLD = 0x2 - FOLD = 0x2
-            0x60,   # pan (offset 28)
-            0xB0,   # dry (offset 29)
-            0x70,   # chorus (offset 30)
-            0x80,   # delay (offset 31)
-            0x90    # reverb (offset 32)
-        ])
+        
+        # Extend with test values from parameter groups
+        for group, params in self.parameter_groups.items():
+            for param, (value, offset) in params.items():
+                # Ensure binary data is long enough
+                while len(binary_data) <= offset:
+                    binary_data.append(0)
+                binary_data[offset] = value
         
         # Read from binary
         params = M8InstrumentParams.from_config("MACROSYNTH")
         params.read(binary_data)
         
-        # Check values
-        self.assertEqual(params.shape, 0x1)
-        self.assertEqual(params.timbre, 0x70)
-        self.assertEqual(params.color, 0x90)
-        self.assertEqual(params.degrade, 0x10)
-        self.assertEqual(params.redux, 0x20)
-        self.assertEqual(params.filter, 0x2)
-        self.assertEqual(params.cutoff, 0xE0)
-        self.assertEqual(params.res, 0x30)
-        self.assertEqual(params.amp, 0x40)
-        self.assertEqual(params.limit, 0x2)  # FOLD = 0x2
-        self.assertEqual(params.pan, 0x60)
-        self.assertEqual(params.dry, 0xB0)
-        self.assertEqual(params.chorus, 0x70)
-        self.assertEqual(params.delay, 0x80)
-        self.assertEqual(params.reverb, 0x90)
+        # Check all parameters were read correctly
+        for param, expected in self.test_values.items():
+            self.assertEqual(getattr(params, param), expected,
+                          f"Parameter {param} should be {expected}")
     
     def test_write_to_binary(self):
-        # Create params with specific values
-        params = M8InstrumentParams.from_config("MACROSYNTH",
-            shape=0x1,
-            timbre=0x70,
-            color=0x90,
-            degrade=0x10,
-            redux=0x20,
-            filter=0x2,
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="FOLD",  # Using string enum (FOLD = 0x2)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+        # Create params with test values
+        test_kwargs = {param: value for param, value in self.test_values.items()}
+        # Convert enum values to string representation for test
+        for param in self.enum_params:
+            value = test_kwargs[param]
+            test_kwargs[param] = self.enum_string_values[param][value]
+        
+        params = M8InstrumentParams.from_config("MACROSYNTH", **test_kwargs)
         
         # Write to binary
         binary = params.write()
         
-        # Check specific values for MacroSynth parameters
-        self.assertEqual(binary[18], 0x1)   # shape
-        self.assertEqual(binary[19], 0x70)  # timbre
-        self.assertEqual(binary[20], 0x90)  # color
-        self.assertEqual(binary[21], 0x10)  # degrade
-        self.assertEqual(binary[22], 0x20)  # redux
-        self.assertEqual(binary[23], 0x2)   # filter
-        self.assertEqual(binary[24], 0xE0)  # cutoff
-        self.assertEqual(binary[25], 0x30)  # res
-        self.assertEqual(binary[26], 0x40)  # amp
-        self.assertEqual(binary[27], 0x2)   # limit (FOLD = 0x2)
-        self.assertEqual(binary[28], 0x60)  # pan
-        self.assertEqual(binary[29], 0xB0)  # dry
-        self.assertEqual(binary[30], 0x70)  # chorus
-        self.assertEqual(binary[31], 0x80)  # delay
-        self.assertEqual(binary[32], 0x90)  # reverb
+        # Check specific values in binary output
+        for group, group_params in self.parameter_groups.items():
+            for param, (value, offset) in group_params.items():
+                self.assertEqual(binary[offset], value,
+                              f"Binary at offset {offset} for {param} should be {value}")
     
     def test_read_write_consistency(self):
-        # Create original params
-        original = M8InstrumentParams.from_config("MACROSYNTH",
-            shape=0x1,
-            timbre=0x70,
-            color=0x90,
-            degrade=0x10,
-            redux=0x20,
-            filter=0x2,
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="FOLD",  # Using string enum (FOLD = 0x2)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+        # Create params with test values
+        test_kwargs = {param: value for param, value in self.test_values.items()}
+        # Convert enum values to string representation for test
+        for param in self.enum_params:
+            value = test_kwargs[param]
+            test_kwargs[param] = self.enum_string_values[param][value]
+        
+        original = M8InstrumentParams.from_config("MACROSYNTH", **test_kwargs)
         
         # Write to binary
         binary = original.write()
@@ -170,107 +146,118 @@ class TestM8MacroSynthParams(unittest.TestCase):
         deserialized = M8InstrumentParams.from_config("MACROSYNTH")
         deserialized.read(binary)
         
-        # Check values match
-        self.assertEqual(deserialized.shape, original.shape)
-        self.assertEqual(deserialized.timbre, original.timbre)
-        self.assertEqual(deserialized.color, original.color)
-        self.assertEqual(deserialized.degrade, original.degrade)
-        self.assertEqual(deserialized.redux, original.redux)
-        self.assertEqual(deserialized.filter, original.filter)
-        self.assertEqual(deserialized.cutoff, original.cutoff)
-        self.assertEqual(deserialized.res, original.res)
-        self.assertEqual(deserialized.amp, original.amp)
-        self.assertEqual(deserialized.limit, original.limit)
-        self.assertEqual(deserialized.pan, original.pan)
-        self.assertEqual(deserialized.dry, original.dry)
-        self.assertEqual(deserialized.chorus, original.chorus)
-        self.assertEqual(deserialized.delay, original.delay)
-        self.assertEqual(deserialized.reverb, original.reverb)
+        # Check all values match
+        for param in self.test_values.keys():
+            self.assertEqual(getattr(deserialized, param), getattr(original, param),
+                          f"Parameter {param} should match after read/write")
     
-    def test_as_dict(self):
-        # Create params
-        params = M8InstrumentParams.from_config("MACROSYNTH",
-            shape=0x1,  # MORPH
-            timbre=0x70,
-            color=0x90,
-            degrade=0x10,
-            redux=0x20,
-            filter=0x2,
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="FOLD",  # Using string enum (FOLD = 0x2)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+    def test_dictionary_serialization(self):
+        # Create params with test values
+        test_kwargs = {param: value for param, value in self.test_values.items()}
+        # Convert enum values to string representation for test
+        for param in self.enum_params:
+            value = test_kwargs[param]
+            test_kwargs[param] = self.enum_string_values[param][value]
+        
+        params = M8InstrumentParams.from_config("MACROSYNTH", **test_kwargs)
         
         # Convert to dict
         result = params.as_dict()
         
-        # Check dict with shape as enum name
-        expected = {
-            "shape": "MORPH",  # Enum name instead of 0x1
-            "timbre": 0x70,
-            "color": 0x90,
-            "degrade": 0x10,
-            "redux": 0x20,
-            "filter": "HIGHPASS",  # Now using enum name
-            "cutoff": 0xE0,
-            "res": 0x30,
-            "amp": 0x40,
-            "limit": "FOLD",  # Now using enum name
-            "pan": 0x60,
-            "dry": 0xB0,
-            "chorus": 0x70,
-            "delay": 0x80,
-            "reverb": 0x90
-        }
+        # Check dict values
+        for param, value in self.test_values.items():
+            expected = value
+            # For enum parameters, we expect the string representation
+            if param in self.enum_params:
+                expected = self.enum_string_values[param][value]
+            self.assertEqual(result[param], expected,
+                          f"Dict value for {param} should be {expected}")
         
-        for key, value in expected.items():
-            self.assertEqual(result[key], value)
-    
-    def test_from_dict(self):
-        # Test data with shape and filter as enum names
-        data = {
-            "shape": "MORPH",  # Enum name instead of 0x1
-            "timbre": 0x70,
-            "color": 0x90,
-            "degrade": 0x10,
-            "redux": 0x20,
-            "filter": "HIGHPASS",  # Enum name instead of 0x2
-            "cutoff": 0xE0,
-            "res": 0x30,
-            "amp": 0x40,
-            "limit": "FOLD",  # Now using enum name
-            "pan": 0x60,
-            "dry": 0xB0,
-            "chorus": 0x70,
-            "delay": 0x80,
-            "reverb": 0x90
-        }
+        # Test from_dict
+        # Create a new dict with string enum values
+        dict_data = {param: value for param, value in self.test_values.items()}
+        for param in self.enum_params:
+            dict_data[param] = self.enum_string_values[param][dict_data[param]]
         
-        # Create from dict
-        params = M8InstrumentParams.from_dict("MACROSYNTH", data)
+        # Create params from dict
+        from_dict_params = M8InstrumentParams.from_dict("MACROSYNTH", dict_data)
         
-        # String enum values are now converted to integers
-        expected_values = data.copy()
-        # Update expected enum values for proper internal representation
-        if "shape" in expected_values and expected_values["shape"] == "MORPH":
-            expected_values["shape"] = 1  # MORPH enum value
-        if "filter" in expected_values and expected_values["filter"] == "HIGHPASS":
-            expected_values["filter"] = 2  # HIGHPASS enum value  
-        if "limit" in expected_values and expected_values["limit"] == "FOLD":
-            expected_values["limit"] = 2  # FOLD enum value
-        
-        # Check values
-        for key, value in expected_values.items():
-            self.assertEqual(getattr(params, key), value)
+        # Check all values match the expected test values
+        for param, expected in self.test_values.items():
+            self.assertEqual(getattr(from_dict_params, param), expected,
+                          f"Parameter {param} should be {expected} after from_dict")
 
 
 class TestM8MacroSynth(unittest.TestCase):
+    def setUp(self):
+        # Common instrument parameters for testing
+        self.common_params = {
+            "name": "TestMacroSynth",
+            "transpose": 0x5,
+            "eq": 0x2,
+            "table_tick": 0x02,
+            "volume": 0x10,
+            "pitch": 0x20,
+            "finetune": 0x90
+        }
+        
+        # Synth-specific parameters
+        self.synth_params = {
+            "shape": "MORPH",  # Using string enum
+            "timbre": 0x70,
+            "color": 0x90,
+            "degrade": 0x10,
+            "redux": 0x20,
+            "filter": "HIGHPASS",  # Using string enum
+            "cutoff": 0xE0,
+            "res": 0x30,
+            "amp": 0x40,
+            "limit": "FOLD",  # Using string enum
+            "pan": 0x60,
+            "dry": 0xB0,
+            "chorus": 0x70,
+            "delay": 0x80,
+            "reverb": 0x90
+        }
+        
+        # Expected binary values for parameters
+        self.binary_offsets = {
+            "shape": 18,
+            "timbre": 19,
+            "color": 20,
+            "degrade": 21,
+            "redux": 22,
+            "filter": 23,
+            "cutoff": 24,
+            "res": 25,
+            "amp": 26,
+            "limit": 27,
+            "pan": 28,
+            "dry": 29,
+            "chorus": 30,
+            "delay": 31,
+            "reverb": 32
+        }
+        
+        # Expected binary values (after enum resolution)
+        self.binary_values = {
+            "shape": 0x01,  # MORPH
+            "timbre": 0x70,
+            "color": 0x90,
+            "degrade": 0x10,
+            "redux": 0x20,
+            "filter": 0x02,  # HIGHPASS
+            "cutoff": 0xE0,
+            "res": 0x30,
+            "amp": 0x40,
+            "limit": 0x02,  # FOLD
+            "pan": 0x60,
+            "dry": 0xB0,
+            "chorus": 0x70,
+            "delay": 0x80,
+            "reverb": 0x90
+        }
+    
     def test_constructor_and_defaults(self):
         # Test default constructor
         synth = M8Instrument(instrument_type="MACROSYNTH")
@@ -291,44 +278,31 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(synth.finetune, 0x80)
         
         # Test with kwargs for both common and specific parameters
-        synth = M8Instrument(
-            instrument_type="MACROSYNTH",
-            # Common instrument parameters
-            name="TestMacroSynth",
-            transpose=0x5,
-            eq=0x2,
-            table_tick=0x02,
-            volume=0x10,
-            pitch=0x20,
-            finetune=0x90,
-            
-            # MacroSynth-specific parameters with string enum values
-            shape="MORPH",
-            timbre=0x70,
-            color=0x90,
-            filter="HIGHPASS",
-            cutoff=0xE0,
-            pan=0x60
-        )
+        kwargs = {**self.common_params, **self.synth_params}
+        synth = M8Instrument(instrument_type="MACROSYNTH", **kwargs)
         
         # Check common parameters
-        self.assertEqual(synth.name, "TestMacroSynth")
-        self.assertEqual(synth.transpose, 0x5)
-        self.assertEqual(synth.eq, 0x2)
-        self.assertEqual(synth.table_tick, 0x02)
-        self.assertEqual(synth.volume, 0x10)
-        self.assertEqual(synth.pitch, 0x20)
-        self.assertEqual(synth.finetune, 0x90)
+        for param, expected in self.common_params.items():
+            self.assertEqual(getattr(synth, param), expected,
+                          f"Common parameter {param} should be {expected}")
         
         # Check synth-specific parameters
-        if isinstance(synth.params.shape, int):
-            self.assertEqual(synth.params.shape, 0x1)
-        else:
-            self.assertEqual(synth.params.shape, "MORPH")
-        self.assertEqual(synth.params.timbre, 0x70)
-        self.assertEqual(synth.params.color, 0x90)
-        self.assertEqual(synth.params.cutoff, 0xE0)
-        self.assertEqual(synth.params.pan, 0x60)
+        for param, expected in self.synth_params.items():
+            param_value = getattr(synth.params, param)
+            
+            # For enum parameters, we need to handle both integer and string representations
+            if param in ["shape", "filter", "limit"]:
+                expected_value = self.binary_values[param]
+                # Some versions might return string, others might return int
+                if isinstance(param_value, str):
+                    self.assertEqual(param_value, expected,
+                                  f"Parameter {param} should be {expected}")
+                else:
+                    self.assertEqual(param_value, expected_value,
+                                  f"Parameter {param} should be {expected_value}")
+            else:
+                self.assertEqual(param_value, expected,
+                              f"Parameter {param} should be {expected}")
     
     def test_read_parameters(self):
         # Create a MacroSynth
@@ -339,64 +313,24 @@ class TestM8MacroSynth(unittest.TestCase):
         binary_data.extend(bytearray([0] * 17))  # Rest of common parameters
         
         # Add macrosynth-specific parameters
-        binary_data.extend([
-            0x01,   # shape
-            0x70,   # timbre
-            0x90,   # color
-            0x10,   # degrade
-            0x20,   # redux
-            0x02,   # filter
-            0xE0,   # cutoff
-            0x30,   # res
-            0x40,   # amp
-            0x50,   # limit
-            0x60,   # pan
-            0xB0,   # dry
-            0x70,   # chorus
-            0x80,   # delay
-            0x90    # reverb
-        ])
+        for _ in range(33 - len(binary_data)):
+            binary_data.append(0)
+            
+        for param, offset in self.binary_offsets.items():
+            binary_data[offset] = self.binary_values[param]
         
         # Call the method to read parameters
         synth._read_parameters(binary_data)
         
         # Check parameters were read correctly
-        self.assertEqual(synth.params.shape, 0x1)
-        self.assertEqual(synth.params.timbre, 0x70)
-        self.assertEqual(synth.params.color, 0x90)
-        self.assertEqual(synth.params.degrade, 0x10)
-        self.assertEqual(synth.params.redux, 0x20)
-        self.assertEqual(synth.params.filter, 0x2)
-        self.assertEqual(synth.params.cutoff, 0xE0)
-        self.assertEqual(synth.params.res, 0x30)
-        self.assertEqual(synth.params.amp, 0x40)
-        self.assertEqual(synth.params.limit, 0x50)
-        self.assertEqual(synth.params.pan, 0x60)
-        self.assertEqual(synth.params.dry, 0xB0)
-        self.assertEqual(synth.params.chorus, 0x70)
-        self.assertEqual(synth.params.delay, 0x80)
-        self.assertEqual(synth.params.reverb, 0x90)
+        for param, expected in self.binary_values.items():
+            self.assertEqual(getattr(synth.params, param), expected,
+                          f"Parameter {param} should be {expected}")
     
     def test_write(self):
         # Create a MacroSynth with specific parameters
-        synth = M8Instrument(
-            instrument_type="MACROSYNTH",
-            shape="MORPH",
-            timbre=0x70,
-            color=0x90,
-            degrade=0x10,
-            redux=0x20,
-            filter="HIGHPASS",
-            cutoff=0xE0,
-            res=0x30,
-            amp=0x40,
-            limit="FOLD",  # Using string enum (FOLD = 0x2)
-            pan=0x60,
-            dry=0xB0,
-            chorus=0x70,
-            delay=0x80,
-            reverb=0x90
-        )
+        kwargs = {**self.common_params, **self.synth_params}
+        synth = M8Instrument(instrument_type="MACROSYNTH", **kwargs)
         
         # Write to binary
         binary = synth.write()
@@ -405,21 +339,10 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(binary[0], 0x01)
         
         # Check macrosynth-specific parameters
-        self.assertEqual(binary[18], 0x1)   # shape
-        self.assertEqual(binary[19], 0x70)  # timbre
-        self.assertEqual(binary[20], 0x90)  # color
-        self.assertEqual(binary[21], 0x10)  # degrade
-        self.assertEqual(binary[22], 0x20)  # redux
-        self.assertEqual(binary[23], 0x2)   # filter
-        self.assertEqual(binary[24], 0xE0)  # cutoff
-        self.assertEqual(binary[25], 0x30)  # res
-        self.assertEqual(binary[26], 0x40)  # amp
-        self.assertEqual(binary[27], 0x2)   # limit (FOLD = 0x2)
-        self.assertEqual(binary[28], 0x60)  # pan
-        self.assertEqual(binary[29], 0xB0)  # dry
-        self.assertEqual(binary[30], 0x70)  # chorus
-        self.assertEqual(binary[31], 0x80)  # delay
-        self.assertEqual(binary[32], 0x90)  # reverb
+        for param, offset in self.binary_offsets.items():
+            expected = self.binary_values[param]
+            self.assertEqual(binary[offset], expected,
+                          f"Binary at offset {offset} for {param} should be {expected}")
     
     def test_is_empty(self):
         # Valid MACROSYNTH instrument should not be empty
@@ -432,7 +355,7 @@ class TestM8MacroSynth(unittest.TestCase):
         mock_synth.is_empty = lambda: True
         self.assertTrue(mock_synth.is_empty())
     
-    def test_add_modulator(self):
+    def test_modulator_integration(self):
         # Create a MacroSynth
         synth = M8Instrument(instrument_type="MACROSYNTH")
         
@@ -446,50 +369,35 @@ class TestM8MacroSynth(unittest.TestCase):
         self.assertEqual(synth.modulators[0].destination, 2)
         self.assertEqual(synth.modulators[0].amount, 100)
         self.assertEqual(synth.modulators[0].params.frequency, 50)
-    
-    def test_as_dict(self):
-        # Create a MacroSynth with specific parameters
-        synth = M8Instrument(
-            instrument_type="MACROSYNTH",
-            # Common parameters
-            name="TestMacroSynth",
-            transpose=0x5,
-            eq=0x2,
-            
-            # Synth-specific parameters
-            shape=0x1,  # MORPH
-            timbre=0x70,
-            color=0x90,
-            cutoff=0xE0,
-            pan=0x60
-        )
         
-        # Add a modulator
+        # Test dict serialization with modulators
+        kwargs = {**self.common_params, **self.synth_params}
+        synth = M8Instrument(instrument_type="MACROSYNTH", **kwargs)
         mod = M8Modulator(modulator_type=M8ModulatorType.LFO, destination=2, amount=100, frequency=50)
         synth.modulators[0] = mod
         
-        # Convert to dict
         result = synth.as_dict()
         
         # Check common parameters
         self.assertEqual(result["type"], "MACROSYNTH")
-        self.assertEqual(result["name"], "TestMacroSynth")
-        self.assertEqual(result["transpose"], 0x5)
-        self.assertEqual(result["eq"], 0x2)
+        for param, expected in self.common_params.items():
+            self.assertEqual(result[param], expected,
+                          f"Dict value for {param} should be {expected}")
         
-        # Check synth-specific parameters
-        self.assertEqual(result["shape"], "MORPH")  # Now returns enum name
-        self.assertEqual(result["timbre"], 0x70)
-        self.assertEqual(result["color"], 0x90)
-        self.assertEqual(result["cutoff"], 0xE0)
-        self.assertEqual(result["pan"], 0x60)
+        # Check synth-specific parameters, ensuring enum values are properly serialized
+        for param, expected in self.synth_params.items():
+            if param in ["shape", "filter", "limit"]:
+                self.assertEqual(result[param], expected,
+                              f"Dict value for enum {param} should be {expected}")
+            else:
+                self.assertEqual(result[param], expected,
+                              f"Dict value for {param} should be {expected}")
         
         # Check modulators
         self.assertIn("modulators", result)
         self.assertIsInstance(result["modulators"], list)
         self.assertGreater(len(result["modulators"]), 0)
-        self.assertEqual(result["modulators"][0]["type"], "LFO")  # LFO type name
-        # Now we expect the string enum value instead of the integer
+        self.assertEqual(result["modulators"][0]["type"], "LFO")
         self.assertEqual(result["modulators"][0]["destination"], "PITCH")
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)
