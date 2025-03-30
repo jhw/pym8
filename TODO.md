@@ -1,11 +1,11 @@
-# short [Hypersynth]
+# short
+
+- Sampler slices
 
 # medium
 
-- Sampler slices
 - 5.0.2
 - TODO.md >> github project
-- Examples
 
 # roadmap
 
