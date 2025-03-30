@@ -34,10 +34,15 @@ def read_fixed_string(data, offset, length):
     return result
 
 def is_empty_instrument(data):
-    """Check if an instrument block is empty (all zeros or no valid type)."""
+    """Check if an instrument block is empty (all zeros, type 255, or no valid type)."""
     # Check if the first few bytes are all zeros
     if all(b == 0 for b in data[:10]):
         return True
+    
+    # Check if the instrument type is 255 (0xFF) - empty/unused
+    if data[0] == 0xFF:
+        return True
+        
     return False
 
 def main():
