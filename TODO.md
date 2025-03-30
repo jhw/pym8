@@ -1,9 +1,7 @@
-# short [Hypersynth mapping]
+# short [Hypersynth]
 
-- Chord and scale field
-- Hypersynth examples test
-- Custom notes (de)serialisers
-- Hypersynth examples test
+- Rationalise instrument test
+- Examples test
 - Custom notes (de)serialisers
 
 # medium

@@ -216,6 +216,8 @@ instruments:
       params:
         amp:
           offset: 33
+        chord:
+          offset: 18
         chorus:
           offset: 37
         cutoff:
@@ -253,6 +255,8 @@ instruments:
           offset: 32
         reverb:
           offset: 39
+        scale:
+          offset: 25
         shift:
           offset: 26
         swarm:
