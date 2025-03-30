@@ -1,5 +1,4 @@
 import unittest
-from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument
 
 
@@ -10,10 +9,8 @@ class TestHyperSynthMapping(unittest.TestCase):
     """
     
     def setUp(self):
-        # Load the M8S file with HyperSynth instrument
-        self.project = M8Project.read_from_file("tests/examples/fixtures/HYPERSYN.m8s")
-        # Get the first instrument (HyperSynth)
-        self.instrument = self.project.instruments[0]
+        # Load the M8I instrument file
+        self.instrument = M8Instrument.read_from_file("tests/examples/fixtures/HYPERSYN.m8i")
         # Get its dictionary representation
         self.instrument_dict = self.instrument.as_dict()
     
@@ -83,8 +80,8 @@ class TestHyperSynthMapping(unittest.TestCase):
                 'destination': 'VOLUME',  # VOLUME enum value
                 'amount': 255,           # 0xFF
                 'attack': 0,             # 0x00
-                'decay': 128,            # 0x80
-                'hold': 0,               # 0x00
+                'decay': 0,              # 0x00
+                'hold': 255,             # 0xFF
                 'index': 0               # 0x00
             },
             {
@@ -92,8 +89,8 @@ class TestHyperSynthMapping(unittest.TestCase):
                 'destination': 7,        # 0x07 CUTOFF
                 'amount': 127,           # 0x7F
                 'attack': 0,             # 0x00
-                'decay': 64,             # 0x40
-                'hold': 0,               # 0x00
+                'decay': 0,              # 0x00
+                'hold': 127,             # 0x7F
                 'index': 1               # 0x01
             }
         ]

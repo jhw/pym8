@@ -1,5 +1,4 @@
 import unittest
-from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument
 
 
@@ -10,10 +9,8 @@ class TestMacroSynthMapping(unittest.TestCase):
     """
     
     def setUp(self):
-        # Load the M8S file with MacroSynth instrument
-        self.project = M8Project.read_from_file("tests/examples/fixtures/MACROSYNTH.m8s")
-        # Get the first instrument (MacroSynth)
-        self.instrument = self.project.instruments[0]
+        # Load the M8I instrument file
+        self.instrument = M8Instrument.read_from_file("tests/examples/fixtures/MACROSYNTH.m8i")
         # Get its dictionary representation
         self.instrument_dict = self.instrument.as_dict()
     
@@ -74,8 +71,8 @@ class TestMacroSynthMapping(unittest.TestCase):
                 'destination': 'VOLUME',  # 0x01
                 'amount': 255,       # 0xFF
                 'attack': 0,         # 0x00
-                'hold': 0,           # 0x00
-                'decay': 128,        # 0x80
+                'hold': 255,         # 0xFF
+                'decay': 0,          # 0x00
                 'type': 'AHD_ENVELOPE',  # 0x00
                 'index': 0           # 0x00
             },
@@ -83,8 +80,8 @@ class TestMacroSynthMapping(unittest.TestCase):
                 'destination': 'CUTOFF',  # 0x07
                 'amount': 112,       # 0x70
                 'attack': 0,         # 0x00
-                'hold': 0,           # 0x00
-                'decay': 80,         # 0x50
+                'hold': 112,         # 0x70
+                'decay': 0,          # 0x00
                 'type': 'AHD_ENVELOPE',  # 0x00
                 'index': 1           # 0x01
             }

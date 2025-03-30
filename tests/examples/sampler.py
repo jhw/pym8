@@ -1,5 +1,4 @@
 import unittest
-from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument
 
 
@@ -10,10 +9,8 @@ class TestSamplerMapping(unittest.TestCase):
     """
     
     def setUp(self):
-        # Load the M8S file with Sampler instrument
-        self.project = M8Project.read_from_file("tests/examples/fixtures/SAMPLER.m8s")
-        # Get the first instrument (Sampler)
-        self.instrument = self.project.instruments[0]
+        # Load the M8I instrument file
+        self.instrument = M8Instrument.read_from_file("tests/examples/fixtures/SAMPLER.m8i")
         # Get its dictionary representation
         self.instrument_dict = self.instrument.as_dict()
     

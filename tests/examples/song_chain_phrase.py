@@ -10,7 +10,7 @@ class TestSongChainPhraseRelationships(unittest.TestCase):
     
     def setUp(self):
         # Load the M8S file with the structure we want to test
-        self.project = M8Project.read_from_file("tests/examples/fixtures/WAVSYNTH.m8s")
+        self.project = M8Project.read_from_file("tests/examples/fixtures/PHRASE_DEMO.m8s")
         
     def test_instrument_referenced_by_phrase(self):
         """Verify instrument 00 is referenced by phrase 00"""
