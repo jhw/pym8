@@ -9,44 +9,25 @@ from m8.api.project import M8Project
 from m8.api.instruments import M8Instrument
 from m8.api import M8Block
 
-def hex_dump(data, width=16):
-    """Prints data in a readable hex dump format."""
-    result = []
-    for i in range(0, len(data), width):
-        chunk = data[i:i+width]
-        hex_values = ' '.join(f"{b:02X}" for b in chunk)
-        ascii_values = ''.join(chr(b) if 32 <= b < 127 else '.' for b in chunk)
-        result.append(f"{i:08X}  {hex_values:<{width * 3}} |{ascii_values}|")
-    return "\n".join(result)
-
-def display_instrument(instrument, index, output_format):
-    if output_format == "yaml":
-        # Convert to dict and output as YAML with integers as hex
-        instrument_dict = instrument.as_dict()
+def display_instrument(instrument, index):
+    # Convert to dict and output as YAML with integers as hex
+    instrument_dict = instrument.as_dict()
+    
+    # Custom representer function to format integers as hex
+    def represent_int_as_hex(dumper, data):
+        if isinstance(data, int):
+            # Format as 0xNN
+            return dumper.represent_scalar('tag:yaml.org,2002:str', f"0x{data:02X}")
+        return dumper.represent_scalar('tag:yaml.org,2002:int', str(data))
         
-        # Custom representer function to format integers as hex
-        def represent_int_as_hex(dumper, data):
-            if isinstance(data, int):
-                # Format as 0xNN
-                return dumper.represent_scalar('tag:yaml.org,2002:str', f"0x{data:02X}")
-            return dumper.represent_scalar('tag:yaml.org,2002:int', str(data))
-            
-        # Add the representer to the YAML dumper
-        yaml.add_representer(int, represent_int_as_hex)
-        
-        print(yaml.dump(instrument_dict, sort_keys=False, default_flow_style=False))
-    else:  # bytes format
-        # Get raw binary data
-        raw_data = instrument.write()
-        print(f"Instrument: {instrument.name} (Type: {instrument.type}, Index: {index})")
-        print(f"Raw binary data ({len(raw_data)} bytes):")
-        print(hex_dump(raw_data))
+    # Add the representer to the YAML dumper
+    yaml.add_representer(int, represent_int_as_hex)
+    
+    print(yaml.dump(instrument_dict, sort_keys=False, default_flow_style=False))
 
 def main():
     parser = argparse.ArgumentParser(description="Inspect instruments in an M8 project file")
     parser.add_argument("file_path", help="Path to the M8 project file (.m8s)")
-    parser.add_argument("--format", "-f", choices=["yaml", "bytes"], default="yaml", 
-                        help="Output format (yaml or bytes, default: yaml)")
     
     args = parser.parse_args()
     
@@ -88,7 +69,7 @@ def main():
                 response = input("Dump instrument details? (y/n/q): ").lower()
                 if response == 'y':
                     print("\n" + "="*50)
-                    display_instrument(instrument, idx, args.format)
+                    display_instrument(instrument, idx)
                     print("="*50)
                     break
                 elif response == 'n':
