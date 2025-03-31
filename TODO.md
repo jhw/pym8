@@ -1,12 +1,11 @@
-# short
+# Short
 
 - 5.0.2
 
-# medium
+# Roadmap
 
-- github project and issues to replace TODO.md, NOTES.md
-
-# roadmap
+- Github Project
+- Github Issues
 
 - Examples
 
@@ -22,7 +21,7 @@
 
 - Themes?
 
-# done
+# Done
 
 - Sampler slices
 - Add custom serializers for HyperSynth notes, with 'notes' list property
