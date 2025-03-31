@@ -149,7 +149,7 @@ def print_metadata(metadata, indent=0):
 
 def main():
     parser = argparse.ArgumentParser(description='Extract M8 slice points from WAV files using cue points')
-    parser.add_argument('files', metavar='FILE', nargs='*', default=['dev/SLICED4.wav'],
+    parser.add_argument('files', metavar='FILE', nargs='*', default=['dev/YAXU-DEMO-BREAK.wav'],
                         help='WAV file(s) to analyze (defaults to dev/SLICED4.wav if not specified)')
     
     args = parser.parse_args()
