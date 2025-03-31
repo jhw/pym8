@@ -1,4 +1,62 @@
 
+## GitHub Projects Migration Plan (31/03/2025)
+
+After evaluating the current TODO.md management approach, we've outlined a plan to migrate to GitHub Projects for improved task tracking and visibility:
+
+### Recommended Project Structure
+
+**Columns:**
+1. **Next Up (Highest Priority)** - Tasks for immediate focus in current sprint
+2. **Backlog (Ready to Work)** - Fully specified tasks, prioritized top to bottom
+3. **In Progress** - Tasks currently being worked on
+4. **Under Review/Testing** - Completed tasks needing verification/testing 
+5. **Recently Completed** - Items finished in last 1-2 weeks (archived regularly)
+
+**Labels:**
+1. **Type Labels:**
+   - `enhancement` - New features
+   - `bug` - Bug fixes
+   - `documentation` - Documentation updates
+   - `refactor` - Code improvements without changing functionality
+   - `test` - Test-related work
+
+2. **Component Labels:**
+   - `instruments` - Instrument-related work
+   - `modulators` - Modulator functionality
+   - `file-format` - File format handling
+   - `cli` - Command-line interface tools
+   - `core` - Core architecture components
+
+3. **Priority Labels:**
+   - `p0-critical` - Must be fixed immediately
+   - `p1-high` - High priority 
+   - `p2-medium` - Medium priority
+   - `p3-low` - Nice to have
+
+### Migration Plan
+
+1. **Initial Setup:**
+   - Create GitHub Project with columns and labels
+   - Configure automation (auto-archiving of completed items)
+   - Update README.md with link to project board
+
+2. **Content Migration:**
+   - Convert "Short" section items to high-priority issues
+   - Convert "Roadmap" items to backlog items with appropriate labels
+   - Convert "Done" section to initial set of closed issues for reference
+
+3. **Process Implementation:**
+   - Document GitHub Project workflow in README.md
+   - Establish PR/Issue linking conventions
+   - Set up templates for new issues
+
+4. **Maintenance Strategy:**
+   - Regular archive of "Recently Completed" items (weekly/biweekly)
+   - Periodic backlog grooming to reprioritize items
+   - Regular milestone planning for upcoming work
+
+The migration will preserve all existing TODO items while enhancing organization, visibility, and collaboration capabilities. We can use GitHub CLI tools to manage the project programmatically when needed.
+
 ## HyperSynth Instrument Implementation (30/03/2025)
 
 Implemented a new instrument type "HyperSynth" (ID 0x05) to extend the M8 synthesizer family. This implementation includes:
