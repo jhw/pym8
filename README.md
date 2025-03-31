@@ -4,9 +4,9 @@ A Python package for reading and writing Dirtywave M8 files
 
 https://dirtywave.com/
 
-# Supported versions
+# Supported file versions
 
-- OS 4.0.1 / file format 4.0.1
+- 4.0.1 [OS 4.0.2]
 
 # Features
 
