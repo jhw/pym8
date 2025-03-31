@@ -1,10 +1,10 @@
 # Overview
 
-A Python package for reading and writing Dirtywave M8 files
+A Python package for reading and writing Dirtywave M8 files (`.m8s`, `.m8i`)
 
 https://dirtywave.com/
 
-# Supported file versions
+# Latest supported file format 
 
 - 4.0.33 [OS 5.0.1]
 
@@ -19,19 +19,17 @@ https://dirtywave.com/
   - FMSynth
   - HyperSynth
 - Modulators
-- m8s, m8i files
 
 # Roadmap
 
-- 5.0.2
+- Tables
 - Instruments
   - MIDI
   - External
-- Tables
-- MIDI contoller mapping
 - Instrument EQ
 - Scales
 - Grooves
+- MIDI controller mapping
 
 # Inspiration
 
