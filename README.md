@@ -10,7 +10,8 @@ https://dirtywave.com/
 
 # Supported
 
-- Songs, chains, phrases, FX
+- Songs, chains
+- Phrases, FX
 - Instruments
   - WavSynth
   - MacroSynth
