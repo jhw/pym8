@@ -134,6 +134,64 @@ GitHub Projects and Issues are designed to work seamlessly together:
 
 By using Issues as the primary unit of work tracked in Projects, we get the benefits of both systems: Issues' rich discussion, reference linking, and status tracking, combined with Projects' visual organization and workflow management.
 
+### Migrating NOTES.md to GitHub Wiki
+
+NOTES.md currently serves as an architectural decision record and technical documentation resource. Moving this content to GitHub Wiki would provide several advantages:
+
+1. **Benefits of Wiki Migration**
+   - **Better organization**: Hierarchical structure with pages and subpages
+   - **Improved navigation**: Automatic table of contents and sidebar navigation
+   - **Searchability**: Built-in search functionality across all wiki pages
+   - **Collaboration**: Version history and attribution for all contributors
+   - **Markdown support**: Same formatting capabilities as NOTES.md
+   - **Linking**: Direct linking to specific sections and between wiki pages
+   - **Integration**: Can link directly to issues, PRs, code files, and other GitHub resources
+
+2. **Recommended Wiki Structure**
+   ```
+   Home (overview and navigation)
+   ├── Architecture/
+   │   ├── Core Components
+   │   ├── Data Flow
+   │   ├── File Format
+   │   └── Design Decisions/
+   │       ├── Context Manager Implementation
+   │       ├── Enum Handling Strategy
+   │       └── Template Naming Convention
+   │
+   ├── Components/
+   │   ├── Instruments
+   │   ├── Modulators
+   │   ├── Phrases
+   │   └── Chains
+   │
+   ├── Implementation Notes/
+   │   ├── HyperSynth
+   │   ├── FMSynth
+   │   └── Sampler
+   │
+   └── Development/
+       ├── Workflow
+       ├── Testing Strategy
+       └── Release Process
+   ```
+
+3. **Migration Process**
+   - Create initial wiki structure as outlined above
+   - Convert chronological entries in NOTES.md to topic-based wiki pages
+   - Organize by subject matter rather than date
+   - Add cross-references between related topics
+   - Use wiki history to preserve chronology when needed
+   - Add diagrams and visual aids where appropriate
+
+4. **Relationship to Issues**
+   - Wiki pages document "why" decisions were made
+   - Issues track "what" needs to be done
+   - Link from issues to wiki for architectural context
+   - Link from wiki to issues for implementation details
+
+This approach transforms NOTES.md from a chronological log into a structured, searchable knowledge base that better serves as project documentation.
+
 ## HyperSynth Instrument Implementation (30/03/2025)
 
 Implemented a new instrument type "HyperSynth" (ID 0x05) to extend the M8 synthesizer family. This implementation includes:
