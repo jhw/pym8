@@ -215,6 +215,73 @@ When deciding whether to migrate TODO.md or NOTES.md first, here's a strategic a
 
 This phased approach prioritizes establishing an active workflow first, while ensuring critical documentation is preserved and enhanced in a structured manner.
 
+### GitHub Projects Migration: Technical Setup
+
+#### Required Software for Mac
+
+1. **GitHub CLI (gh)**
+   - Install via Homebrew: `brew install gh`
+   - Authenticate with: `gh auth login`
+   - Provides command-line access to GitHub Projects and Issues
+
+2. **Optional Tools**
+   - **GitHub Desktop**: For visual repository management
+   - **VS Code**: Excellent GitHub integration via extensions
+   - **Markdown editor**: For issue/PR template creation
+
+#### Permission Requirements
+
+For Claude to assist with the migration through API:
+
+1. **Required Scopes**
+   - `repo`: Full repository access (create issues, PRs)
+   - `project`: GitHub Projects management
+   - `workflow`: (Optional) For setting up automation
+
+2. **Access Pattern Options**
+   - **CLI-based**: You execute commands Claude suggests
+   - **API-based**: Requires Personal Access Token (not recommended to share)
+   - **UI-based**: You follow Claude's instructions in GitHub web interface
+
+3. **Recommended Workflow**
+   - Claude provides CLI commands for you to execute
+   - You share results/output for Claude to analyze
+   - CLI commands are safer than sharing access tokens
+
+#### Initial Migration Steps
+
+```bash
+# Check if gh CLI is installed and authenticated
+gh auth status
+
+# List current GitHub Projects
+gh project list
+
+# Create a new organization project (if needed)
+gh api graphql -f query='
+mutation {
+  createProjectV2(
+    input: {
+      ownerId: "<OWNER_ID>",
+      title: "PYM8 Development",
+      repositoryIds: ["<REPO_ID>"]
+    }
+  ) {
+    projectV2 {
+      id
+      title
+    }
+  }
+}
+'
+```
+
+For most efficient migration, we'll need:
+1. Your GitHub username or organization name
+2. Repository name and visibility (public/private)
+3. Confirmation of gh CLI installation
+4. Preferred project structure (already outlined earlier)
+
 ### Migrating NOTES.md to GitHub Wiki
 
 NOTES.md currently serves as an architectural decision record and technical documentation resource. Moving this content to GitHub Wiki would provide several advantages:
