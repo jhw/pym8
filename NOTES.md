@@ -160,6 +160,61 @@ GitHub offers different coupling models for its features:
 
 This understanding helps ensure we set up the correct structure during migration.
 
+### Migration Sequence Analysis: TODO vs NOTES
+
+When deciding whether to migrate TODO.md or NOTES.md first, here's a strategic analysis:
+
+#### Option 1: Migrate TODO.md First (Recommended)
+
+**Advantages:**
+- Establishes active workflow immediately
+- Creates momentum with visible progress tracking
+- Shorter migration time (less content to organize)
+- Provides structure for current development before documenting past decisions
+- Simpler to set up (Project boards require less hierarchical planning than Wiki)
+
+**Implementation Steps:**
+1. Create GitHub Project board with columns (Next Up, Backlog, In Progress, etc.)
+2. Convert top TODO items to GitHub Issues
+3. Organize issues into the Project board
+4. Set up automation rules
+5. Begin using the new workflow immediately
+
+**Timeline:** Can be completed in 1-2 hours of focused work
+
+#### Option 2: Migrate NOTES.md First
+
+**Advantages:**
+- Preserves architectural knowledge in more accessible format
+- Provides documentation foundation for future issues
+- May inform better organization of issues
+- Ensures historical decisions are properly documented
+
+**Disadvantages:**
+- More time-consuming initial effort
+- Doesn't immediately impact development workflow
+- May feel less immediately productive
+
+**Timeline:** Would require 4-8 hours to properly organize and structure
+
+#### Recommended Approach: Phased Migration
+
+1. **Phase 1 (Day 1):** Migrate TODO.md to GitHub Projects/Issues
+   - Focus on high-priority items only (~10-15 issues)
+   - Set up basic project structure and automation
+
+2. **Phase 2 (Days 2-3):** Create Wiki foundation
+   - Set up basic Wiki structure (main sections)
+   - Migrate most recent/relevant architectural notes
+   - Create homepage and navigation
+
+3. **Phase 3 (Ongoing):** Complete migrations
+   - Gradually migrate remaining NOTES entries as needed
+   - Continue adding lower-priority TODO items as issues
+   - Refine and expand both systems based on usage
+
+This phased approach prioritizes establishing an active workflow first, while ensuring critical documentation is preserved and enhanced in a structured manner.
+
 ### Migrating NOTES.md to GitHub Wiki
 
 NOTES.md currently serves as an architectural decision record and technical documentation resource. Moving this content to GitHub Wiki would provide several advantages:
