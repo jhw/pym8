@@ -59,7 +59,46 @@ The migration will preserve all existing TODO items while enhancing organization
 
 ### GitHub Issues Integration
 
-GitHub Projects and Issues are designed to work together seamlessly:
+#### Direct Relationship Between Issues and Project Cards
+
+In GitHub's system, the relationship between Issues and Project boards works like this:
+
+1. **Issues ARE Project Cards**
+   - When you add an Issue to a Project, the Issue itself becomes a card on the board
+   - There's no separate "card" that links to an issue - the issue IS the card
+   - Opening a card created from an issue will take you directly to that issue
+
+2. **Visual Representation**
+   ```
+   Project Board
+   ┌───────────────────────┐ ┌───────────────────────┐ ┌───────────────────────┐
+   │ To Do                 │ │ In Progress           │ │ Done                  │
+   ├───────────────────────┤ ├───────────────────────┤ ├───────────────────────┤
+   │ ┌─────────────────┐   │ │ ┌─────────────────┐   │ │ ┌─────────────────┐   │
+   │ │ Issue #42       │   │ │ │ Issue #37       │   │ │ │ Issue #28       │   │
+   │ │ Bug: Fix crash  │   │ │ │ Feature: Add UI │   │ │ │ Refactor: Clean │   │
+   │ └─────────────────┘   │ │ └─────────────────┘   │ │ └─────────────────┘   │
+   │                       │ │                       │ │                       │
+   │ ┌─────────────────┐   │ │                       │ │ ┌─────────────────┐   │
+   │ │ Issue #45       │   │ │                       │ │ │ Issue #30       │   │
+   │ │ Docs: Update    │   │ │                       │ │ │ Test: Add unit  │   │
+   │ └─────────────────┘   │ │                       │ │ └─────────────────┘   │
+   └───────────────────────┘ └───────────────────────┘ └───────────────────────┘
+   ```
+
+3. **Two Types of Cards**
+   - **Issue/PR Cards**: Created from existing Issues or Pull Requests 
+   - **Note Cards**: Simple text notes created directly on the board (no Issue backing)
+
+4. **Typical Workflow**
+   - Create an Issue for a bug, feature, or task
+   - The Issue automatically appears as a card in the "To Do" column
+   - When work begins, drag the card to "In Progress"
+   - Create a Pull Request that references the Issue (e.g., "Fixes #42")
+   - When PR is merged, the Issue card automatically moves to "Done"
+   - All discussion, context, and history remain in the Issue itself
+
+GitHub Projects and Issues are designed to work seamlessly together:
 
 1. **Issue-to-Project Integration:**
    - Issues can be directly added to project boards
