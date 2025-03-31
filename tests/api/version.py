@@ -150,7 +150,7 @@ class TestM8Version(unittest.TestCase):
         new_project = M8Project.from_dict(project_dict)
         
         # New project should have default version, not the one from original project
-        self.assertEqual(str(new_project.version), "4.0.1")  # Default version
+        self.assertEqual(str(new_project.version), "4.0.33")  # Default version
         
         # Check instrument serialization
         instr_dict = instrument.as_dict()

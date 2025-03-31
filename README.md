@@ -6,7 +6,7 @@ https://dirtywave.com/
 
 # Supported file versions
 
-- 4.0.1 [OS 4.0.2]
+- 4.0.33 [OS 5.0.1]
 
 # Features
 

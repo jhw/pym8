@@ -1,7 +1,5 @@
 # Short
 
-- bump to 5.0.1
-
 # Roadmap
 
 - Github Project
@@ -23,6 +21,9 @@
 
 # Done
 
+- rename template files to use consistent naming scheme (TEMPLATE-OS-VERSION-FILE-VERSION)
+- update default template from DEFAULT401 to TEMPLATE-5-0-1-4-0-33
+- bump to 5.0.1
 - Sampler slices
 - Add custom serializers for HyperSynth notes, with 'notes' list property
 - Add HyperSynth example test with fixture validation
