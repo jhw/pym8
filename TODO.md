@@ -1,9 +1,8 @@
 # Short
 
-# Roadmap
+- Github Project, Issues
 
-- Github Project
-- Github Issues
+# Roadmap
 
 - Examples
 
