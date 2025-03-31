@@ -1,25 +1,30 @@
 # short
 
-- Sampler slices
+- 5.0.2
 
 # medium
 
-- 5.0.2
-- TODO.md >> github project
+- github project and issues to replace TODO.md, NOTES.md
 
 # roadmap
 
+- Examples
+
 - Midi Out instrument
 - External instrument
+
 - Midi controller mapping
+
 - Tables
 - Eq
 - Grooves
 - Scales
+
 - Themes?
 
 # done
 
+- Sampler slices
 - Add custom serializers for HyperSynth notes, with 'notes' list property
 - Add HyperSynth example test with fixture validation
 - Rationalise instrument test files (HyperSynth, FMSynth, WavSynth, Sampler, MacroSynth)
