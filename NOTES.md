@@ -134,6 +134,32 @@ GitHub Projects and Issues are designed to work seamlessly together:
 
 By using Issues as the primary unit of work tracked in Projects, we get the benefits of both systems: Issues' rich discussion, reference linking, and status tracking, combined with Projects' visual organization and workflow management.
 
+### Repository, Project, and Wiki Relationships
+
+GitHub offers different coupling models for its features:
+
+1. **GitHub Wiki**: 
+   - **Tightly Coupled to Repository**: Each repository has exactly one wiki
+   - The wiki is automatically enabled/disabled in repository settings
+   - Technically, the wiki is a separate Git repository (yourrepo.wiki.git) but managed through the main repo's UI
+   - Accessible via the "Wiki" tab in your repository
+
+2. **GitHub Projects**:
+   - **Loosely Coupled (Two Types)**:
+     - **Repository Projects**: Limited to a single repository (legacy)
+     - **Organization Projects**: Can span multiple repositories (newer, recommended)
+   - Organization Projects allow tracking work across multiple repositories
+   - You can have multiple projects for one repository or one project for multiple repositories
+   - Repository connection happens at the issue/PR level, not the project level
+
+3. **Practical Setup for pym8**:
+   - Enable the built-in Wiki for the pym8 repository (1:1 relationship)
+   - Create an organization-level project called "PYM8 Development" 
+   - Link issues from the pym8 repository to this project
+   - This gives flexibility to potentially add related repositories later if needed
+
+This understanding helps ensure we set up the correct structure during migration.
+
 ### Migrating NOTES.md to GitHub Wiki
 
 NOTES.md currently serves as an architectural decision record and technical documentation resource. Moving this content to GitHub Wiki would provide several advantages:
