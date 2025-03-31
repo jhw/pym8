@@ -11,24 +11,20 @@ https://dirtywave.com/
 # Supported
 
 - Songs, chains, phrases, FX
-
 - Instruments
   - WavSynth
   - MacroSynth
   - Sampler
   - FMSynth
   - HyperSynth
-
 - m8s, m8i files
 
 # Roadmap
 
 - 5.0.2
-
 - Instruments
   - MIDI
   - External
-  
 - Tables
 - MIDI contoller mapping
 - Instrument EQ
