@@ -57,6 +57,44 @@ After evaluating the current TODO.md management approach, we've outlined a plan 
 
 The migration will preserve all existing TODO items while enhancing organization, visibility, and collaboration capabilities. We can use GitHub CLI tools to manage the project programmatically when needed.
 
+### GitHub Issues Integration
+
+GitHub Projects and Issues are designed to work together seamlessly:
+
+1. **Issue-to-Project Integration:**
+   - Issues can be directly added to project boards
+   - When an issue is created, it can be automatically added to a specific project column
+   - Issues can be tracked across multiple projects if needed
+
+2. **Automation Opportunities:**
+   - Issues move automatically through project columns based on their status
+   - When a PR references "Fixes #123", the issue can auto-move to "Done" when the PR is merged
+   - Custom workflows can be triggered by issue labels, comments, or status changes
+
+3. **CLI Management:**
+   ```bash
+   # Create an issue and add it to a project
+   gh issue create --title "Implement MIDI mapping" --body "Description" --project "PYM8 Development"
+   
+   # Add an existing issue to a project
+   gh api graphql -f query='mutation { addProjectCard(input: {projectColumnId: "COLUMN_ID", contentId: "ISSUE_ID"}) { card { id } } }'
+   
+   # Move an issue to a different column
+   gh api graphql -f query='mutation { moveProjectCard(input: {cardId: "CARD_ID", columnId: "NEW_COLUMN_ID"}) { cardEdge { node { id } } } }'
+   ```
+
+4. **Issue Templates:**
+   - Create templates in `.github/ISSUE_TEMPLATE/` to standardize issue creation
+   - Templates can include checkboxes, sections for reproduction steps, etc.
+   - Different templates for bugs vs. features vs. refactoring work
+
+5. **GitHub Actions Integration:**
+   - Set up actions to automatically triage and categorize new issues
+   - Automate issue assignment based on file paths or keywords
+   - Generate reports on issue status and project progress
+
+By using Issues as the primary unit of work tracked in Projects, we get the benefits of both systems: Issues' rich discussion, reference linking, and status tracking, combined with Projects' visual organization and workflow management.
+
 ## HyperSynth Instrument Implementation (30/03/2025)
 
 Implemented a new instrument type "HyperSynth" (ID 0x05) to extend the M8 synthesizer family. This implementation includes:
