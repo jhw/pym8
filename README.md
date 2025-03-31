@@ -17,6 +17,7 @@ https://dirtywave.com/
   - Sampler
   - FMSynth
   - HyperSynth
+- Modulators
 - m8s, m8i files
 
 # Roadmap
