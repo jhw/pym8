@@ -229,24 +229,51 @@ This phased approach prioritizes establishing an active workflow first, while en
    - **VS Code**: Excellent GitHub integration via extensions
    - **Markdown editor**: For issue/PR template creation
 
-#### Permission Requirements
+#### Setting Up GitHub CLI with Required Scopes
 
-For Claude to assist with the migration through API:
+The GitHub CLI will need proper authentication scopes to manage Projects and Issues. Here's how to set them up:
 
-1. **Required Scopes**
-   - `repo`: Full repository access (create issues, PRs)
-   - `project`: GitHub Projects management
-   - `workflow`: (Optional) For setting up automation
+1. **Authentication with Proper Scopes**
+   ```bash
+   # Run the GitHub CLI authentication flow
+   gh auth login
+   
+   # During the interactive flow:
+   # 1. Select "GitHub.com" as the host
+   # 2. Select "HTTPS" as the protocol
+   # 3. Select "Y" to authenticate with your GitHub credentials
+   # 4. Choose the browser authentication method (recommended)
+   # 5. In the browser authorization page, make sure the following scopes are selected:
+   #    - repo (Full control of private repositories)
+   #    - workflow (Update GitHub Action workflows)
+   #    - admin:org (For organization projects if needed)
+   ```
 
-2. **Access Pattern Options**
-   - **CLI-based**: You execute commands Claude suggests
-   - **API-based**: Requires Personal Access Token (not recommended to share)
-   - **UI-based**: You follow Claude's instructions in GitHub web interface
+2. **Verify Authentication Scopes**
+   ```bash
+   # Check your current authentication status and scopes
+   gh auth status
+   
+   # The output should show you're logged in with at least:
+   # - repo
+   # - workflow (if needed)
+   # - admin:org or admin:enterprise (for org-level projects)
+   ```
 
-3. **Recommended Workflow**
-   - Claude provides CLI commands for you to execute
-   - You share results/output for Claude to analyze
-   - CLI commands are safer than sharing access tokens
+3. **If Scopes are Missing**
+   ```bash
+   # To reset and re-authenticate with proper scopes:
+   gh auth logout
+   gh auth login
+   
+   # Then follow the same steps above, ensuring all needed scopes are selected
+   ```
+
+4. **Authentication Note**
+   - The GitHub CLI handles token management securely
+   - You don't need to create or share personal access tokens
+   - All GitHub API requests will use the scopes authorized during the login process
+   - Claude never has direct access to your GitHub account
 
 #### Initial Migration Steps
 
