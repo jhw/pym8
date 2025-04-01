@@ -1,10 +1,5 @@
 # Short
 
-- slices not working :/
-  - roll back to 4.0.x
-  - move slice tools back to dev
-  - fix default args in slice tools
-
 # Roadmap
 
 - Github Project, Issues
