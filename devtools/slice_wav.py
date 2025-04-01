@@ -178,15 +178,18 @@ def add_slice_points_to_wav_m8_format(input_file, output_file, num_slices, lengt
 
 def main():
     parser = argparse.ArgumentParser(description='Add evenly spaced slice points to WAV files for Dirtywave M8')
+    parser.add_argument('input_file', help='Input WAV file path')
     parser.add_argument('--slices', '-s', type=int, default=4, help='Number of slices to create (default: 4)')
     
     args = parser.parse_args()
     
-    input_file = 'UNSLICED.wav'
-    output_file = 'PYSLICED2.wav'
+    # Generate output filename with number of slices in the same directory as input
+    input_path = args.input_file
+    base_name, ext = os.path.splitext(input_path)
+    output_file = f"{base_name}-{args.slices}{ext}"
     
     # Process the file
-    add_slice_points_to_wav_m8_format(input_file, output_file, args.slices, 0)
+    add_slice_points_to_wav_m8_format(input_path, output_file, args.slices, 0)
 
 if __name__ == "__main__":
     main()
