@@ -1,5 +1,10 @@
 # Short
 
+- enum for sampler slice parameter?
+- song/chain/phrase table representations
+- m8/tools to contain sample slice point generators
+- OFF note
+
 # Roadmap
 
 - Github Project, Issues
