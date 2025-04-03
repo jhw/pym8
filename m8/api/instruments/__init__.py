@@ -22,7 +22,7 @@ config = load_format_config()
 # Instrument type mapping
 INSTRUMENT_TYPES = get_instrument_types()
 
-# Global counter for auto-generating instrument names
+# Global counter for auto-generating instrument names (starts at 0 to generate 0000 as first index)
 _INSTRUMENT_COUNTER = 0
 
 # Block sizes and counts for instruments - from config
@@ -256,7 +256,7 @@ class M8Instrument(EnumPropertyMixin):
             base_name = instrument_type
             # Truncate or pad to 8 characters
             name_base = (base_name[:8] if len(base_name) > 8 else base_name.ljust(8))
-            # Use global counter for 4-digit hex code
+            # Use global counter for 4-digit hex code, starting at 0000
             counter_hex = f"{_INSTRUMENT_COUNTER & 0xFFFF:04X}"
             # Combine name components
             kwargs['name'] = f"{name_base}{counter_hex}"
@@ -586,6 +586,13 @@ class M8Instrument(EnumPropertyMixin):
         return instrument
         
     def write_to_file(self, file_path):
+        import os
+        
+        # Create intermediate directories if they don't exist
+        directory = os.path.dirname(file_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+        
         instrument_data = self.write()
         
         # Get offsets

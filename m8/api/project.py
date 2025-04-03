@@ -321,6 +321,13 @@ class M8Project:
         raise FileNotFoundError(f"Template '{template_filename}' not found. Check that it exists in the m8/templates directory.")
 
     def write_to_file(self, filename: str):
+        import os
+        
+        # Create intermediate directories if they don't exist
+        directory = os.path.dirname(filename)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+        
         with open(filename, "wb") as f:
             f.write(self.write())
 
@@ -360,6 +367,13 @@ class M8Project:
         
     def write_to_json_file(self, filename):
         """Writes project to a human-readable JSON file."""
+        import os
+        
+        # Create intermediate directories if they don't exist
+        directory = os.path.dirname(filename)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+            
         with open(filename, "w") as f:
             f.write(json_dumps(self.as_dict()))
             
