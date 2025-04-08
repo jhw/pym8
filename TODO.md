@@ -1,15 +1,20 @@
 # Short
 
+# Medium
+
+- can't pass enum keys to add_fx()
 - enum for sampler slice parameter?
 - song/chain/phrase table representations
-- m8/tools to contain sample slice point generators
+- bundle generation tool
 - OFF note
+
+# Thoughts
 
 # Roadmap
 
-- Github Project, Issues
+- OFF note
 
-- Examples
+- Github Project, Issues
 
 - Midi Out instrument
 - External instrument
@@ -21,9 +26,10 @@
 - Grooves
 - Scales
 
-- Themes?
-
 # Done
+
+- Implemented WAV file slicer (WAVSlicer) in m8/tools for client scripts
+- Fixed instrument naming to start at 0000 instead of 0001
 
 - rename template files to use consistent naming scheme (TEMPLATE-OS-VERSION-FILE-VERSION)
 - update default template from DEFAULT401 to TEMPLATE-5-0-1-4-0-33
