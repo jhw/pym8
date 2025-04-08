@@ -2,9 +2,6 @@
 
 # Medium
 
-- song/chain/phrase table representations
-- OFF note
-
 # Thoughts
 
 - enum for sampler slice parameter?
@@ -28,6 +25,7 @@
 
 # Done
 
+- song/chain/phrase table representations
 - can't pass enum keys to add_fx()
 - Implemented WAV file slicer (WAVSlicer) in m8/tools for client scripts
 - Fixed instrument naming to start at 0000 instead of 0001
