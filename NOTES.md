@@ -1,4 +1,27 @@
 
+## Enum Parameter Support Gaps (04/08/2025)
+
+I've identified a gap in our enum support implementation. While we handle enum values correctly for serialization/deserialization and constructor parameters, there are several API methods that still only accept numeric values where they should support enum strings.
+
+The main example is in `M8PhraseStep` where methods like `add_fx(key, value)`, `set_fx(key, value, slot)`, `get_fx(key)`, and `delete_fx(key)` only accept numeric key values, not the more intuitive enum string names that would provide clearer and more maintainable code.
+
+I've added a detailed proposal for implementing a decorator-based solution in `PROPOSALS.md`. The key points:
+
+1. Add a `with_enum_param` decorator in `m8/core/enums.py` that handles conversion of string params to numeric values
+2. Apply the decorator to relevant methods with minimal code changes
+3. Add a configuration helper to retrieve appropriate enum classes based on instrument type
+
+This would allow users to write more intuitive code like:
+```python
+# Instead of using magic numbers:
+step.add_fx(0x01, 64)  
+
+# They could use readable enum names:
+step.add_fx("REVERB", 64)
+```
+
+See the full proposal for implementation details.
+
 ## GitHub Projects Migration Plan (31/03/2025)
 
 After evaluating the current TODO.md management approach, we've outlined a plan to migrate to GitHub Projects for improved task tracking and visibility:
