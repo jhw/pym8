@@ -4,12 +4,15 @@ import os
 import sys
 import yaml
 import logging
+import pandas as pd
+from tabulate import pd.io.formats.style
 
 from m8.api.project import M8Project
 from m8.api.chains import M8ChainStep, M8Chain
 from m8.api import M8Block
 
-def display_chain(project, chain, chain_idx):
+def display_chain_tabular(project, chain, chain_idx):
+    """Display chain and phrase data as a pandas DataFrame."""
     # Set up and log details about the context manager
     import logging
     logger = logging.getLogger("inspect_chains")
@@ -46,11 +49,9 @@ def display_chain(project, chain, chain_idx):
     fx_config = load_format_config()["fx"]
     logger.debug(f"FX config: {fx_config['fields']['key']}")
     
-    chain_dict = chain.as_dict()
-    chain_dict["index"] = chain_idx
+    # Prepare data for tabular output
+    table_data = []
     
-    phrases = []
-    logger.debug("Processing chain steps to serialize phrases")
     for step_idx, step in enumerate(chain):
         if not step.is_empty():
             phrase_idx = step.phrase
@@ -61,72 +62,110 @@ def display_chain(project, chain, chain_idx):
                     logger.debug(f"Phrase {phrase_idx} is valid, serializing")
                     
                     # Get instrument from the first non-empty step in the phrase
-                    # Chain steps don't have instrument references, only phrase steps do
                     instrument_id = None
                     for phrase_step in phrase:
                         if not phrase_step.is_empty() and phrase_step.instrument != 0xFF:
                             instrument_id = phrase_step.instrument
                             logger.debug(f"Found instrument {instrument_id} referenced in phrase {phrase_idx}")
                             break
-                            
+                    
+                    instrument_type_id = None
                     if instrument_id is not None and instrument_id != 0xFF:
-                        # Log instrument context setup
+                        # Set context for serialization
                         logger.debug(f"Creating context for instrument {instrument_id}")
-                        
-                        # Get the instrument from the project
-                        if instrument_id < len(project.instruments):
-                            instrument = project.instruments[instrument_id]
-                            logger.debug(f"Found instrument: {instrument.__class__.__name__}")
-                            
-                            # Check if it has type information
-                            if hasattr(instrument, 'instrument_type'):
-                                instrument_type = instrument.instrument_type
-                                logger.debug(f"Instrument type: {instrument_type}")
-                            
-                            # Get instrument type id
-                            instrument_type_id = context.get_instrument_type_id(instrument_id)
-                            logger.debug(f"Got instrument_type_id: {instrument_type_id}")
-                            
-                            # Important: Set context for serialization
-                            if instrument_type_id is not None:
-                                with context.with_instrument(instrument_id=instrument_id, 
-                                                        instrument_type_id=instrument_type_id):
-                                    logger.debug("Serializing phrase with instrument context")
-                                    phrase_dict = phrase.as_dict()
-                                    phrase_dict["index"] = phrase_idx
-                                    phrases.append(phrase_dict)
-                            else:
-                                logger.warning("Failed to get instrument type ID, serializing without context")
-                                phrase_dict = phrase.as_dict()
-                                phrase_dict["index"] = phrase_idx
-                                phrases.append(phrase_dict)
-                        else:
-                            logger.warning(f"Invalid instrument ID {instrument_id}, serializing without context")
+                        instrument_type_id = context.get_instrument_type_id(instrument_id)
+                        logger.debug(f"Got instrument_type_id: {instrument_type_id}")
+                    
+                    # Create context for serialization if possible
+                    if instrument_type_id is not None:
+                        with context.with_instrument(instrument_id=instrument_id, instrument_type_id=instrument_type_id):
+                            logger.debug("Serializing phrase with instrument context")
                             phrase_dict = phrase.as_dict()
-                            phrase_dict["index"] = phrase_idx
-                            phrases.append(phrase_dict)
                     else:
-                        logger.debug("No instrument reference found in phrase, serializing without context")
+                        logger.warning("Failed to get instrument type ID, serializing without context")
                         phrase_dict = phrase.as_dict()
-                        phrase_dict["index"] = phrase_idx
-                        phrases.append(phrase_dict)
+                    
+                    # Extract phrase steps data for tabular view
+                    for i, step_data in enumerate(phrase_dict.get('steps', [])):
+                        if step_data.get('note') == 0xFF and step_data.get('velocity') == 0xFF:
+                            continue  # Skip empty steps
+                        
+                        row = {
+                            'chain_idx': chain_idx,
+                            'chain_step': step_idx,
+                            'phrase_idx': phrase_idx,
+                            'step_idx': i,
+                            'note': step_data.get('note'),
+                            'velocity': step_data.get('velocity'),
+                            'instrument': step_data.get('instrument'),
+                        }
+                        
+                        # Add FX data
+                        fx_data = step_data.get('fx', [])
+                        for j, fx in enumerate(fx_data[:3]):  # Only include up to 3 FX
+                            if not fx.get('key', 0xFF) == 0xFF:  # Only add non-empty FX
+                                row[f'fx{j+1}_key'] = fx.get('key')
+                                row[f'fx{j+1}_value'] = fx.get('value')
+                        
+                        table_data.append(row)
     
-    result = {
-        "chain": chain_dict,
-        "referenced_phrases": phrases
-    }
-    
-    # Custom representer function to format integers as hex
-    def represent_int_as_hex(dumper, data):
-        if isinstance(data, int):
-            # Format as 0xNN
-            return dumper.represent_scalar('tag:yaml.org,2002:str', f"0x{data:02X}")
-        return dumper.represent_scalar('tag:yaml.org,2002:int', str(data))
+    # If no data, return early
+    if not table_data:
+        print(f"No data found for chain {chain_idx}")
+        return
         
-    # Add the representer to the YAML dumper
-    yaml.add_representer(int, represent_int_as_hex)
+    # Create pandas DataFrame
+    df = pd.DataFrame(table_data)
     
-    print(yaml.dump(result, sort_keys=False, default_flow_style=False))
+    # Replace 0xFF values with NaN for better readability
+    df = df.replace(0xFF, pd.NA)
+    
+    # Format note values to note names where possible
+    if 'note' in df.columns:
+        df['note'] = df['note'].apply(lambda x: format_note(x) if pd.notna(x) else pd.NA)
+    
+    # Format hex values for FX keys
+    for col in [c for c in df.columns if 'fx' in c and 'key' in c]:
+        df[col] = df[col].apply(lambda x: f"0x{x:02X}" if pd.notna(x) else pd.NA)
+    
+    # Define column order
+    column_order = ['chain_idx', 'chain_step', 'phrase_idx', 'step_idx', 'note', 'velocity', 'instrument']
+    fx_columns = [c for c in df.columns if 'fx' in c]
+    
+    # Sort FX columns to ensure fx1, fx2, fx3 order
+    fx_columns.sort()
+    
+    # Create final column list
+    columns = column_order + fx_columns
+    
+    # Select only columns that exist in the DataFrame
+    columns = [c for c in columns if c in df.columns]
+    
+    # Sort by step_idx for better readability
+    df = df.sort_values(['chain_step', 'step_idx'])
+    
+    # Display the DataFrame
+    print(f"\nChain {chain_idx} - Phrase Steps:")
+    print(df.to_string(index=False, na_rep='-'))
+
+def format_note(note_value):
+    """Convert numeric note value to note name if possible."""
+    if note_value is None or pd.isna(note_value):
+        return '-'
+        
+    # If already a string, return it
+    if isinstance(note_value, str):
+        return note_value
+        
+    # Notes mapping (0 = C-0, 12 = C-1, etc.)
+    note_names = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-']
+    
+    if 0 <= note_value <= 127:
+        octave = note_value // 12
+        note = note_value % 12
+        return f"{note_names[note]}{octave}"
+    else:
+        return f"0x{note_value:02X}"  # Use hex for out-of-range values
 
 def main():
     parser = argparse.ArgumentParser(description="Inspect chains and their phrases in an M8 project file")
@@ -181,7 +220,7 @@ def main():
                 response = input("Dump chain details? (y/n/q): ").lower()
                 if response == 'y':
                     print("\n" + "="*50)
-                    display_chain(project, chain, idx)
+                    display_chain_tabular(project, chain, idx)
                     print("="*50)
                     break
                 elif response == 'n':
