@@ -1,14 +1,14 @@
-# Overview
+# M8 Library
 
 A Python package for reading and writing Dirtywave M8 files (`.m8s`, `.m8i`)
 
 https://dirtywave.com/
 
-# Latest supported file format 
+## Latest supported file format 
 
 - 4.0.33 [OS 5.0.1]
 
-# Features
+## Features
 
 - Songs, chains
 - Phrases, FX
@@ -20,7 +20,12 @@ https://dirtywave.com/
   - HyperSynth
 - Modulators
 
-# Roadmap
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Technical overview of the library design
+- [CLAUDE.md](CLAUDE.md) - Project guidelines and requirements
+
+## Roadmap
 
 - Tables
 - Instruments
@@ -31,7 +36,7 @@ https://dirtywave.com/
 - Grooves
 - MIDI controller mapping
 
-# Inspiration
+## Inspiration
 
 - https://github.com/Twinside/m8-files
 - https://github.com/whitlockjc/m8-js
