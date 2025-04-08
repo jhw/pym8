@@ -249,19 +249,19 @@ class TestM8PhraseStep(unittest.TestCase):
         # Test add_fx method
         step = M8PhraseStep()
         
-        # Add new FX
+        # Add new FX - using numeric value still works
         slot = step.add_fx(10, 20)
         self.assertEqual(slot, 0)
         self.assertEqual(step.fx[0].key, 10)
         self.assertEqual(step.fx[0].value, 20)
         
-        # Add another FX
+        # Add another FX - using numeric value
         slot = step.add_fx(30, 40)
         self.assertEqual(slot, 1)
         self.assertEqual(step.fx[1].key, 30)
         self.assertEqual(step.fx[1].value, 40)
         
-        # Update existing FX
+        # Update existing FX - using numeric value
         slot = step.add_fx(10, 25)  # Same key, different value
         self.assertEqual(slot, 0)  # Should reuse the same slot
         self.assertEqual(step.fx[0].key, 10)
@@ -271,6 +271,52 @@ class TestM8PhraseStep(unittest.TestCase):
         step.fx[2] = M8FXTuple(key=50, value=60)
         with self.assertRaises(IndexError):
             step.add_fx(70, 80)  # No slots available
+            
+    def test_add_fx_with_enum_strings(self):
+        """Test add_fx with string enum keys."""
+        from m8.enums import M8SequencerFX, M8MixerFX
+        
+        # Set up a step with an instrument reference for context
+        step = M8PhraseStep(note="C_4", velocity=100, instrument=0)
+        
+        # Create a context for the test
+        from m8.core.enums import M8InstrumentContext
+        from m8.enums import M8InstrumentType
+        context = M8InstrumentContext.get_instance()
+        
+        # Set up a project context with an instrument
+        class MockProject:
+            def __init__(self):
+                self.instruments = [MockInstrument()]
+                
+        class MockInstrument:
+            def __init__(self):
+                self.type = M8InstrumentType.WAVSYNTH
+                self.instrument_type = "WAVSYNTH"
+                
+        context.set_project(MockProject())
+        
+        try:
+            # Add FX using string enum name
+            slot = step.add_fx("RNL", 96)  # RNL = 7
+            self.assertEqual(slot, 0)
+            self.assertEqual(step.fx[0].key, M8SequencerFX.RNL.value)  # Should convert to numeric value
+            self.assertEqual(step.fx[0].value, 96)
+            
+            # Add another FX using string enum name
+            slot = step.add_fx("VMV", 80)  # VMV = 27
+            self.assertEqual(slot, 1)
+            self.assertEqual(step.fx[1].key, M8MixerFX.VMV.value)  # Should convert to numeric value
+            self.assertEqual(step.fx[1].value, 80)
+            
+            # Update existing FX using string enum name
+            slot = step.add_fx("RNL", 100)  # Update value for RNL
+            self.assertEqual(slot, 0)  # Should reuse the same slot
+            self.assertEqual(step.fx[0].key, M8SequencerFX.RNL.value)
+            self.assertEqual(step.fx[0].value, 100)  # Updated value
+        finally:
+            # Clean up context
+            context.clear()
     
     def test_set_fx(self):
         # Test set_fx method
@@ -287,6 +333,44 @@ class TestM8PhraseStep(unittest.TestCase):
         
         with self.assertRaises(IndexError):
             step.set_fx(30, 40, -1)
+            
+    def test_set_fx_with_enum_strings(self):
+        """Test set_fx with string enum keys."""
+        from m8.enums import M8SequencerFX, M8MixerFX
+        
+        # Set up a step with an instrument reference for context
+        step = M8PhraseStep(note="C_4", velocity=100, instrument=0)
+        
+        # Create a context for the test
+        from m8.core.enums import M8InstrumentContext
+        from m8.enums import M8InstrumentType
+        context = M8InstrumentContext.get_instance()
+        
+        # Set up a project context with an instrument
+        class MockProject:
+            def __init__(self):
+                self.instruments = [MockInstrument()]
+                
+        class MockInstrument:
+            def __init__(self):
+                self.type = M8InstrumentType.WAVSYNTH
+                self.instrument_type = "WAVSYNTH"
+                
+        context.set_project(MockProject())
+        
+        try:
+            # Set FX using string enum name
+            step.set_fx("RNL", 96, 0)  # RNL = 7
+            self.assertEqual(step.fx[0].key, M8SequencerFX.RNL.value)  # Should convert to numeric value
+            self.assertEqual(step.fx[0].value, 96)
+            
+            # Set another FX using string enum name
+            step.set_fx("VMV", 80, 1)  # VMV = 27
+            self.assertEqual(step.fx[1].key, M8MixerFX.VMV.value)  # Should convert to numeric value
+            self.assertEqual(step.fx[1].value, 80)
+        finally:
+            # Clean up context
+            context.clear()
     
     def test_get_fx(self):
         # Test get_fx method
@@ -300,6 +384,43 @@ class TestM8PhraseStep(unittest.TestCase):
         
         # Get non-existent FX
         self.assertIsNone(step.get_fx(20))
+        
+    def test_get_fx_with_enum_strings(self):
+        """Test get_fx with string enum keys."""
+        from m8.enums import M8SequencerFX, M8MixerFX
+        
+        # Set up a step with an instrument reference and FX
+        step = M8PhraseStep(note="C_4", velocity=100, instrument=0)
+        step.fx[0] = M8FXTuple(key=M8SequencerFX.RNL.value, value=96)  # RNL = 7
+        step.fx[1] = M8FXTuple(key=M8MixerFX.VMV.value, value=80)  # VMV = 27
+        
+        # Create a context for the test
+        from m8.core.enums import M8InstrumentContext
+        from m8.enums import M8InstrumentType
+        context = M8InstrumentContext.get_instance()
+        
+        # Set up a project context with an instrument
+        class MockProject:
+            def __init__(self):
+                self.instruments = [MockInstrument()]
+                
+        class MockInstrument:
+            def __init__(self):
+                self.type = M8InstrumentType.WAVSYNTH
+                self.instrument_type = "WAVSYNTH"
+                
+        context.set_project(MockProject())
+        
+        try:
+            # Get FX using string enum name
+            self.assertEqual(step.get_fx("RNL"), 96)
+            self.assertEqual(step.get_fx("VMV"), 80)
+            
+            # Get non-existent FX using string enum name
+            self.assertIsNone(step.get_fx("SCA"))  # SCA doesn't exist in this step
+        finally:
+            # Clean up context
+            context.clear()
     
     def test_delete_fx(self):
         # Test delete_fx method
@@ -316,6 +437,46 @@ class TestM8PhraseStep(unittest.TestCase):
         # Delete non-existent FX
         result = step.delete_fx(20)
         self.assertFalse(result)
+        
+    def test_delete_fx_with_enum_strings(self):
+        """Test delete_fx with string enum keys."""
+        from m8.enums import M8SequencerFX, M8MixerFX
+        
+        # Set up a step with an instrument reference and FX
+        step = M8PhraseStep(note="C_4", velocity=100, instrument=0)
+        step.fx[0] = M8FXTuple(key=M8SequencerFX.RNL.value, value=96)  # RNL = 7
+        step.fx[1] = M8FXTuple(key=M8MixerFX.VMV.value, value=80)  # VMV = 27
+        
+        # Create a context for the test
+        from m8.core.enums import M8InstrumentContext
+        from m8.enums import M8InstrumentType
+        context = M8InstrumentContext.get_instance()
+        
+        # Set up a project context with an instrument
+        class MockProject:
+            def __init__(self):
+                self.instruments = [MockInstrument()]
+                
+        class MockInstrument:
+            def __init__(self):
+                self.type = M8InstrumentType.WAVSYNTH
+                self.instrument_type = "WAVSYNTH"
+                
+        context.set_project(MockProject())
+        
+        try:
+            # Delete FX using string enum name
+            result = step.delete_fx("RNL")
+            self.assertTrue(result)
+            self.assertTrue(step.fx[0].is_empty())
+            self.assertEqual(step.fx[1].key, M8MixerFX.VMV.value)  # Other FX should be unchanged
+            
+            # Delete non-existent FX using string enum name
+            result = step.delete_fx("SCA")  # SCA doesn't exist in this step
+            self.assertFalse(result)
+        finally:
+            # Clean up context
+            context.clear()
     
     def test_as_dict(self):
         # For proper enum value serialization, we need context with instrument types

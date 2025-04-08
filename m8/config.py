@@ -268,6 +268,35 @@ def get_instrument_common_defaults():
         
         return defaults
     raise ValueError("Common defaults for instruments not found in configuration")
+    
+def get_fx_keys_enum_paths(instrument_type_id):
+    """Get enum paths for FX keys for the given instrument type."""
+    config = load_format_config()
+    fx_enums = {}
+    
+    # Check if fx section exists with enums for key field
+    if ('fx' in config and 'fields' in config['fx'] and 
+        'key' in config['fx']['fields'] and 'enums' in config['fx']['fields']['key']):
+        fx_enums = config['fx']['fields']['key']['enums']
+    
+    # Try direct lookup by ID
+    if instrument_type_id in fx_enums:
+        return fx_enums[instrument_type_id]
+    
+    # Try hex format
+    hex_key = f"0x{instrument_type_id:02x}"
+    if hex_key in fx_enums:
+        return fx_enums[hex_key]
+    
+    # Try string instrument type
+    instrument_types = get_instrument_types()
+    if instrument_type_id in instrument_types:
+        instrument_type = instrument_types[instrument_type_id]
+        if instrument_type in fx_enums:
+            return fx_enums[instrument_type]
+    
+    # Default fallback for when no specific enum is found
+    return fx_enums.get("default", [])
 
 def get_modulator_common_offsets():
     """Retrieves common parameter offsets for modulators from configuration."""

@@ -668,6 +668,71 @@ def ensure_enum_int_value(value, enum_paths, instrument_type=None, param_name=No
         error_msg = f"Invalid enum string value: '{value}' - no enum classes found"
         raise M8EnumValueError(error_msg)
 
+# Parameter decorator for enum string conversion
+def with_enum_param(param_index=0, instrument_attr='instrument', empty_value=0xFF):
+    """
+    Decorator to convert string enum parameters to numeric values.
+    
+    Args:
+        param_index: Index of the parameter to convert (default is 0, the first parameter)
+        instrument_attr: Name of the attribute containing the instrument ID (default is 'instrument')
+        empty_value: Value that represents an empty/invalid reference (default is 0xFF)
+        
+    Usage:
+        @with_enum_param(param_index=0)  # Convert the first parameter (key)
+        def add_fx(self, key, value):
+            # key will be converted from string enum to numeric value if needed
+            ...
+    """
+    def decorator(func):
+        import functools
+        
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # Convert args to list to allow modification
+            args_list = list(args)
+            
+            # Get the parameter to convert
+            if len(args_list) > param_index:
+                param = args_list[param_index]
+                
+                # Only convert if it's a string
+                if isinstance(param, str):
+                    # Get instrument ID from self
+                    instrument_id = getattr(self, instrument_attr, empty_value)
+                    
+                    # Only proceed if we have a valid instrument reference
+                    if instrument_id != empty_value:
+                        context = M8InstrumentContext.get_instance()
+                        
+                        # Use context to find appropriate enum for this instrument type
+                        with context.with_referenced_context(instrument_id):
+                            # Get enum classes from configuration
+                            from m8.config import get_fx_keys_enum_paths
+                            instrument_type_id = context.get_instrument_type_id()
+                            
+                            if instrument_type_id is not None:
+                                # Get enum paths for this instrument type
+                                enum_paths = get_fx_keys_enum_paths(instrument_type_id)
+                                
+                                # Load enum classes
+                                enum_classes = load_enum_classes(enum_paths)
+                                
+                                # Try each enum class to find the key
+                                for enum_class in enum_classes:
+                                    try:
+                                        args_list[param_index] = enum_class[param].value
+                                        break
+                                    except KeyError:
+                                        continue
+            
+            # Call the original function with possibly modified args
+            return func(self, *args_list, **kwargs)
+        
+        return wrapper
+    
+    return decorator
+
 # Clear the enum class cache
 def clear_enum_cache():
     """Clear the enum class cache."""

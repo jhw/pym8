@@ -2,13 +2,13 @@
 
 # Medium
 
-- can't pass enum keys to add_fx()
-- enum for sampler slice parameter?
 - song/chain/phrase table representations
-- bundle generation tool
 - OFF note
 
 # Thoughts
+
+- enum for sampler slice parameter?
+- bundle generation tool?
 
 # Roadmap
 
@@ -28,6 +28,7 @@
 
 # Done
 
+- can't pass enum keys to add_fx()
 - Implemented WAV file slicer (WAVSlicer) in m8/tools for client scripts
 - Fixed instrument naming to start at 0000 instead of 0001
 

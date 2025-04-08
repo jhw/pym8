@@ -1,6 +1,6 @@
 from m8.api import M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
-from m8.core.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum, M8InstrumentContext
+from m8.core.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum, M8InstrumentContext, with_enum_param
 from m8.config import load_format_config
 from m8.core.validation import M8ValidationResult
 
@@ -182,6 +182,7 @@ class M8PhraseStep(EnumPropertyMixin):
                 return slot_idx
         return None
     
+    @with_enum_param(param_index=0)
     def add_fx(self, key, value):
         # First check if we already have this key
         existing_slot = self.find_fx_slot(key)
@@ -206,6 +207,7 @@ class M8PhraseStep(EnumPropertyMixin):
             
         return slot
         
+    @with_enum_param(param_index=0)
     def set_fx(self, key, value, slot):
         if not (0 <= slot < FX_BLOCK_COUNT):
             raise IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
@@ -219,12 +221,14 @@ class M8PhraseStep(EnumPropertyMixin):
         else:
             self.fx[slot] = M8FXTuple(key=key, value=value)
     
+    @with_enum_param(param_index=0)
     def get_fx(self, key):
         slot = self.find_fx_slot(key)
         if slot is not None:
             return self.fx[slot].value
         return None
     
+    @with_enum_param(param_index=0)
     def delete_fx(self, key):
         slot = self.find_fx_slot(key)
         if slot is not None:
