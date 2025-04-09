@@ -25,6 +25,14 @@ INSTRUMENT_TYPES = get_instrument_types()
 # Global counter for auto-generating instrument names (starts at 0 to generate 0000 as first index)
 _INSTRUMENT_COUNTER = 0
 
+def reset_instrument_counter():
+    """Reset the instrument counter to 0.
+    
+    Call this before creating your first instrument to ensure sequential numbering starts from 0000.
+    """
+    global _INSTRUMENT_COUNTER
+    _INSTRUMENT_COUNTER = 0
+
 # Block sizes and counts for instruments - from config
 BLOCK_SIZE = config["instruments"]["block_size"]    # Size of each instrument in bytes
 BLOCK_COUNT = config["instruments"]["count"]        # Maximum number of instruments

@@ -17,6 +17,8 @@ from m8.core.enums import (
     ensure_enum_int_value, clear_enum_cache
 )
 
+# Import reset_instrument_counter will happen in client code directly from m8.api.instruments
+
 class M8UnknownTypeError(Exception):
     """Exception raised when an unknown instrument or modulator type is encountered."""
     pass
@@ -60,3 +62,5 @@ def load_class(class_path):
     module_name, class_name = class_path.rsplit('.', 1)
     module = __import__(module_name, fromlist=[class_name])
     return getattr(module, class_name)
+
+# Circular import concerns: don't import reset_instrument_counter here
