@@ -22,16 +22,6 @@ config = load_format_config()
 # Instrument type mapping
 INSTRUMENT_TYPES = get_instrument_types()
 
-# Global counter for auto-generating instrument names (starts at 0 to generate 0000 as first index)
-_INSTRUMENT_COUNTER = 0
-
-def reset_instrument_counter():
-    """Reset the instrument counter to 0.
-    
-    Call this before creating your first instrument to ensure sequential numbering starts from 0000.
-    """
-    global _INSTRUMENT_COUNTER
-    _INSTRUMENT_COUNTER = 0
 
 # Block sizes and counts for instruments - from config
 BLOCK_SIZE = config["instruments"]["block_size"]    # Size of each instrument in bytes
@@ -230,8 +220,6 @@ class M8Instrument(EnumPropertyMixin):
     
     def __init__(self, instrument_type=None, **kwargs):
         """Initialize a new instrument with default parameters."""
-        global _INSTRUMENT_COUNTER
-        
         # Process instrument_type
         if instrument_type is None:
             # Default to wavsynth if not specified
@@ -257,19 +245,6 @@ class M8Instrument(EnumPropertyMixin):
         
         # Initialize version (will be set from project or read from file)
         self.version = M8Version()
-        
-        # Generate sequential name if not provided
-        if 'name' not in kwargs:
-            # Use instrument type for name base
-            base_name = instrument_type
-            # Truncate or pad to 8 characters
-            name_base = (base_name[:8] if len(base_name) > 8 else base_name.ljust(8))
-            # Use global counter for 4-digit hex code, starting at 0000
-            counter_hex = f"{_INSTRUMENT_COUNTER & 0xFFFF:04X}"
-            # Combine name components
-            kwargs['name'] = f"{name_base}{counter_hex}"
-            # Increment counter for next instrument
-            _INSTRUMENT_COUNTER += 1
         
         # Get common default parameters from config
         common_defaults = get_instrument_common_defaults()

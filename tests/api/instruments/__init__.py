@@ -188,31 +188,6 @@ class TestInstrumentBase(unittest.TestCase):
         # Create a unified instrument for testing
         self.instrument = M8Instrument(instrument_type="WAVSYNTH")
     
-    def test_reset_instrument_counter(self):
-        # Import the modules
-        import m8.api.instruments
-        
-        # Create a few instruments to increment the counter
-        instr1 = M8Instrument(instrument_type="WAVSYNTH")
-        instr2 = M8Instrument(instrument_type="FMSYNTH")
-        
-        # Counter should be > 0 now
-        self.assertGreater(m8.api.instruments._INSTRUMENT_COUNTER, 0)
-        
-        # Reset counter
-        m8.api.instruments.reset_instrument_counter()
-        
-        # Counter should be 0
-        self.assertEqual(m8.api.instruments._INSTRUMENT_COUNTER, 0)
-        
-        # Create new instrument, should use counter 0
-        instr3 = M8Instrument(instrument_type="MACROSYNTH")
-        
-        # Name should end with 0000
-        self.assertTrue(instr3.name.endswith("0000"))
-        
-        # Counter should be 1 now
-        self.assertEqual(m8.api.instruments._INSTRUMENT_COUNTER, 1)
     
     def test_constructor_and_defaults(self):
         # Test default constructor
@@ -220,7 +195,7 @@ class TestInstrumentBase(unittest.TestCase):
         
         # Check common parameters
         self.assertEqual(instr.type, 0x00)  # WavSynth type id
-        self.assertNotEqual(instr.name, "")  # Should have auto-generated a name
+        self.assertEqual(instr.name, " ")  # Default name is a single space from config
         self.assertEqual(instr.transpose, 0x4)
         self.assertEqual(instr.eq, 0x1)
         self.assertEqual(instr.table_tick, 0x01)
