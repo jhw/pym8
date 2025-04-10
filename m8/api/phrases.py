@@ -29,6 +29,8 @@ class M8PhraseStep(EnumPropertyMixin):
     EMPTY_VELOCITY = config["constants"]["empty_velocity"]
     EMPTY_INSTRUMENT = config["constants"]["empty_instrument"]
     
+    OFF_NOTE = 0x80
+    
     def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
         # Process note value - convert from string enum if needed
         if isinstance(note, str) and note != self.EMPTY_NOTE:
@@ -79,11 +81,15 @@ class M8PhraseStep(EnumPropertyMixin):
         4. It maintains separation between emptiness checks and validity checks
         
         A step is considered non-empty if it either:
-        - Contains a non-empty note value
+        - Contains a non-empty note value (including OFF_NOTE)
         - Contains non-empty FX, even with an empty note
         """
         # If FX is non-empty, the step is non-empty even with an empty note
         if not self.fx.is_empty():
+            return False
+        
+        # If note is OFF_NOTE (0x80), the step is non-empty
+        if self._data[self.NOTE_OFFSET] == self.OFF_NOTE:
             return False
             
         # If FX is empty, check if note/velocity/instrument are all empty
@@ -97,11 +103,16 @@ class M8PhraseStep(EnumPropertyMixin):
         A step is considered complete if:
         1. It's empty (all fields are empty), or
         2. It has both a note, velocity and instrument set, and all FX tuples are complete
+        3. It's a note-off command (note is OFF_NOTE)
         
         This helps identify incomplete steps where some required fields are set but others aren't.
         """
         # If the step is completely empty, it's considered complete
         if self.is_empty():
+            return True
+            
+        # If it's a note-off, it's considered complete by definition
+        if self._data[self.NOTE_OFFSET] == self.OFF_NOTE:
             return True
             
         # For non-empty steps, check all required fields are set
@@ -236,6 +247,14 @@ class M8PhraseStep(EnumPropertyMixin):
             self.fx[slot] = M8FXTuple()
             return True
         return False
+        
+    def off(self):
+        self._data[self.NOTE_OFFSET] = self.OFF_NOTE
+        self._data[self.VELOCITY_OFFSET] = self.EMPTY_VELOCITY
+        self._data[self.INSTRUMENT_OFFSET] = self.EMPTY_INSTRUMENT
+        
+        for i in range(len(self.fx)):
+            self.fx[i] = M8FXTuple(key=M8FXTuple.EMPTY_KEY, value=M8FXTuple.DEFAULT_VALUE)
 
     def as_dict(self):
         # Set up context for FX serialization based on the instrument

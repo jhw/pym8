@@ -2,29 +2,28 @@
 
 # Medium
 
-# Thoughts
-
-- enum for sampler slice parameter?
-- bundle generation tool?
-
 # Roadmap
 
-- OFF note
+- Midi Out instrument
+- Midi controller mapping
 
 - Github Project, Issues
 
-- Midi Out instrument
 - External instrument
-
-- Midi controller mapping
 
 - Tables
 - Eq
 - Grooves
 - Scales
 
+# Thoughts
+
+- enum for sampler slice parameter?
+- bundle generation tool?
+
 # Done
 
+- OFF note
 - song/chain/phrase table representations
 - can't pass enum keys to add_fx()
 - Implemented WAV file slicer (WAVSlicer) in m8/tools for client scripts

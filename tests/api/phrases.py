@@ -477,6 +477,36 @@ class TestM8PhraseStep(unittest.TestCase):
         finally:
             # Clean up context
             context.clear()
+            
+    def test_off(self):
+        # Test off method
+        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
+        step.fx[0] = M8FXTuple(key=10, value=20)
+        step.fx[1] = M8FXTuple(key=30, value=40)
+        
+        # Verify it's not empty initially
+        self.assertFalse(step.is_empty())
+        
+        # Call off method
+        step.off()
+        
+        # Verify note is set to OFF_NOTE (0x80)
+        self.assertEqual(step._data[step.NOTE_OFFSET], step.OFF_NOTE)
+        
+        # Verify velocity and instrument are set to empty
+        self.assertEqual(step.velocity, step.EMPTY_VELOCITY)
+        self.assertEqual(step.instrument, step.EMPTY_INSTRUMENT)
+        
+        # Verify all FX are cleared (keys=0xFF, values=0x00)
+        for fx in step.fx:
+            self.assertEqual(fx.key, M8FXTuple.EMPTY_KEY)
+            self.assertEqual(fx.value, M8FXTuple.DEFAULT_VALUE)
+        
+        # Verify the step is not considered empty when note is OFF_NOTE
+        self.assertFalse(step.is_empty())
+        
+        # Verify the step is considered complete
+        self.assertTrue(step.is_complete())
     
     def test_as_dict(self):
         # For proper enum value serialization, we need context with instrument types
