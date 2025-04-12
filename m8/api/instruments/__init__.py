@@ -67,7 +67,7 @@ class M8InstrumentParams(EnumPropertyMixin):
         for key, value in kwargs.items():
             if hasattr(self, key):
                 # Check if this parameter has enum support
-                param_def = self._param_defs.get(key, {})
+                param_def = self._param_defs[key]
                 if "enums" in param_def and isinstance(value, str):
                     # Convert string enum values to numeric values
                     value = deserialize_param_enum(param_def["enums"], value, key, instrument_type)
@@ -98,12 +98,9 @@ class M8InstrumentParams(EnumPropertyMixin):
             size = param_def["size"]
             end = offset + size
             
-            # Get parameter type (enum value or use UINT8 as default)
-            param_type = M8ParamType.UINT8
-            if "type" in param_def:
-                type_name = param_def["type"]
-                if type_name == "STRING":
-                    param_type = M8ParamType.STRING
+            # Get parameter type from definition
+            type_name = param_def.get("type", "UINT8")
+            param_type = M8ParamType.STRING if type_name == "STRING" else M8ParamType.UINT8
             
             if param_type == M8ParamType.UINT8:
                 # Read a single byte
@@ -111,9 +108,6 @@ class M8InstrumentParams(EnumPropertyMixin):
             elif param_type == M8ParamType.STRING:
                 # Read a string of specified length using utility function
                 value = read_fixed_string(data, offset, size)
-            else:
-                # Default to UINT8 for unknown types
-                value = data[offset]
                 
             setattr(self, param_name, value)
     
@@ -135,12 +129,9 @@ class M8InstrumentParams(EnumPropertyMixin):
             end = offset + size
             value = getattr(self, param_name)
             
-            # Get parameter type (enum value or use UINT8 as default)
-            param_type = M8ParamType.UINT8
-            if "type" in param_def:
-                type_name = param_def["type"]
-                if type_name == "STRING":
-                    param_type = M8ParamType.STRING
+            # Get parameter type from definition
+            type_name = param_def.get("type", "UINT8")
+            param_type = M8ParamType.STRING if type_name == "STRING" else M8ParamType.UINT8
             
             if param_type == M8ParamType.UINT8:
                 # Write a single byte
@@ -155,9 +146,6 @@ class M8InstrumentParams(EnumPropertyMixin):
                 else:
                     # Handle non-string values by padding with nulls
                     buffer[offset:end] = bytes([0] * size)
-            else:
-                # Default to UINT8 for unknown types
-                buffer[offset] = value & 0xFF
         
         return bytes(buffer[:max_end])
     
@@ -326,12 +314,6 @@ class M8Instrument(EnumPropertyMixin):
         with context.with_instrument(instrument_type_id=type_id):
             self.modulators = M8Modulators.read(data[self.modulators_offset:])
             
-            # Set instrument_type on each modulator for backward compatibility
-            # The context manager will be the primary mechanism, but this ensures
-            # existing code still works correctly
-            for modulator in self.modulators:
-                if hasattr(modulator, 'instrument_type'):
-                    modulator.instrument_type = self.instrument_type
 
     def write(self):
         """Convert the instrument to binary data."""
@@ -364,12 +346,9 @@ class M8Instrument(EnumPropertyMixin):
             # Get the parameter value
             value = getattr(self.params, param_name)
             
-            # Get parameter type (enum value or use UINT8 as default)
-            param_type = M8ParamType.UINT8
-            if "type" in param_def:
-                type_name = param_def["type"]
-                if type_name == "STRING":
-                    param_type = M8ParamType.STRING
+            # Get parameter type from definition
+            type_name = param_def.get("type", "UINT8")
+            param_type = M8ParamType.STRING if type_name == "STRING" else M8ParamType.UINT8
             
             if param_type == M8ParamType.UINT8:
                 # Write a single byte
@@ -384,12 +363,6 @@ class M8Instrument(EnumPropertyMixin):
                 else:
                     # Null padding
                     buffer[offset:end] = bytes([0] * size)
-            else:
-                # Default to UINT8
-                if "enums" in param_def and isinstance(value, str):
-                    # Convert string enum to int value
-                    value = ensure_enum_int_value(value, param_def["enums"])
-                buffer[offset] = value & 0xFF
         
         # Write modulators
         modulator_params = self.modulators.write()
@@ -554,9 +527,6 @@ class M8Instrument(EnumPropertyMixin):
         version = M8Version.read(data[version_offset:])
         logger.info(f"M8 instrument file {file_path} has version {version}")
         
-        # Check if version matches expected version if provided
-        if expected_version is not None and str(version) != str(expected_version):
-            raise ValueError(f"Version mismatch: instrument has version {version}, expected {expected_version}")
         
         # Read instrument data
         metadata_offset = get_offset("metadata")

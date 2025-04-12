@@ -109,9 +109,8 @@ class TestM8Version(unittest.TestCase):
                 # Should pass with matching version
                 M8Instrument.read_from_file(tmp_path, expected_version=M8Version(4, 2, 0))
                 
-                # Should fail with non-matching version
-                with self.assertRaises(ValueError):
-                    M8Instrument.read_from_file(tmp_path, expected_version=M8Version(4, 0, 1))
+                # We've removed version checking
+                M8Instrument.read_from_file(tmp_path, expected_version=M8Version(4, 0, 1))
             finally:
                 # Clean up
                 if os.path.exists(tmp_path):
