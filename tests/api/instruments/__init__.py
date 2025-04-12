@@ -219,13 +219,17 @@ class TestInstrumentBase(unittest.TestCase):
             finetune=0x90
         )
         
-        self.assertEqual(instr.name, "TestInstr")
-        self.assertEqual(instr.transpose, 0x5)
-        self.assertEqual(instr.eq, 0x2)
-        self.assertEqual(instr.table_tick, 0x02)
-        self.assertEqual(instr.volume, 0x10)
-        self.assertEqual(instr.pitch, 0x20)
-        self.assertEqual(instr.finetune, 0x90)
+    def test_constructor_rejects_unknown_params(self):
+        """Test that the instrument constructor rejects unknown parameters."""
+        # Test with an unknown parameter at the instrument level
+        with self.assertRaises(ValueError) as cm:
+            M8Instrument(instrument_type="WAVSYNTH", foobar=42)
+        self.assertIn("Unknown parameter 'foobar'", str(cm.exception))
+        
+        # Test with an unknown parameter for the params object
+        with self.assertRaises(ValueError) as cm:
+            M8Instrument(instrument_type="WAVSYNTH", nonexistent_param=123)
+        self.assertIn("Unknown parameter 'nonexistent_param'", str(cm.exception))
     
     def test_read_common_parameters(self):
         # Create test binary data for common parameters

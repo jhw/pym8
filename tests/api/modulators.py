@@ -35,6 +35,12 @@ class TestM8ModulatorParams(unittest.TestCase):
         self.assertEqual(params.param1, 0x40)
         self.assertEqual(params.param2, 0x20)  # Default
         self.assertEqual(params.param3, 0x30)  # Default
+        
+    def test_reject_unknown_parameters(self):
+        """Test that the modulator params constructor rejects unknown parameters."""
+        with self.assertRaises(ValueError) as cm:
+            M8ModulatorParams(self.test_param_defs, nonexistent_param=123)
+        self.assertIn("Unknown parameter 'nonexistent_param'", str(cm.exception))
     
     def test_read_from_binary(self):
         # Create test binary data
@@ -183,6 +189,18 @@ class TestM8Modulator(unittest.TestCase):
         self.assertEqual(mod.params.oscillator, 0x1)
         self.assertEqual(mod.params.trigger, 0x2)
         self.assertEqual(mod.params.frequency, 0x30)
+        
+    def test_reject_unknown_parameters(self):
+        """Test that the modulator constructor rejects unknown parameters."""
+        # Test with unknown modulator property
+        with self.assertRaises(ValueError) as cm:
+            M8Modulator(modulator_type="LFO", foobar=42)
+        self.assertIn("Unknown parameter 'foobar'", str(cm.exception))
+        
+        # Test with unknown parameter for the params object
+        with self.assertRaises(ValueError) as cm:
+            M8Modulator(modulator_type="LFO", nonexistent_param=123)
+        self.assertIn("Unknown parameter 'nonexistent_param'", str(cm.exception))
     
     def test_constructor_with_string_enums(self):
         """Test using string enum values with modulator constructor."""

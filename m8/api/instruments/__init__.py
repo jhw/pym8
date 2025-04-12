@@ -63,15 +63,21 @@ class M8InstrumentParams(EnumPropertyMixin):
             default = param_def["default"]
             setattr(self, param_name, default)
         
-        # Apply any kwargs
+        # Validate kwargs before applying them
+        valid_params = set(self._param_defs.keys())
+        for key in kwargs.keys():
+            if key not in valid_params:
+                raise ValueError(f"Unknown parameter '{key}' for instrument parameters")
+        
+        # Apply valid kwargs
         for key, value in kwargs.items():
-            if hasattr(self, key):
-                # Check if this parameter has enum support
-                param_def = self._param_defs[key]
-                if "enums" in param_def and isinstance(value, str):
-                    # Convert string enum values to numeric values
-                    value = deserialize_param_enum(param_def["enums"], value, key, instrument_type)
-                setattr(self, key, value)
+            # Parameter is already validated to exist
+            # Check if this parameter has enum support
+            param_def = self._param_defs[key]
+            if "enums" in param_def and isinstance(value, str):
+                # Convert string enum values to numeric values
+                value = deserialize_param_enum(param_def["enums"], value, key, instrument_type)
+            setattr(self, key, value)
     
     @classmethod
     def from_config(cls, instrument_type, instrument_type_id=None, **kwargs):
@@ -255,6 +261,23 @@ class M8Instrument(EnumPropertyMixin):
         # Set up modulators
         self.modulators_offset = get_instrument_modulators_offset(instrument_type)
         self.modulators = M8Modulators(items=create_default_modulators())
+        
+        # Validate kwargs first
+        valid_keys = set()
+        # Add common instrument properties
+        for key in dir(self):
+            if not key.startswith('_') and key not in ["modulators", "type", "params"]:
+                valid_keys.add(key)
+        
+        # Add all parameter keys
+        for key in dir(self.params):
+            if not key.startswith('_') and not callable(getattr(self.params, key)):
+                valid_keys.add(key)
+        
+        # Check for invalid keys
+        for key in kwargs.keys():
+            if key not in valid_keys:
+                raise ValueError(f"Unknown parameter '{key}' for instrument type '{instrument_type}'")
         
         # Apply common parameters from kwargs
         for key, value in kwargs.items():
