@@ -64,7 +64,7 @@ class M8ModulatorParams:
     
     def read(self, data):
         """Read parameters from binary data."""
-        # Read values from their explicit offsets
+        # Read values directly from their explicit offsets in the binary data
         for param_name, param_def in self._param_defs.items():
             if 'nibble' in param_def:
                 # This is a special case for destination which is stored in a nibble
@@ -271,9 +271,26 @@ class M8Modulator(EnumPropertyMixin):
         # Read amount
         self.amount = data[self.AMOUNT_OFFSET]
         
-        # Create and read the appropriate params object based on modulator type
+        # Create the parameters object based on modulator type
         self.params = M8ModulatorParams.from_config(self.modulator_type)
-        self.params.read(data)
+        
+        # Read parameters directly from their positions in the binary data
+        for param_name in dir(self.params):
+            # Skip private attributes and methods
+            if param_name.startswith('_') or callable(getattr(self.params, param_name)):
+                continue
+                
+            # Get parameter definition to find its offset
+            param_def = self.params._param_defs.get(param_name)
+            if not param_def or 'nibble' in param_def:
+                continue  # Skip parameters without definitions or nibble params
+                
+            # Get parameter offset
+            offset = param_def.get("offset")
+            
+            # Read value directly from its position in the data
+            if offset is not None and offset < len(data):
+                setattr(self.params, param_name, data[offset])
         
         return self
     
@@ -300,13 +317,29 @@ class M8Modulator(EnumPropertyMixin):
                 # Use generic enum conversion with config-provided enum paths
                 dest_value = ensure_enum_int_value(dest_value, field_def["enums"], self.instrument_type)
         
+        # Write common fields
         buffer[self.TYPE_DEST_BYTE_OFFSET] = join_nibbles(self.type, dest_value)
         buffer[self.AMOUNT_OFFSET] = self.amount
         
-        params_data = self.params.write()
-        
-        for i in range(min(len(params_data), BLOCK_SIZE - 2)):
-            buffer[i + 2] = params_data[i]
+        # Write each parameter directly to its position in the buffer based on its offset
+        # This ensures params are written to their correct positions directly
+        for param_name in dir(self.params):
+            # Skip private attributes and methods
+            if param_name.startswith('_') or callable(getattr(self.params, param_name)):
+                continue
+                
+            # Get parameter definition to find its offset
+            param_def = self.params._param_defs.get(param_name)
+            if not param_def or 'nibble' in param_def:
+                continue  # Skip parameters without definitions or nibble params
+                
+            # Get parameter offset and value
+            offset = param_def.get("offset")
+            value = getattr(self.params, param_name)
+            
+            # Ensure the offset is within the buffer bounds
+            if offset is not None and offset < BLOCK_SIZE:
+                buffer[offset] = value & 0xFF
         
         return bytes(buffer)
     

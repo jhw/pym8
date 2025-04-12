@@ -1,5 +1,41 @@
 # Historical Notes
 
+## Modulator Parameter Summary (04/12/2025)
+
+A critical bug in modulator parameter handling caused specific parameters (like decay) to be lost during binary serialization/deserialization. This especially affected the 303-style acid sound design, which relies heavily on envelope decay parameters.
+
+The problem stemmed from how parameter offsets were mapped to binary positions:
+- In the format_config.yaml, the decay parameter has offset 4
+- When accounting for the common fields, this would place it at position 6 (2+4) in the buffer
+- But the modulator block size is only 6 bytes (positions 0-5), causing these values to be truncated
+- When writing, parameters were copied sequentially rather than to their configured positions
+- When reading, the parameters couldn't be found at their expected positions
+
+The fix implemented a direct parameter writing/reading approach:
+- Modified M8Modulator.write() to write each parameter directly to its configured offset position
+- Updated M8Modulator.read() to read each parameter directly from its offset position
+- Added bounds checking to ensure values are only written within the block size
+- Maintained compatibility with the existing format_config.yaml
+
+This solution ensures all modulator parameters (including important decay values for envelopes) are correctly preserved during binary serialization/deserialization, regardless of their offset values.
+
+## Modulator Parameter Fixed (04/12/2025)
+
+Fixed the critical bug in modulator parameter handling that was causing certain parameters (like decay) to be lost during binary serialization/deserialization.
+
+Original issue:
+- When writing modulators to binary format, the M8Modulator.write method incorrectly copied parameter data from M8ModulatorParams.write() to the final binary buffer.
+- It treated the params_data as a continuous array starting from index 0, ignoring the actual parameter offsets defined in the configuration.
+- In AHD_ENVELOPE, the decay parameter has offset 4 in the configuration, which would place it at position 6 (2+4) in the binary data.
+- But with the block size of 6 bytes, this position was outside the valid range.
+
+Solution implemented:
+- Modified M8Modulator.write() to write parameters directly to their correct offset positions in the binary buffer.
+- Updated M8Modulator.read() to read parameters directly from their offset positions in the binary data.
+- This ensures that all parameters are correctly preserved during binary serialization/deserialization, regardless of their offset values.
+
+The fix maintains the existing format_config.yaml parameter definitions while ensuring correct binary representation of all modulator parameters.
+
 ## Modulator Parameter Writing Bug (04/12/2025)
 
 Identified a critical bug in the M8Modulator.write method that affects all modulator parameters with non-zero offsets.
