@@ -1,7 +1,5 @@
 # Short
 
-- think AHD hold/decay are being mapped incorrectly
-
 # Medium
 
 # Roadmap
@@ -25,6 +23,7 @@
 
 # Done
 
+- think AHD hold/decay are being mapped incorrectly
 - OFF note
 - song/chain/phrase table representations
 - can't pass enum keys to add_fx()
