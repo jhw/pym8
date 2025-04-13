@@ -19,7 +19,7 @@ class M8SamplerFX(IntEnum):
     SCH = 0x8F
     SDL = 0x90
     SRV = 0x91
-    SLI = 0x92  # Extra command for slice
+    SLI = 0xA6  # Extra command for slice
 
 class M8SamplerPlayMode(IntEnum):
     FWD = 0x00

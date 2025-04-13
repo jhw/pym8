@@ -18,10 +18,11 @@
 
 # Thoughts
 
-- enum for sampler slice parameter?
 - bundle generation tool?
 
 # Done
+
+- enum for sampler slice parameter? (SLI 0xA6 value fixed)
 
 - think AHD hold/decay are being mapped incorrectly
 - OFF note

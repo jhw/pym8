@@ -1,5 +1,9 @@
 # Historical Notes
 
+## SLI FX Value Fix (13/04/2025)
+
+Fixed the SLI (slice) FX enum value in m8/enums/sampler.py to use the correct value of 0xA6 (previously was incorrectly set to 0x92). All tests pass with this update.
+
 ## Modulator Parameter Summary (04/12/2025)
 
 A critical bug in modulator parameter handling caused specific parameters (like decay) to be lost during binary serialization/deserialization. This especially affected the 303-style acid sound design, which relies heavily on envelope decay parameters.
