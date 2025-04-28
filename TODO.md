@@ -1,24 +1,18 @@
 # Short
 
+- external instrument
+- midi controller mapping
+
 # Medium
 
 # Roadmap
 
-- Midi Out instrument
-- Midi controller mapping
-
-- Github Project, Issues
-
-- External instrument
-
-- Tables
-- Eq
-- Grooves
-- Scales
+- tables
+- eq
+- grooves
+- scales
 
 # Thoughts
-
-- bundle generation tool?
 
 # Done
 
@@ -28,6 +22,7 @@
 - OFF note
 - song/chain/phrase table representations
 - can't pass enum keys to add_fx()
+- Removed WAV-related tools from devtools directory
 - Implemented WAV file slicer (WAVSlicer) in m8/tools for client scripts
 - Fixed instrument naming to start at 0000 instead of 0001
 
@@ -86,6 +81,7 @@
 ✓ Fix modulator destination enum serialization (see NOTES.md for details)
 ✓ Fix non_zero_destination_mods in example tests
 ✓ Enhance M8Modulator.is_empty() to consider OFF destination as empty
+✓ removed tools/bake_chains.py and tools/concat_phrases.py from the codebase
 ✓ refactor tools/concat_phrases.py and tools/bake_chains.py to use a class-based approach
 ✓ update tests for refactored tools
 ✓ phrase note enum support (M8PhraseStep with EnumPropertyMixin)

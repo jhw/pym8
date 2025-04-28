@@ -1,3 +1,9 @@
+## WAV Tool Refactoring (22/04/2025)
+
+- Removed defunct WAV processing tools from devtools directory:
+  - read_wav_slices.py - This functionality is now handled by the m8.tools.extract_slices module
+  - show_wav_structure.py - No longer needed as WAV slice extraction is formally part of the m8.tools package
+
 # Historical Notes
 
 ## SLI FX Value Fix (13/04/2025)
