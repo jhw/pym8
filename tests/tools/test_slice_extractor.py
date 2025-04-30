@@ -5,8 +5,8 @@ import shutil
 import wave
 import struct
 
-from m8.tools.extract_slices import SliceExtractor
-from m8.tools.slice_wav import WAVSlicer
+from m8.tools.slice_extractor import SliceExtractor
+from m8.tools.wav_slicer import WAVSlicer
 
 
 class TestSliceExtractor(unittest.TestCase):

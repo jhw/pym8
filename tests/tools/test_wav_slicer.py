@@ -6,7 +6,7 @@ import wave
 import struct
 from unittest.mock import patch, mock_open, MagicMock
 
-from m8.tools.slice_wav import WAVSlicer
+from m8.tools.wav_slicer import WAVSlicer
 
 
 class TestWAVSlicer(unittest.TestCase):
