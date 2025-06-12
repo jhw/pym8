@@ -474,8 +474,8 @@ class TestInstrumentBase(unittest.TestCase):
         self.assertIsInstance(result["modulators"], list)
         self.assertGreater(len(result["modulators"]), 0)
         self.assertEqual(result["modulators"][0]["type"], "LFO")  # LFO type name
-        # Now we expect the string enum value instead of the integer
-        self.assertEqual(result["modulators"][0]["destination"], "PITCH")
+        # Now we expect the integer enum value instead of the string
+        self.assertEqual(result["modulators"][0]["destination"], 2)  # PITCH destination
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)
 

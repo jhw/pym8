@@ -84,19 +84,7 @@ class TestM8FMSynthParams(unittest.TestCase):
             "reverb": 0x0
         }
         
-        # Define parameters that are serialized as enums in dictionaries
-        self.enum_params = ["algo", "shape1", "shape2", "shape3", "shape4", "filter", "limit"]
-        
-        # Define expected enum string values for specific test values
-        self.enum_string_values = {
-            "algo": {0x02: "A_B_PLUS_C_D"},
-            "shape1": {0x06: "TRI"},
-            "shape2": {0x07: "SAW"},
-            "shape3": {0x08: "SQR"},
-            "shape4": {0x09: "PUL"},
-            "filter": {0x02: "HIGHPASS"},
-            "limit": {0x01: "SIN"}
-        }
+        # With simplified enum system, all parameters are now integer values
 
     def test_constructor_and_defaults(self):
         # Test default constructor for FMSynth params
@@ -158,15 +146,9 @@ class TestM8FMSynthParams(unittest.TestCase):
         
         # Check dictionary has all values correctly
         for param_name, (value, _) in params_dict.items():
-            if param_name in self.enum_params and value in self.enum_string_values.get(param_name, {}):
-                # Check enum string value
-                expected_string = self.enum_string_values[param_name][value]
-                self.assertEqual(result[param_name], expected_string,
-                               f"Dictionary value for {param_name} should be '{expected_string}'")
-            else:
-                # Check numeric value
-                self.assertEqual(result[param_name], value,
-                               f"Dictionary value for {param_name} should be {value}")
+            # With simplified enum system, all values are now integers
+            self.assertEqual(result[param_name], value,
+                           f"Dictionary value for {param_name} should be {value}")
     
     def test_read_write_consistency(self):
         # Prepare all parameters with test values
@@ -228,20 +210,9 @@ class TestM8FMSynthParams(unittest.TestCase):
         
         # Check all parameters are in the dictionary with correct values
         for param_name, value in all_params.items():
-            if param_name in self.enum_params:
-                # Check enum values are strings
-                self.assertIsInstance(result[param_name], str,
-                                    f"Parameter {param_name} should be a string in dictionary")
-                
-                # Check specific enum string values if we have them defined
-                if value in self.enum_string_values.get(param_name, {}):
-                    expected_string = self.enum_string_values[param_name][value]
-                    self.assertEqual(result[param_name], expected_string,
-                                  f"Dictionary value for {param_name} should be '{expected_string}'")
-            else:
-                # Check other values match what we set
-                self.assertEqual(result[param_name], value,
-                                f"Dictionary value for {param_name} should be {value}")
+            # With simplified enum system, all values are integers
+            self.assertEqual(result[param_name], value,
+                           f"Dictionary value for {param_name} should be {value}")
 
 
 class TestFMOperator(unittest.TestCase):
@@ -388,19 +359,7 @@ class TestM8FMSynthInstrument(unittest.TestCase):
             "reverb": 0x0
         }
         
-        # For dict serialization testing - parameters that are serialized as enums
-        self.enum_params = ["algo", "shape1", "shape2", "shape3", "shape4", "filter", "limit"]
-        
-        # Define expected enum string values for specific test values
-        self.enum_string_values = {
-            "algo": {0x02: "A_B_PLUS_C_D"},
-            "shape1": {0x06: "TRI"},
-            "shape2": {0x07: "SAW"},
-            "shape3": {0x08: "SQR"},
-            "shape4": {0x09: "PUL"},
-            "filter": {0x02: "HIGHPASS"},
-            "limit": {0x01: "SIN"}
-        }
+        # With simplified enum system, all parameters are now integer values
         
         # Create operators list that matches the test values
         self.test_operators = [
@@ -562,8 +521,8 @@ class TestM8FMSynthInstrument(unittest.TestCase):
         # Check common parameters
         self.assertEqual(result["type"], "FMSYNTH")
         self.assertEqual(result["name"], "TestFMSynth")
-        self.assertEqual(result["algo"], "A_B_PLUS_C_D")
-        self.assertEqual(result["filter"], "HIGHPASS")
+        self.assertEqual(result["algo"], 0x02)  # A_B_PLUS_C_D enum value
+        self.assertEqual(result["filter"], 0x02)  # HIGHPASS enum value
         self.assertEqual(result["cutoff"], 0xE0)
         self.assertEqual(result["res"], 0x30)
         
@@ -574,16 +533,9 @@ class TestM8FMSynthInstrument(unittest.TestCase):
         # Check operator values in the dictionary
         for i, op in enumerate(self.test_operators):
             for param, value in self.operator_test_values[i].items():
-                # Shape is serialized as a string
-                if param == "shape":
-                    # Shape enum mapping (can be extended with more comprehensive mapping if needed)
-                    shape_strings = {0x06: "TRI", 0x07: "SAW", 0x08: "SQR", 0x09: "PUL"}
-                    if value in shape_strings:
-                        self.assertEqual(result["operators"][i][param], shape_strings[value],
-                                       f"Operator {i}.{param} should be '{shape_strings[value]}'")
-                else:
-                    self.assertEqual(result["operators"][i][param], value,
-                                   f"Operator {i}.{param} should be {value}")
+                # With simplified enum system, shape is now an integer enum value
+                self.assertEqual(result["operators"][i][param], value,
+                               f"Operator {i}.{param} should be {value}")
 
     def test_binary_serialization(self):
         # Create synth with all parameters but use a shorter name

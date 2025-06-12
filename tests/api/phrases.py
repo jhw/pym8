@@ -100,21 +100,22 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertEqual(step.instrument, M8PhraseStep.EMPTY_INSTRUMENT)
         self.assertEqual(len(step.fx), FX_BLOCK_COUNT)
         
-        # Test with string note parameter
-        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
-        self.assertEqual(step.note, "C_6")
+        # Test with numeric note parameter (simplified enum system)
+        from m8.enums import M8Notes
+        step = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
+        self.assertEqual(step.note, M8Notes.C_6.value)  # Should return numeric value
         self.assertEqual(step.velocity, 100)
         self.assertEqual(step.instrument, 5)
         
-        # Test with numeric note parameter (should still return string from getter)
-        step = M8PhraseStep(note=60, velocity=100, instrument=5)
-        self.assertEqual(step.note, "C_6")
+        # Test with numeric note parameter directly
+        step = M8PhraseStep(note=60, velocity=100, instrument=5)  # 60 = C_6
+        self.assertEqual(step.note, 60)  # Should return numeric value
         self.assertEqual(step.velocity, 100)
         self.assertEqual(step.instrument, 5)
         
         # Test with partial parameters
-        step = M8PhraseStep(note="C_6")
-        self.assertEqual(step.note, "C_6")
+        step = M8PhraseStep(note=M8Notes.C_6.value)
+        self.assertEqual(step.note, M8Notes.C_6.value)  # Should return numeric value
         self.assertEqual(step.velocity, M8PhraseStep.EMPTY_VELOCITY)
         self.assertEqual(step.instrument, M8PhraseStep.EMPTY_INSTRUMENT)
     
