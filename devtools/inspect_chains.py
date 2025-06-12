@@ -5,7 +5,7 @@ import sys
 import yaml
 import logging
 import pandas as pd
-from tabulate import pd.io.formats.style
+from tabulate import tabulate
 
 from m8.api.project import M8Project
 from m8.api.chains import M8ChainStep, M8Chain
@@ -13,23 +13,10 @@ from m8.api import M8Block
 
 def display_chain_tabular(project, chain, chain_idx):
     """Display chain and phrase data as a pandas DataFrame."""
-    # Set up and log details about the context manager
+    # Context management was removed with enum system simplification
     import logging
     logger = logging.getLogger("inspect_chains")
-    logger.debug("Setting up context for chain serialization")
-    
-    from m8.core.enums import M8InstrumentContext, serialize_param_enum_value
-    from m8.config import load_format_config
-    
-    # Get the context manager
-    context = M8InstrumentContext.get_instance()
-    logger.debug(f"Initial context state: project={context.project is not None}, "
-              f"current_instrument_id={context.current_instrument_id}, "
-              f"current_instrument_type_id={context.current_instrument_type_id}")
-    
-    # Set the project on the context manager
-    logger.debug(f"Setting project on context manager: {project}")
-    context.set_project(project)
+    logger.debug("Inspecting chain with simplified enum system")
     
     # Log information about project instruments
     logger.debug(f"Project has {len(project.instruments)} instruments")
@@ -69,21 +56,9 @@ def display_chain_tabular(project, chain, chain_idx):
                             logger.debug(f"Found instrument {instrument_id} referenced in phrase {phrase_idx}")
                             break
                     
-                    instrument_type_id = None
-                    if instrument_id is not None and instrument_id != 0xFF:
-                        # Set context for serialization
-                        logger.debug(f"Creating context for instrument {instrument_id}")
-                        instrument_type_id = context.get_instrument_type_id(instrument_id)
-                        logger.debug(f"Got instrument_type_id: {instrument_type_id}")
-                    
-                    # Create context for serialization if possible
-                    if instrument_type_id is not None:
-                        with context.with_instrument(instrument_id=instrument_id, instrument_type_id=instrument_type_id):
-                            logger.debug("Serializing phrase with instrument context")
-                            phrase_dict = phrase.as_dict()
-                    else:
-                        logger.warning("Failed to get instrument type ID, serializing without context")
-                        phrase_dict = phrase.as_dict()
+                    # Serialize phrase with simplified enum system
+                    logger.debug(f"Serializing phrase {phrase_idx} (instrument: {instrument_id})")
+                    phrase_dict = phrase.as_dict()
                     
                     # Extract phrase steps data for tabular view
                     for i, step_data in enumerate(phrase_dict.get('steps', [])):

@@ -52,7 +52,7 @@ def extract_first_instrument(input_path, output_dir="tmp"):
     for i, instrument in enumerate(project.instruments):
         # Check if it's an M8Block (which would be empty) or if type is 0xFF
         if hasattr(instrument, 'type'):
-            type_value = getattr(instrument.type, 'value', instrument.type)
+            type_value = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
             if isinstance(type_value, int) and type_value != 0xFF:
                 valid_instruments.append(i)
     
