@@ -510,25 +510,19 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertTrue(step.is_complete())
     
     def test_as_dict(self):
-        # For proper enum value serialization, we need context with instrument types
-        # This test uses explicit context to ensure consistent behavior
-        from m8.core.enums import M8InstrumentContext
-        from m8.enums import M8InstrumentType
+        # Test simplified enum system - no context needed
+        from m8.enums import M8Notes
         
-        # Set up direct instrument context
-        context = M8InstrumentContext.get_instance()
-        context.current_instrument_type_id = M8InstrumentType.WAVSYNTH.value
-        
-        # Create a step with FX and a valid instrument reference
-        step = M8PhraseStep(note="C_6", velocity=100, instrument=5)
+        # Create a step with FX
+        step = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
         step.fx[0] = M8FXTuple(key=10, value=20)
         step.fx[2] = M8FXTuple(key=30, value=40)
         
         # Get serialized dict
         result = step.as_dict()
         
-        # Verify basic fields - note should be string
-        self.assertEqual(result["note"], "C_6")
+        # Verify basic fields - note should be integer value with simplified system
+        self.assertEqual(result["note"], M8Notes.C_6.value)  # Should be integer value
         self.assertEqual(result["velocity"], 100)
         self.assertEqual(result["instrument"], 5)
         
@@ -536,18 +530,14 @@ class TestM8PhraseStep(unittest.TestCase):
         self.assertEqual(len(result["fx"]), 2)  # Only non-empty FX tuples
         
         # Find specific FX tuples
-        # Since we have set the context properly, both FX keys should be serialized as strings
+        # With simplified enum system, FX keys are integer values
         fx0 = next(fx for fx in result["fx"] if fx["index"] == 0)
-        # The specific string depends on which enum the value maps to in the current context
-        self.assertTrue(isinstance(fx0["key"], str), f"Expected string FX key, got {type(fx0['key']).__name__}")
+        self.assertEqual(fx0["key"], 10)  # Integer key value
         self.assertEqual(fx0["value"], 20)
         
         fx2 = next(fx for fx in result["fx"] if fx["index"] == 2)
-        self.assertTrue(isinstance(fx2["key"], str), f"Expected string FX key, got {type(fx2['key']).__name__}")
+        self.assertEqual(fx2["key"], 30)  # Integer key value
         self.assertEqual(fx2["value"], 40)
-        
-        # Clean up context
-        context.clear()
         
     def test_as_dict_with_instrument_context(self):
         """Test that FX keys are serialized to string enum values when instrument context is available."""

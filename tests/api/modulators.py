@@ -630,16 +630,14 @@ class TestM8Modulators(unittest.TestCase):
         
         # Set up modulator 0 with WavSynth enum destination
         modulators[0] = M8Modulator(
-            modulator_type="LFO", 
-            instrument_type=0x00,  # WavSynth
+            modulator_type=3,  # LFO
             destination=M8WavSynthModDestinations.CUTOFF.value,  # Numeric value 0x7
             amount=0xFF
         )
         
         # Set up modulator 1 with MacroSynth enum destination
         modulators[1] = M8Modulator(
-            modulator_type="AHD_ENVELOPE", 
-            instrument_type=0x01,  # MacroSynth
+            modulator_type=0,  # AHD_ENVELOPE
             destination=M8MacroSynthModDestinations.TIMBRE.value,  # Numeric value 0x3
             amount=0xFF
         )
@@ -732,17 +730,15 @@ class TestM8Modulators(unittest.TestCase):
         
         modulators = M8Modulators()
         
-        # Set modulators with different instrument types and enum destinations
+        # Set modulators with different types and enum destinations
         modulators[0] = M8Modulator(
-            modulator_type="LFO", 
-            instrument_type=0x00,  # WavSynth
+            modulator_type=3,  # LFO
             destination=M8WavSynthModDestinations.CUTOFF.value,  # Numeric value 0x7
             amount=0xFF
         )
         
         modulators[1] = M8Modulator(
-            modulator_type="AHD_ENVELOPE", 
-            instrument_type=0x01,  # MacroSynth
+            modulator_type=0,  # AHD_ENVELOPE
             destination=M8MacroSynthModDestinations.TIMBRE.value,  # Numeric value 0x3
             amount=0xFF
         )
@@ -753,15 +749,15 @@ class TestM8Modulators(unittest.TestCase):
         # Should only include non-empty modulators with their indexes
         self.assertEqual(len(result), 2)
         
-        # Check specific modulators - string enum values expected
+        # Check specific modulators - integer enum values expected
         mod0 = next(i for i in result if i["index"] == 0)
-        self.assertEqual(mod0["type"], "LFO")
-        self.assertEqual(mod0["destination"], "CUTOFF")
+        self.assertEqual(mod0["type"], "LFO")  # Type is still serialized as string
+        self.assertEqual(mod0["destination"], M8WavSynthModDestinations.CUTOFF.value)  # Destination as integer
         self.assertEqual(mod0["amount"], 0xFF)
         
         mod1 = next(i for i in result if i["index"] == 1)
-        self.assertEqual(mod1["type"], "AHD_ENVELOPE")
-        self.assertEqual(mod1["destination"], "TIMBRE")
+        self.assertEqual(mod1["type"], "AHD_ENVELOPE")  # Type is still serialized as string
+        self.assertEqual(mod1["destination"], M8MacroSynthModDestinations.TIMBRE.value)  # Destination as integer
         self.assertEqual(mod1["amount"], 0xFF)
     
     def test_from_list(self):
@@ -834,8 +830,8 @@ class TestM8Modulators(unittest.TestCase):
         data[0]["type"] = 3  # LFO
         data[1]["type"] = 0  # AHD_ENVELOPE
         
-        # Create from list with instrument type context
-        modulators = M8Modulators.from_list(data, instrument_type=0x00)  # First modulator uses WavSynth
+        # Create from list
+        modulators = M8Modulators.from_list(data)
         
         # Check count
         self.assertEqual(len(modulators), BLOCK_COUNT)
