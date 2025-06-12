@@ -1,4 +1,4 @@
-from m8.core.enums import serialize_enum, deserialize_enum
+from m8.core.utils.enum_utils import serialize_enum, deserialize_enum
 from m8.config import load_format_config
 
 # Load configuration
