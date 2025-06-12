@@ -50,15 +50,7 @@ class TestM8MacroSynthParams(unittest.TestCase):
             "reverb": 0x0
         }
         
-        # Define parameters that are serialized as enums in dictionaries
-        self.enum_params = ["shape", "filter", "limit"]
-        
-        # Define expected enum string values for specific test values
-        self.enum_string_values = {
-            "shape": {0x01: "MORPH"},
-            "filter": {0x02: "HIGHPASS"},
-            "limit": {0x02: "FOLD"}
-        }
+        # With simplified enum system, all parameters are now integer values
         
         # Create a flattened test values dict for convenience
         self.test_values = {}
@@ -111,12 +103,8 @@ class TestM8MacroSynthParams(unittest.TestCase):
                           f"Parameter {param} should be {expected}")
     
     def test_write_to_binary(self):
-        # Create params with test values
+        # Create params with test values (use numeric values directly)
         test_kwargs = {param: value for param, value in self.test_values.items()}
-        # Convert enum values to string representation for test
-        for param in self.enum_params:
-            value = test_kwargs[param]
-            test_kwargs[param] = self.enum_string_values[param][value]
         
         params = M8InstrumentParams.from_config("MACROSYNTH", **test_kwargs)
         
@@ -130,12 +118,8 @@ class TestM8MacroSynthParams(unittest.TestCase):
                               f"Binary at offset {offset} for {param} should be {value}")
     
     def test_read_write_consistency(self):
-        # Create params with test values
+        # Create params with test values (use numeric values directly)
         test_kwargs = {param: value for param, value in self.test_values.items()}
-        # Convert enum values to string representation for test
-        for param in self.enum_params:
-            value = test_kwargs[param]
-            test_kwargs[param] = self.enum_string_values[param][value]
         
         original = M8InstrumentParams.from_config("MACROSYNTH", **test_kwargs)
         
