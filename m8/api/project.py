@@ -57,10 +57,7 @@ class M8Project:
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
         instance.instruments = M8Instruments.read(data[OFFSETS["instruments"]:])
 
-        # This handles the case when read() is called directly without read_from_file()
-        from m8.core.enums import M8InstrumentContext
-        context = M8InstrumentContext.get_instance()
-        context.set_project(instance)
+        # Context management was removed with enum system simplification
 
         return instance
 
@@ -280,10 +277,7 @@ class M8Project:
         with open(filename, "rb") as f:
             project = M8Project.read(f.read())
             
-        # Set the project on the context manager for proper enum resolution
-        from m8.core.enums import M8InstrumentContext
-        context = M8InstrumentContext.get_instance()
-        context.set_project(project)
+        # Context management was removed with enum system simplification
         
         return project
 

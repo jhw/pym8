@@ -624,7 +624,6 @@ class TestM8Modulators(unittest.TestCase):
         # Create modulators with numeric enum destination values
         from m8.enums.wavsynth import M8WavSynthModDestinations
         from m8.enums.macrosynth import M8MacroSynthModDestinations
-        from m8.api import serialize_param_enum_value
         
         modulators = M8Modulators()
         
@@ -656,24 +655,13 @@ class TestM8Modulators(unittest.TestCase):
         self.assertEqual(deserialized[0].destination, M8WavSynthModDestinations.CUTOFF.value)
         self.assertEqual(deserialized[1].destination, M8MacroSynthModDestinations.TIMBRE.value)
         
-        # Demonstrate how we could convert these numeric values to string enums
-        cutoff_string = serialize_param_enum_value(
-            deserialized[0].destination, 
-            {"enums": ["m8.enums.wavsynth.M8WavSynthModDestinations"]},
-            None,
-            "destination"
-        )
+        # With simplified enum system, we work directly with integer values
+        # Verify we can map back to enum names if needed
+        cutoff_enum = M8WavSynthModDestinations(deserialized[0].destination)
+        timbre_enum = M8MacroSynthModDestinations(deserialized[1].destination)
         
-        timbre_string = serialize_param_enum_value(
-            deserialized[1].destination, 
-            {"enums": ["m8.enums.macrosynth.M8MacroSynthModDestinations"]},
-            None,
-            "destination"
-        )
-        
-        # Verify enum string conversion
-        self.assertEqual(cutoff_string, "CUTOFF")
-        self.assertEqual(timbre_string, "TIMBRE")
+        self.assertEqual(cutoff_enum.name, "CUTOFF")
+        self.assertEqual(timbre_enum.name, "TIMBRE")
     
     def test_clone(self):
         # Create original modulators

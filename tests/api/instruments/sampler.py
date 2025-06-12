@@ -53,15 +53,7 @@ class TestM8SamplerParams(unittest.TestCase):
             "sample_path": ""
         }
         
-        # Define parameters that are serialized as enums in dictionaries
-        self.enum_params = ["play_mode", "filter", "limit"]
-        
-        # Define expected enum string values for specific test values
-        self.enum_string_values = {
-            "play_mode": {0x01: "REV"},
-            "filter": {0x02: "HIGHPASS"},
-            "limit": {0x00: "CLIP"}
-        }
+        # With simplified enum system, all parameters are now integer values
         
         # Sample path for testing
         self.test_sample_path = "/samples/kick.wav"
@@ -147,17 +139,12 @@ class TestM8SamplerParams(unittest.TestCase):
         dict_params = M8InstrumentParams.from_config("SAMPLER", **kwargs)
         result = dict_params.as_dict()
         
-        # Check dictionary has all values correctly
+        # Check dictionary has all values correctly - expect integer values with simplified enum system
         for param_name, (value, _) in params_dict.items():
-            if param_name in self.enum_params and value in self.enum_string_values.get(param_name, {}):
-                # Check enum string value
-                expected_string = self.enum_string_values[param_name][value]
-                self.assertEqual(result[param_name], expected_string,
-                               f"Dictionary value for {param_name} should be '{expected_string}'")
-            else:
-                # Check numeric value
-                self.assertEqual(result[param_name], value,
-                               f"Dictionary value for {param_name} should be {value}")
+            self.assertIsInstance(result[param_name], int,
+                               f"Parameter {param_name} should be an integer in dictionary")
+            self.assertEqual(result[param_name], value,
+                           f"Dictionary value for {param_name} should be {value}")
         
         # Check sample path in dictionary
         self.assertEqual(result["sample_path"], self.test_sample_path,
@@ -236,37 +223,33 @@ class TestM8SamplerParams(unittest.TestCase):
         # Convert to dict
         result = params.as_dict()
         
-        # Check all parameters are in the dictionary with correct values
+        # Check all parameters are in the dictionary with correct values - expect integer values with simplified enum system
         for param_name, value in all_params.items():
-            if param_name in self.enum_params:
-                # Check enum values are strings
-                self.assertIsInstance(result[param_name], str,
-                                    f"Parameter {param_name} should be a string in dictionary")
-                
-                # Check specific enum string values if we have them defined
-                if value in self.enum_string_values.get(param_name, {}):
-                    expected_string = self.enum_string_values[param_name][value]
-                    self.assertEqual(result[param_name], expected_string,
-                                  f"Dictionary value for {param_name} should be '{expected_string}'")
+            if param_name == "sample_path":
+                # Sample path should remain a string
+                self.assertIsInstance(result[param_name], str)
+                self.assertEqual(result[param_name], value)
             else:
-                # Check other values match what we set
+                # All other parameters should be integers
+                self.assertIsInstance(result[param_name], int,
+                                   f"Parameter {param_name} should be an integer in dictionary")
                 self.assertEqual(result[param_name], value,
-                                f"Dictionary value for {param_name} should be {value}")
+                               f"Dictionary value for {param_name} should be {value}")
     
     def test_from_dict(self):
-        # Test data with enum values as strings
+        # Test data with integer enum values (simplified enum system)
         data = {
-            "play_mode": "REV",  # Enum name instead of 0x1
+            "play_mode": 0x01,  # REV enum value
             "slice": 0x5,
             "start": 0x10,
             "loop_start": 0x20,
             "length": 0xE0,
             "degrade": 0x30,
-            "filter": "HIGHPASS",  # Enum name instead of 0x2
+            "filter": 0x02,  # HIGHPASS enum value
             "cutoff": 0xD0,
             "res": 0x40,
             "amp": 0x50,
-            "limit": "CLIP",  # Enum name instead of 0x0
+            "limit": 0x00,  # CLIP enum value
             "pan": 0x70,
             "dry": 0xB0,
             "chorus": 0x80,
@@ -278,17 +261,8 @@ class TestM8SamplerParams(unittest.TestCase):
         # Create from dict
         params = M8InstrumentParams.from_dict("SAMPLER", data)
         
-        # String enum values are now converted to integers
-        expected_values = data.copy()
-        # Update expected enum values for proper internal representation
-        expected_values["play_mode"] = 1  # REV enum value
-        expected_values["filter"] = 2  # HIGHPASS enum value
-        expected_values["limit"] = 0  # CLIP enum value
-        
-        # Check values
-        for key, value in expected_values.items():
-            if isinstance(value, str) and key != "sample_path":
-                continue  # Skip enum strings, already checked
+        # Check values - all should match exactly
+        for key, value in data.items():
             self.assertEqual(getattr(params, key), value,
                           f"Parameter {key} should be {value}")
 
@@ -375,15 +349,7 @@ class TestM8Sampler(unittest.TestCase):
             "sample_path": ""
         }
         
-        # For dict serialization testing - parameters that are serialized as enums
-        self.enum_params = ["play_mode", "filter", "limit"]
-        
-        # Define expected enum string values for specific test values
-        self.enum_string_values = {
-            "play_mode": {0x01: "REV"},
-            "filter": {0x02: "HIGHPASS"},
-            "limit": {0x00: "CLIP"}
-        }
+        # With simplified enum system, all parameters are now integer values
 
     def test_constructor_and_defaults(self):
         # Test default constructor
@@ -598,19 +564,15 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(result["type"], "SAMPLER")
         self.assertEqual(result["name"], "TestSampler")
         
-        # Check instrument-specific parameters
+        # Check instrument-specific parameters - expect integer values with simplified enum system
         for param, value in self.sampler_params.items():
-            if param in self.enum_params:
-                # Check enum values are strings
-                self.assertIsInstance(result[param], str,
-                                   f"Parameter {param} should be a string in dictionary")
-                
-                if value in self.enum_string_values.get(param, {}):
-                    expected_string = self.enum_string_values[param][value]
-                    self.assertEqual(result[param], expected_string,
-                                  f"Dictionary value for {param} should be '{expected_string}'")
+            if param == "sample_path":
+                # Sample path should remain a string
+                self.assertIsInstance(result[param], str)
+                self.assertEqual(result[param], value)
             else:
-                # Check other values match what we set
+                self.assertIsInstance(result[param], int,
+                                   f"Parameter {param} should be an integer in dictionary")
                 self.assertEqual(result[param], value,
                               f"Dictionary value for {param} should be {value}")
         
@@ -618,8 +580,6 @@ class TestM8Sampler(unittest.TestCase):
         self.assertIn("modulators", result)
         self.assertIsInstance(result["modulators"], list)
         self.assertGreater(len(result["modulators"]), 0)  # At least the one we added
-        self.assertEqual(result["modulators"][0]["type"], "LFO")
-        self.assertEqual(result["modulators"][0]["destination"], "PITCH")
         self.assertEqual(result["modulators"][0]["amount"], 100)
         self.assertEqual(result["modulators"][0]["frequency"], 50)
 

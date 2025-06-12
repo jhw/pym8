@@ -127,18 +127,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         dict_params = M8InstrumentParams.from_config("HYPERSYNTH", **kwargs)
         result = dict_params.as_dict()
         
-        # Check dictionary has all values correctly
+        # Check dictionary has all values correctly - expect integer values with simplified enum system
         for param_name, (value, _) in params_dict.items():
-            # Enum values are serialized as strings in dictionaries
-            if param_name == "filter" and value == 0x2:
-                self.assertEqual(result[param_name], "HIGHPASS",
-                               f"Dictionary value for {param_name} should be 'HIGHPASS'")
-            elif param_name == "limit" and value == 0x1:
-                self.assertEqual(result[param_name], "SIN",
-                               f"Dictionary value for {param_name} should be 'SIN'")
-            else:
-                self.assertEqual(result[param_name], value,
-                               f"Dictionary value for {param_name} should be {value}")
+            self.assertIsInstance(result[param_name], int,
+                               f"Parameter {param_name} should be an integer in dictionary")
+            self.assertEqual(result[param_name], value,
+                           f"Dictionary value for {param_name} should be {value}")
     
     def test_read_write_consistency(self):
         # Prepare all parameters with test values
@@ -198,16 +192,12 @@ class TestM8HyperSynthParams(unittest.TestCase):
         # Convert to dict
         result = params.as_dict()
         
-        # Check all parameters are in the dictionary with correct values
+        # Check all parameters are in the dictionary with correct values - expect integer values with simplified enum system
         for param_name, value in all_params.items():
-            if param_name in ["filter", "limit"]:
-                # Check enum values are strings
-                self.assertIsInstance(result[param_name], str,
-                                    f"Parameter {param_name} should be a string in dictionary")
-            else:
-                # Check other values match what we set
-                self.assertEqual(result[param_name], value,
-                                f"Dictionary value for {param_name} should be {value}")
+            self.assertIsInstance(result[param_name], int,
+                               f"Parameter {param_name} should be an integer in dictionary")
+            self.assertEqual(result[param_name], value,
+                           f"Dictionary value for {param_name} should be {value}")
 
     def test_write_to_binary_with_all_params(self):
         # Prepare all parameters with test values
@@ -331,8 +321,6 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
             "note6": 0x0
         }
         
-        # For dict serialization testing
-        self.enum_params = ["filter", "limit"]
 
     def test_constructor_and_defaults(self):
         # Test default constructor
@@ -387,9 +375,9 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
                                     if not k.startswith("note")}
         data.update(hypersynth_params_no_notes)
         
-        # Convert enum values to strings for the test
-        data["filter"] = "HIGHPASS"
-        data["limit"] = "SIN"
+        # Use integer enum values with simplified enum system
+        data["filter"] = 0x02  # HIGHPASS
+        data["limit"] = 0x01   # SIN
         
         # Add the notes list
         data["notes"] = [
@@ -470,24 +458,24 @@ class TestM8HyperSynthInstrument(unittest.TestCase):
         for i in range(1, 7):
             self.assertNotIn(f"note{i}", result)
         
-        # Check other parameters are in the dictionary with correct values
+        # Check other parameters are in the dictionary with correct values - expect integer values with simplified enum system
         for param, expected in all_params.items():
             # Skip note params as they're handled separately
             if param.startswith("note"):
                 continue
                 
-            if param in self.enum_params:
-                # Check enum values are strings
+            if param == "name":
+                # Name should remain a string
                 self.assertIsInstance(result[param], str,
                                    f"Parameter {param} should be a string in dictionary")
-                if param == "filter":
-                    self.assertEqual(result[param], "HIGHPASS")
-                elif param == "limit":
-                    self.assertEqual(result[param], "SIN")
-            else:
-                # Check other values match what we set
                 self.assertEqual(result[param], expected,
-                              f"Dictionary value for {param} should be {expected}")
+                               f"Dictionary value for {param} should be {expected}")
+            else:
+                # All other parameters should be integers
+                self.assertIsInstance(result[param], int,
+                                   f"Parameter {param} should be an integer in dictionary")
+                self.assertEqual(result[param], expected,
+                               f"Dictionary value for {param} should be {expected}")
     
     def test_notes_property(self):
         # Test the notes property getter and setter

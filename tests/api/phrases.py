@@ -58,9 +58,8 @@ class TestM8PhraseStepEssential(unittest.TestCase):
     def test_add_fx(self):
         # Test add_fx method
         step = M8PhraseStep()
-        fx = M8FXTuple(key=10, value=20)
         
-        slot = step.add_fx(fx)
+        slot = step.add_fx(key=10, value=20)
         self.assertEqual(slot, 0)
         self.assertEqual(step.fx[0].key, 10)
         self.assertEqual(step.fx[0].value, 20)
