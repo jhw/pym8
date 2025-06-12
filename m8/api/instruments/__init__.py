@@ -1,7 +1,6 @@
 # m8/api/instruments/__init__.py
-from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
+from m8.api import M8Block, load_class, join_nibbles, split_byte, read_fixed_string, write_fixed_string, serialize_enum, deserialize_enum, M8UnknownTypeError
 from m8.api.modulators import M8Modulators, create_default_modulators, M8Modulator
-from m8.core.enums import EnumPropertyMixin, M8InstrumentContext
 from m8.api.version import M8Version
 from enum import Enum, auto
 from m8.enums import M8InstrumentType
@@ -32,7 +31,7 @@ class M8ParamType(Enum):
     UINT8 = auto()      # Standard 1-byte integer (0-255)
     STRING = auto()     # String type with variable length
 
-class M8InstrumentParams(EnumPropertyMixin):
+class M8InstrumentParams:
     """Dynamic parameter container for instrument parameters with support for different parameter types."""
     
     @staticmethod
@@ -72,11 +71,7 @@ class M8InstrumentParams(EnumPropertyMixin):
         # Apply valid kwargs
         for key, value in kwargs.items():
             # Parameter is already validated to exist
-            # Check if this parameter has enum support
-            param_def = self._param_defs[key]
-            if "enums" in param_def and isinstance(value, str):
-                # Convert string enum values to numeric values
-                value = deserialize_param_enum(param_def["enums"], value, key, instrument_type)
+            # Clients should pass enum.value directly for enum parameters
             setattr(self, key, value)
     
     @classmethod
@@ -140,10 +135,7 @@ class M8InstrumentParams(EnumPropertyMixin):
             param_type = M8ParamType.STRING if type_name == "STRING" else M8ParamType.UINT8
             
             if param_type == M8ParamType.UINT8:
-                # Write a single byte
-                if "enums" in param_def and isinstance(value, str):
-                    # Convert string enum to int value
-                    value = ensure_enum_int_value(value, param_def["enums"], self._instrument_type)
+                # Write a single byte - clients should pass enum.value directly
                 buffer[offset] = value & 0xFF
             elif param_type == M8ParamType.STRING:
                 # Write a string of specified length using utility function
@@ -168,11 +160,6 @@ class M8InstrumentParams(EnumPropertyMixin):
         
         for param_name, param_def in self._param_defs.items():
             value = getattr(self, param_name)
-            
-            # Handle enum parameters with simplified approach using serialize_param_enum_value
-            if "enums" in param_def:
-                value = serialize_param_enum_value(value, param_def, self._instrument_type, param_name)
-            
             result[param_name] = value
             
         return result
@@ -185,18 +172,12 @@ class M8InstrumentParams(EnumPropertyMixin):
         for param_name in params._param_defs.keys():
             if param_name in data:
                 value = data[param_name]
-                
-                # Handle enum parameters
-                param_def = params._param_defs[param_name]
-                if "enums" in param_def and isinstance(value, str):
-                    # Convert string enum values to integers for consistency
-                    value = deserialize_param_enum(param_def["enums"], value, param_name, instrument_type)
-                
+                # Clients should pass enum.value directly for enum parameters
                 setattr(params, param_name, value)
             
         return params
 
-class M8Instrument(EnumPropertyMixin):
+class M8Instrument:
     """Base instrument class for all M8 instrument types."""
     
     # Get common parameter offsets from config
@@ -330,12 +311,8 @@ class M8Instrument(EnumPropertyMixin):
         # Set the modulators offset based on instrument type
         self.modulators_offset = get_instrument_modulators_offset(self.instrument_type)
         
-        # Read modulators with instrument context
-        context = M8InstrumentContext.get_instance()
-        # Get the numeric type ID for the context
-        type_id = self.type.value if hasattr(self.type, 'value') else self.type
-        with context.with_instrument(instrument_type_id=type_id):
-            self.modulators = M8Modulators.read(data[self.modulators_offset:])
+        # Read modulators
+        self.modulators = M8Modulators.read(data[self.modulators_offset:])
             
 
     def write(self):
@@ -374,10 +351,7 @@ class M8Instrument(EnumPropertyMixin):
             param_type = M8ParamType.STRING if type_name == "STRING" else M8ParamType.UINT8
             
             if param_type == M8ParamType.UINT8:
-                # Write a single byte
-                if "enums" in param_def and isinstance(value, str):
-                    # Convert string enum to int value
-                    value = ensure_enum_int_value(value, param_def["enums"])
+                # Write a single byte - clients should pass enum.value directly
                 buffer[offset] = value & 0xFF
             elif param_type == M8ParamType.STRING:
                 # Write a string using utility function
@@ -433,17 +407,7 @@ class M8Instrument(EnumPropertyMixin):
         if slot is None:
             raise IndexError("No empty modulator slots available in this instrument")
         
-        # Set the instrument context for the modulator
-        context = M8InstrumentContext.get_instance()
-        # Get the numeric type ID for the context
-        type_id = self.type.value if hasattr(self.type, 'value') else self.type
-        with context.with_instrument(instrument_type_id=type_id):
-            # If the modulator has no instrument_type set, it will use the context
-            if modulator.instrument_type is None:
-                modulator.instrument_type = self.instrument_type
-            
-            self.modulators[slot] = modulator
-            
+        self.modulators[slot] = modulator
         return slot
         
     def set_modulator(self, modulator, slot):
@@ -451,16 +415,7 @@ class M8Instrument(EnumPropertyMixin):
         if not (0 <= slot < len(self.modulators)):
             raise IndexError(f"Modulator slot index must be between 0 and {len(self.modulators)-1}")
         
-        # Set the instrument context for the modulator
-        context = M8InstrumentContext.get_instance()
-        # Get the numeric type ID for the context
-        type_id = self.type.value if hasattr(self.type, 'value') else self.type
-        with context.with_instrument(instrument_type_id=type_id):
-            # If the modulator has no instrument_type set, it will use the context
-            if modulator.instrument_type is None:
-                modulator.instrument_type = self.instrument_type
-                
-            self.modulators[slot] = modulator
+        self.modulators[slot] = modulator
 
     def as_dict(self):
         """Convert instrument to dictionary for serialization."""
@@ -484,12 +439,8 @@ class M8Instrument(EnumPropertyMixin):
         for key, value in params_dict.items():
             result[key] = value
             
-        # Add modulators with instrument context
-        context = M8InstrumentContext.get_instance()
-        # Get the numeric type ID for the context
-        type_id = self.type.value if hasattr(self.type, 'value') else self.type
-        with context.with_instrument(instrument_type_id=type_id):
-            result["modulators"] = self.modulators.as_list()
+        # Add modulators
+        result["modulators"] = self.modulators.as_list()
         
         return result
 
@@ -773,12 +724,7 @@ def create_instrument_from_dict(data):
     
     # Set modulators
     if "modulators" in data:
-        # Set up instrument context for modulators
-        context = M8InstrumentContext.get_instance()
-        # Get the numeric type ID for the context
-        type_id = instrument.type.value if hasattr(instrument.type, 'value') else instrument.type
-        with context.with_instrument(instrument_type_id=type_id):
-            instrument.modulators = M8Modulators.from_list(data["modulators"], type_id)
+        instrument.modulators = M8Modulators.from_list(data["modulators"])
     
     return instrument
 

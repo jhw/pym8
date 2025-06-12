@@ -1,6 +1,5 @@
 from m8.api import M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
-from m8.core.enums import EnumPropertyMixin, serialize_param_enum_value, deserialize_param_enum, M8InstrumentContext, with_enum_param
 from m8.config import load_format_config
 from m8.core.validation import M8ValidationResult
 
@@ -15,7 +14,7 @@ STEP_COUNT = config["step_count"]           # Number of steps per phrase
 PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total phrase size in bytes
 PHRASE_COUNT = config["count"]              # Maximum number of phrases
 
-class M8PhraseStep(EnumPropertyMixin):
+class M8PhraseStep:
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""
     
     NOTE_OFFSET = config["fields"]["note"]["offset"]
@@ -32,18 +31,7 @@ class M8PhraseStep(EnumPropertyMixin):
     OFF_NOTE = 0x80
     
     def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
-        # Process note value - convert from string enum if needed
-        if isinstance(note, str) and note != self.EMPTY_NOTE:
-            if "enums" in config["fields"]["note"]:
-                note = deserialize_param_enum(
-                    config["fields"]["note"]["enums"],
-                    note,
-                    "note",
-                    None
-                )
-            else:
-                note = int(note)  # Try direct conversion
-                
+        # Clients should pass enum.value directly for note values
         self._data = bytearray([note, velocity, instrument])
         self.fx = M8FXTuples()
 
@@ -51,16 +39,7 @@ class M8PhraseStep(EnumPropertyMixin):
     def read(cls, data):
         instance = cls()
         instance._data = bytearray(data[:cls.BASE_DATA_SIZE])
-        
-        # Set up context for FX serialization based on the instrument
-        instrument_id = instance._data[cls.INSTRUMENT_OFFSET]
-        if instrument_id != cls.EMPTY_INSTRUMENT:
-            context = M8InstrumentContext.get_instance()
-            with context.with_instrument(instrument_id=instrument_id):
-                instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
-        else:
-            instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
-            
+        instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
         return instance
 
     def clone(self):
@@ -70,20 +49,7 @@ class M8PhraseStep(EnumPropertyMixin):
         return instance
 
     def is_empty(self):
-        """Check if this phrase step is empty.
-        
-        Uses a lenient approach that checks if note, velocity and instrument equal their
-        M8 empty values (typically 0xFF), rather than validating notes against enums.
-        This approach is preferable because:
-        1. It focuses on the M8's definition of emptiness
-        2. It's more performant by avoiding enum lookups
-        3. It's less coupled to enum implementations
-        4. It maintains separation between emptiness checks and validity checks
-        
-        A step is considered non-empty if it either:
-        - Contains a non-empty note value (including OFF_NOTE)
-        - Contains non-empty FX, even with an empty note
-        """
+        """Check if this phrase step is empty."""
         # If FX is non-empty, the step is non-empty even with an empty note
         if not self.fx.is_empty():
             return False
@@ -98,15 +64,7 @@ class M8PhraseStep(EnumPropertyMixin):
                 self.instrument == self.EMPTY_INSTRUMENT)
                 
     def is_complete(self):
-        """Check if this phrase step is complete.
-        
-        A step is considered complete if:
-        1. It's empty (all fields are empty), or
-        2. It has both a note, velocity and instrument set, and all FX tuples are complete
-        3. It's a note-off command (note is OFF_NOTE)
-        
-        This helps identify incomplete steps where some required fields are set but others aren't.
-        """
+        """Check if this phrase step is complete."""
         # If the step is completely empty, it's considered complete
         if self.is_empty():
             return True
@@ -131,37 +89,11 @@ class M8PhraseStep(EnumPropertyMixin):
 
     @property
     def note(self):
-        # Get the underlying byte value
-        numeric_value = self._data[self.NOTE_OFFSET]
-        
-        # If empty note, just return it as-is
-        if numeric_value == self.EMPTY_NOTE:
-            return numeric_value
-            
-        # If there are enum mappings, convert to string
-        if "enums" in config["fields"]["note"]:
-            string_value = serialize_param_enum_value(
-                numeric_value,
-                config["fields"]["note"],
-                None,
-                "note"
-            )
-            return string_value
-        
-        return numeric_value
+        return self._data[self.NOTE_OFFSET]
     
     @note.setter
     def note(self, value):
-        # Convert string enum to numeric value if needed
-        if isinstance(value, str) and value != self.EMPTY_NOTE:
-            if "enums" in config["fields"]["note"]:
-                value = deserialize_param_enum(
-                    config["fields"]["note"]["enums"],
-                    value,
-                    "note",
-                    None
-                )
-        
+        # Clients should pass enum.value directly for enum note values
         self._data[self.NOTE_OFFSET] = value
     
     @property
@@ -193,8 +125,8 @@ class M8PhraseStep(EnumPropertyMixin):
                 return slot_idx
         return None
     
-    @with_enum_param(param_index=0)
     def add_fx(self, key, value):
+        """Add FX with key and value. Clients should pass enum.value for key."""
         # First check if we already have this key
         existing_slot = self.find_fx_slot(key)
         if existing_slot is not None:
@@ -207,40 +139,25 @@ class M8PhraseStep(EnumPropertyMixin):
         if slot is None:
             raise IndexError("No empty FX slots available in this step")
         
-        # Set instrument context for FX if there's a valid instrument
-        instrument_id = self.instrument
-        if instrument_id != self.EMPTY_INSTRUMENT:
-            context = M8InstrumentContext.get_instance()
-            with context.with_instrument(instrument_id=instrument_id):
-                self.fx[slot] = M8FXTuple(key=key, value=value)
-        else:
-            self.fx[slot] = M8FXTuple(key=key, value=value)
-            
+        self.fx[slot] = M8FXTuple(key=key, value=value)
         return slot
         
-    @with_enum_param(param_index=0)
     def set_fx(self, key, value, slot):
+        """Set FX at specific slot. Clients should pass enum.value for key."""
         if not (0 <= slot < FX_BLOCK_COUNT):
             raise IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
         
-        # Set instrument context for FX if there's a valid instrument
-        instrument_id = self.instrument
-        if instrument_id != self.EMPTY_INSTRUMENT:
-            context = M8InstrumentContext.get_instance()
-            with context.with_instrument(instrument_id=instrument_id):
-                self.fx[slot] = M8FXTuple(key=key, value=value)
-        else:
-            self.fx[slot] = M8FXTuple(key=key, value=value)
+        self.fx[slot] = M8FXTuple(key=key, value=value)
     
-    @with_enum_param(param_index=0)
     def get_fx(self, key):
+        """Get FX value by key. Clients should pass enum.value for key."""
         slot = self.find_fx_slot(key)
         if slot is not None:
             return self.fx[slot].value
         return None
     
-    @with_enum_param(param_index=0)
     def delete_fx(self, key):
+        """Delete FX by key. Clients should pass enum.value for key."""
         slot = self.find_fx_slot(key)
         if slot is not None:
             # Replace with empty FX tuple
@@ -257,16 +174,7 @@ class M8PhraseStep(EnumPropertyMixin):
             self.fx[i] = M8FXTuple(key=M8FXTuple.EMPTY_KEY, value=M8FXTuple.DEFAULT_VALUE)
 
     def as_dict(self):
-        # Set up context for FX serialization based on the instrument
-        instrument_id = self.instrument
-        
-        # Serialize FX with instrument context if there's a valid instrument reference
-        if instrument_id != self.EMPTY_INSTRUMENT:
-            from m8.core.enums import with_referenced_context
-            with with_referenced_context(instrument_id):
-                fx_list = self.fx.as_list()
-        else:
-            fx_list = self.fx.as_list()
+        fx_list = self.fx.as_list()
         
         result = {}
         
@@ -277,8 +185,8 @@ class M8PhraseStep(EnumPropertyMixin):
         if self.velocity != self.EMPTY_VELOCITY:
             result["velocity"] = self.velocity
             
-        if instrument_id != self.EMPTY_INSTRUMENT:
-            result["instrument"] = instrument_id
+        if self.instrument != self.EMPTY_INSTRUMENT:
+            result["instrument"] = self.instrument
             
         # Always include FX list even if empty, for consistency
         result["fx"] = fx_list
@@ -298,15 +206,9 @@ class M8PhraseStep(EnumPropertyMixin):
             instrument=instrument
         )
     
-        # Deserialize FX using the FXTuples' from_list method, with instrument context
+        # Deserialize FX using the FXTuples' from_list method
         if "fx" in data:
-            # Use instrument context if there's a valid instrument reference
-            if instrument != cls.EMPTY_INSTRUMENT:
-                from m8.core.enums import with_referenced_context
-                with with_referenced_context(instrument):
-                    instance.fx = M8FXTuples.from_list(data["fx"])
-            else:
-                instance.fx = M8FXTuples.from_list(data["fx"])
+            instance.fx = M8FXTuples.from_list(data["fx"])
     
         return instance
 
@@ -347,11 +249,7 @@ class M8Phrase(list):
         return all(step.is_empty() for step in self)
         
     def is_complete(self):
-        """Check if all steps in this phrase are complete.
-        
-        A phrase is considered complete if all of its steps are complete.
-        This helps identify phrases with incomplete steps that might cause issues.
-        """
+        """Check if all steps in this phrase are complete."""
         if self.is_empty():
             return True
             
@@ -477,11 +375,7 @@ class M8Phrases(list):
         return all(phrase.is_empty() for phrase in self)
         
     def is_complete(self):
-        """Check if all phrases in this collection are complete.
-        
-        The phrases collection is considered complete if all non-empty phrases are complete.
-        This helps catch any issues with incomplete phrases in the project.
-        """
+        """Check if all phrases in this collection are complete."""
         if self.is_empty():
             return True
             

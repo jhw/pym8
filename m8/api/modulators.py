@@ -1,14 +1,10 @@
 from m8.api import (
-    M8Block, load_class, split_byte, join_nibbles, serialize_enum, deserialize_enum,
-    deserialize_param_enum, ensure_enum_int_value, serialize_param_enum_value, M8UnknownTypeError
-)
-from m8.core.enums import (
-    EnumPropertyMixin, M8InstrumentContext, get_instrument_type_from_context, get_type_id, with_instrument_context
+    M8Block, load_class, split_byte, join_nibbles, serialize_enum, deserialize_enum, M8UnknownTypeError
 )
 from m8.enums import M8ModulatorType
 from m8.config import (
     load_format_config, get_modulator_types, get_modulator_type_id, 
-    get_modulator_data, get_modulator_common_offsets, get_modulator_type_field_def
+    get_modulator_data, get_modulator_common_offsets
 )
 import logging
 import importlib
@@ -29,10 +25,9 @@ DEFAULT_MODULATOR_CONFIGS = config["default_config"]  # 2 AHD envelopes, 2 LFOs
 class M8ModulatorParams:
     """Dynamic parameter container for modulator parameters."""
     
-    def __init__(self, param_defs, instrument_type=None, **kwargs):
+    def __init__(self, param_defs, **kwargs):
         """Initialize the parameter group with the given parameter definitions."""
         self._param_defs = param_defs
-        self._instrument_type = instrument_type
         
         # Initialize parameters with defaults
         for param_name, param_def in param_defs.items():
@@ -45,17 +40,12 @@ class M8ModulatorParams:
             if key not in valid_params:
                 raise ValueError(f"Unknown parameter '{key}' for modulator parameters")
         
-        # Apply valid kwargs
+        # Apply valid kwargs directly - clients should pass enum.value for enum parameters
         for key, value in kwargs.items():
-            # Check if this parameter has enum support
-            param_def = self._param_defs[key]
-            if "enums" in param_def and isinstance(value, str):
-                # Convert string enum values to numeric values
-                value = deserialize_param_enum(param_def["enums"], value, key, instrument_type)
             setattr(self, key, value)
     
     @classmethod
-    def from_config(cls, modulator_type, instrument_type=None, **kwargs):
+    def from_config(cls, modulator_type, **kwargs):
         """Create parameters from modulator type config."""
         config = load_format_config()
         
@@ -65,7 +55,7 @@ class M8ModulatorParams:
         # Load parameter definitions from config
         param_defs = config["modulators"]["types"][lookup_type]["fields"].copy()
         
-        return cls(param_defs, instrument_type, **kwargs)
+        return cls(param_defs, **kwargs)
     
     def read(self, data):
         """Read parameters from binary data."""
@@ -107,19 +97,14 @@ class M8ModulatorParams:
             offset = param_def["offset"]
             value = getattr(self, param_name)
             
-            # Check if this parameter has enum support
-            if "enums" in param_def and isinstance(value, str):
-                # Convert string enum to int value
-                value = ensure_enum_int_value(value, param_def["enums"], self._instrument_type)
-            
-            # All modulator parameters are UINT8
+            # All modulator parameters are UINT8 - clients pass enum.value directly
             buffer[offset] = value & 0xFF
         
         return bytes(buffer)
     
     def clone(self):
         """Create a deep copy of this parameter object."""
-        instance = self.__class__(self._param_defs, self._instrument_type)
+        instance = self.__class__(self._param_defs)
         for param_name in self._param_defs.keys():
             setattr(instance, param_name, getattr(self, param_name))
         return instance
@@ -128,42 +113,25 @@ class M8ModulatorParams:
         """Convert parameters to dictionary for serialization."""
         result = {}
         
-        # Use instrument type directly from the instance
-        instrument_type = self._instrument_type
-        
         for param_name, param_def in self._param_defs.items():
             value = getattr(self, param_name)
-            
-            # Handle enum conversion to string names
-            if "enums" in param_def:
-                value = serialize_param_enum_value(value, param_def, instrument_type, param_name)
-                
             result[param_name] = value
             
         return result
     
     @classmethod
-    def from_dict(cls, modulator_type, data, instrument_type=None):
+    def from_dict(cls, modulator_type, data):
         """Create parameters from a dictionary."""
-        # Use provided instrument type directly
-            
-        params = cls.from_config(modulator_type, instrument_type)
+        params = cls.from_config(modulator_type)
         
         for param_name in params._param_defs.keys():
             if param_name in data:
                 value = data[param_name]
-                
-                # Handle enum parameters
-                param_def = params._param_defs[param_name]
-                if "enums" in param_def and isinstance(value, str):
-                    # Convert string enum values to numeric values
-                    value = deserialize_param_enum(param_def["enums"], value, param_name, instrument_type)
-                
                 setattr(params, param_name, value)
             
         return params
 
-class M8Modulator(EnumPropertyMixin):
+class M8Modulator:
     """Unified modulator class for all M8 modulator types."""
     
     # Get common parameter offsets from config
@@ -177,20 +145,13 @@ class M8Modulator(EnumPropertyMixin):
     EMPTY_DESTINATION = config["constants"]["empty_destination"]
     DEFAULT_AMOUNT = config["constants"]["default_amount"]
     
-    def __init__(self, modulator_type=None, instrument_type=None, **kwargs):
+    def __init__(self, modulator_type=None, **kwargs):
         """Initialize a new modulator with default parameters.
         
         Args:
             modulator_type: The type of modulator to create
-            instrument_type: Optional explicit instrument type for enum context
-                          If not provided, will check the current context
             **kwargs: Additional parameters to set on the modulator
         """
-        # Use provided instrument type directly
-        
-        # Store instrument type for enum lookups
-        self.instrument_type = instrument_type
-            
         # Process modulator_type
         if modulator_type is None:
             # Default to AHD envelope if not specified
@@ -214,12 +175,12 @@ class M8Modulator(EnumPropertyMixin):
         # Set the modulator type name as provided
         self.modulator_type = modulator_type
         
-        # Common modulator parameters
+        # Common modulator parameters - clients pass enum.value directly
         self.destination = self.EMPTY_DESTINATION
         self.amount = self.DEFAULT_AMOUNT
         
         # Create params object based on modulator type
-        self.params = M8ModulatorParams.from_config(modulator_type, instrument_type)
+        self.params = M8ModulatorParams.from_config(modulator_type)
         
         # Validate kwargs first
         valid_keys = set()
@@ -238,7 +199,7 @@ class M8Modulator(EnumPropertyMixin):
             if key not in valid_keys:
                 raise ValueError(f"Unknown parameter '{key}' for modulator type '{modulator_type}'")
         
-        # Apply common parameters from kwargs
+        # Apply common parameters from kwargs - clients pass enum.value directly
         for key, value in kwargs.items():
             if hasattr(self, key) and not key.startswith('_') and key not in ["type", "params"]:
                 setattr(self, key, value)
@@ -306,14 +267,8 @@ class M8Modulator(EnumPropertyMixin):
         """Convert the modulator to binary data."""
         buffer = bytearray([0] * BLOCK_SIZE)
         
-        # Get destination value, converting from string if needed
+        # Get destination value - clients should pass enum.value directly
         dest_value = self.destination
-        if isinstance(dest_value, str):
-            # Get field definition from config for this modulator type
-            field_def = get_modulator_type_field_def(self.modulator_type, "destination")
-            if field_def and "enums" in field_def:
-                # Use generic enum conversion with config-provided enum paths
-                dest_value = ensure_enum_int_value(dest_value, field_def["enums"], self.instrument_type)
         
         # Write common fields
         buffer[self.TYPE_DEST_BYTE_OFFSET] = join_nibbles(self.type, dest_value)
@@ -342,12 +297,7 @@ class M8Modulator(EnumPropertyMixin):
         return bytes(buffer)
     
     def is_empty(self):
-        """Check if this modulator is empty.
-        
-        A modulator is considered empty if either:
-        1. It has an invalid type, or
-        2. Its destination is 'OFF' (0x00)
-        """
+        """Check if this modulator is empty."""
         # Check if type is valid
         type_value = getattr(self.type, 'value', self.type) if hasattr(self.type, 'value') else self.type
         if not isinstance(type_value, int) or type_value not in MODULATOR_TYPES:
@@ -355,9 +305,7 @@ class M8Modulator(EnumPropertyMixin):
             
         # Check if destination is OFF/0
         dest_value = self.destination
-        if isinstance(dest_value, str) and dest_value == 'OFF':
-            return True
-        elif isinstance(dest_value, int) and dest_value == 0:
+        if isinstance(dest_value, int) and dest_value == 0:
             return True
             
         return False
@@ -365,7 +313,7 @@ class M8Modulator(EnumPropertyMixin):
     def clone(self):
         """Create a deep copy of this modulator."""
         # Create a new instance of this class with the same modulator type
-        instance = self.__class__(modulator_type=self.modulator_type, instrument_type=self.instrument_type)
+        instance = self.__class__(modulator_type=self.modulator_type)
         
         # Copy common attributes
         instance.type = self.type
@@ -381,25 +329,9 @@ class M8Modulator(EnumPropertyMixin):
         """Convert modulator to dictionary for serialization."""
         type_value = serialize_enum(self.type, 'modulator')
         
-        # Get instrument type from the instance
-        instrument_type = self.instrument_type
-        
-        # Handle destination serialization - always convert to enum string
-        dest_value = self.destination
-        # Get field definition from config for this modulator type
-        field_def = get_modulator_type_field_def(self.modulator_type, "destination")
-        if field_def and "enums" in field_def and isinstance(dest_value, int):
-            # Use generic enum serialization with config-provided enum paths
-            dest_value = serialize_param_enum_value(
-                dest_value, 
-                field_def, 
-                instrument_type, 
-                "destination"
-            )
-        
         result = {
             "type": type_value,
-            "destination": dest_value,
+            "destination": self.destination,
             "amount": self.amount
         }
         
@@ -411,20 +343,17 @@ class M8Modulator(EnumPropertyMixin):
         return result
     
     @classmethod
-    def from_dict(cls, data, instrument_type=None):
+    def from_dict(cls, data):
         """Create a modulator from a dictionary."""
         mod_type = data["type"]
         
-        # Use provided instrument type directly
-        
         try:
             modulator_type = deserialize_enum(M8ModulatorType, mod_type, 'modulator')
-            modulator = cls(modulator_type=modulator_type, instrument_type=instrument_type)
+            modulator = cls(modulator_type=modulator_type)
             
-            # Process destination value with enum support
+            # Process destination value - clients should pass enum.value directly
             if "destination" in data:
                 dest_value = data["destination"]
-                # We can store the string value directly, it will be converted when needed
                 modulator.destination = dest_value
             
             if "amount" in data:
@@ -486,7 +415,6 @@ class M8Modulators(list):
                         raise M8UnknownTypeError(f"Unknown modulator type ID: {mod_type}")
             except M8UnknownTypeError as e:
                 # Log error but treat as M8Block to be resilient in collection reading
-                # logging.warning(f"Block {i}: {str(e)} - treating as raw data block")
                 instance.append(M8Block.read(block_data))
         
         return instance
@@ -537,7 +465,7 @@ class M8Modulators(list):
         return items
     
     @classmethod
-    def from_list(cls, items, instrument_type=None):
+    def from_list(cls, items):
         """Create modulators from a list."""
         instance = cls.__new__(cls)
         list.__init__(instance)
@@ -556,7 +484,7 @@ class M8Modulators(list):
                     mod_dict = {k: v for k, v in mod_data.items() if k != "index"}
                     
                     if "type" in mod_dict and mod_dict["type"] in MODULATOR_TYPES:
-                        instance[index] = M8Modulator.from_dict(mod_dict, instrument_type)
+                        instance[index] = M8Modulator.from_dict(mod_dict)
                     elif "data" in mod_dict:
                         instance[index] = M8Block.from_dict(mod_dict)
         

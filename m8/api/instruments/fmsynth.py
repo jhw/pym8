@@ -1,7 +1,5 @@
 # m8/api/instruments/fmsynth.py
 from m8.api.instruments import M8Instrument
-from m8.core.enums import EnumPropertyMixin
-from m8.api import serialize_param_enum_value
 from m8.config import load_format_config
 import importlib
 
