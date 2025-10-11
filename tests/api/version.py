@@ -3,7 +3,7 @@ import tempfile
 import os
 from m8.api.version import M8Version
 from m8.api.project import M8Project
-from m8.api.instruments import M8Instrument
+from m8.api.sampler import M8Instrument
 
 class TestM8Version(unittest.TestCase):
     def test_version_state(self):
@@ -13,7 +13,7 @@ class TestM8Version(unittest.TestCase):
         project.version = M8Version(4, 1, 2)
         
         # Initialize instruments list
-        from m8.api.instruments import M8Instruments
+        from m8.api.sampler import M8Instruments
         project.instruments = M8Instruments()
         
         # Create instrument
@@ -39,7 +39,7 @@ class TestM8Version(unittest.TestCase):
         project.version = M8Version(4, 1, 0)
         
         # Initialize instruments list
-        from m8.api.instruments import M8Instruments
+        from m8.api.sampler import M8Instruments
         project.instruments = M8Instruments()
         
         # Add an instrument, it should inherit project version
@@ -123,7 +123,7 @@ class TestM8Version(unittest.TestCase):
         project.version = M8Version(4, 1, 2)
         
         # Initialize all required components
-        from m8.api.instruments import M8Instruments
+        from m8.api.sampler import M8Instruments
         from m8.api.metadata import M8Metadata
         from m8.api.song import M8SongMatrix
         from m8.api.chains import M8Chains

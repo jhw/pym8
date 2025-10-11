@@ -7,7 +7,7 @@ from m8.api.metadata import M8Metadata
 from m8.api.song import M8SongMatrix, M8SongRow
 from m8.api.chains import M8Chain, M8Chains
 from m8.api.phrases import M8Phrase, M8Phrases
-from m8.api.instruments import M8Instruments, M8Instrument
+from m8.api.sampler import M8Instruments, M8Instrument
 
 class TestM8Project(unittest.TestCase):
     def setUp(self):

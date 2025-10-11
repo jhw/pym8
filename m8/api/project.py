@@ -1,6 +1,6 @@
 from m8.api import M8Block, json_dumps, json_loads
 from m8.api.chains import M8Chains
-from m8.api.instruments import M8Instruments
+from m8.api.sampler import M8Samplers
 from m8.api.metadata import M8Metadata
 from m8.api.phrases import M8Phrases
 from m8.api.song import M8SongMatrix
@@ -55,7 +55,7 @@ class M8Project:
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
-        instance.instruments = M8Instruments.read(data[OFFSETS["instruments"]:])
+        instance.instruments = M8Samplers.read(data[OFFSETS["instruments"]:])
 
         # Context management was removed with enum system simplification
 
@@ -355,7 +355,7 @@ class M8Project:
             instance.phrases = M8Phrases.from_list(data["phrases"])
             
         if "instruments" in data:
-            instance.instruments = M8Instruments.from_list(data["instruments"])
+            instance.instruments = M8Samplers.from_list(data["instruments"])
         
         return instance
         

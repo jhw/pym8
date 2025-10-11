@@ -2,7 +2,12 @@
 import unittest
 import os
 import tempfile
-from m8.api.instruments import M8InstrumentParams, M8Instrument, M8Instruments, BLOCK_SIZE, BLOCK_COUNT
+from m8.api.sampler import M8SamplerParams, M8Sampler, M8Samplers, BLOCK_SIZE, BLOCK_COUNT
+
+# Legacy aliases
+M8InstrumentParams = M8SamplerParams
+M8Instrument = M8Sampler
+M8Instruments = M8Samplers
 from m8.api import M8Block
 
 class TestM8InstrumentParams(unittest.TestCase):

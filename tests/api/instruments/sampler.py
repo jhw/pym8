@@ -1,5 +1,5 @@
 import unittest
-from m8.api.instruments import M8Sampler, M8InstrumentParams
+from m8.api.sampler import M8Sampler, M8SamplerParams
 
 class TestM8SamplerParams(unittest.TestCase):
     def setUp(self):
@@ -10,7 +10,7 @@ class TestM8SamplerParams(unittest.TestCase):
 
     def test_constructor_and_defaults(self):
         # Test default constructor
-        params = M8InstrumentParams()
+        params = M8SamplerParams()
 
         # Check defaults
         self.assertEqual(params.play_mode, 0)
@@ -19,7 +19,7 @@ class TestM8SamplerParams(unittest.TestCase):
 
     def test_constructor_with_values(self):
         # Test constructor with parameters
-        params = M8InstrumentParams(
+        params = M8SamplerParams(
             play_mode=self.test_play_mode,
             slice=self.test_slice,
             sample_path=self.test_sample_path
@@ -32,7 +32,7 @@ class TestM8SamplerParams(unittest.TestCase):
 
     def test_read_write_consistency(self):
         # Create params with test values
-        original = M8InstrumentParams(
+        original = M8SamplerParams(
             play_mode=self.test_play_mode,
             slice=self.test_slice,
             sample_path=self.test_sample_path
@@ -42,7 +42,7 @@ class TestM8SamplerParams(unittest.TestCase):
         binary = original.write()
 
         # Read back from binary
-        deserialized = M8InstrumentParams()
+        deserialized = M8SamplerParams()
         deserialized.read(binary)
 
         # Check all values match
@@ -52,7 +52,7 @@ class TestM8SamplerParams(unittest.TestCase):
 
     def test_as_dict(self):
         # Create params with test values
-        params = M8InstrumentParams(
+        params = M8SamplerParams(
             play_mode=self.test_play_mode,
             slice=self.test_slice,
             sample_path=self.test_sample_path
@@ -75,7 +75,7 @@ class TestM8SamplerParams(unittest.TestCase):
         }
 
         # Create from dict
-        params = M8InstrumentParams.from_dict(data)
+        params = M8SamplerParams.from_dict(data)
 
         # Check values
         self.assertEqual(params.play_mode, self.test_play_mode)
@@ -84,7 +84,7 @@ class TestM8SamplerParams(unittest.TestCase):
 
     def test_clone(self):
         # Create params with test values
-        original = M8InstrumentParams(
+        original = M8SamplerParams(
             play_mode=self.test_play_mode,
             slice=self.test_slice,
             sample_path=self.test_sample_path
@@ -131,7 +131,7 @@ class TestM8Sampler(unittest.TestCase):
 
         # Check params object is created
         self.assertTrue(hasattr(sampler, "params"))
-        self.assertIsInstance(sampler.params, M8InstrumentParams)
+        self.assertIsInstance(sampler.params, M8SamplerParams)
 
         # Check default parameters
         self.assertEqual(sampler.name, "")
