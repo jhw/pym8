@@ -361,8 +361,7 @@ class TestM8Project(unittest.TestCase):
         # Create an incomplete project (use a real-world example)
         from m8.api.phrases import M8PhraseStep
         # Create a phrase step with a note but no velocity/instrument
-        from m8.enums import M8Notes
-        incomplete_step = M8PhraseStep(note=M8Notes.C_6.value)
+        incomplete_step = M8PhraseStep(note=72)  # C_6 note value
         project.phrases[0][0] = incomplete_step
         
         # Validation should fail and raise exception by default

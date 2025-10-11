@@ -6,7 +6,11 @@ from m8.api.phrases import (
 from m8.api.fx import M8FXTuple, M8FXTuples
 from m8.api import M8Block
 from m8.core.validation import M8ValidationResult
-from m8.enums import M8Notes, M8SequencerFX
+# Test constants - using hardcoded values since we removed enums
+TEST_NOTE_C6 = 72  # C_6 note value
+TEST_NOTE_C7 = 84  # C_7 note value
+TEST_FX_RMX = 0x08
+TEST_FX_DEL = 0x06
 
 class TestM8PhraseStepEssential(unittest.TestCase):
     """Essential phrase step tests focusing on core functionality."""
@@ -20,16 +24,16 @@ class TestM8PhraseStepEssential(unittest.TestCase):
         self.assertEqual(len(step.fx), FX_BLOCK_COUNT)
         
         # Test with numeric note parameter (simplified enum system)
-        step = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
-        self.assertEqual(step.note, M8Notes.C_6.value)
+        step = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
+        self.assertEqual(step.note, TEST_NOTE_C6)
         self.assertEqual(step.velocity, 100)
         self.assertEqual(step.instrument, 5)
     
     def test_read_write_consistency(self):
         # Create a step with some data
-        original = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
-        original.fx[0] = M8FXTuple(key=M8SequencerFX.RMX.value, value=20)
-        original.fx[1] = M8FXTuple(key=M8SequencerFX.DEL.value, value=40)
+        original = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
+        original.fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
+        original.fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
         
         # Write to binary
         binary = original.write()
@@ -52,16 +56,16 @@ class TestM8PhraseStepEssential(unittest.TestCase):
         self.assertTrue(step.is_empty())
         
         # Modify note
-        step.note = M8Notes.C_6.value
+        step.note = TEST_NOTE_C6
         self.assertFalse(step.is_empty())
     
     def test_add_fx(self):
         # Test add_fx method
         step = M8PhraseStep()
         
-        slot = step.add_fx(key=M8SequencerFX.RMX.value, value=20)
+        slot = step.add_fx(key=TEST_FX_RMX, value=20)
         self.assertEqual(slot, 0)
-        self.assertEqual(step.fx[0].key, M8SequencerFX.RMX.value)
+        self.assertEqual(step.fx[0].key, TEST_FX_RMX)
         self.assertEqual(step.fx[0].value, 20)
 
 class TestM8PhraseEssential(unittest.TestCase):
@@ -77,10 +81,10 @@ class TestM8PhraseEssential(unittest.TestCase):
     def test_read_write_consistency(self):
         # Create a phrase with some steps
         original = M8Phrase()
-        original[0] = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
-        original[0].fx[0] = M8FXTuple(key=M8SequencerFX.RMX.value, value=20)
-        original[3] = M8PhraseStep(note=M8Notes.C_7.value, velocity=80, instrument=3)
-        original[3].fx[1] = M8FXTuple(key=M8SequencerFX.DEL.value, value=40)
+        original[0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
+        original[0].fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
+        original[3] = M8PhraseStep(note=TEST_NOTE_C7, velocity=80, instrument=3)
+        original[3].fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
         
         # Write to binary
         binary = original.write()
@@ -105,7 +109,7 @@ class TestM8PhraseEssential(unittest.TestCase):
         self.assertTrue(phrase.is_empty())
         
         # Add a step
-        phrase[0] = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
+        phrase[0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
         self.assertFalse(phrase.is_empty())
 
 class TestM8PhrasesEssential(unittest.TestCase):
@@ -121,10 +125,10 @@ class TestM8PhrasesEssential(unittest.TestCase):
     def test_read_write_consistency(self):
         # Create phrases with some data
         original = M8Phrases()
-        original[0][0] = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
-        original[0][0].fx[0] = M8FXTuple(key=M8SequencerFX.RMX.value, value=20)
-        original[2][3] = M8PhraseStep(note=M8Notes.C_7.value, velocity=80, instrument=3)
-        original[2][3].fx[1] = M8FXTuple(key=M8SequencerFX.DEL.value, value=40)
+        original[0][0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
+        original[0][0].fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
+        original[2][3] = M8PhraseStep(note=TEST_NOTE_C7, velocity=80, instrument=3)
+        original[2][3].fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
         
         # Write to binary
         binary = original.write()
@@ -148,7 +152,7 @@ class TestM8PhrasesEssential(unittest.TestCase):
         self.assertTrue(phrases.is_empty())
         
         # Add a step to a phrase
-        phrases[0][0] = M8PhraseStep(note=M8Notes.C_6.value, velocity=100, instrument=5)
+        phrases[0][0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
         self.assertFalse(phrases.is_empty())
 
 if __name__ == '__main__':

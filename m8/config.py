@@ -1,6 +1,5 @@
 import os
 import yaml
-from m8.enums import M8InstrumentType, M8ModulatorType
 from functools import lru_cache
 
 @lru_cache(maxsize=1)
@@ -124,110 +123,42 @@ def get_param_type_enum(param_type_str):
             return param_types[param_type_str]
     return 1  # Default to UINT8 value
 
-def get_modulator_data(modulator_type):
-    """Retrieves configuration data for a specific modulator type."""
-    config = load_format_config()
-    if 'modulators' in config and 'types' in config['modulators']:
-        modulator_types = config['modulators']['types']
-        
-        # Use the type as provided without case conversion
-        if modulator_type in modulator_types:
-            return modulator_types[modulator_type]
-            
-        raise ValueError(f"Modulator type '{modulator_type}' not found in configuration")
-    raise ValueError("Modulators section not found in configuration")
-
-def get_modulator_type_id_map():
-    # Provides a mapping of modulator type IDs to their class paths
-    # Generate the mapping from the enum values
-    enum_map = {member.value: member.name for member in M8ModulatorType}
-    
-    # Map the enum values to class paths
-    # This maintains backward compatibility with code expecting class paths
-    class_path_map = {}
-    for type_id, type_name in enum_map.items():
-        # Convert enum names to class paths (e.g., LFO -> m8.api.modulators.M8LFO)
-        class_path_map[type_id] = f"m8.api.modulators.M8{type_name.title().replace('_', '')}"
-    
-    return class_path_map
-
-def get_modulator_types():
-    # Returns a dictionary of modulator type IDs to type names
-    # Generate directly from the enum for a single source of truth
-    return {member.value: member.name for member in M8ModulatorType}
-
-def get_modulator_type_id(modulator_type):
-    # Retrieves type ID for a modulator from M8ModulatorType enum
-    # If it's None, return None
-    if modulator_type is None:
-        return None
-        
-    # If it's already an integer, just return it
-    if isinstance(modulator_type, int):
-        return modulator_type
-        
-    # Try to get from the enum if it's a string
-    if isinstance(modulator_type, str):
-        # First check if it's a name in the M8ModulatorType enum
-        try:
-            return M8ModulatorType[modulator_type].value
-        except KeyError:
-            pass
-            
-        # If not in enum, look in config as fallback
-        config = load_format_config()
-        
-        # Use the type as provided without case conversion
-        if 'modulators' in config and 'types' in config['modulators'] and modulator_type in config['modulators']['types']:
-            type_id = config['modulators']['types'][modulator_type]['id']
-            if isinstance(type_id, str) and type_id.startswith('0x'):
-                return int(type_id, 16)
-            return type_id
-    
-    raise ValueError(f"Type ID for modulator '{modulator_type}' not found in enum or configuration")
-
 def get_instrument_type_id(instrument_type):
-    # Retrieves type ID for an instrument from M8InstrumentType enum or config
+    # Retrieves type ID for an instrument from config
     # If it's None, return None
     if instrument_type is None:
         return None
-        
+
     # If it's already an integer, just return it
     if isinstance(instrument_type, int):
         return instrument_type
-        
-    # Try to get from the enum if it's a string
+
+    # Try to get from config
     if isinstance(instrument_type, str):
-        # First check if it's a name in the M8InstrumentType enum
-        try:
-            return M8InstrumentType[instrument_type].value
-        except KeyError:
-            pass
-            
-        # If not in enum, look in config as fallback
         config = load_format_config()
-        
+
         # Use the type as provided without case conversion
-        if ('instruments' in config and 'types' in config['instruments'] and 
+        if ('instruments' in config and 'types' in config['instruments'] and
             instrument_type in config['instruments']['types']):
             type_id = config['instruments']['types'][instrument_type]['type_id']
             if isinstance(type_id, str) and type_id.startswith('0x'):
                 return int(type_id, 16)
             return type_id
-    
-    raise ValueError(f"Type ID for instrument '{instrument_type}' not found in enum or configuration")
 
-def get_instrument_modulators_offset(instrument_type=None):
-    """Retrieves modulators offset for instruments from configuration."""
-    config = load_format_config()
-    if 'instruments' in config and 'modulators_offset' in config['instruments']:
-        return config['instruments']['modulators_offset']
-    raise ValueError("Modulators offset not found in instruments configuration")
+    raise ValueError(f"Type ID for instrument '{instrument_type}' not found in configuration")
 
 def get_instrument_types():
     # Returns a dictionary of instrument type IDs to type names from configuration
-    # Generate directly from the enum for a single source of truth
-    return {member.value: member.name for member in M8InstrumentType}
+    config = load_format_config()
+    result = {}
+    if 'instruments' in config and 'types' in config['instruments']:
+        for type_name, type_config in config['instruments']['types'].items():
+            if 'type_id' in type_config:
+                type_id = type_config['type_id']
+                if isinstance(type_id, str) and type_id.startswith('0x'):
+                    type_id = int(type_id, 16)
+                result[type_id] = type_name
+    return result
 
 def get_instrument_common_offsets():
     """Retrieves common parameter offsets for instruments from configuration."""
@@ -298,47 +229,24 @@ def get_fx_keys_enum_paths(instrument_type_id):
     # Default fallback for when no specific enum is found
     return fx_enums.get("default", [])
 
-def get_modulator_common_offsets():
-    """Retrieves common parameter offsets for modulators from configuration."""
-    config = load_format_config()
-    if 'modulators' in config and 'fields' in config['modulators']:
-        # Convert from fields structure to simple offset dictionary
-        offsets = {}
-        for field_name, field_config in config['modulators']['fields'].items():
-            offsets[field_name] = field_config['offset']
-        return offsets
-    raise ValueError("Fields for modulators not found in configuration")
-
-def get_modulator_type_field_def(modulator_type, field_name):
-    """Retrieves field definition for a specific field of a modulator type."""
-    config = load_format_config()
-    if 'modulators' in config and 'types' in config['modulators']:
-        # Use the type as provided without case conversion
-        if modulator_type in config['modulators']['types']:
-            mod_data = config['modulators']['types'][modulator_type]
-            if 'fields' in mod_data and field_name in mod_data['fields']:
-                return mod_data['fields'][field_name]
-    return None
-def generate_instrument_type_id_map():
-    # Generates the instrument type_id_map from the M8InstrumentType enum
-    return {member.value: member.name for member in M8InstrumentType}
-
-def generate_modulator_type_id_map():
-    # Generates the modulator type_id_map from the M8ModulatorType enum
-    return {member.value: member.name for member in M8ModulatorType}
-
 def validate_config():
     from m8.core.validation import M8ValidationResult
-    
+
     # Create a validation result
     result = M8ValidationResult(context="config")
-    
+
     # Load the configuration
     config = load_format_config()
-    
-    # Get valid IDs from enums
-    valid_instrument_ids = {member.value for member in M8InstrumentType}
-    valid_modulator_ids = {member.value for member in M8ModulatorType}
+
+    # Get valid instrument IDs from config
+    valid_instrument_ids = set()
+    if 'instruments' in config and 'types' in config['instruments']:
+        for type_config in config['instruments']['types'].values():
+            if 'type_id' in type_config:
+                type_id = type_config['type_id']
+                if isinstance(type_id, str) and type_id.startswith('0x'):
+                    type_id = int(type_id, 16)
+                valid_instrument_ids.add(type_id)
     
     # Check instrument types in config
     if 'instruments' in config and 'types' in config['instruments']:
@@ -372,24 +280,6 @@ def validate_config():
             result
         )
     
-    # Check for duplicated or overlapping offsets in modulators
-    if 'modulators' in config and 'types' in config['modulators']:
-        for mod_type, mod_config in config['modulators']['types'].items():
-            if 'fields' in mod_config:
-                validate_field_offsets(
-                    mod_config['fields'], 
-                    f"modulators.types.{mod_type}.fields",
-                    result
-                )
-    
-    # Check for duplicated or overlapping offsets in modulator fields
-    if 'modulators' in config and 'fields' in config['modulators']:
-        validate_field_offsets(
-            config['modulators']['fields'], 
-            "modulators.fields",
-            result
-        )
-    
     # Check FX enums mappings
     if 'fx' in config and 'fields' in config['fx'] and 'key' in config['fx']['fields'] and 'enums' in config['fx']['fields']['key']:
         fx_enums = config['fx']['fields']['key']['enums']
@@ -413,49 +303,6 @@ def validate_config():
             "fx.fields",
             result
         )
-    
-    # Check modulator destination enums
-    if 'modulators' in config and 'types' in config['modulators']:
-        for mod_type, mod_config in config['modulators']['types'].items():
-            if 'fields' in mod_config and 'destination' in mod_config['fields'] and 'enums' in mod_config['fields']['destination']:
-                dest_enums = mod_config['fields']['destination']['enums']
-                for instrument_id_str in dest_enums:
-                    # Convert hex strings to int
-                    if instrument_id_str.startswith('0x'):
-                        instrument_id = int(instrument_id_str, 16)
-                    else:
-                        instrument_id = int(instrument_id_str)
-                        
-                    if instrument_id not in valid_instrument_ids:
-                        result.add_error(
-                            f"Invalid instrument ID in modulator destination enums: {instrument_id_str}",
-                            f"modulators.types.{mod_type}.fields.destination.enums"
-                        )
-    
-    # Check modulator types
-    if 'modulators' in config and 'types' in config['modulators']:
-        for mod_type, mod_config in config['modulators']['types'].items():
-            if 'id' in mod_config:
-                type_id = mod_config['id']
-                
-                # Convert hex strings to int if needed
-                if isinstance(type_id, str) and type_id.startswith('0x'):
-                    type_id = int(type_id, 16)
-                
-                if type_id not in valid_modulator_ids:
-                    result.add_error(
-                        f"Invalid modulator type ID: {type_id} for {mod_type}",
-                        "modulators.types"
-                    )
-    
-    # Check default_config
-    if 'modulators' in config and 'default_config' in config['modulators']:
-        for i, mod_type_id in enumerate(config['modulators']['default_config']):
-            if mod_type_id not in valid_modulator_ids:
-                result.add_error(
-                    f"Invalid modulator type ID in default_config[{i}]: {mod_type_id}",
-                    "modulators.default_config"
-                )
     
     return result
 
