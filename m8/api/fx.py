@@ -8,6 +8,12 @@ config = load_format_config()["fx"]
 BLOCK_SIZE = config["block_size"]
 BLOCK_COUNT = config["block_count"]
 
+# Hardcoded FX keys for supported effects
+FX_PITCH = 0x03         # PIT command (pitch)
+FX_NOTE_LENGTH = 0x07   # NTH command (note length)
+FX_RETRIGGER = 0x0C     # RTG command (repeat/retrigger)
+FX_PLAY_MODE = 0x83     # PLY command (play mode)
+
 class M8FXTuple:
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
     

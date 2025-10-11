@@ -17,7 +17,7 @@ class TestM8Version(unittest.TestCase):
         project.instruments = M8Instruments()
         
         # Create instrument
-        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
+        instrument = M8Instrument(name="TestSynth")
         
         # When adding to project, instrument should inherit project version
         slot = project.add_instrument(instrument)
@@ -28,7 +28,7 @@ class TestM8Version(unittest.TestCase):
         self.assertEqual(str(project.instruments[slot].version), "4.1.2")
         
         # Adding a new instrument should give it the updated version
-        instrument2 = M8Instrument("MACROSYNTH", name="Test2")
+        instrument2 = M8Instrument(name="Test2")
         slot2 = project.add_instrument(instrument2)
         self.assertEqual(str(project.instruments[slot2].version), "4.1.3")
         
@@ -43,7 +43,7 @@ class TestM8Version(unittest.TestCase):
         project.instruments = M8Instruments()
         
         # Add an instrument, it should inherit project version
-        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
+        instrument = M8Instrument(name="TestSynth")
         slot = project.add_instrument(instrument)
         
         # Version validation should pass
@@ -72,7 +72,7 @@ class TestM8Version(unittest.TestCase):
         project.version = M8Version(4, 2, 0)
         
         # Add instrument that inherits the version
-        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
+        instrument = M8Instrument(name="TestSynth")
         slot = project.add_instrument(instrument)
         self.assertEqual(str(project.instruments[slot].version), "4.2.0")
         
@@ -107,10 +107,10 @@ class TestM8Version(unittest.TestCase):
                 
                 # Try with version mismatch check
                 # Should pass with matching version
-                M8Instrument.read_from_file(tmp_path, expected_version=M8Version(4, 2, 0))
+                M8Instrument.read_from_file(tmp_path)
                 
                 # We've removed version checking
-                M8Instrument.read_from_file(tmp_path, expected_version=M8Version(4, 0, 1))
+                M8Instrument.read_from_file(tmp_path)
             finally:
                 # Clean up
                 if os.path.exists(tmp_path):
@@ -136,7 +136,7 @@ class TestM8Version(unittest.TestCase):
         project.instruments = M8Instruments()
         
         # Add an instrument
-        instrument = M8Instrument("WAVSYNTH", name="TestSynth")
+        instrument = M8Instrument(name="TestSynth")
         project.add_instrument(instrument)
         
         # Serialize to dict
