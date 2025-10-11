@@ -1,6 +1,5 @@
 import unittest
 from m8.api.song import M8SongRow, M8SongMatrix, COL_COUNT, ROW_COUNT
-from m8.core.validation import M8ValidationResult
 
 class TestM8SongRow(unittest.TestCase):
     def test_read_from_binary(self):
@@ -148,40 +147,6 @@ class TestM8SongRow(unittest.TestCase):
         # Modify clone and verify original remains unchanged
         clone[0] = 30
         self.assertEqual(original[0], 10)
-    
-    def test_validate_references_chains(self):
-        # Mock chains list for validation
-        mock_chains = [
-            type('MockChain', (), {'is_empty': lambda: False}),  # Chain 0 (not empty)
-            type('MockChain', (), {'is_empty': lambda: False}),  # Chain 1 (not empty)
-            type('MockChain', (), {'is_empty': lambda: True}),   # Chain 2 (empty)
-        ]
-        
-        # Test case 1: Valid row
-        row = M8SongRow()
-        row[0] = 0  # References valid chain 0
-        row[1] = 1  # References valid chain 1
-        result = row.validate_references_chains(mock_chains)
-        self.assertTrue(result.valid)
-        
-        # Test case 2: Reference to non-existent chain
-        row = M8SongRow()
-        row[0] = 5  # References chain 5, which doesn't exist
-        result = row.validate_references_chains(mock_chains)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("non-existent" in err.lower() for err in result.errors))
-        
-        # Test case 3: Reference to empty chain
-        row = M8SongRow()
-        row[0] = 2  # References chain 2, which is empty
-        result = row.validate_references_chains(mock_chains)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("empty" in err.lower() for err in result.errors))
-        
-        # Test case 4: Empty row should always be valid
-        row = M8SongRow()
-        result = row.validate_references_chains([])
-        self.assertTrue(result.valid)
     
     def test_as_dict(self):
         # Test as_dict method
@@ -380,40 +345,6 @@ class TestM8SongMatrix(unittest.TestCase):
         # Modify clone and verify original remains unchanged
         clone[0][0] = 10
         self.assertEqual(original[0][0], 1)
-    
-    def test_validate_references_chains(self):
-        # Mock chains list for validation
-        mock_chains = [
-            type('MockChain', (), {'is_empty': lambda: False}),  # Chain 0 (not empty)
-            type('MockChain', (), {'is_empty': lambda: False}),  # Chain 1 (not empty)
-            type('MockChain', (), {'is_empty': lambda: True}),   # Chain 2 (empty)
-        ]
-        
-        # Test case 1: Valid matrix
-        matrix = M8SongMatrix()
-        matrix[0][0] = 0  # References valid chain 0
-        matrix[1][0] = 1  # References valid chain 1
-        result = matrix.validate_references_chains(mock_chains)
-        self.assertTrue(result.valid)
-        
-        # Test case 2: Reference to non-existent chain
-        matrix = M8SongMatrix()
-        matrix[0][0] = 5  # References chain 5, which doesn't exist
-        result = matrix.validate_references_chains(mock_chains)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("non-existent" in err.lower() for err in result.errors))
-        
-        # Test case 3: Reference to empty chain
-        matrix = M8SongMatrix()
-        matrix[0][0] = 2  # References chain 2, which is empty
-        result = matrix.validate_references_chains(mock_chains)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("empty" in err.lower() for err in result.errors))
-        
-        # Test case 4: Empty matrix should always be valid
-        matrix = M8SongMatrix()
-        result = matrix.validate_references_chains([])
-        self.assertTrue(result.valid)
     
     def test_as_list(self):
         # Test as_list method

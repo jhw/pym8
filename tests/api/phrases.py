@@ -5,7 +5,6 @@ from m8.api.phrases import (
 )
 from m8.api.fx import M8FXTuple, M8FXTuples
 from m8.api import M8Block
-from m8.core.validation import M8ValidationResult
 # Test constants - using hardcoded values since we removed enums
 TEST_NOTE_C6 = 72  # C_6 note value
 TEST_NOTE_C7 = 84  # C_7 note value

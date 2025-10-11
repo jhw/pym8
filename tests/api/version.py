@@ -32,33 +32,6 @@ class TestM8Version(unittest.TestCase):
         slot2 = project.add_instrument(instrument2)
         self.assertEqual(str(project.instruments[slot2].version), "4.1.3")
         
-    def test_version_validation(self):
-        """Test version validation between projects and instruments."""
-        # Create project with version 4.1.0
-        project = M8Project()
-        project.version = M8Version(4, 1, 0)
-        
-        # Initialize instruments list
-        from m8.api.instruments import M8Instruments
-        project.instruments = M8Instruments()
-        
-        # Add an instrument, it should inherit project version
-        instrument = M8Instrument(name="TestSynth")
-        slot = project.add_instrument(instrument)
-        
-        # Version validation should pass
-        result = project.validate_versions()
-        self.assertTrue(result.valid)
-        self.assertEqual(len(result.errors), 0)
-        
-        # Manually change instrument version
-        project.instruments[slot].version = M8Version(4, 0, 1)
-        
-        # Now validation should fail
-        result = project.validate_versions()
-        self.assertFalse(result.valid)
-        self.assertTrue(any(["version" in err.lower() for err in result.errors]))
-        
     def test_file_operations_with_version(self):
         """Test that version is preserved when reading/writing files."""
         # Skip this test if we don't have the template file

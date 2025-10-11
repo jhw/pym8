@@ -3,7 +3,6 @@ from m8.api.chains import (
     M8ChainStep, M8Chain, M8Chains,
     STEP_BLOCK_SIZE, STEP_COUNT, CHAIN_BLOCK_SIZE, CHAIN_COUNT
 )
-from m8.core.validation import M8ValidationResult
 
 class TestM8ChainStep(unittest.TestCase):
     def test_read_from_binary(self):
@@ -287,60 +286,6 @@ class TestM8Chain(unittest.TestCase):
         # Modify clone and verify original remains unchanged
         clone[0].phrase = 30
         self.assertEqual(original[0].phrase, 10)
-    
-    def test_validate_references_phrases(self):
-        # Create a mock phrases list
-        mock_phrases = [None] * 20  # Just need a list of the right length
-        
-        # Test case 1: Valid chain
-        chain = M8Chain()
-        chain[0] = M8ChainStep(phrase=10, transpose=5)
-        chain[1] = M8ChainStep(phrase=15, transpose=10)
-        result = chain.validate_references_phrases(mock_phrases)
-        self.assertTrue(result.valid)
-        
-        # Test case 2: Reference to non-existent phrase
-        chain = M8Chain()
-        chain[0] = M8ChainStep(phrase=30, transpose=5)  # Phrase 30 doesn't exist
-        result = chain.validate_references_phrases(mock_phrases)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("non-existent" in err for err in result.errors))
-        
-        # Test case 3: Empty chain should be valid
-        chain = M8Chain()
-        chain.validate_references_phrases([])  # Should not raise even with empty phrases list
-        
-    def test_validate_one_to_one_pattern(self):
-        # Test case 1: Valid one-to-one pattern (chain 5 with phrase 5)
-        chain = M8Chain()
-        chain[0] = M8ChainStep(phrase=5, transpose=0)
-        # All other steps are empty by default
-        
-        result = chain.validate_one_to_one_pattern(5)
-        self.assertTrue(result.valid)
-        
-        # Test case 2: Invalid - phrase ID doesn't match chain ID
-        chain = M8Chain()
-        chain[0] = M8ChainStep(phrase=10, transpose=0)
-        
-        result = chain.validate_one_to_one_pattern(5)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("should reference" in err.lower() for err in result.errors))
-        
-        # Test case 3: Invalid - has a second phrase
-        chain = M8Chain()
-        chain[0] = M8ChainStep(phrase=5, transpose=0)
-        chain[1] = M8ChainStep(phrase=6, transpose=0)
-        
-        result = chain.validate_one_to_one_pattern(5)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("must be empty" in err.lower() for err in result.errors))
-        
-        # Test case 4: Invalid - empty chain (no phrases)
-        chain = M8Chain()
-        result = chain.validate_one_to_one_pattern(5)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("must have a phrase" in err.lower() for err in result.errors))
     
     def test_available_step_slot(self):
         # Test available_step_slot property
@@ -635,28 +580,6 @@ class TestM8Chains(unittest.TestCase):
         # Modify clone and verify original remains unchanged
         clone[0][0].phrase = 30
         self.assertEqual(original[0][0].phrase, 10)
-    
-    def test_validate_references_phrases(self):
-        # Create a mock phrases list
-        mock_phrases = [None] * 20  # Just need a list of the right length
-        
-        # Test case 1: Valid chains
-        chains = M8Chains()
-        chains[0][0] = M8ChainStep(phrase=10, transpose=5)
-        chains[5][3] = M8ChainStep(phrase=15, transpose=10)
-        result = chains.validate_references_phrases(mock_phrases)
-        self.assertTrue(result.valid)
-        
-        # Test case 2: Reference to non-existent phrase
-        chains = M8Chains()
-        chains[0][0] = M8ChainStep(phrase=30, transpose=5)  # Phrase 30 doesn't exist
-        result = chains.validate_references_phrases(mock_phrases)
-        self.assertFalse(result.valid)
-        self.assertTrue(any("non-existent" in err.lower() for err in result.errors))
-        
-        # Test case 3: Empty chains should be valid
-        chains = M8Chains()
-        chains.validate_references_phrases([])  # Should not raise even with empty phrases list
     
     def test_as_list(self):
         # Test as_list method

@@ -1,5 +1,4 @@
 from m8.core.format import load_format_config
-from m8.core.validation import M8ValidationResult
 
 # Load configuration
 config = load_format_config()
@@ -56,25 +55,6 @@ class M8SongRow:
     
     def write(self):
         return bytes(self._data)
-    
-    def validate_references_chains(self, chains, result=None):
-        if result is None:
-            result = M8ValidationResult(context="song_row.chains")
-            
-        if not self.is_empty():
-            for col_idx in range(COL_COUNT):
-                chain_idx = self[col_idx]
-                if chain_idx != self.EMPTY_CHAIN and (
-                    chain_idx >= len(chains) or 
-                    chains[chain_idx].is_empty()
-                ):
-                    result.add_error(
-                        f"Column {col_idx} references non-existent or empty "
-                        f"chain {chain_idx}",
-                        f"col[{col_idx}]"
-                    )
-                    
-        return result
     
     def as_dict(self):
         # Only include non-blank chain references
@@ -146,18 +126,6 @@ class M8SongMatrix(list):
             row_data = row.write()
             result.extend(row_data)
         return bytes(result)
-    
-    def validate_references_chains(self, chains, result=None):
-        if result is None:
-            result = M8ValidationResult(context="song_matrix.chains")
-            
-        for row_idx, row in enumerate(self):
-            row_result = row.validate_references_chains(chains)
-            if not row_result.valid:
-                # Merge errors with the proper context
-                result.merge(row_result, f"row[{row_idx}]")
-                
-        return result
     
     def as_list(self):
         # Only include non-empty rows for sparse representation
