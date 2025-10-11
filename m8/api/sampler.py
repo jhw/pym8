@@ -151,10 +151,7 @@ class M8Sampler:
         buffer[NAME_OFFSET:NAME_OFFSET + NAME_LENGTH] = name_bytes
 
         # Write common parameters with config defaults
-        buffer[common_fields["transpose_eq"]["offset"]] = common_fields["transpose_eq"]["default"] & 0xFF
         buffer[common_fields["table_tick"]["offset"]] = common_fields["table_tick"]["default"] & 0xFF
-        buffer[common_fields["volume"]["offset"]] = common_fields["volume"]["default"] & 0xFF
-        buffer[common_fields["pitch"]["offset"]] = common_fields["pitch"]["default"] & 0xFF
         buffer[common_fields["finetune"]["offset"]] = common_fields["finetune"]["default"] & 0xFF
 
         # Write sampler-specific parameters

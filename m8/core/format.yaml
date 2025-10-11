@@ -41,19 +41,11 @@ instruments:
       offset: 1
       size: 12
       type: STRING
-    name_length:
-      offset: 12
-    pitch:
-      offset: 16
     table_tick:
       default: 1
       offset: 14
-    transpose_eq:
-      offset: 13
     type:
       offset: 0
-    volume:
-      offset: 15
   count: 128
   offset: 80446
   types:
