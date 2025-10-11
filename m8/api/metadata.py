@@ -1,9 +1,37 @@
 import struct
 from m8.core.config import load_format_config
-from m8.api import read_fixed_string, write_fixed_string
 
 # Load configuration
 config = load_format_config()["metadata"]
+
+def _read_fixed_string(data, offset, length):
+    """Read fixed-length string from binary data, handling null bytes and 0xFF padding."""
+    str_bytes = data[offset:offset + length]
+
+    # Truncate at null byte if present
+    null_idx = str_bytes.find(0)
+    if null_idx != -1:
+        str_bytes = str_bytes[:null_idx]
+
+    # Filter out 0xFF bytes (common padding in M8 files)
+    str_bytes = bytes([b for b in str_bytes if b != 0xFF])
+
+    # Decode and strip
+    return str_bytes.decode('utf-8', errors='replace').strip()
+
+def _write_fixed_string(string, length):
+    """Encode string as fixed-length byte array with null byte padding."""
+    encoded = string.encode('utf-8')
+
+    # Truncate if too long
+    if len(encoded) > length:
+        encoded = encoded[:length]
+
+    # Pad with null bytes if too short
+    if len(encoded) < length:
+        encoded = encoded + bytes([0] * (length - len(encoded)))
+
+    return encoded
 
 class M8Metadata:
     """Stores M8 tracker metadata including song name, directory, tempo, key, transpose and quantize."""
@@ -37,7 +65,7 @@ class M8Metadata:
         instance = cls()
         
         # Directory (null-terminated string)
-        instance.directory = read_fixed_string(data, cls.DIRECTORY_OFFSET, cls.DIRECTORY_LENGTH)
+        instance.directory = _read_fixed_string(data, cls.DIRECTORY_OFFSET, cls.DIRECTORY_LENGTH)
         
         # Transpose (1 byte)
         instance.transpose = data[cls.TRANSPOSE_OFFSET]
@@ -49,7 +77,7 @@ class M8Metadata:
         instance.quantize = data[cls.QUANTIZE_OFFSET]
         
         # Name (null-terminated string)
-        instance.name = read_fixed_string(data, cls.NAME_OFFSET, cls.NAME_LENGTH)
+        instance.name = _read_fixed_string(data, cls.NAME_OFFSET, cls.NAME_LENGTH)
         
         # Key (1 byte)
         instance.key = data[cls.KEY_OFFSET]
@@ -60,7 +88,7 @@ class M8Metadata:
         buffer = bytearray()
         
         # Directory (null-terminated) using utility function
-        buffer.extend(write_fixed_string(self.directory, self.DIRECTORY_LENGTH))
+        buffer.extend(_write_fixed_string(self.directory, self.DIRECTORY_LENGTH))
         
         # Transpose (1 byte)
         buffer.append(self.transpose)
@@ -72,7 +100,7 @@ class M8Metadata:
         buffer.append(self.quantize)
         
         # Name (null-terminated) using utility function
-        buffer.extend(write_fixed_string(self.name, self.NAME_LENGTH))
+        buffer.extend(_write_fixed_string(self.name, self.NAME_LENGTH))
         
         # Key (1 byte)
         buffer.append(self.key)

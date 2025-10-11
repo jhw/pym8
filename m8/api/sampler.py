@@ -1,12 +1,41 @@
 # m8/api/sampler.py
 """M8 Sampler instrument - the only instrument type supported."""
 
-from m8.api import M8Block, read_fixed_string, write_fixed_string
+from m8.api import M8Block
 from m8.api.version import M8Version
 from m8.core.config import load_format_config, get_offset
 
 # Load configuration
 config = load_format_config()
+
+def _read_fixed_string(data, offset, length):
+    """Read fixed-length string from binary data, handling null bytes and 0xFF padding."""
+    str_bytes = data[offset:offset + length]
+
+    # Truncate at null byte if present
+    null_idx = str_bytes.find(0)
+    if null_idx != -1:
+        str_bytes = str_bytes[:null_idx]
+
+    # Filter out 0xFF bytes (common padding in M8 files)
+    str_bytes = bytes([b for b in str_bytes if b != 0xFF])
+
+    # Decode and strip
+    return str_bytes.decode('utf-8', errors='replace').strip()
+
+def _write_fixed_string(string, length):
+    """Encode string as fixed-length byte array with null byte padding."""
+    encoded = string.encode('utf-8')
+
+    # Truncate if too long
+    if len(encoded) > length:
+        encoded = encoded[:length]
+
+    # Pad with null bytes if too short
+    if len(encoded) < length:
+        encoded = encoded + bytes([0] * (length - len(encoded)))
+
+    return encoded
 
 # Block sizes and counts for samplers
 BLOCK_SIZE = config["instruments"]["block_size"]
@@ -41,7 +70,7 @@ class M8SamplerParams:
         sample_path_config = SAMPLER_CONFIG["sample_path"]
         offset = sample_path_config["offset"]
         size = sample_path_config["size"]
-        self.sample_path = read_fixed_string(data, offset, size)
+        self.sample_path = _read_fixed_string(data, offset, size)
 
     def write(self):
         """Write parameters to binary data."""
@@ -57,7 +86,7 @@ class M8SamplerParams:
         # Write sample_path
         offset = sample_path_config["offset"]
         size = sample_path_config["size"]
-        buffer[offset:offset + size] = write_fixed_string(self.sample_path, size)
+        buffer[offset:offset + size] = _write_fixed_string(self.sample_path, size)
 
         return bytes(buffer)
 
@@ -107,7 +136,7 @@ class M8Sampler:
     def _read_common_parameters(self, data):
         """Read common parameters from binary data."""
         self.type = data[TYPE_OFFSET]
-        self.name = read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
+        self.name = _read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
         # Other common parameters (volume, pitch, etc.) are ignored - use defaults
 
     def write(self):
@@ -118,7 +147,7 @@ class M8Sampler:
         buffer[TYPE_OFFSET] = SAMPLER_TYPE_ID
 
         # Write name
-        name_bytes = write_fixed_string(self.name, NAME_LENGTH)
+        name_bytes = _write_fixed_string(self.name, NAME_LENGTH)
         buffer[NAME_OFFSET:NAME_OFFSET + NAME_LENGTH] = name_bytes
 
         # Write common parameters with config defaults
@@ -136,7 +165,7 @@ class M8Sampler:
         sample_path_config = SAMPLER_CONFIG["sample_path"]
         offset = sample_path_config["offset"]
         size = sample_path_config["size"]
-        sample_path_bytes = write_fixed_string(self.params.sample_path, size)
+        sample_path_bytes = _write_fixed_string(self.params.sample_path, size)
         buffer[offset:offset + size] = sample_path_bytes
 
         return bytes(buffer)

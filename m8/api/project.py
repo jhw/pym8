@@ -1,4 +1,7 @@
-from m8.api import M8Block, json_dumps, json_loads
+import json
+import logging
+
+from m8.api import M8Block
 from m8.api.chains import M8Chains
 from m8.api.instruments import M8Instruments
 from m8.api.metadata import M8Metadata
@@ -7,7 +10,48 @@ from m8.api.song import M8SongMatrix
 from m8.api.version import M8Version
 from m8.core.config import get_offset
 from m8.core.validation import M8ValidationResult
-import logging
+
+# JSON serialization utilities
+class _M8JSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that converts small integers (0-255) to hex strings."""
+
+    def iterencode(self, obj, _one_shot=False):
+        # Pre-process the object to convert all integers to hex strings
+        obj = self._process_object(obj)
+        return super().iterencode(obj, _one_shot)
+
+    def _process_object(self, obj):
+        if isinstance(obj, int) and obj < 256:
+            # Convert integers to hex strings with '0x' prefix
+            return f"0x{obj:02x}"
+        elif isinstance(obj, dict):
+            # Process dictionaries recursively
+            return {k: self._process_object(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            # Process lists recursively
+            return [self._process_object(item) for item in obj]
+        else:
+            # Return other types unchanged
+            return obj
+
+def _m8_json_decoder(obj):
+    """Convert hex strings back to integers in decoded JSON."""
+    for key, value in obj.items():
+        if isinstance(value, str) and value.startswith("0x"):
+            try:
+                # Convert hex strings back to integers
+                obj[key] = int(value, 16)
+            except ValueError:
+                pass
+    return obj
+
+def _json_dumps(obj, indent=2):
+    """Serialize an object to JSON using M8 encoding (integers as hex strings)."""
+    return json.dumps(obj, indent=indent, cls=_M8JSONEncoder)
+
+def _json_loads(json_str):
+    """Deserialize a JSON string using M8 decoding (hex strings to integers)."""
+    return json.loads(json_str, object_hook=_m8_json_decoder)
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -362,19 +406,19 @@ class M8Project:
     def write_to_json_file(self, filename):
         """Writes project to a human-readable JSON file."""
         import os
-        
+
         # Create intermediate directories if they don't exist
         directory = os.path.dirname(filename)
         if directory and not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
-            
+
         with open(filename, "w") as f:
-            f.write(json_dumps(self.as_dict()))
+            f.write(_json_dumps(self.as_dict()))
             
     @classmethod
     def read_from_json_file(cls, filename):
         """Reads project from a JSON file previously created with write_to_json_file."""
         with open(filename, "r") as f:
             json_str = f.read()
-        return M8Project.from_dict(json_loads(json_str))
+        return M8Project.from_dict(_json_loads(json_str))
 
