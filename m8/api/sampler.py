@@ -22,11 +22,6 @@ common_fields = config["instruments"]["common_fields"]
 TYPE_OFFSET = common_fields["type"]["offset"]
 NAME_OFFSET = common_fields["name"]["offset"]
 NAME_LENGTH = common_fields["name"]["size"]
-VOLUME_OFFSET = common_fields["volume"]["offset"]
-PITCH_OFFSET = common_fields["pitch"]["offset"]
-FINETUNE_OFFSET = common_fields["finetune"]["offset"]
-TABLE_TICK_OFFSET = common_fields["table_tick"]["offset"]
-TRANSPOSE_EQ_OFFSET = common_fields["transpose_eq"]["offset"]
 
 
 class M8SamplerParams:
@@ -95,8 +90,7 @@ class M8SamplerParams:
 class M8Sampler:
     """M8 Sampler instrument - the only instrument type supported."""
 
-    def __init__(self, name="", sample_path="", play_mode=0, slice=0,
-                 volume=255, pitch=64, transpose=4, eq=1, table_tick=1, finetune=128):
+    def __init__(self, name="", sample_path="", play_mode=0, slice=0):
         """Initialize a sampler instrument with default parameters."""
         # Type is always SAMPLER
         self.type = SAMPLER_TYPE_ID
@@ -104,14 +98,8 @@ class M8Sampler:
         # Version (set from project or file)
         self.version = M8Version()
 
-        # Common parameters
+        # Common parameters (only name is supported)
         self.name = name
-        self.volume = volume
-        self.pitch = pitch
-        self.transpose = transpose
-        self.eq = eq
-        self.table_tick = table_tick
-        self.finetune = finetune
 
         # Sampler-specific parameters
         self.params = M8SamplerParams(play_mode, slice, sample_path)
@@ -120,16 +108,7 @@ class M8Sampler:
         """Read common parameters from binary data."""
         self.type = data[TYPE_OFFSET]
         self.name = read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
-
-        # Read transpose and eq from combined byte
-        combined_byte = data[TRANSPOSE_EQ_OFFSET]
-        self.transpose = combined_byte & 0x0F
-        self.eq = (combined_byte >> 4) & 0x0F
-
-        self.table_tick = data[TABLE_TICK_OFFSET]
-        self.volume = data[VOLUME_OFFSET]
-        self.pitch = data[PITCH_OFFSET]
-        self.finetune = data[FINETUNE_OFFSET]
+        # Other common parameters (volume, pitch, etc.) are ignored - use defaults
 
     def write(self):
         """Convert instrument to binary data."""
@@ -142,14 +121,12 @@ class M8Sampler:
         name_bytes = write_fixed_string(self.name, NAME_LENGTH)
         buffer[NAME_OFFSET:NAME_OFFSET + NAME_LENGTH] = name_bytes
 
-        # Write transpose and eq combined
-        buffer[TRANSPOSE_EQ_OFFSET] = (self.transpose & 0x0F) | ((self.eq & 0x0F) << 4)
-
-        # Write other common parameters
-        buffer[TABLE_TICK_OFFSET] = self.table_tick & 0xFF
-        buffer[VOLUME_OFFSET] = self.volume & 0xFF
-        buffer[PITCH_OFFSET] = self.pitch & 0xFF
-        buffer[FINETUNE_OFFSET] = self.finetune & 0xFF
+        # Write common parameters with config defaults
+        buffer[common_fields["transpose_eq"]["offset"]] = common_fields["transpose_eq"]["default"] & 0xFF
+        buffer[common_fields["table_tick"]["offset"]] = common_fields["table_tick"]["default"] & 0xFF
+        buffer[common_fields["volume"]["offset"]] = common_fields["volume"]["default"] & 0xFF
+        buffer[common_fields["pitch"]["offset"]] = common_fields["pitch"]["default"] & 0xFF
+        buffer[common_fields["finetune"]["offset"]] = common_fields["finetune"]["default"] & 0xFF
 
         # Write sampler-specific parameters
         buffer[SAMPLER_CONFIG["params"]["play_mode"]["offset"]] = self.params.play_mode & 0xFF
@@ -174,13 +151,7 @@ class M8Sampler:
             name=self.name,
             sample_path=self.params.sample_path,
             play_mode=self.params.play_mode,
-            slice=self.params.slice,
-            volume=self.volume,
-            pitch=self.pitch,
-            transpose=self.transpose,
-            eq=self.eq,
-            table_tick=self.table_tick,
-            finetune=self.finetune
+            slice=self.params.slice
         )
         instance.version = self.version
         return instance
@@ -189,13 +160,7 @@ class M8Sampler:
         """Convert to dictionary."""
         result = {
             "type": self.type,
-            "name": self.name,
-            "volume": self.volume,
-            "pitch": self.pitch,
-            "transpose": self.transpose,
-            "eq": self.eq,
-            "table_tick": self.table_tick,
-            "finetune": self.finetune
+            "name": self.name
         }
 
         # Add params
@@ -211,13 +176,7 @@ class M8Sampler:
             name=data.get("name", ""),
             sample_path=data.get("sample_path", ""),
             play_mode=data.get("play_mode", 0),
-            slice=data.get("slice", 0),
-            volume=data.get("volume", 255),
-            pitch=data.get("pitch", 64),
-            transpose=data.get("transpose", 4),
-            eq=data.get("eq", 1),
-            table_tick=data.get("table_tick", 1),
-            finetune=data.get("finetune", 128)
+            slice=data.get("slice", 0)
         )
 
     @classmethod

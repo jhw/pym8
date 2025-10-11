@@ -104,19 +104,9 @@ class TestM8SamplerParams(unittest.TestCase):
 
 class TestM8Sampler(unittest.TestCase):
     def setUp(self):
-        # Define common instrument parameters
-        self.common_params = {
-            "name": "TestSampler",
-            "transpose": 0x5,
-            "eq": 0x2,
-            "table_tick": 0x2,
-            "volume": 0x10,
-            "pitch": 0x20,
-            "finetune": 0x90
-        }
-
         # Define Sampler-specific parameters
         self.sampler_params = {
+            "name": "TestSampler",
             "play_mode": 0x01,  # REV
             "slice": 0x05,
             "sample_path": "/samples/kick.wav"
@@ -135,12 +125,6 @@ class TestM8Sampler(unittest.TestCase):
 
         # Check default parameters
         self.assertEqual(sampler.name, "")
-        self.assertEqual(sampler.volume, 255)
-        self.assertEqual(sampler.pitch, 64)
-        self.assertEqual(sampler.transpose, 4)
-        self.assertEqual(sampler.eq, 1)
-        self.assertEqual(sampler.table_tick, 1)
-        self.assertEqual(sampler.finetune, 128)
 
         # Check sampler-specific defaults
         self.assertEqual(sampler.params.play_mode, 0)
@@ -148,47 +132,27 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(sampler.params.sample_path, "")
 
     def test_constructor_with_parameters(self):
-        # Test with kwargs for both common and specific parameters
+        # Test with kwargs
         sampler = M8Sampler(
             name="TestSampler",
             sample_path="/samples/kick.wav",
             play_mode=0x01,
-            slice=0x05,
-            volume=0x10,
-            pitch=0x20,
-            transpose=0x5,
-            eq=0x2,
-            table_tick=0x2,
-            finetune=0x90
+            slice=0x05
         )
 
-        # Check common parameters
+        # Check parameters
         self.assertEqual(sampler.name, "TestSampler")
-        self.assertEqual(sampler.volume, 0x10)
-        self.assertEqual(sampler.pitch, 0x20)
-        self.assertEqual(sampler.transpose, 0x5)
-        self.assertEqual(sampler.eq, 0x2)
-        self.assertEqual(sampler.table_tick, 0x2)
-        self.assertEqual(sampler.finetune, 0x90)
-
-        # Check instrument-specific parameters
         self.assertEqual(sampler.params.play_mode, 0x01)
         self.assertEqual(sampler.params.slice, 0x05)
         self.assertEqual(sampler.params.sample_path, "/samples/kick.wav")
 
     def test_binary_serialization(self):
-        # Create sampler with all parameters
+        # Create sampler with supported parameters
         sampler = M8Sampler(
             name="TEST",
             sample_path="/samples/kick.wav",
             play_mode=0x01,
-            slice=0x05,
-            volume=0x10,
-            pitch=0x20,
-            transpose=0x5,
-            eq=0x2,
-            table_tick=0x2,
-            finetune=0x90
+            slice=0x05
         )
 
         # Write to binary
@@ -197,14 +161,8 @@ class TestM8Sampler(unittest.TestCase):
         # Read it back
         read_sampler = M8Sampler.read(binary)
 
-        # Check all parameters were preserved
+        # Check supported parameters were preserved
         self.assertEqual(read_sampler.name, "TEST")
-        self.assertEqual(read_sampler.volume, 0x10)
-        self.assertEqual(read_sampler.pitch, 0x20)
-        self.assertEqual(read_sampler.transpose, 0x5)
-        self.assertEqual(read_sampler.eq, 0x2)
-        self.assertEqual(read_sampler.table_tick, 0x2)
-        self.assertEqual(read_sampler.finetune, 0x90)
 
         # Check sampler-specific parameters
         self.assertEqual(read_sampler.params.play_mode, 0x01)
@@ -217,18 +175,12 @@ class TestM8Sampler(unittest.TestCase):
         self.assertFalse(sampler.is_empty())
 
     def test_as_dict(self):
-        # Create sampler with all parameters
+        # Create sampler with supported parameters
         sampler = M8Sampler(
             name="TestSampler",
             sample_path="/samples/kick.wav",
             play_mode=0x01,
-            slice=0x05,
-            volume=0x10,
-            pitch=0x20,
-            transpose=0x5,
-            eq=0x2,
-            table_tick=0x2,
-            finetune=0x90
+            slice=0x05
         )
 
         # Convert to dict
@@ -237,12 +189,6 @@ class TestM8Sampler(unittest.TestCase):
         # Check common parameters
         self.assertEqual(result["type"], 0x02)
         self.assertEqual(result["name"], "TestSampler")
-        self.assertEqual(result["volume"], 0x10)
-        self.assertEqual(result["pitch"], 0x20)
-        self.assertEqual(result["transpose"], 0x5)
-        self.assertEqual(result["eq"], 0x2)
-        self.assertEqual(result["table_tick"], 0x2)
-        self.assertEqual(result["finetune"], 0x90)
 
         # Check sampler-specific parameters
         self.assertEqual(result["play_mode"], 0x01)
@@ -255,26 +201,14 @@ class TestM8Sampler(unittest.TestCase):
             "name": "TestSampler",
             "sample_path": "/samples/kick.wav",
             "play_mode": 0x01,
-            "slice": 0x05,
-            "volume": 0x10,
-            "pitch": 0x20,
-            "transpose": 0x5,
-            "eq": 0x2,
-            "table_tick": 0x2,
-            "finetune": 0x90
+            "slice": 0x05
         }
 
         # Create from dict
         sampler = M8Sampler.from_dict(data)
 
-        # Check all parameters
+        # Check supported parameters
         self.assertEqual(sampler.name, "TestSampler")
-        self.assertEqual(sampler.volume, 0x10)
-        self.assertEqual(sampler.pitch, 0x20)
-        self.assertEqual(sampler.transpose, 0x5)
-        self.assertEqual(sampler.eq, 0x2)
-        self.assertEqual(sampler.table_tick, 0x2)
-        self.assertEqual(sampler.finetune, 0x90)
         self.assertEqual(sampler.params.play_mode, 0x01)
         self.assertEqual(sampler.params.slice, 0x05)
         self.assertEqual(sampler.params.sample_path, "/samples/kick.wav")

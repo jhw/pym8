@@ -89,22 +89,16 @@ class TestInstrumentBase(unittest.TestCase):
         # Test default constructor
         instrument = M8Instrument()
         self.assertEqual(instrument.name, "")
-        self.assertEqual(instrument.volume, 255)
-        self.assertEqual(instrument.pitch, 64)
-        self.assertEqual(instrument.transpose, 4)
-        self.assertEqual(instrument.eq, 1)
-        self.assertEqual(instrument.table_tick, 1)
-        self.assertEqual(instrument.finetune, 128)
+        # volume, pitch, transpose, eq, table_tick, finetune use config defaults
 
         # Test with kwargs
-        instrument = M8Instrument(name="TestSynth", volume=200, sample_path="/test.wav")
+        instrument = M8Instrument(name="TestSynth", sample_path="/test.wav")
         self.assertEqual(instrument.name, "TestSynth")
-        self.assertEqual(instrument.volume, 200)
         self.assertEqual(instrument.params.sample_path, "/test.wav")
 
     def test_write(self):
         # Create instrument
-        instrument = M8Instrument(name="Test", volume=200)
+        instrument = M8Instrument(name="Test")
 
         # Write to binary
         binary = instrument.write()
@@ -114,7 +108,7 @@ class TestInstrumentBase(unittest.TestCase):
 
     def test_read_common_parameters(self):
         # Create an instrument
-        instrument = M8Instrument(name="TestInstr", volume=180, pitch=70)
+        instrument = M8Instrument(name="TestInstr")
 
         # Write to binary
         binary = instrument.write()
@@ -124,8 +118,6 @@ class TestInstrumentBase(unittest.TestCase):
 
         # Check common parameters
         self.assertEqual(read_instrument.name, "TestInstr")
-        self.assertEqual(read_instrument.volume, 180)
-        self.assertEqual(read_instrument.pitch, 70)
 
     def test_clone(self):
         # Create instrument
@@ -148,11 +140,10 @@ class TestInstrumentBase(unittest.TestCase):
         self.assertEqual(original.name, "Original")
 
     def test_as_dict(self):
-        instrument = M8Instrument(name="Test", volume=200, sample_path="/test.wav", slice=3)
+        instrument = M8Instrument(name="Test", sample_path="/test.wav", slice=3)
         result = instrument.as_dict()
 
         self.assertEqual(result["name"], "Test")
-        self.assertEqual(result["volume"], 200)
         self.assertEqual(result["sample_path"], "/test.wav")
         self.assertEqual(result["slice"], 3)
 
@@ -218,9 +209,7 @@ class TestInstrumentFileIO(unittest.TestCase):
             name="RoundTrip",
             sample_path="/path/to/file.wav",
             play_mode=1,
-            slice=12,
-            volume=220,
-            pitch=72
+            slice=12
         )
 
         with tempfile.NamedTemporaryFile(suffix='.m8i', delete=False) as tmp:
@@ -238,8 +227,6 @@ class TestInstrumentFileIO(unittest.TestCase):
                 self.assertEqual(read_instrument.params.sample_path, original.params.sample_path)
                 self.assertEqual(read_instrument.params.play_mode, original.params.play_mode)
                 self.assertEqual(read_instrument.params.slice, original.params.slice)
-                self.assertEqual(read_instrument.volume, original.volume)
-                self.assertEqual(read_instrument.pitch, original.pitch)
             finally:
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
@@ -356,7 +343,7 @@ class TestM8Instruments(unittest.TestCase):
 
     def test_from_list(self):
         data = [
-            {"index": 0, "name": "First", "sample_path": "/first.wav", "volume": 200},
+            {"index": 0, "name": "First", "sample_path": "/first.wav"},
             {"index": 7, "name": "Second", "slice": 5}
         ]
 
@@ -368,7 +355,6 @@ class TestM8Instruments(unittest.TestCase):
         # Check instruments
         self.assertEqual(instruments[0].name, "First")
         self.assertEqual(instruments[0].params.sample_path, "/first.wav")
-        self.assertEqual(instruments[0].volume, 200)
 
         self.assertEqual(instruments[7].name, "Second")
         self.assertEqual(instruments[7].params.slice, 5)
