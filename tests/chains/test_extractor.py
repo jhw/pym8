@@ -5,11 +5,11 @@ import shutil
 import wave
 import struct
 
-from m8.tools.slice_extractor import SliceExtractor
-from m8.tools.wav_slicer import WAVSlicer
+from m8.chains.extractor import M8ChainExtractor
+from m8.chains.slicer import M8ChainSlicer
 
 
-class TestSliceExtractor(unittest.TestCase):
+class TestM8ChainExtractor(unittest.TestCase):
     def setUp(self):
         """Set up temporary directory and test WAV files."""
         # Create temp dir in project root
@@ -23,10 +23,10 @@ class TestSliceExtractor(unittest.TestCase):
         self.create_test_wav(self.input_wav, num_frames=48000)
         
         # Create sliced WAV files with different slice counts
-        self.slicer = WAVSlicer(num_slices=4)
+        self.slicer = M8ChainSlicer(num_slices=4)
         self.sliced_wav = self.slicer.process_wav_file(self.input_wav)
-        
-        self.slicer8 = WAVSlicer(num_slices=8)
+
+        self.slicer8 = M8ChainSlicer(num_slices=8)
         self.sliced_wav8 = self.slicer8.process_wav_file(self.input_wav)
         
         # Create empty WAV for error testing
@@ -50,7 +50,7 @@ class TestSliceExtractor(unittest.TestCase):
     
     def test_extract_slices(self):
         """Test basic slice extraction from file."""
-        extractor = SliceExtractor()
+        extractor = M8ChainExtractor()
         slices = extractor.extract_slices(self.sliced_wav)
         
         # Should have 4 slices
@@ -82,8 +82,8 @@ class TestSliceExtractor(unittest.TestCase):
         # Read the file as bytes
         with open(self.sliced_wav, 'rb') as f:
             wav_data = f.read()
-        
-        extractor = SliceExtractor()
+
+        extractor = M8ChainExtractor()
         slices = extractor.extract_slices_from_bytes(wav_data)
         
         # Should have 4 slices
@@ -91,7 +91,7 @@ class TestSliceExtractor(unittest.TestCase):
     
     def test_class_method_extract_with_path(self):
         """Test class method extract with file path."""
-        slices = SliceExtractor.extract(self.sliced_wav)
+        slices = M8ChainExtractor.extract(self.sliced_wav)
         
         # Should have 4 slices
         self.assertEqual(len(slices), 4)
@@ -101,8 +101,8 @@ class TestSliceExtractor(unittest.TestCase):
         # Read the file as bytes
         with open(self.sliced_wav, 'rb') as f:
             wav_data = f.read()
-        
-        slices = SliceExtractor.extract(wav_data)
+
+        slices = M8ChainExtractor.extract(wav_data)
         
         # Should have 4 slices
         self.assertEqual(len(slices), 4)
@@ -110,7 +110,7 @@ class TestSliceExtractor(unittest.TestCase):
     def test_extract_different_slice_counts(self):
         """Test extraction with different slice counts."""
         # Extract from 8-slice WAV
-        slices = SliceExtractor.extract(self.sliced_wav8)
+        slices = M8ChainExtractor.extract(self.sliced_wav8)
         
         # Should have 8 slices
         self.assertEqual(len(slices), 8)
@@ -128,12 +128,12 @@ class TestSliceExtractor(unittest.TestCase):
             f.write(b'This is not a WAV file')
         
         with self.assertRaises(ValueError):
-            SliceExtractor.extract(non_wav)
+            M8ChainExtractor.extract(non_wav)
     
     def test_file_with_no_slices(self):
         """Test with a WAV file that has no slices."""
         with self.assertRaises(ValueError):
-            SliceExtractor.extract(self.input_wav)  # Original unsliced WAV
+            M8ChainExtractor.extract(self.input_wav)  # Original unsliced WAV
     
     def test_skip_zero_length_slices(self):
         """Test that zero-length slices are skipped."""
@@ -170,7 +170,7 @@ class TestSliceExtractor(unittest.TestCase):
                     f.write(modified_data)
                 
                 # Now extract slices and verify we don't have the zero-length one
-                slices = SliceExtractor.extract(modified_wav)
+                slices = M8ChainExtractor.extract(modified_wav)
                 
                 # Should have fewer slices than original
                 self.assertLess(len(slices), num_cues)

@@ -4,7 +4,7 @@ import struct
 import wave
 
 
-class SliceExtractor:
+class M8ChainExtractor:
     def __init__(self):
         pass
     
@@ -145,7 +145,7 @@ def main():
     args = parser.parse_args()
     
     try:
-        slices = SliceExtractor.extract(args.input_file)
+        slices = M8ChainExtractor.extract(args.input_file)
         print(f"Found {len(slices)} slices in {args.input_file}:")
         for i, (start, end) in enumerate(slices):
             print(f"  Slice {i}: {start} to {end} ({end - start} samples)")

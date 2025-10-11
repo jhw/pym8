@@ -6,10 +6,10 @@ import wave
 import struct
 from unittest.mock import patch, mock_open, MagicMock
 
-from m8.tools.wav_slicer import WAVSlicer
+from m8.chains.slicer import M8ChainSlicer
 
 
-class TestWAVSlicer(unittest.TestCase):
+class TestM8ChainSlicer(unittest.TestCase):
     def setUp(self):
         """Set up temporary directory and test WAV file."""
         # Create temp dir in project root
@@ -39,25 +39,25 @@ class TestWAVSlicer(unittest.TestCase):
     
     def test_create_slice_points(self):
         """Test create_slice_points method."""
-        slicer = WAVSlicer(num_slices=4)
+        slicer = M8ChainSlicer(num_slices=4)
         # Test with 1000 frames
         slice_points = slicer.create_slice_points(1000)
         self.assertEqual(len(slice_points), 4)
         self.assertEqual(slice_points, [0, 250, 500, 750])
-        
+
         # Test with zero slices
-        slicer = WAVSlicer(num_slices=0)
+        slicer = M8ChainSlicer(num_slices=0)
         slice_points = slicer.create_slice_points(1000)
         self.assertEqual(len(slice_points), 0)
-        
+
         # Test with negative slices (should return empty)
-        slicer = WAVSlicer(num_slices=-1)
+        slicer = M8ChainSlicer(num_slices=-1)
         slice_points = slicer.create_slice_points(1000)
         self.assertEqual(len(slice_points), 0)
     
     def test_create_standard_cue_chunk(self):
         """Test create_standard_cue_chunk method."""
-        slicer = WAVSlicer()
+        slicer = M8ChainSlicer()
         
         # Test with 3 slice points
         slice_points = [0, 100, 200]
@@ -87,7 +87,7 @@ class TestWAVSlicer(unittest.TestCase):
     
     def test_create_m8_atad_cue_chunk(self):
         """Test create_m8_atad_cue_chunk method."""
-        slicer = WAVSlicer()
+        slicer = M8ChainSlicer()
         
         # Test with 3 slice points
         slice_points = [0, 100, 200]
@@ -117,7 +117,7 @@ class TestWAVSlicer(unittest.TestCase):
     
     def test_process_wav_file(self):
         """Test process_wav_file with actual file IO."""
-        slicer = WAVSlicer(num_slices=8)
+        slicer = M8ChainSlicer(num_slices=8)
         
         # Process the test file
         output_file = slicer.process_wav_file(self.input_wav)
@@ -142,7 +142,7 @@ class TestWAVSlicer(unittest.TestCase):
     
     def test_file_not_found(self):
         """Test process_wav_file with non-existent file."""
-        slicer = WAVSlicer()
+        slicer = M8ChainSlicer()
         
         with self.assertRaises(FileNotFoundError):
             slicer.process_wav_file(os.path.join(self.temp_dir, "nonexistent.wav"))
@@ -154,13 +154,13 @@ class TestWAVSlicer(unittest.TestCase):
         with open(non_wav, 'wb') as f:
             f.write(b'This is not a WAV file')
         
-        slicer = WAVSlicer()
+        slicer = M8ChainSlicer()
         with self.assertRaises(RuntimeError):
             slicer.process_wav_file(non_wav)
-    
+
     def test_zero_slices(self):
         """Test process_wav_file with zero slices."""
-        slicer = WAVSlicer(num_slices=0)
+        slicer = M8ChainSlicer(num_slices=0)
         
         with self.assertRaises(RuntimeError):
             slicer.process_wav_file(self.input_wav)
@@ -168,7 +168,7 @@ class TestWAVSlicer(unittest.TestCase):
     def test_class_method_slice_file(self):
         """Test the class method slice_file."""
         # Use class method for simpler API
-        output_file = WAVSlicer.slice_file(self.input_wav, num_slices=4)
+        output_file = M8ChainSlicer.slice_file(self.input_wav, num_slices=4)
         
         # Verify output file exists
         self.assertTrue(os.path.exists(output_file))

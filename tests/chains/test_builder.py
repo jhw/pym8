@@ -7,11 +7,11 @@ import struct
 from pathlib import Path
 from pydub import AudioSegment
 
-from m8.tools.chain_builder import ChainBuilder
-from m8.tools.slice_extractor import SliceExtractor
+from m8.chains.builder import M8ChainBuilder
+from m8.chains.extractor import M8ChainExtractor
 
 
-class TestChainBuilder(unittest.TestCase):
+class TestM8ChainBuilder(unittest.TestCase):
     def setUp(self):
         """Set up temporary directory and test WAV files."""
         # Create temp dir in project root
@@ -53,18 +53,18 @@ class TestChainBuilder(unittest.TestCase):
     def test_init(self):
         """Test constructor with various parameters."""
         # Default initialization
-        chain_builder = ChainBuilder(500, 10)
+        chain_builder = M8ChainBuilder(500, 10)
         self.assertEqual(chain_builder.duration_ms, 500)
         self.assertEqual(chain_builder.fade_ms, 10)
         self.assertEqual(chain_builder.packs_dir, Path("tmp/packs"))
-        
+
         # Custom packs directory
-        chain_builder = ChainBuilder(500, 10, packs_dir=self.packs_dir)
+        chain_builder = M8ChainBuilder(500, 10, packs_dir=self.packs_dir)
         self.assertEqual(chain_builder.packs_dir, Path(self.packs_dir))
     
     def test_build_chain_from_files(self):
         """Test building a chain from file paths."""
-        chain_builder = ChainBuilder(500, 10)
+        chain_builder = M8ChainBuilder(500, 10)
         
         # Use a subset of test files
         files_to_use = self.test_files[:3]
@@ -93,7 +93,7 @@ class TestChainBuilder(unittest.TestCase):
     
     def test_build_chain(self):
         """Test building a chain from sample dictionaries."""
-        chain_builder = ChainBuilder(500, 10, packs_dir=self.packs_dir)
+        chain_builder = M8ChainBuilder(500, 10, packs_dir=self.packs_dir)
         
         # Create sample dictionaries
         samples = []
@@ -125,7 +125,7 @@ class TestChainBuilder(unittest.TestCase):
     
     def test_add_slice_points(self):
         """Test adding slice points to a WAV file."""
-        chain_builder = ChainBuilder(500, 10)
+        chain_builder = M8ChainBuilder(500, 10)
         
         # Create a test chain
         files_to_use = self.test_files[:3]
@@ -139,7 +139,7 @@ class TestChainBuilder(unittest.TestCase):
         chain_builder.add_slice_points(output_path, slice_positions)
         
         # Extract slice points to verify
-        slices = SliceExtractor.extract(output_path)
+        slices = M8ChainExtractor.extract(output_path)
         
         # Should have the same number of slices
         self.assertEqual(len(slices), len(files_to_use))
@@ -149,7 +149,7 @@ class TestChainBuilder(unittest.TestCase):
     
     def test_create_chain(self):
         """Test create_chain method."""
-        chain_builder = ChainBuilder(500, 10)
+        chain_builder = M8ChainBuilder(500, 10)
         
         # Use a subset of test files
         files_to_use = self.test_files[:3]
@@ -165,12 +165,12 @@ class TestChainBuilder(unittest.TestCase):
         self.assertEqual(result_path, output_path)
         
         # Verify it contains slice points
-        slices = SliceExtractor.extract(output_path)
+        slices = M8ChainExtractor.extract(output_path)
         self.assertEqual(len(slices), len(files_to_use))
     
     def test_create_chain_with_nested_output_path(self):
         """Test create_chain with a nested output path."""
-        chain_builder = ChainBuilder(500, 10)
+        chain_builder = M8ChainBuilder(500, 10)
         
         # Use a subset of test files
         files_to_use = self.test_files[:3]
@@ -188,7 +188,7 @@ class TestChainBuilder(unittest.TestCase):
     
     def test_empty_input(self):
         """Test with empty input."""
-        chain_builder = ChainBuilder(500, 10)
+        chain_builder = M8ChainBuilder(500, 10)
         
         # Empty file list
         with self.assertRaises(ValueError):
@@ -200,7 +200,7 @@ class TestChainBuilder(unittest.TestCase):
     
     def test_too_many_samples(self):
         """Test with too many samples (M8 has a 255 sample limit)."""
-        chain_builder = ChainBuilder(500, 10)
+        chain_builder = M8ChainBuilder(500, 10)
         
         # Create 256 sample dictionaries (exceeds M8 limit)
         samples = []

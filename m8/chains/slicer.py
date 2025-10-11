@@ -4,12 +4,12 @@ import struct
 import wave
 
 
-class WAVSlicer:
+class M8ChainSlicer:
     """Tool for creating evenly spaced slice points in WAV files for Dirtywave M8."""
-    
+
     def __init__(self, num_slices=4):
         """Initialize with configuration options.
-        
+
         Args:
             num_slices: Number of slices to create (default: 4)
         """
@@ -229,7 +229,7 @@ def main():
     args = parser.parse_args()
     
     try:
-        output_file = WAVSlicer.slice_file(args.input_file, args.slices, args.output)
+        output_file = M8ChainSlicer.slice_file(args.input_file, args.slices, args.output)
         print(f"Successfully wrote sliced WAV to {output_file}")
         return 0
     except Exception as e:

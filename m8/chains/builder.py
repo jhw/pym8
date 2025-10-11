@@ -4,9 +4,9 @@ import os
 import struct
 from pathlib import Path
 from pydub import AudioSegment
-from m8.tools.wav_slicer import WAVSlicer
+from m8.chains.slicer import M8ChainSlicer
 
-class ChainBuilder:
+class M8ChainBuilder:
     def __init__(self, duration_ms, fade_ms, packs_dir=None):
         self.duration_ms = duration_ms
         self.fade_ms = fade_ms
@@ -119,8 +119,8 @@ class ChainBuilder:
         with open(file_path, 'rb') as src, open(temp_file, 'wb') as dst:
             dst.write(src.read())
         
-        # Create a WAVSlicer and add custom slice points
-        slicer = WAVSlicer()
+        # Create a M8ChainSlicer and add custom slice points
+        slicer = M8ChainSlicer()
         
         # Read the file
         with open(temp_file, 'rb') as file:
