@@ -114,15 +114,6 @@ def get_param_data(section_path, param_name):
         return current[param_name]
     raise ValueError(f"Parameter '{param_name}' not found in section {section_path}")
 
-def get_param_type_enum(param_type_str):
-    """Maps parameter type strings to their enum values."""
-    config = load_format_config()
-    if 'instruments' in config and 'param_types' in config['instruments']:
-        param_types = config['instruments']['param_types']
-        if param_type_str in param_types:
-            return param_types[param_type_str]
-    return 1  # Default to UINT8 value
-
 def get_instrument_type_id(instrument_type):
     # Retrieves type ID for an instrument from config
     # If it's None, return None
@@ -199,35 +190,6 @@ def get_instrument_common_defaults():
         
         return defaults
     raise ValueError("Common defaults for instruments not found in configuration")
-    
-def get_fx_keys_enum_paths(instrument_type_id):
-    """Get enum paths for FX keys for the given instrument type."""
-    config = load_format_config()
-    fx_enums = {}
-    
-    # Check if fx section exists with enums for key field
-    if ('fx' in config and 'fields' in config['fx'] and 
-        'key' in config['fx']['fields'] and 'enums' in config['fx']['fields']['key']):
-        fx_enums = config['fx']['fields']['key']['enums']
-    
-    # Try direct lookup by ID
-    if instrument_type_id in fx_enums:
-        return fx_enums[instrument_type_id]
-    
-    # Try hex format
-    hex_key = f"0x{instrument_type_id:02x}"
-    if hex_key in fx_enums:
-        return fx_enums[hex_key]
-    
-    # Try string instrument type
-    instrument_types = get_instrument_types()
-    if instrument_type_id in instrument_types:
-        instrument_type = instrument_types[instrument_type_id]
-        if instrument_type in fx_enums:
-            return fx_enums[instrument_type]
-    
-    # Default fallback for when no specific enum is found
-    return fx_enums.get("default", [])
 
 def validate_config():
     from m8.core.validation import M8ValidationResult
@@ -279,22 +241,6 @@ def validate_config():
             "instruments.common_fields",
             result
         )
-    
-    # Check FX enums mappings
-    if 'fx' in config and 'fields' in config['fx'] and 'key' in config['fx']['fields'] and 'enums' in config['fx']['fields']['key']:
-        fx_enums = config['fx']['fields']['key']['enums']
-        for instrument_id_str in fx_enums:
-            # Convert hex strings to int
-            if instrument_id_str.startswith('0x'):
-                instrument_id = int(instrument_id_str, 16)
-            else:
-                instrument_id = int(instrument_id_str)
-                
-            if instrument_id not in valid_instrument_ids:
-                result.add_error(
-                    f"Invalid instrument ID in FX enums mapping: {instrument_id_str}",
-                    "fx.fields.key.enums"
-                )
     
     # Check for duplicated or overlapping offsets in fx fields
     if 'fx' in config and 'fields' in config['fx']:
