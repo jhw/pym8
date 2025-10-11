@@ -1,5 +1,5 @@
 import struct
-from m8.config import load_format_config
+from m8.core.config import load_format_config
 from m8.api import read_fixed_string, write_fixed_string
 
 # Load configuration

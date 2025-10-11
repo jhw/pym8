@@ -2,7 +2,7 @@
 """Generic M8 Instruments collection."""
 
 from m8.api import M8Block
-from m8.config import load_format_config
+from m8.core.config import load_format_config
 
 # Load configuration
 config = load_format_config()

@@ -1,4 +1,4 @@
-from m8.config import load_format_config
+from m8.core.config import load_format_config
 
 # Load configuration
 config = load_format_config()["fx"]

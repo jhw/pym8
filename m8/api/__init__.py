@@ -1,10 +1,10 @@
 import logging
 
 # Re-export utility functions
-from m8.core.utils.string_utils import (
+from m8.utils.string_utils import (
     read_fixed_string, write_fixed_string
 )
-from m8.core.utils.json_utils import (
+from m8.utils.json_utils import (
     M8JSONEncoder, m8_json_decoder, json_dumps, json_loads
 )
 

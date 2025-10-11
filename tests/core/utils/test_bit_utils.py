@@ -1,5 +1,5 @@
 import unittest
-from m8.core.utils.bit_utils import split_byte, join_nibbles, get_bits, set_bits
+from m8.utils.bit_utils import split_byte, join_nibbles, get_bits, set_bits
 
 class TestBitUtils(unittest.TestCase):
     def test_split_byte(self):
