@@ -1,17 +1,11 @@
 import logging
 
 # Re-export utility functions
-from m8.core.utils.bit_utils import (
-    split_byte, join_nibbles, get_bits, set_bits
-)
 from m8.core.utils.string_utils import (
     read_fixed_string, write_fixed_string
 )
 from m8.core.utils.json_utils import (
     M8JSONEncoder, m8_json_decoder, json_dumps, json_loads
-)
-from m8.core.utils.enum_utils import (
-    serialize_enum, deserialize_enum
 )
 
 

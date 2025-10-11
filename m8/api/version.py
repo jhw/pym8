@@ -1,5 +1,5 @@
 # m8/api/version.py
-from m8.api import M8Block, split_byte, join_nibbles
+from m8.api import M8Block
 
 class M8Version:
     """Represents the M8 firmware version used to create a file."""
