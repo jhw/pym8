@@ -5,7 +5,7 @@ from functools import lru_cache
 @lru_cache(maxsize=1)
 def load_format_config():
     """Loads M8 format configuration from YAML with caching to avoid disk reads."""
-    config_path = os.path.join(os.path.dirname(__file__), '..', 'format_config.yaml')
+    config_path = os.path.join(os.path.dirname(__file__), 'format.yaml')
     with open(config_path, 'r') as config_file:
         config = yaml.safe_load(config_file)
 

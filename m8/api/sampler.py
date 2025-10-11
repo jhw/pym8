@@ -3,7 +3,7 @@
 
 from m8.api import M8Block
 from m8.api.version import M8Version
-from m8.core.config import load_format_config, get_offset
+from m8.core.format import load_format_config, get_offset
 
 # Load configuration
 config = load_format_config()

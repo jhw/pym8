@@ -8,7 +8,7 @@ from m8.api.metadata import M8Metadata
 from m8.api.phrases import M8Phrases
 from m8.api.song import M8SongMatrix
 from m8.api.version import M8Version
-from m8.core.config import get_offset
+from m8.core.format import get_offset
 from m8.core.validation import M8ValidationResult
 
 # JSON serialization utilities
