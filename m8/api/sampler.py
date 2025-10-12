@@ -66,10 +66,6 @@ class M8Sampler:
 
         return bytes(buffer)
 
-    def is_empty(self):
-        """Check if instrument is empty."""
-        return self.type != SAMPLER_TYPE_ID
-
     def clone(self):
         """Create a copy of this instrument."""
         instance = M8Sampler(

@@ -37,14 +37,6 @@ class M8FXTuple:
     def write(self):
         return bytes(self._data)
     
-    def is_empty(self):
-        """Check if this FX tuple is empty."""
-        return self._data[self.KEY_OFFSET] == self.EMPTY_KEY
-        
-    def is_complete(self):
-        """Check if this FX tuple is complete."""
-        return self._data[self.KEY_OFFSET] != self.EMPTY_KEY
-    
     @property
     def key(self):
         return self._data[self.KEY_OFFSET]
@@ -103,17 +95,6 @@ class M8FXTuples(list):
                 instance.append(cloned_tuple)
         
         return instance
-    
-    def is_empty(self):
-        return all(fx_tuple.is_empty() for fx_tuple in self)
-        
-    def is_complete(self):
-        """Check if all non-empty FX tuples are complete."""
-        if self.is_empty():
-            return True
-            
-        # For each tuple, either it's empty or it's complete
-        return all(fx_tuple.is_empty() or fx_tuple.is_complete() for fx_tuple in self)
     
     def write(self):
         result = bytearray()

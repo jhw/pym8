@@ -81,10 +81,6 @@ class M8Metadata:
         assert len(buffer) == self.BLOCK_SIZE, f"Buffer size mismatch: {len(buffer)} != {self.BLOCK_SIZE}"
         return bytes(buffer)
     
-    def is_empty(self):
-        return (self.directory.strip('/') == "" and 
-                self.name.strip() == "")
-    
     def clone(self):
         return M8Metadata(
             directory=self.directory,

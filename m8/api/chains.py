@@ -29,15 +29,6 @@ class M8ChainStep:
     def write(self):
         return bytes(self._data)
     
-    def is_empty(self):
-        """Check if this chain step is empty.
-        
-        Uses a lenient approach that only checks if the phrase reference equals
-        the M8 empty phrase value (0xFF). This maintains consistency with other
-        emptiness checks throughout the codebase and follows the M8's concept of emptiness.
-        """
-        return self.phrase == self.EMPTY_PHRASE
-    
     @property
     def phrase(self):
         return self._data[self.PHRASE_OFFSET]
@@ -90,42 +81,12 @@ class M8Chain(list):
         
         return instance
     
-    def is_empty(self):
-        """Check if this chain is empty.
-        
-        A chain is considered empty if all of its steps are empty.
-        This lenient approach delegates to each step's is_empty() method,
-        maintaining consistency in emptiness definitions throughout the codebase.
-        """
-        return all(step.is_empty() for step in self)
-    
     def write(self):
         result = bytearray()
         for step in self:
             step_data = step.write()
             result.extend(step_data)
         return bytes(result)
-    
-    @property
-    def available_step_slot(self):
-        for slot_idx, step in enumerate(self):
-            if step.phrase == M8ChainStep.EMPTY_PHRASE:  # Empty step has 0xFF phrase
-                return slot_idx
-        return None
-        
-    def add_step(self, step):
-        slot = self.available_step_slot
-        if slot is None:
-            raise IndexError("No empty step slots available in this chain")
-            
-        self[slot] = step
-        return slot
-        
-    def set_step(self, step, slot):
-        if not (0 <= slot < len(self)):
-            raise IndexError(f"Step slot index must be between 0 and {len(self)-1}")
-
-        self[slot] = step
 
 class M8Chains(list):
     """Collection of up to 255 chains for song composition in the M8 tracker."""
@@ -156,9 +117,6 @@ class M8Chains(list):
             instance.append(chain.clone())
         
         return instance
-    
-    def is_empty(self):
-        return all(chain.is_empty() for chain in self)
     
     def write(self):
         result = bytearray()

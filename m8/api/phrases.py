@@ -47,40 +47,6 @@ class M8PhraseStep:
         instance.fx = self.fx.clone()  # Clone fx tuples
         return instance
 
-    def is_empty(self):
-        """Check if this phrase step is empty."""
-        # If FX is non-empty, the step is non-empty even with an empty note
-        if not self.fx.is_empty():
-            return False
-        
-        # If note is OFF_NOTE (0x80), the step is non-empty
-        if self._data[self.NOTE_OFFSET] == self.OFF_NOTE:
-            return False
-            
-        # If FX is empty, check if note/velocity/instrument are all empty
-        return (self.note == self.EMPTY_NOTE and
-                self.velocity == self.EMPTY_VELOCITY and
-                self.instrument == self.EMPTY_INSTRUMENT)
-                
-    def is_complete(self):
-        """Check if this phrase step is complete."""
-        # If the step is completely empty, it's considered complete
-        if self.is_empty():
-            return True
-            
-        # If it's a note-off, it's considered complete by definition
-        if self._data[self.NOTE_OFFSET] == self.OFF_NOTE:
-            return True
-            
-        # For non-empty steps, check all required fields are set
-        has_note = self.note != self.EMPTY_NOTE
-        has_velocity = self.velocity != self.EMPTY_VELOCITY
-        has_instrument = self.instrument != self.EMPTY_INSTRUMENT
-        fx_complete = self.fx.is_complete()
-        
-        # All FX must be complete, and if there's a note, velocity and instrument must be set too
-        return fx_complete and (not has_note or (has_velocity and has_instrument))
-
     def write(self):
         buffer = bytearray(self._data)
         buffer.extend(self.fx.write())
@@ -111,59 +77,6 @@ class M8PhraseStep:
     def instrument(self, value):
         self._data[self.INSTRUMENT_OFFSET] = value
 
-    @property
-    def available_slot(self):
-        for slot_idx, fx in enumerate(self.fx):
-            if fx.is_empty() or (fx.key == 0xFF):
-                return slot_idx
-        return None
-    
-    def find_fx_slot(self, key):
-        for slot_idx, fx in enumerate(self.fx):
-            if not fx.is_empty() and fx.key == key:
-                return slot_idx
-        return None
-    
-    def add_fx(self, key, value):
-        """Add FX with key and value. Clients should pass enum.value for key."""
-        # First check if we already have this key
-        existing_slot = self.find_fx_slot(key)
-        if existing_slot is not None:
-            # Update the existing FX tuple
-            self.fx[existing_slot].value = value
-            return existing_slot
-        
-        # Otherwise find an empty slot
-        slot = self.available_slot
-        if slot is None:
-            raise IndexError("No empty FX slots available in this step")
-        
-        self.fx[slot] = M8FXTuple(key=key, value=value)
-        return slot
-        
-    def set_fx(self, key, value, slot):
-        """Set FX at specific slot. Clients should pass enum.value for key."""
-        if not (0 <= slot < FX_BLOCK_COUNT):
-            raise IndexError(f"FX slot index must be between 0 and {FX_BLOCK_COUNT-1}")
-        
-        self.fx[slot] = M8FXTuple(key=key, value=value)
-    
-    def get_fx(self, key):
-        """Get FX value by key. Clients should pass enum.value for key."""
-        slot = self.find_fx_slot(key)
-        if slot is not None:
-            return self.fx[slot].value
-        return None
-    
-    def delete_fx(self, key):
-        """Delete FX by key. Clients should pass enum.value for key."""
-        slot = self.find_fx_slot(key)
-        if slot is not None:
-            # Replace with empty FX tuple
-            self.fx[slot] = M8FXTuple()
-            return True
-        return False
-        
     def off(self):
         self._data[self.NOTE_OFFSET] = self.OFF_NOTE
         self._data[self.VELOCITY_OFFSET] = self.EMPTY_VELOCITY
@@ -205,16 +118,6 @@ class M8Phrase(list):
         
         return instance
     
-    def is_empty(self):
-        return all(step.is_empty() for step in self)
-        
-    def is_complete(self):
-        """Check if all steps in this phrase are complete."""
-        if self.is_empty():
-            return True
-            
-        return all(step.is_complete() for step in self)
-    
     def write(self):
         result = bytearray()
         for step in self:
@@ -226,27 +129,6 @@ class M8Phrase(list):
                 step_data = step_data[:STEP_BLOCK_SIZE]
             result.extend(step_data)
         return bytes(result)
-
-    @property
-    def available_step_slot(self):
-        for slot_idx, step in enumerate(self):
-            if step.is_empty():
-                return slot_idx
-        return None
-        
-    def add_step(self, step):
-        slot = self.available_step_slot
-        if slot is None:
-            raise IndexError("No empty step slots available in this phrase")
-            
-        self[slot] = step
-        return slot
-        
-    def set_step(self, step, slot):
-        if not (0 <= slot < len(self)):
-            raise IndexError(f"Step slot index must be between 0 and {len(self)-1}")
-
-        self[slot] = step
 
 class M8Phrases(list):
     """Collection of up to 255 phrases that make up a complete M8 project."""
@@ -277,16 +159,6 @@ class M8Phrases(list):
             instance.append(phrase.clone())
         
         return instance
-    
-    def is_empty(self):
-        return all(phrase.is_empty() for phrase in self)
-        
-    def is_complete(self):
-        """Check if all phrases in this collection are complete."""
-        if self.is_empty():
-            return True
-            
-        return all(phrase.is_empty() or phrase.is_complete() for phrase in self)
     
     def write(self):
         result = bytearray()

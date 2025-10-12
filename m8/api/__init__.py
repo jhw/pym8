@@ -43,9 +43,6 @@ class M8Block:
         instance.data = data
         return instance
 
-    def is_empty(self):
-        return all(b == 0x0 for b in self.data)
-    
     def write(self):
         return self.data
 

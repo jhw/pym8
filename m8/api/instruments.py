@@ -63,10 +63,6 @@ class M8Instruments(list):
 
         return instance
 
-    def is_empty(self):
-        """Check if collection is empty."""
-        return all(isinstance(instr, M8Block) or instr.is_empty() for instr in self)
-
     def write(self):
         """Write instruments to binary data."""
         result = bytearray()
