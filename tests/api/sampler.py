@@ -1,84 +1,12 @@
 import unittest
-from m8.api.sampler import M8Sampler, M8SamplerParams
-
-class TestM8SamplerParams(unittest.TestCase):
-    def setUp(self):
-        # Test values for sampler parameters
-        self.test_sample_path = "/samples/kick.wav"
-        self.test_play_mode = 0x01  # REV
-        self.test_slice = 0x05
-
-    def test_constructor_and_defaults(self):
-        # Test default constructor
-        params = M8SamplerParams()
-
-        # Check defaults
-        self.assertEqual(params.play_mode, 0)
-        self.assertEqual(params.slice, 0)
-        self.assertEqual(params.sample_path, "")
-
-    def test_constructor_with_values(self):
-        # Test constructor with parameters
-        params = M8SamplerParams(
-            play_mode=self.test_play_mode,
-            slice=self.test_slice,
-            sample_path=self.test_sample_path
-        )
-
-        # Check values match
-        self.assertEqual(params.play_mode, self.test_play_mode)
-        self.assertEqual(params.slice, self.test_slice)
-        self.assertEqual(params.sample_path, self.test_sample_path)
-
-    def test_read_write_consistency(self):
-        # Create params with test values
-        original = M8SamplerParams(
-            play_mode=self.test_play_mode,
-            slice=self.test_slice,
-            sample_path=self.test_sample_path
-        )
-
-        # Write to binary
-        binary = original.write()
-
-        # Read back from binary
-        deserialized = M8SamplerParams()
-        deserialized.read(binary)
-
-        # Check all values match
-        self.assertEqual(deserialized.play_mode, original.play_mode)
-        self.assertEqual(deserialized.slice, original.slice)
-        self.assertEqual(deserialized.sample_path, original.sample_path)
-
-    def test_clone(self):
-        # Create params with test values
-        original = M8SamplerParams(
-            play_mode=self.test_play_mode,
-            slice=self.test_slice,
-            sample_path=self.test_sample_path
-        )
-
-        # Clone
-        cloned = original.clone()
-
-        # Check they are different objects
-        self.assertIsNot(cloned, original)
-
-        # Check values match
-        self.assertEqual(cloned.play_mode, original.play_mode)
-        self.assertEqual(cloned.slice, original.slice)
-        self.assertEqual(cloned.sample_path, original.sample_path)
+from m8.api.sampler import M8Sampler
 
 
 class TestM8Sampler(unittest.TestCase):
     def setUp(self):
         # Define Sampler-specific parameters
-        self.sampler_params = {
-            "name": "TestSampler",
-            "play_mode": 0x01,  # REV
-            "slice": 0x05,
-            "sample_path": "/samples/kick.wav"
-        }
+        self.test_name = "TestSampler"
+        self.test_sample_path = "/samples/kick.wav"
 
     def test_constructor_and_defaults(self):
         # Test default constructor
@@ -87,40 +15,26 @@ class TestM8Sampler(unittest.TestCase):
         # Check type is set correctly
         self.assertEqual(sampler.type, 0x02)  # SAMPLER type_id is 2
 
-        # Check params object is created
-        self.assertTrue(hasattr(sampler, "params"))
-        self.assertIsInstance(sampler.params, M8SamplerParams)
-
         # Check default parameters
         self.assertEqual(sampler.name, "")
-
-        # Check sampler-specific defaults
-        self.assertEqual(sampler.params.play_mode, 0)
-        self.assertEqual(sampler.params.slice, 0)
-        self.assertEqual(sampler.params.sample_path, "")
+        self.assertEqual(sampler.sample_path, "")
 
     def test_constructor_with_parameters(self):
         # Test with kwargs
         sampler = M8Sampler(
-            name="TestSampler",
-            sample_path="/samples/kick.wav",
-            play_mode=0x01,
-            slice=0x05
+            name=self.test_name,
+            sample_path=self.test_sample_path
         )
 
         # Check parameters
-        self.assertEqual(sampler.name, "TestSampler")
-        self.assertEqual(sampler.params.play_mode, 0x01)
-        self.assertEqual(sampler.params.slice, 0x05)
-        self.assertEqual(sampler.params.sample_path, "/samples/kick.wav")
+        self.assertEqual(sampler.name, self.test_name)
+        self.assertEqual(sampler.sample_path, self.test_sample_path)
 
     def test_binary_serialization(self):
         # Create sampler with supported parameters
         sampler = M8Sampler(
             name="TEST",
-            sample_path="/samples/kick.wav",
-            play_mode=0x01,
-            slice=0x05
+            sample_path="/samples/kick.wav"
         )
 
         # Write to binary
@@ -131,11 +45,7 @@ class TestM8Sampler(unittest.TestCase):
 
         # Check supported parameters were preserved
         self.assertEqual(read_sampler.name, "TEST")
-
-        # Check sampler-specific parameters
-        self.assertEqual(read_sampler.params.play_mode, 0x01)
-        self.assertEqual(read_sampler.params.slice, 0x05)
-        self.assertEqual(read_sampler.params.sample_path, "/samples/kick.wav")
+        self.assertEqual(read_sampler.sample_path, "/samples/kick.wav")
 
     def test_is_empty(self):
         # Valid SAMPLER instrument should not be empty
@@ -145,10 +55,8 @@ class TestM8Sampler(unittest.TestCase):
     def test_clone(self):
         # Create sampler
         original = M8Sampler(
-            name="TestSampler",
-            sample_path="/samples/kick.wav",
-            play_mode=0x01,
-            slice=0x05
+            name=self.test_name,
+            sample_path=self.test_sample_path
         )
 
         # Clone it
@@ -156,13 +64,10 @@ class TestM8Sampler(unittest.TestCase):
 
         # Check they are different objects
         self.assertIsNot(cloned, original)
-        self.assertIsNot(cloned.params, original.params)
 
         # Check values match
         self.assertEqual(cloned.name, original.name)
-        self.assertEqual(cloned.params.sample_path, original.params.sample_path)
-        self.assertEqual(cloned.params.play_mode, original.params.play_mode)
-        self.assertEqual(cloned.params.slice, original.params.slice)
+        self.assertEqual(cloned.sample_path, original.sample_path)
 
 
 if __name__ == '__main__':

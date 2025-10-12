@@ -52,57 +52,15 @@ TYPE_OFFSET = common_fields["type"]["offset"]
 NAME_OFFSET = common_fields["name"]["offset"]
 NAME_LENGTH = common_fields["name"]["size"]
 
-
-class M8SamplerParams:
-    """Sampler-specific parameters."""
-
-    def __init__(self, play_mode=0, slice=0, sample_path=""):
-        self.play_mode = play_mode
-        self.slice = slice
-        self.sample_path = sample_path
-
-    def read(self, data):
-        """Read parameters from binary data."""
-        self.play_mode = data[SAMPLER_CONFIG["params"]["play_mode"]["offset"]]
-        self.slice = data[SAMPLER_CONFIG["params"]["slice"]["offset"]]
-
-        # Read sample_path
-        sample_path_config = SAMPLER_CONFIG["sample_path"]
-        offset = sample_path_config["offset"]
-        size = sample_path_config["size"]
-        self.sample_path = _read_fixed_string(data, offset, size)
-
-    def write(self):
-        """Write parameters to binary data."""
-        # Calculate buffer size needed
-        sample_path_config = SAMPLER_CONFIG["sample_path"]
-        max_offset = sample_path_config["offset"] + sample_path_config["size"]
-
-        buffer = bytearray([0] * max_offset)
-
-        buffer[SAMPLER_CONFIG["params"]["play_mode"]["offset"]] = self.play_mode & 0xFF
-        buffer[SAMPLER_CONFIG["params"]["slice"]["offset"]] = self.slice & 0xFF
-
-        # Write sample_path
-        offset = sample_path_config["offset"]
-        size = sample_path_config["size"]
-        buffer[offset:offset + size] = _write_fixed_string(self.sample_path, size)
-
-        return bytes(buffer)
-
-    def clone(self):
-        """Create a copy of this params object."""
-        return M8SamplerParams(
-            play_mode=self.play_mode,
-            slice=self.slice,
-            sample_path=self.sample_path
-        )
+# Sample path configuration
+SAMPLE_PATH_OFFSET = SAMPLER_CONFIG["sample_path"]["offset"]
+SAMPLE_PATH_SIZE = SAMPLER_CONFIG["sample_path"]["size"]
 
 
 class M8Sampler:
     """M8 Sampler instrument - the only instrument type supported."""
 
-    def __init__(self, name="", sample_path="", play_mode=0, slice=0):
+    def __init__(self, name="", sample_path=""):
         """Initialize a sampler instrument with default parameters."""
         # Type is always SAMPLER
         self.type = SAMPLER_TYPE_ID
@@ -113,14 +71,8 @@ class M8Sampler:
         # Common parameters (only name is supported)
         self.name = name
 
-        # Sampler-specific parameters
-        self.params = M8SamplerParams(play_mode, slice, sample_path)
-
-    def _read_common_parameters(self, data):
-        """Read common parameters from binary data."""
-        self.type = data[TYPE_OFFSET]
-        self.name = _read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
-        # Other common parameters (volume, pitch, etc.) are ignored - use defaults
+        # Sampler-specific parameter
+        self.sample_path = sample_path
 
     def write(self):
         """Convert instrument to binary data."""
@@ -137,16 +89,9 @@ class M8Sampler:
         buffer[common_fields["table_tick"]["offset"]] = common_fields["table_tick"]["default"] & 0xFF
         buffer[common_fields["finetune"]["offset"]] = common_fields["finetune"]["default"] & 0xFF
 
-        # Write sampler-specific parameters
-        buffer[SAMPLER_CONFIG["params"]["play_mode"]["offset"]] = self.params.play_mode & 0xFF
-        buffer[SAMPLER_CONFIG["params"]["slice"]["offset"]] = self.params.slice & 0xFF
-
         # Write sample_path
-        sample_path_config = SAMPLER_CONFIG["sample_path"]
-        offset = sample_path_config["offset"]
-        size = sample_path_config["size"]
-        sample_path_bytes = _write_fixed_string(self.params.sample_path, size)
-        buffer[offset:offset + size] = sample_path_bytes
+        sample_path_bytes = _write_fixed_string(self.sample_path, SAMPLE_PATH_SIZE)
+        buffer[SAMPLE_PATH_OFFSET:SAMPLE_PATH_OFFSET + SAMPLE_PATH_SIZE] = sample_path_bytes
 
         return bytes(buffer)
 
@@ -158,9 +103,7 @@ class M8Sampler:
         """Create a copy of this instrument."""
         instance = M8Sampler(
             name=self.name,
-            sample_path=self.params.sample_path,
-            play_mode=self.params.play_mode,
-            slice=self.params.slice
+            sample_path=self.sample_path
         )
         instance.version = self.version
         return instance
@@ -169,8 +112,9 @@ class M8Sampler:
     def read(cls, data):
         """Read instrument from binary data."""
         instrument = cls()
-        instrument._read_common_parameters(data)
-        instrument.params.read(data)
+        instrument.type = data[TYPE_OFFSET]
+        instrument.name = _read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
+        instrument.sample_path = _read_fixed_string(data, SAMPLE_PATH_OFFSET, SAMPLE_PATH_SIZE)
         return instrument
 
     @classmethod

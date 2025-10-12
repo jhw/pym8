@@ -2,62 +2,12 @@
 import unittest
 import os
 import tempfile
-from m8.api.sampler import M8SamplerParams, M8Sampler, BLOCK_SIZE, BLOCK_COUNT
+from m8.api.sampler import M8Sampler, BLOCK_SIZE, BLOCK_COUNT
 from m8.api.instruments import M8Instruments
 
-# Legacy aliases
-M8InstrumentParams = M8SamplerParams
+# Legacy alias
 M8Instrument = M8Sampler
 from m8.api import M8Block
-
-class TestM8InstrumentParams(unittest.TestCase):
-    def test_constructor_and_defaults(self):
-        # Test default constructor
-        params = M8InstrumentParams()
-        self.assertEqual(params.play_mode, 0)
-        self.assertEqual(params.slice, 0)
-        self.assertEqual(params.sample_path, "")
-
-        # Test with kwargs
-        params = M8InstrumentParams(play_mode=1, slice=5, sample_path="/path/to/sample.wav")
-        self.assertEqual(params.play_mode, 1)
-        self.assertEqual(params.slice, 5)
-        self.assertEqual(params.sample_path, "/path/to/sample.wav")
-
-    def test_read_write_consistency(self):
-        # Create original params
-        original = M8InstrumentParams(play_mode=2, slice=10, sample_path="/test.wav")
-
-        # Write to binary
-        binary = original.write()
-
-        # Read back from binary
-        params = M8InstrumentParams()
-        params.read(binary)
-
-        # Check values match
-        self.assertEqual(params.play_mode, original.play_mode)
-        self.assertEqual(params.slice, original.slice)
-        self.assertEqual(params.sample_path, original.sample_path)
-
-    def test_clone(self):
-        # Create params
-        original = M8InstrumentParams(play_mode=3, slice=7, sample_path="/sample.wav")
-
-        # Clone it
-        clone = original.clone()
-
-        # Check values match
-        self.assertEqual(clone.play_mode, original.play_mode)
-        self.assertEqual(clone.slice, original.slice)
-        self.assertEqual(clone.sample_path, original.sample_path)
-
-        # Verify they're separate instances
-        self.assertIsNot(clone, original)
-
-        # Modify clone and verify original unchanged
-        clone.play_mode = 5
-        self.assertEqual(original.play_mode, 3)
 
 
 class TestInstrumentBase(unittest.TestCase):
@@ -70,7 +20,7 @@ class TestInstrumentBase(unittest.TestCase):
         # Test with kwargs
         instrument = M8Instrument(name="TestSynth", sample_path="/test.wav")
         self.assertEqual(instrument.name, "TestSynth")
-        self.assertEqual(instrument.params.sample_path, "/test.wav")
+        self.assertEqual(instrument.sample_path, "/test.wav")
 
     def test_write(self):
         # Create instrument
@@ -97,19 +47,17 @@ class TestInstrumentBase(unittest.TestCase):
 
     def test_clone(self):
         # Create instrument
-        original = M8Instrument(name="Original", sample_path="/test.wav", slice=5)
+        original = M8Instrument(name="Original", sample_path="/test.wav")
 
         # Clone it
         clone = original.clone()
 
         # Check values match
         self.assertEqual(clone.name, original.name)
-        self.assertEqual(clone.params.sample_path, original.params.sample_path)
-        self.assertEqual(clone.params.slice, original.params.slice)
+        self.assertEqual(clone.sample_path, original.sample_path)
 
         # Verify they're separate instances
         self.assertIsNot(clone, original)
-        self.assertIsNot(clone.params, original.params)
 
         # Modify clone and verify original unchanged
         clone.name = "Modified"
@@ -153,7 +101,7 @@ class TestInstrumentFileIO(unittest.TestCase):
             return
 
         # Create and write instrument
-        instrument = M8Instrument(name="ReadTest", sample_path="/sample.wav", slice=7)
+        instrument = M8Instrument(name="ReadTest", sample_path="/sample.wav")
 
         with tempfile.NamedTemporaryFile(suffix='.m8i', delete=False) as tmp:
             try:
@@ -165,8 +113,7 @@ class TestInstrumentFileIO(unittest.TestCase):
 
                 # Check values
                 self.assertEqual(read_instrument.name, "ReadTest")
-                self.assertEqual(read_instrument.params.sample_path, "/sample.wav")
-                self.assertEqual(read_instrument.params.slice, 7)
+                self.assertEqual(read_instrument.sample_path, "/sample.wav")
             finally:
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
@@ -175,9 +122,7 @@ class TestInstrumentFileIO(unittest.TestCase):
         # Create instrument
         original = M8Instrument(
             name="RoundTrip",
-            sample_path="/path/to/file.wav",
-            play_mode=1,
-            slice=12
+            sample_path="/path/to/file.wav"
         )
 
         with tempfile.NamedTemporaryFile(suffix='.m8i', delete=False) as tmp:
@@ -192,9 +137,7 @@ class TestInstrumentFileIO(unittest.TestCase):
 
                 # Compare
                 self.assertEqual(read_instrument.name, original.name)
-                self.assertEqual(read_instrument.params.sample_path, original.params.sample_path)
-                self.assertEqual(read_instrument.params.play_mode, original.params.play_mode)
-                self.assertEqual(read_instrument.params.slice, original.params.slice)
+                self.assertEqual(read_instrument.sample_path, original.sample_path)
             finally:
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
@@ -216,7 +159,7 @@ class TestM8Instruments(unittest.TestCase):
         # Create instruments collection with one instrument
         instruments = M8Instruments()
         instruments[0] = M8Instrument(name="Test1", sample_path="/test1.wav")
-        instruments[5] = M8Instrument(name="Test2", slice=3)
+        instruments[5] = M8Instrument(name="Test2", sample_path="/test2.wav")
 
         # Write to binary
         binary = instruments.write()
@@ -250,7 +193,7 @@ class TestM8Instruments(unittest.TestCase):
         # Create collection
         original = M8Instruments()
         original[0] = M8Instrument(name="Instr1", sample_path="/path1.wav")
-        original[10] = M8Instrument(name="Instr2", slice=5)
+        original[10] = M8Instrument(name="Instr2", sample_path="/path2.wav")
 
         # Write and read
         binary = original.write()
@@ -258,9 +201,9 @@ class TestM8Instruments(unittest.TestCase):
 
         # Check instruments match
         self.assertEqual(read_instruments[0].name, "Instr1")
-        self.assertEqual(read_instruments[0].params.sample_path, "/path1.wav")
+        self.assertEqual(read_instruments[0].sample_path, "/path1.wav")
         self.assertEqual(read_instruments[10].name, "Instr2")
-        self.assertEqual(read_instruments[10].params.slice, 5)
+        self.assertEqual(read_instruments[10].sample_path, "/path2.wav")
 
     def test_clone(self):
         original = M8Instruments()
