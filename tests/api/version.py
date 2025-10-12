@@ -3,7 +3,7 @@ import tempfile
 import os
 from m8.api.version import M8Version
 from m8.api.project import M8Project
-from m8.api.sampler import M8Sampler as M8Instrument
+from m8.api.sampler import M8Sampler
 
 class TestM8Version(unittest.TestCase):
     def test_version_state(self):
@@ -15,21 +15,21 @@ class TestM8Version(unittest.TestCase):
         # Initialize instruments list
         from m8.api.instruments import M8Instruments
         project.instruments = M8Instruments()
-        
-        # Create instrument
-        instrument = M8Instrument(name="TestSynth")
-        
-        # When adding to project, instrument should inherit project version
-        slot = project.add_instrument(instrument)
+
+        # Create sampler
+        sampler = M8Sampler(name="TestSynth")
+
+        # When adding to project, sampler should inherit project version
+        slot = project.add_instrument(sampler)
         self.assertEqual(str(project.instruments[slot].version), "4.1.2")
-        
-        # Changing project version should not affect instrument already added
+
+        # Changing project version should not affect sampler already added
         project.version = M8Version(4, 1, 3)
         self.assertEqual(str(project.instruments[slot].version), "4.1.2")
-        
-        # Adding a new instrument should give it the updated version
-        instrument2 = M8Instrument(name="Test2")
-        slot2 = project.add_instrument(instrument2)
+
+        # Adding a new sampler should give it the updated version
+        sampler2 = M8Sampler(name="Test2")
+        slot2 = project.add_instrument(sampler2)
         self.assertEqual(str(project.instruments[slot2].version), "4.1.3")
         
     def test_file_operations_with_version(self):
@@ -43,47 +43,47 @@ class TestM8Version(unittest.TestCase):
             
         # Set custom version
         project.version = M8Version(4, 2, 0)
-        
-        # Add instrument that inherits the version
-        instrument = M8Instrument(name="TestSynth")
-        slot = project.add_instrument(instrument)
+
+        # Add sampler that inherits the version
+        sampler = M8Sampler(name="TestSynth")
+        slot = project.add_instrument(sampler)
         self.assertEqual(str(project.instruments[slot].version), "4.2.0")
-        
+
         # Write project to temporary file and read it back
         with tempfile.NamedTemporaryFile(suffix='.m8s', delete=False) as tmp:
             try:
                 tmp_path = tmp.name
                 project.write_to_file(tmp_path)
-                
+
                 # Read it back
                 read_project = M8Project.read_from_file(tmp_path)
-                
+
                 # Check version was preserved
                 self.assertEqual(str(read_project.version), "4.2.0")
             finally:
                 # Clean up
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
-                    
-        # Write instrument to temporary file and read it back
-        instrument = project.instruments[slot]
+
+        # Write sampler to temporary file and read it back
+        sampler = project.instruments[slot]
         with tempfile.NamedTemporaryFile(suffix='.m8i', delete=False) as tmp:
             try:
                 tmp_path = tmp.name
-                instrument.write_to_file(tmp_path)
-                
+                sampler.write_to_file(tmp_path)
+
                 # Read it back
-                read_instrument = M8Instrument.read_from_file(tmp_path)
-                
+                read_sampler = M8Sampler.read_from_file(tmp_path)
+
                 # Check version was preserved
-                self.assertEqual(str(read_instrument.version), "4.2.0")
-                
+                self.assertEqual(str(read_sampler.version), "4.2.0")
+
                 # Try with version mismatch check
                 # Should pass with matching version
-                M8Instrument.read_from_file(tmp_path)
-                
+                M8Sampler.read_from_file(tmp_path)
+
                 # We've removed version checking
-                M8Instrument.read_from_file(tmp_path)
+                M8Sampler.read_from_file(tmp_path)
             finally:
                 # Clean up
                 if os.path.exists(tmp_path):

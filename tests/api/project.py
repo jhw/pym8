@@ -8,7 +8,7 @@ from m8.api.song import M8SongMatrix, M8SongRow
 from m8.api.chains import M8Chain, M8Chains
 from m8.api.phrases import M8Phrase, M8Phrases
 from m8.api.instruments import M8Instruments
-from m8.api.sampler import M8Sampler as M8Instrument
+from m8.api.sampler import M8Sampler
 
 class TestM8Project(unittest.TestCase):
     def setUp(self):
@@ -18,11 +18,11 @@ class TestM8Project(unittest.TestCase):
         self.project.song = M8SongMatrix()
         self.project.chains = M8Chains()
         self.project.phrases = M8Phrases()
-        self.project.instruments = M8Instruments()
+        self.project.instruments = M8Samplers()
         
         # Create some data that will be used for testing references
         # Add a simple instrument
-        self.test_instrument = M8Instrument(name="TestSynth")
+        self.test_instrument = M8Sampler(name="TestSynth")
         self.instrument_slot = self.project.add_instrument(self.test_instrument)
         
         # Add a phrase using this instrument
@@ -40,14 +40,14 @@ class TestM8Project(unittest.TestCase):
     
     def test_add_get_instrument(self):
         # Test adding an instrument
-        instrument = M8Instrument(name="NewInstrument")
+        instrument = M8Sampler(name="NewInstrument")
         slot = self.project.add_instrument(instrument)
         
         # Check the instrument was added
         self.assertIs(self.project.instruments[slot], instrument)
         
         # Test setting an instrument explicitly
-        instrument2 = M8Instrument(name="Instrument2")
+        instrument2 = M8Sampler(name="Instrument2")
         self.project.set_instrument(instrument2, 2)
         self.assertIs(self.project.instruments[2], instrument2)
         
@@ -58,14 +58,14 @@ class TestM8Project(unittest.TestCase):
         # Fill all slots and test overflow
         for i in range(len(self.project.instruments)):
             if isinstance(self.project.instruments[i], M8Block):
-                self.project.instruments[i] = M8Instrument(name=f"Instr{i}")
+                self.project.instruments[i] = M8Sampler(name=f"Instr{i}")
         
         # Should be no available slots now
         self.assertIsNone(self.project.available_instrument_slot)
         
         # Adding another should raise error
         with self.assertRaises(IndexError):
-            self.project.add_instrument(M8Instrument(name="Overflow"))
+            self.project.add_instrument(M8Sampler(name="Overflow"))
     
     def test_add_get_phrase(self):
         # Test adding a phrase
