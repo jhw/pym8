@@ -1,41 +1,12 @@
 # m8/api/sampler.py
 """M8 Sampler instrument - the only instrument type supported."""
 
-from m8.api import M8Block
+from m8.api import M8Block, _read_fixed_string, _write_fixed_string
 from m8.api.version import M8Version
 from m8.core.format import load_format_config, get_offset
 
 # Load configuration
 config = load_format_config()
-
-def _read_fixed_string(data, offset, length):
-    """Read fixed-length string from binary data, handling null bytes and 0xFF padding."""
-    str_bytes = data[offset:offset + length]
-
-    # Truncate at null byte if present
-    null_idx = str_bytes.find(0)
-    if null_idx != -1:
-        str_bytes = str_bytes[:null_idx]
-
-    # Filter out 0xFF bytes (common padding in M8 files)
-    str_bytes = bytes([b for b in str_bytes if b != 0xFF])
-
-    # Decode and strip
-    return str_bytes.decode('utf-8', errors='replace').strip()
-
-def _write_fixed_string(string, length):
-    """Encode string as fixed-length byte array with null byte padding."""
-    encoded = string.encode('utf-8')
-
-    # Truncate if too long
-    if len(encoded) > length:
-        encoded = encoded[:length]
-
-    # Pad with null bytes if too short
-    if len(encoded) < length:
-        encoded = encoded + bytes([0] * (length - len(encoded)))
-
-    return encoded
 
 # Block sizes and counts for samplers
 BLOCK_SIZE = config["instruments"]["block_size"]
