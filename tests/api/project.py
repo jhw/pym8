@@ -18,7 +18,7 @@ class TestM8Project(unittest.TestCase):
         self.project.song = M8SongMatrix()
         self.project.chains = M8Chains()
         self.project.phrases = M8Phrases()
-        self.project.instruments = M8Samplers()
+        self.project.instruments = M8Instruments()
         
         # Create some data that will be used for testing references
         # Add a simple instrument
