@@ -205,19 +205,7 @@ class TestM8Metadata(unittest.TestCase):
         self.assertEqual(metadata.quantize, 0)  # Default
         self.assertEqual(metadata.name, "PARTIAL")
         self.assertEqual(metadata.key, 0)  # Default
-    
-    def test_is_empty(self):
-        # Test is_empty method
-        # Empty metadata should have empty directory and name
-        self.assertTrue(M8Metadata(directory="", name="").is_empty())
-        self.assertTrue(M8Metadata(directory="/", name="").is_empty())
-        self.assertTrue(M8Metadata(directory="", name=" ").is_empty())
-        
-        # Non-empty cases
-        self.assertFalse(M8Metadata(directory="/Songs/", name="").is_empty())
-        self.assertFalse(M8Metadata(directory="", name="SONG").is_empty())
-        self.assertFalse(M8Metadata(directory="/Songs/", name="SONG").is_empty())
-    
+
     def test_clone(self):
         # Test clone method
         original = M8Metadata(

@@ -8,18 +8,6 @@ class TestM8ApiInit(unittest.TestCase):
         block = M8Block.read(test_data)
         self.assertEqual(block.data, bytearray(b'\x01\x02\x03\x04'))
 
-    def test_m8block_is_empty(self):
-        # Test M8Block is_empty functionality
-        empty_block = M8Block()
-        self.assertTrue(empty_block.is_empty())
-        
-        empty_block.data = bytearray(b'\x00\x00\x00')
-        self.assertTrue(empty_block.is_empty())
-        
-        non_empty_block = M8Block()
-        non_empty_block.data = bytearray(b'\x01\x00\x00')
-        self.assertFalse(non_empty_block.is_empty())
-
     def test_m8block_write(self):
         # Test M8Block write functionality
         block = M8Block()

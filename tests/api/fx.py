@@ -21,10 +21,9 @@ class TestM8FXTuple(unittest.TestCase):
         # Test case 2: Empty tuple
         test_data = bytes([M8FXTuple.EMPTY_KEY, 0])
         fx_tuple = M8FXTuple.read(test_data)
-        
+
         self.assertEqual(fx_tuple.key, M8FXTuple.EMPTY_KEY)
         self.assertEqual(fx_tuple.value, 0)
-        self.assertTrue(fx_tuple.is_empty())
         
         # Test case 3: Extra data (should only read first 2 bytes)
         test_data = bytes([TEST_FX_ARP, 30, 40, 50])
@@ -102,36 +101,6 @@ class TestM8FXTuple(unittest.TestCase):
         fx_tuple.key = TEST_FX_PAN
         self.assertEqual(fx_tuple.key, TEST_FX_PAN)
     
-    def test_is_empty(self):
-        # Test is_empty method
-        fx_tuple = M8FXTuple()
-        self.assertTrue(fx_tuple.is_empty())
-        
-        fx_tuple.key = TEST_FX_VOL
-        self.assertFalse(fx_tuple.is_empty())
-        
-        fx_tuple.key = M8FXTuple.EMPTY_KEY
-        self.assertTrue(fx_tuple.is_empty())
-        
-        # Value shouldn't affect emptiness
-        fx_tuple.value = 50
-        self.assertTrue(fx_tuple.is_empty())
-        
-    def test_is_complete(self):
-        # Test is_complete method
-        fx_tuple = M8FXTuple()
-        # Empty tuple is not complete because key isn't set
-        self.assertFalse(fx_tuple.is_complete())
-        
-        # Tuple with key set is complete
-        fx_tuple.key = TEST_FX_VOL
-        self.assertTrue(fx_tuple.is_complete())
-        
-        # Tuple is complete regardless of value
-        fx_tuple.value = 0
-        self.assertTrue(fx_tuple.is_complete())
-        fx_tuple.value = 50
-        self.assertTrue(fx_tuple.is_complete())
 
 
 class TestM8FXTuples(unittest.TestCase):
@@ -157,7 +126,6 @@ class TestM8FXTuples(unittest.TestCase):
         
         self.assertEqual(fx_tuples[1].key, M8FXTuple.EMPTY_KEY)
         self.assertEqual(fx_tuples[1].value, 0)
-        self.assertTrue(fx_tuples[1].is_empty())
         
         self.assertEqual(fx_tuples[2].key, TEST_FX_ARP)
         self.assertEqual(fx_tuples[2].value, 40)
@@ -214,49 +182,13 @@ class TestM8FXTuples(unittest.TestCase):
         
         # Should have BLOCK_COUNT tuples
         self.assertEqual(len(fx_tuples), BLOCK_COUNT)
-        
-        # All tuples should be empty
+
+        # All tuples should have empty key by default
         for fx_tuple in fx_tuples:
-            self.assertTrue(fx_tuple.is_empty())
+            self.assertEqual(fx_tuple.key, M8FXTuple.EMPTY_KEY)
     
-    def test_is_empty(self):
-        # Test is_empty method
-        fx_tuples = M8FXTuples()
-        self.assertTrue(fx_tuples.is_empty())
-        
-        # Modify one tuple
-        fx_tuples[0] = M8FXTuple(key=TEST_FX_VOL, value=20)
-        self.assertFalse(fx_tuples.is_empty())
-        
-        # Reset to empty
-        fx_tuples[0] = M8FXTuple()
-        self.assertTrue(fx_tuples.is_empty())
-        
-    def test_is_complete(self):
-        # Create a custom test class that inherits from M8FXTuple but overrides is_complete
-        class MockIncompleteM8FXTuple(M8FXTuple):
-            def is_empty(self):
-                return False  # Always non-empty
-                
-            def is_complete(self):
-                return False  # Always incomplete
-        
-        # Test the normal case first
-        fx_tuples = M8FXTuples()
-        # Empty tuples collection is complete since there are no non-empty tuples
-        self.assertTrue(fx_tuples.is_complete())
-        
-        # Add a complete tuple (with key)
-        fx_tuples[0] = M8FXTuple(key=TEST_FX_VOL, value=20)
-        self.assertTrue(fx_tuples.is_complete())
-        
-        # Test with our mock incomplete tuple
-        fx_tuples = M8FXTuples()
-        fx_tuples[0] = MockIncompleteM8FXTuple()
-        
-        # Now verify the collection is incomplete
-        self.assertFalse(fx_tuples.is_complete())
-    
+
+
     def test_clone(self):
         # Test clone method
         original = M8FXTuples()

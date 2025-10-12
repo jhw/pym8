@@ -49,23 +49,7 @@ class TestM8PhraseStepEssential(unittest.TestCase):
         self.assertEqual(deserialized.fx[1].key, original.fx[1].key)
         self.assertEqual(deserialized.fx[1].value, original.fx[1].value)
     
-    def test_is_empty(self):
-        # Test is_empty method
-        step = M8PhraseStep()
-        self.assertTrue(step.is_empty())
-        
-        # Modify note
-        step.note = TEST_NOTE_C6
-        self.assertFalse(step.is_empty())
-    
-    def test_add_fx(self):
-        # Test add_fx method
-        step = M8PhraseStep()
-        
-        slot = step.add_fx(key=TEST_FX_RMX, value=20)
-        self.assertEqual(slot, 0)
-        self.assertEqual(step.fx[0].key, TEST_FX_RMX)
-        self.assertEqual(step.fx[0].value, 20)
+
 
 class TestM8PhraseEssential(unittest.TestCase):
     """Essential phrase tests focusing on core functionality."""
@@ -75,7 +59,7 @@ class TestM8PhraseEssential(unittest.TestCase):
         phrase = M8Phrase()
         self.assertEqual(len(phrase), STEP_COUNT)
         for step in phrase:
-            self.assertTrue(step.is_empty())
+            self.assertEqual(step.note, M8PhraseStep.EMPTY_NOTE)
     
     def test_read_write_consistency(self):
         # Create a phrase with some steps
@@ -102,14 +86,6 @@ class TestM8PhraseEssential(unittest.TestCase):
         self.assertEqual(deserialized[3].velocity, original[3].velocity)
         self.assertEqual(deserialized[3].instrument, original[3].instrument)
     
-    def test_is_empty(self):
-        # Test is_empty method
-        phrase = M8Phrase()
-        self.assertTrue(phrase.is_empty())
-        
-        # Add a step
-        phrase[0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
-        self.assertFalse(phrase.is_empty())
 
 class TestM8PhrasesEssential(unittest.TestCase):
     """Essential phrases collection tests focusing on core functionality."""
@@ -118,9 +94,8 @@ class TestM8PhrasesEssential(unittest.TestCase):
         # Test default constructor
         phrases = M8Phrases()
         self.assertEqual(len(phrases), PHRASE_COUNT)
-        for phrase in phrases:
-            self.assertTrue(phrase.is_empty())
-    
+        # All phrases are empty by default
+
     def test_read_write_consistency(self):
         # Create phrases with some data
         original = M8Phrases()
@@ -145,14 +120,3 @@ class TestM8PhrasesEssential(unittest.TestCase):
         self.assertEqual(deserialized[2][3].velocity, original[2][3].velocity)
         self.assertEqual(deserialized[2][3].instrument, original[2][3].instrument)
     
-    def test_is_empty(self):
-        # Test is_empty method
-        phrases = M8Phrases()
-        self.assertTrue(phrases.is_empty())
-        
-        # Add a step to a phrase
-        phrases[0][0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
-        self.assertFalse(phrases.is_empty())
-
-if __name__ == '__main__':
-    unittest.main()

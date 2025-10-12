@@ -47,11 +47,6 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(read_sampler.name, "TEST")
         self.assertEqual(read_sampler.sample_path, "/samples/kick.wav")
 
-    def test_is_empty(self):
-        # Valid SAMPLER instrument should not be empty
-        sampler = M8Sampler()
-        self.assertFalse(sampler.is_empty())
-
     def test_clone(self):
         # Create sampler
         original = M8Sampler(

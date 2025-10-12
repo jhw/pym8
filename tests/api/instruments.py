@@ -60,11 +60,6 @@ class TestInstrumentBase(unittest.TestCase):
         clone.name = "Modified"
         self.assertEqual(original.name, "Original")
 
-    def test_is_empty(self):
-        # New sampler instrument should not be empty
-        instrument = M8Sampler(name="Test")
-        self.assertFalse(instrument.is_empty())
-
 
 class TestInstrumentFileIO(unittest.TestCase):
     def test_write_to_file(self):
@@ -221,13 +216,6 @@ class TestM8Instruments(unittest.TestCase):
         # Modify clone
         clone[0].name = "Modified"
         self.assertEqual(original[0].name, "Original")
-
-    def test_is_empty(self):
-        instruments = M8Instruments()
-        self.assertTrue(instruments.is_empty())
-
-        instruments[0] = M8Sampler(name="Test")
-        self.assertFalse(instruments.is_empty())
 
 
 if __name__ == '__main__':

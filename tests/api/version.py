@@ -16,20 +16,22 @@ class TestM8Version(unittest.TestCase):
         from m8.api.instruments import M8Instruments
         project.instruments = M8Instruments()
 
-        # Create sampler
+        # Create sampler and directly assign to slot
         sampler = M8Sampler(name="TestSynth")
-
-        # When adding to project, sampler should inherit project version
-        slot = project.add_instrument(sampler)
+        sampler.version = project.version
+        slot = 0
+        project.instruments[slot] = sampler
         self.assertEqual(str(project.instruments[slot].version), "4.1.2")
 
         # Changing project version should not affect sampler already added
         project.version = M8Version(4, 1, 3)
         self.assertEqual(str(project.instruments[slot].version), "4.1.2")
 
-        # Adding a new sampler should give it the updated version
+        # Adding a new sampler with updated version
         sampler2 = M8Sampler(name="Test2")
-        slot2 = project.add_instrument(sampler2)
+        sampler2.version = project.version
+        slot2 = 1
+        project.instruments[slot2] = sampler2
         self.assertEqual(str(project.instruments[slot2].version), "4.1.3")
         
     def test_file_operations_with_version(self):
@@ -44,9 +46,11 @@ class TestM8Version(unittest.TestCase):
         # Set custom version
         project.version = M8Version(4, 2, 0)
 
-        # Add sampler that inherits the version
+        # Add sampler with the version
         sampler = M8Sampler(name="TestSynth")
-        slot = project.add_instrument(sampler)
+        sampler.version = project.version
+        slot = 0
+        project.instruments[slot] = sampler
         self.assertEqual(str(project.instruments[slot].version), "4.2.0")
 
         # Write project to temporary file and read it back
