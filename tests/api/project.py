@@ -160,63 +160,7 @@ class TestM8Project(unittest.TestCase):
                 # Clean up
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
-    
-    def test_json_serialization(self):
-        # Test JSON serialization/deserialization
-        project_dict = self.project.as_dict()
-        
-        # Check the structure of the dictionary
-        self.assertEqual(project_dict["metadata"]["name"], self.project.metadata.name)
-        self.assertIn("instruments", project_dict)
-        self.assertIn("phrases", project_dict)
-        self.assertIn("chains", project_dict)
-        self.assertIn("song", project_dict)
-        
-        # Create a new project from the dictionary
-        new_project = M8Project.from_dict(project_dict)
-        
-        # Check the reconstructed project
-        self.assertEqual(new_project.metadata.name, self.project.metadata.name)
-        
-        # Check instrument was properly reconstructed
-        instr_list = new_project.instruments.as_list()
-        self.assertGreaterEqual(len(instr_list), 1)
-        self.assertEqual(instr_list[0]["name"], "TestSynth")
-        
-        # Check reference chain
-        # Find our test chain
-        chain_list = new_project.chains.as_list()
-        chain = next((c for c in chain_list if c["index"] == self.chain_slot), None)
-        self.assertIsNotNone(chain)
-        
-        # Check it references the correct phrase
-        step = next((s for s in chain["steps"] if s["index"] == 0), None)
-        self.assertIsNotNone(step)
-        self.assertEqual(step["phrase"], self.phrase_slot)
-    
-    def test_json_file_io(self):
-        # Test writing to JSON file and reading back
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as tmp:
-            try:
-                tmp_path = tmp.name
-                self.project.write_to_json_file(tmp_path)
-                
-                # Read it back
-                read_project = M8Project.read_from_json_file(tmp_path)
-                
-                # Compare basic attributes
-                self.assertEqual(read_project.metadata.name, self.project.metadata.name)
-                
-                # Check that all the major components were preserved
-                self.assertIsNotNone(read_project.instruments)
-                self.assertIsNotNone(read_project.phrases)
-                self.assertIsNotNone(read_project.chains)
-                self.assertIsNotNone(read_project.song)
-            finally:
-                # Clean up
-                if os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
-    
+
     def test_initialise(self):
         try:
             # Attempt to create a project from the default template

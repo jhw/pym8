@@ -98,23 +98,6 @@ class M8SamplerParams:
             sample_path=self.sample_path
         )
 
-    def as_dict(self):
-        """Convert to dictionary."""
-        return {
-            "play_mode": self.play_mode,
-            "slice": self.slice,
-            "sample_path": self.sample_path
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        """Create from dictionary."""
-        return cls(
-            play_mode=data.get("play_mode", 0),
-            slice=data.get("slice", 0),
-            sample_path=data.get("sample_path", "")
-        )
-
 
 class M8Sampler:
     """M8 Sampler instrument - the only instrument type supported."""
@@ -181,29 +164,6 @@ class M8Sampler:
         )
         instance.version = self.version
         return instance
-
-    def as_dict(self):
-        """Convert to dictionary."""
-        result = {
-            "type": self.type,
-            "name": self.name
-        }
-
-        # Add params
-        params_dict = self.params.as_dict()
-        result.update(params_dict)
-
-        return result
-
-    @classmethod
-    def from_dict(cls, data):
-        """Create instrument from dictionary."""
-        return cls(
-            name=data.get("name", ""),
-            sample_path=data.get("sample_path", ""),
-            play_mode=data.get("play_mode", 0),
-            slice=data.get("slice", 0)
-        )
 
     @classmethod
     def read(cls, data):

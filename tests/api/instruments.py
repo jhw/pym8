@@ -59,30 +59,6 @@ class TestM8InstrumentParams(unittest.TestCase):
         clone.play_mode = 5
         self.assertEqual(original.play_mode, 3)
 
-    def test_as_dict(self):
-        params = M8InstrumentParams(play_mode=1, slice=3, sample_path="/test.wav")
-        result = params.as_dict()
-
-        expected = {
-            "play_mode": 1,
-            "slice": 3,
-            "sample_path": "/test.wav"
-        }
-        self.assertEqual(result, expected)
-
-    def test_from_dict(self):
-        data = {
-            "play_mode": 2,
-            "slice": 8,
-            "sample_path": "/path/sample.wav"
-        }
-
-        params = M8InstrumentParams.from_dict(data)
-
-        self.assertEqual(params.play_mode, 2)
-        self.assertEqual(params.slice, 8)
-        self.assertEqual(params.sample_path, "/path/sample.wav")
-
 
 class TestInstrumentBase(unittest.TestCase):
     def test_constructor_and_defaults(self):
@@ -138,14 +114,6 @@ class TestInstrumentBase(unittest.TestCase):
         # Modify clone and verify original unchanged
         clone.name = "Modified"
         self.assertEqual(original.name, "Original")
-
-    def test_as_dict(self):
-        instrument = M8Instrument(name="Test", sample_path="/test.wav", slice=3)
-        result = instrument.as_dict()
-
-        self.assertEqual(result["name"], "Test")
-        self.assertEqual(result["sample_path"], "/test.wav")
-        self.assertEqual(result["slice"], 3)
 
     def test_is_empty(self):
         # New sampler instrument should not be empty
@@ -320,47 +288,6 @@ class TestM8Instruments(unittest.TestCase):
 
         instruments[0] = M8Instrument(name="Test")
         self.assertFalse(instruments.is_empty())
-
-    def test_as_list(self):
-        instruments = M8Instruments()
-        instruments[0] = M8Instrument(name="First", sample_path="/first.wav")
-        instruments[5] = M8Instrument(name="Second", slice=3)
-
-        result = instruments.as_list()
-
-        # Should only include non-empty instruments
-        self.assertEqual(len(result), 2)
-
-        # Check first instrument
-        first = next(item for item in result if item["index"] == 0)
-        self.assertEqual(first["name"], "First")
-        self.assertEqual(first["sample_path"], "/first.wav")
-
-        # Check second instrument
-        second = next(item for item in result if item["index"] == 5)
-        self.assertEqual(second["name"], "Second")
-        self.assertEqual(second["slice"], 3)
-
-    def test_from_list(self):
-        data = [
-            {"index": 0, "name": "First", "sample_path": "/first.wav"},
-            {"index": 7, "name": "Second", "slice": 5}
-        ]
-
-        instruments = M8Instruments.from_list(data)
-
-        # Check length
-        self.assertEqual(len(instruments), BLOCK_COUNT)
-
-        # Check instruments
-        self.assertEqual(instruments[0].name, "First")
-        self.assertEqual(instruments[0].params.sample_path, "/first.wav")
-
-        self.assertEqual(instruments[7].name, "Second")
-        self.assertEqual(instruments[7].params.slice, 5)
-
-        # Check empty slots
-        self.assertIsInstance(instruments[1], M8Block)
 
 
 if __name__ == '__main__':

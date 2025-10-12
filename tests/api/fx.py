@@ -132,38 +132,6 @@ class TestM8FXTuple(unittest.TestCase):
         self.assertTrue(fx_tuple.is_complete())
         fx_tuple.value = 50
         self.assertTrue(fx_tuple.is_complete())
-    
-    def test_as_dict(self):
-        # Test as_dict method with enum values
-        fx_tuple = M8FXTuple(key=TEST_FX_VOL, value=20)
-        result = fx_tuple.as_dict()
-        
-        expected = {
-            "key": TEST_FX_VOL,  # Should be integer enum value
-            "value": 20
-        }
-        
-        self.assertEqual(result, expected)
-    
-    def test_from_dict(self):
-        # Test from_dict method with integer enum values
-        data = {
-            "key": TEST_FX_VOL,
-            "value": 25
-        }
-        
-        fx_tuple = M8FXTuple.from_dict(data)
-        
-        self.assertEqual(fx_tuple.key, TEST_FX_VOL)
-        self.assertEqual(fx_tuple.value, 25)
-        
-        # Test dict/object round trip
-        original = M8FXTuple(key=TEST_FX_DEL, value=40)
-        dict_data = original.as_dict()
-        roundtrip = M8FXTuple.from_dict(dict_data)
-        
-        self.assertEqual(roundtrip.key, original.key)
-        self.assertEqual(roundtrip.value, original.value)
 
 
 class TestM8FXTuples(unittest.TestCase):
@@ -310,66 +278,6 @@ class TestM8FXTuples(unittest.TestCase):
         clone[0].value = 60
         self.assertEqual(original[0].key, TEST_FX_VOL)
         self.assertEqual(original[0].value, 20)
-    
-    def test_as_list(self):
-        # Test as_list method with enum values
-        fx_tuples = M8FXTuples()
-        
-        # Add some tuples
-        fx_tuples[0] = M8FXTuple(key=TEST_FX_VOL, value=20)
-        fx_tuples[2] = M8FXTuple(key=TEST_FX_ARP, value=40)
-        
-        result = fx_tuples.as_list()
-        
-        # Should only contain non-empty tuples
-        self.assertEqual(len(result), 2)
-        
-        # Check specific tuples
-        tuple0 = next(t for t in result if t["index"] == 0)
-        self.assertEqual(tuple0["key"], TEST_FX_VOL)
-        self.assertEqual(tuple0["value"], 20)
-        
-        tuple2 = next(t for t in result if t["index"] == 2)
-        self.assertEqual(tuple2["key"], TEST_FX_ARP)
-        self.assertEqual(tuple2["value"], 40)
-        
-        # Test empty tuples
-        fx_tuples = M8FXTuples()
-        result = fx_tuples.as_list()
-        self.assertEqual(result, [])
-    
-    def test_from_list(self):
-        # Test from_list method with integer enum values
-        data = [
-            {"index": 0, "key": TEST_FX_VOL, "value": 20},
-            {"index": 2, "key": TEST_FX_ARP, "value": 40}
-        ]
-        
-        fx_tuples = M8FXTuples.from_list(data)
-        
-        # Check specific tuples
-        self.assertEqual(fx_tuples[0].key, TEST_FX_VOL)
-        self.assertEqual(fx_tuples[0].value, 20)
-        
-        self.assertTrue(fx_tuples[1].is_empty())
-        
-        self.assertEqual(fx_tuples[2].key, TEST_FX_ARP)
-        self.assertEqual(fx_tuples[2].value, 40)
-        
-        # Test with invalid index
-        data = [
-            {"index": BLOCK_COUNT + 5, "key": TEST_FX_VOL, "value": 60}  # Out of range
-        ]
-        
-        fx_tuples = M8FXTuples.from_list(data)
-        self.assertTrue(fx_tuples.is_empty())
-        
-        # Test with empty list
-        fx_tuples = M8FXTuples.from_list([])
-        self.assertTrue(fx_tuples.is_empty())
-        
-        # Verify number of tuples is correct
-        self.assertEqual(len(fx_tuples), BLOCK_COUNT)
 
 if __name__ == '__main__':
     unittest.main()

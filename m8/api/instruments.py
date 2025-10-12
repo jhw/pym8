@@ -83,34 +83,3 @@ class M8Instruments(list):
             result.extend(instr_data)
 
         return bytes(result)
-
-    def as_list(self):
-        """Convert to list for serialization."""
-        items = []
-        for i, instr in enumerate(self):
-            if not (isinstance(instr, M8Block) or instr.is_empty()):
-                item_dict = instr.as_dict()
-                item_dict["index"] = i
-                items.append(item_dict)
-
-        return items
-
-    @classmethod
-    def from_list(cls, items):
-        """Create collection from list."""
-        instance = cls.__new__(cls)
-        list.__init__(instance)
-
-        # Initialize with empty blocks
-        for _ in range(BLOCK_COUNT):
-            instance.append(M8Block())
-
-        # Set instruments at their positions
-        if items:
-            for instr_data in items:
-                index = instr_data.get("index", 0)
-                if 0 <= index < BLOCK_COUNT:
-                    instr_dict = {k: v for k, v in instr_data.items() if k != "index"}
-                    instance[index] = M8Sampler.from_dict(instr_dict)
-
-        return instance

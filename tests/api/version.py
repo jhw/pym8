@@ -88,45 +88,6 @@ class TestM8Version(unittest.TestCase):
                 # Clean up
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
-                    
-    def test_not_serialized_to_json(self):
-        """Test that version is not serialized to JSON."""
-        # Create project with a specific version
-        project = M8Project()
-        project.version = M8Version(4, 1, 2)
-        
-        # Initialize all required components
-        from m8.api.instruments import M8Instruments
-        from m8.api.metadata import M8Metadata
-        from m8.api.song import M8SongMatrix
-        from m8.api.chains import M8Chains
-        from m8.api.phrases import M8Phrases
-        
-        project.metadata = M8Metadata(name="Test Project")
-        project.song = M8SongMatrix()
-        project.chains = M8Chains()
-        project.phrases = M8Phrases()
-        project.instruments = M8Instruments()
-        
-        # Add an instrument
-        instrument = M8Instrument(name="TestSynth")
-        project.add_instrument(instrument)
-        
-        # Serialize to dict
-        project_dict = project.as_dict()
-        
-        # Version should not be in the dict
-        self.assertNotIn("version", project_dict)
-        
-        # Create a new project from dict
-        new_project = M8Project.from_dict(project_dict)
-        
-        # New project should have default version, not the one from original project
-        self.assertEqual(str(new_project.version), "4.0.33")  # Default version
-        
-        # Check instrument serialization
-        instr_dict = instrument.as_dict()
-        self.assertNotIn("version", instr_dict)
 
 
 if __name__ == '__main__':

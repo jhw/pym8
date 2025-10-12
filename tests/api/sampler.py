@@ -50,38 +50,6 @@ class TestM8SamplerParams(unittest.TestCase):
         self.assertEqual(deserialized.slice, original.slice)
         self.assertEqual(deserialized.sample_path, original.sample_path)
 
-    def test_as_dict(self):
-        # Create params with test values
-        params = M8SamplerParams(
-            play_mode=self.test_play_mode,
-            slice=self.test_slice,
-            sample_path=self.test_sample_path
-        )
-
-        # Convert to dict
-        result = params.as_dict()
-
-        # Check all parameters are in the dictionary
-        self.assertEqual(result["play_mode"], self.test_play_mode)
-        self.assertEqual(result["slice"], self.test_slice)
-        self.assertEqual(result["sample_path"], self.test_sample_path)
-
-    def test_from_dict(self):
-        # Test data
-        data = {
-            "play_mode": self.test_play_mode,
-            "slice": self.test_slice,
-            "sample_path": self.test_sample_path
-        }
-
-        # Create from dict
-        params = M8SamplerParams.from_dict(data)
-
-        # Check values
-        self.assertEqual(params.play_mode, self.test_play_mode)
-        self.assertEqual(params.slice, self.test_slice)
-        self.assertEqual(params.sample_path, self.test_sample_path)
-
     def test_clone(self):
         # Create params with test values
         original = M8SamplerParams(
@@ -173,45 +141,6 @@ class TestM8Sampler(unittest.TestCase):
         # Valid SAMPLER instrument should not be empty
         sampler = M8Sampler()
         self.assertFalse(sampler.is_empty())
-
-    def test_as_dict(self):
-        # Create sampler with supported parameters
-        sampler = M8Sampler(
-            name="TestSampler",
-            sample_path="/samples/kick.wav",
-            play_mode=0x01,
-            slice=0x05
-        )
-
-        # Convert to dict
-        result = sampler.as_dict()
-
-        # Check common parameters
-        self.assertEqual(result["type"], 0x02)
-        self.assertEqual(result["name"], "TestSampler")
-
-        # Check sampler-specific parameters
-        self.assertEqual(result["play_mode"], 0x01)
-        self.assertEqual(result["slice"], 0x05)
-        self.assertEqual(result["sample_path"], "/samples/kick.wav")
-
-    def test_from_dict(self):
-        # Test data
-        data = {
-            "name": "TestSampler",
-            "sample_path": "/samples/kick.wav",
-            "play_mode": 0x01,
-            "slice": 0x05
-        }
-
-        # Create from dict
-        sampler = M8Sampler.from_dict(data)
-
-        # Check supported parameters
-        self.assertEqual(sampler.name, "TestSampler")
-        self.assertEqual(sampler.params.play_mode, 0x01)
-        self.assertEqual(sampler.params.slice, 0x05)
-        self.assertEqual(sampler.params.sample_path, "/samples/kick.wav")
 
     def test_clone(self):
         # Create sampler

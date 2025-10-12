@@ -122,24 +122,3 @@ class M8Metadata:
             name=self.name,
             key=self.key
         )
-    
-    def as_dict(self):
-        return {
-            "directory": self.directory,
-            "transpose": self.transpose,
-            "tempo": self.tempo,
-            "quantize": self.quantize,
-            "name": self.name,
-            "key": self.key
-        }
-    
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            directory=data["directory"],
-            transpose=data["transpose"],
-            tempo=data["tempo"],
-            quantize=data["quantize"],
-            name=data["name"],
-            key=data["key"]
-        )

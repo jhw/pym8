@@ -67,19 +67,6 @@ class M8FXTuple:
             key=self.key,
             value=self.value
         )
-    
-    def as_dict(self):
-        return {
-            "key": self.key,
-            "value": self.value
-        }
-    
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            key=data["key"],
-            value=data["value"]
-        )
 
 
 class M8FXTuples(list):
@@ -134,36 +121,3 @@ class M8FXTuples(list):
             tuple_data = fx_tuple.write()
             result.extend(tuple_data)
         return bytes(result)
-    
-    def as_list(self):
-        # Only include non-empty tuples with their position index
-        tuples = []
-        for i, fx_tuple in enumerate(self):
-            if not fx_tuple.is_empty():
-                tuple_dict = fx_tuple.as_dict()
-                # Add index to track position
-                tuple_dict["index"] = i
-                tuples.append(tuple_dict)
-        
-        return tuples
-        
-    @classmethod
-    def from_list(cls, items):
-        instance = cls()
-        instance.clear()  # Clear default tuples
-        
-        # Initialize with empty tuples
-        for _ in range(BLOCK_COUNT):
-            instance.append(M8FXTuple())
-        
-        # Set tuples at their original positions
-        if items:
-            for tuple_data in items:
-                # Get index from data
-                index = tuple_data["index"]
-                if 0 <= index < BLOCK_COUNT:
-                    # Remove index field before passing to from_dict
-                    tuple_dict = {k: v for k, v in tuple_data.items() if k != "index"}
-                    instance[index] = M8FXTuple.from_dict(tuple_dict)
-        
-        return instance

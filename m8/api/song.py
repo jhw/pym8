@@ -55,31 +55,6 @@ class M8SongRow:
     
     def write(self):
         return bytes(self._data)
-    
-    def as_dict(self):
-        # Only include non-blank chain references
-        chains = []
-        for i in range(COL_COUNT):
-            if self[i] != self.EMPTY_CHAIN:
-                chains.append({"col": i, "chain": self[i]})
-        
-        return {
-            "chains": chains
-        }
-    
-    @classmethod
-    def from_dict(cls, data):
-        instance = cls()
-        
-        # Set chain references
-        if "chains" in data:
-            for chain_ref in data["chains"]:
-                col = chain_ref["col"]
-                chain = chain_ref["chain"]
-                if 0 <= col < COL_COUNT:
-                    instance[col] = chain
-        
-        return instance
 
 class M8SongMatrix(list):
     """Represents the M8 song grid as a 2D matrix with 255 rows and 8 columns of chain references."""
@@ -126,27 +101,3 @@ class M8SongMatrix(list):
             row_data = row.write()
             result.extend(row_data)
         return bytes(result)
-    
-    def as_list(self):
-        # Only include non-empty rows for sparse representation
-        result = []
-        for i, row in enumerate(self):
-            if not row.is_empty():
-                row_dict = row.as_dict()
-                row_dict["index"] = i
-                result.append(row_dict)
-        
-        return result
-    
-    @classmethod
-    def from_list(cls, items):
-        instance = cls()
-        
-        # Set rows
-        if items:
-            for row_data in items:
-                row_idx = row_data.get("index", 0)
-                if 0 <= row_idx < ROW_COUNT:
-                    instance[row_idx] = M8SongRow.from_dict(row_data)
-        
-        return instance
