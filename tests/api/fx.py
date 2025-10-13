@@ -1,5 +1,5 @@
 import unittest
-from m8.api.fx import M8FXTuple, M8FXTuples, BLOCK_SIZE, BLOCK_COUNT, FX_PITCH, FX_NOTE_LENGTH, FX_RETRIGGER, FX_PLAY_MODE
+from m8.api.fx import M8FXTuple, M8FXTuples, BLOCK_SIZE, BLOCK_COUNT, FX_PITCH, FX_LENGTH, FX_RETRIGGER, FX_PLAY_MODE
 
 # Test FX values - use hardcoded integers since we removed enums
 TEST_FX_VOL = 0x01

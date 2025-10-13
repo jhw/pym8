@@ -9,7 +9,7 @@ BLOCK_COUNT = config["block_count"]
 
 # Hardcoded FX keys for supported effects
 FX_PITCH = 0x03         # PIT command (pitch)
-FX_NOTE_LENGTH = 0x07   # NTH command (note length)
+FX_LENGTH = 0x86        # LEN command (sample length)
 FX_RETRIGGER = 0x0C     # RTG command (repeat/retrigger)
 FX_PLAY_MODE = 0x83     # PLY command (play mode)
 
