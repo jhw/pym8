@@ -8,14 +8,18 @@ import pkgutil
 def discover_test_modules(package_name="tests"):
     """Recursively discover all test modules in the given package."""
     package = importlib.import_module(package_name)
-    
+
     for _, name, is_pkg in pkgutil.iter_modules(package.__path__, package.__name__ + '.'):
         if is_pkg:
             # If it's a package, recursively scan it
             discover_test_modules(name)
         else:
             # If it's a module, import it to add its tests to the registry
-            importlib.import_module(name)
+            try:
+                importlib.import_module(name)
+            except ImportError as e:
+                print(f"ERROR: Failed to import test module {name}: {e}", file=sys.stderr)
+                raise
 
 def clean_temp_test_dirs():
     """Clean up temporary test directories created by tests."""
