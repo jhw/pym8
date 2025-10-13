@@ -33,17 +33,10 @@ groove:
 instruments:
   block_size: 215
   common_fields:
-    finetune:
-      default: 128
-      offset: 17
     name:
-      default: ' '
       offset: 1
       size: 12
       type: STRING
-    table_tick:
-      default: 1
-      offset: 14
     type:
       offset: 0
   count: 128

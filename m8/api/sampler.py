@@ -56,10 +56,6 @@ class M8Sampler:
         name_bytes = _write_fixed_string(self.name, NAME_LENGTH)
         buffer[NAME_OFFSET:NAME_OFFSET + NAME_LENGTH] = name_bytes
 
-        # Write common parameters with config defaults
-        buffer[common_fields["table_tick"]["offset"]] = common_fields["table_tick"]["default"] & 0xFF
-        buffer[common_fields["finetune"]["offset"]] = common_fields["finetune"]["default"] & 0xFF
-
         # Write sample_path
         sample_path_bytes = _write_fixed_string(self.sample_path, SAMPLE_PATH_SIZE)
         buffer[SAMPLE_PATH_OFFSET:SAMPLE_PATH_OFFSET + SAMPLE_PATH_SIZE] = sample_path_bytes
