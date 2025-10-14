@@ -119,12 +119,12 @@ class M8Chains(list):
         return instance
     
     def clone(self):
-        instance = self.__class__.__new__(self.__class__)  # Create without __init__
-        list.__init__(instance)  # Initialize list directly
-        
+        instance = self.__class__()
+        instance.clear()  # Remove default items
+
         for chain in self:
             instance.append(chain.clone())
-        
+
         return instance
     
     def write(self):
