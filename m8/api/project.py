@@ -109,32 +109,30 @@ class M8Project:
         """Creates a new project from a template file."""
         import os
         import sys
-        
+
         template_filename = template_name if template_name.endswith('.m8s') else f"{template_name}.m8s"
-        
+
+        # Strategy 1: Try importlib.resources (Python 3.7+, works with installed packages)
         try:
             import importlib.resources
-            try:
-                with importlib.resources.path('m8.templates', template_filename) as template_path:
-                    if os.path.exists(template_path):
-                        # Will automatically set the project on the context manager
-                        return cls.read_from_file(str(template_path))
-            except (ImportError, ModuleNotFoundError, FileNotFoundError):
-                pass
-        except ImportError:
+            with importlib.resources.path('m8.templates', template_filename) as template_path:
+                if os.path.exists(template_path):
+                    return cls.read_from_file(str(template_path))
+        except (ImportError, ModuleNotFoundError, FileNotFoundError, TypeError):
             pass
-            
+
+        # Strategy 2: Search sys.path for m8/templates
         for path in sys.path:
             potential_path = os.path.join(path, 'm8', 'templates', template_filename)
             if os.path.exists(potential_path):
                 return cls.read_from_file(potential_path)
-            
+
+        # Strategy 3: Relative to this module (development/source installs)
         module_path = os.path.dirname(os.path.abspath(__file__))
         template_path = os.path.join(module_path, "..", "templates", template_filename)
-        
         if os.path.exists(template_path):
             return cls.read_from_file(template_path)
-            
+
         raise FileNotFoundError(f"Template '{template_filename}' not found. Check that it exists in the m8/templates directory.")
 
     def write_to_file(self, filename: str):
