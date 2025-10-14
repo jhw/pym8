@@ -1,33 +1,41 @@
 import logging
 
 from m8.api import M8Block
-from m8.api.chains import M8Chains
-from m8.api.instruments import M8Instruments
-from m8.api.metadata import M8Metadata
-from m8.api.phrases import M8Phrases
-from m8.api.song import M8SongMatrix
+from m8.api.chains import M8Chains, CHAINS_OFFSET
+from m8.api.instruments import M8Instruments, INSTRUMENTS_OFFSET
+from m8.api.metadata import M8Metadata, METADATA_OFFSET
+from m8.api.phrases import M8Phrases, PHRASES_OFFSET
+from m8.api.song import M8SongMatrix, SONG_OFFSET
 from m8.api.version import M8Version
-from m8.core.format import get_offset
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Reference: https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
 
+# Project file offsets
+VERSION_OFFSET = 10
+GROOVE_OFFSET = 238
+TABLE_OFFSET = 47678
+EFFECT_SETTINGS_OFFSET = 107969
+MIDI_MAPPING_OFFSET = 108030
+SCALE_OFFSET = 109182
+EQ_OFFSET = 109918
+
 # Dictionary to cache offsets loaded from configuration
 OFFSETS = {
-    "version": get_offset("version"),
-    "metadata": get_offset("metadata"),
-    "groove": get_offset("groove"),
-    "song": get_offset("song"),
-    "phrases": get_offset("phrases"),
-    "chains": get_offset("chains"),
-    "table": get_offset("table"),
-    "instruments": get_offset("instruments"),
-    "effect_settings": get_offset("effect_settings"),
-    "midi_mapping": get_offset("midi_mapping"),
-    "scale": get_offset("scale"),
-    "eq": get_offset("eq")
+    "version": VERSION_OFFSET,
+    "metadata": METADATA_OFFSET,
+    "groove": GROOVE_OFFSET,
+    "song": SONG_OFFSET,
+    "phrases": PHRASES_OFFSET,
+    "chains": CHAINS_OFFSET,
+    "table": TABLE_OFFSET,
+    "instruments": INSTRUMENTS_OFFSET,
+    "effect_settings": EFFECT_SETTINGS_OFFSET,
+    "midi_mapping": MIDI_MAPPING_OFFSET,
+    "scale": SCALE_OFFSET,
+    "eq": EQ_OFFSET
 }
 
 class M8Project:

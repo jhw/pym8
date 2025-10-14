@@ -1,21 +1,30 @@
-from m8.core.format import load_format_config
+# Chains configuration
+CHAINS_OFFSET = 39518
+CHAINS_COUNT = 128
+CHAIN_STEP_SIZE = 2
+CHAIN_STEP_COUNT = 16
+CHAIN_BLOCK_SIZE = CHAIN_STEP_COUNT * CHAIN_STEP_SIZE
 
-# Load configuration
-config = load_format_config()["chains"]
+# Field offsets within chain step
+PHRASE_OFFSET = 0
+TRANSPOSE_OFFSET = 1
+
+# Constants
+EMPTY_PHRASE = 255
+DEFAULT_TRANSPOSE = 0
 
 # Module-level constants for block sizes and counts
-STEP_BLOCK_SIZE = config["step_size"]
-STEP_COUNT = config["step_count"]
-CHAIN_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total chain size in bytes
-CHAIN_COUNT = config["count"]
+STEP_BLOCK_SIZE = CHAIN_STEP_SIZE
+STEP_COUNT = CHAIN_STEP_COUNT
+CHAIN_COUNT = CHAINS_COUNT
 
 class M8ChainStep:
     """Represents a single step in an M8 chain that references a phrase with transposition."""
-    
-    PHRASE_OFFSET = config["fields"]["phrase"]["offset"]
-    TRANSPOSE_OFFSET = config["fields"]["transpose"]["offset"]
-    EMPTY_PHRASE = config["constants"]["empty_phrase"]
-    DEFAULT_TRANSPOSE = config["constants"]["default_transpose"]
+
+    PHRASE_OFFSET = PHRASE_OFFSET
+    TRANSPOSE_OFFSET = TRANSPOSE_OFFSET
+    EMPTY_PHRASE = EMPTY_PHRASE
+    DEFAULT_TRANSPOSE = DEFAULT_TRANSPOSE
     
     def __init__(self, phrase=EMPTY_PHRASE, transpose=DEFAULT_TRANSPOSE):
         self._data = bytearray([phrase, transpose])

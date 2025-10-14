@@ -1,17 +1,19 @@
-from m8.core.format import load_format_config
+# Song configuration
+SONG_OFFSET = 750
+SONG_COL_COUNT = 8
+SONG_ROW_COUNT = 255
 
-# Load configuration
-config = load_format_config()
-song_config = config["song"]
+# Constants
+EMPTY_CHAIN = 255
 
 # Module-level constants from config
-COL_COUNT = song_config["col_count"]       # Number of tracks/columns in the song
-ROW_COUNT = song_config["row_count"]       # Maximum number of rows in the song
+COL_COUNT = SONG_COL_COUNT
+ROW_COUNT = SONG_ROW_COUNT
 
 class M8SongRow:
     """Represents a single row in the M8 song grid with 8 columns of chain references."""
-    
-    EMPTY_CHAIN = song_config["constants"]["empty_chain"]  # Value indicating no chain is assigned
+
+    EMPTY_CHAIN = EMPTY_CHAIN
     
     def __init__(self, **kwargs):
         self._data = bytearray([self.EMPTY_CHAIN] * COL_COUNT)

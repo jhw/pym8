@@ -2,14 +2,15 @@
 """Generic M8 Instruments collection."""
 
 from m8.api import M8Block
-from m8.core.format import load_format_config
 
-# Load configuration
-config = load_format_config()
+# Instruments configuration
+INSTRUMENTS_OFFSET = 80446
+INSTRUMENTS_BLOCK_SIZE = 215
+INSTRUMENTS_COUNT = 128
 
 # Block sizes and counts for instruments
-BLOCK_SIZE = config["instruments"]["block_size"]
-BLOCK_COUNT = config["instruments"]["count"]
+BLOCK_SIZE = INSTRUMENTS_BLOCK_SIZE
+BLOCK_COUNT = INSTRUMENTS_COUNT
 
 # Import sampler for type checking
 from m8.api.sampler import M8Sampler, SAMPLER_TYPE_ID

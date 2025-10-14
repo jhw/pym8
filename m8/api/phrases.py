@@ -1,33 +1,48 @@
 from m8.api import M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
-from m8.core.format import load_format_config
 
-# Load configuration
-config = load_format_config()["phrases"]
-fx_config = load_format_config()["fx"]
+# Phrases configuration
+PHRASES_OFFSET = 2798
+PHRASES_COUNT = 255
+PHRASE_STEP_SIZE = 9
+PHRASE_STEP_COUNT = 16
+PHRASE_BLOCK_SIZE = PHRASE_STEP_COUNT * PHRASE_STEP_SIZE
+
+# Field offsets within phrase step
+NOTE_OFFSET = 0
+VELOCITY_OFFSET = 1
+INSTRUMENT_OFFSET = 2
+FX_OFFSET = 3
+FX_SIZE = 6
+
+# Constants
+BASE_DATA_SIZE = 3
+EMPTY_NOTE = 255
+EMPTY_VELOCITY = 255
+EMPTY_INSTRUMENT = 255
+OFF_NOTE = 0x80
 
 # Module-level constants
-FX_BLOCK_COUNT = fx_config["block_count"]   # Number of FX slots per step
-STEP_BLOCK_SIZE = config["step_size"]       # Size of each step in bytes
-STEP_COUNT = config["step_count"]           # Number of steps per phrase 
-PHRASE_BLOCK_SIZE = STEP_COUNT * STEP_BLOCK_SIZE  # Total phrase size in bytes
-PHRASE_COUNT = config["count"]              # Maximum number of phrases
+FX_BLOCK_COUNT = 3  # Number of FX slots per step (from fx config)
+STEP_BLOCK_SIZE = PHRASE_STEP_SIZE
+STEP_COUNT = PHRASE_STEP_COUNT
+PHRASE_COUNT = PHRASES_COUNT
 
 class M8PhraseStep:
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""
-    
-    NOTE_OFFSET = config["fields"]["note"]["offset"]
-    VELOCITY_OFFSET = config["fields"]["velocity"]["offset"]
-    INSTRUMENT_OFFSET = config["fields"]["instrument"]["offset"]
-    FX_OFFSET = config["fields"]["fx"]["offset"]
-    
-    BASE_DATA_SIZE = config["constants"]["base_data_size"]
-    
-    EMPTY_NOTE = config["constants"]["empty_note"]
-    EMPTY_VELOCITY = config["constants"]["empty_velocity"]
-    EMPTY_INSTRUMENT = config["constants"]["empty_instrument"]
-    
-    OFF_NOTE = 0x80
+
+    NOTE_OFFSET = NOTE_OFFSET
+    VELOCITY_OFFSET = VELOCITY_OFFSET
+    INSTRUMENT_OFFSET = INSTRUMENT_OFFSET
+    FX_OFFSET = FX_OFFSET
+
+    BASE_DATA_SIZE = BASE_DATA_SIZE
+
+    EMPTY_NOTE = EMPTY_NOTE
+    EMPTY_VELOCITY = EMPTY_VELOCITY
+    EMPTY_INSTRUMENT = EMPTY_INSTRUMENT
+
+    OFF_NOTE = OFF_NOTE
     
     def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
         # Clients should pass enum.value directly for note values

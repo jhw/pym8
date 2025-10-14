@@ -1,30 +1,49 @@
 import struct
 from m8.api import _read_fixed_string, _write_fixed_string
-from m8.core.format import load_format_config
 
-# Load configuration
-config = load_format_config()["metadata"]
+# Metadata offsets and sizes
+METADATA_OFFSET = 14
+METADATA_BLOCK_SIZE = 147
+
+# Field offsets within metadata block
+DIRECTORY_OFFSET = 0
+DIRECTORY_LENGTH = 128
+TRANSPOSE_OFFSET = 128
+TEMPO_OFFSET = 129
+TEMPO_SIZE = 4
+QUANTIZE_OFFSET = 133
+NAME_OFFSET = 134
+NAME_LENGTH = 12
+KEY_OFFSET = 146
+
+# Default values
+DEFAULT_DIRECTORY = '/Songs/'
+DEFAULT_TRANSPOSE = 0
+DEFAULT_TEMPO = 120.0
+DEFAULT_QUANTIZE = 0
+DEFAULT_NAME = 'HELLO'
+DEFAULT_KEY = 0
 
 class M8Metadata:
     """Stores M8 tracker metadata including song name, directory, tempo, key, transpose and quantize."""
-    
-    DIRECTORY_OFFSET = config["fields"]["directory"]["offset"]
-    DIRECTORY_LENGTH = config["fields"]["directory"]["size"]
-    TRANSPOSE_OFFSET = config["fields"]["transpose"]["offset"]
-    TEMPO_OFFSET = config["fields"]["tempo"]["offset"]
-    TEMPO_SIZE = config["fields"]["tempo"]["size"]
-    QUANTIZE_OFFSET = config["fields"]["quantize"]["offset"]
-    NAME_OFFSET = config["fields"]["name"]["offset"]
-    NAME_LENGTH = config["fields"]["name"]["size"]
-    KEY_OFFSET = config["fields"]["key"]["offset"]
-    BLOCK_SIZE = config["block_size"]
 
-    def __init__(self, directory=config["fields"]["directory"]["default"], 
-                 transpose=config["fields"]["transpose"]["default"], 
-                 tempo=config["fields"]["tempo"]["default"], 
-                 quantize=config["fields"]["quantize"]["default"], 
-                 name=config["fields"]["name"]["default"], 
-                 key=config["fields"]["key"]["default"]):
+    DIRECTORY_OFFSET = DIRECTORY_OFFSET
+    DIRECTORY_LENGTH = DIRECTORY_LENGTH
+    TRANSPOSE_OFFSET = TRANSPOSE_OFFSET
+    TEMPO_OFFSET = TEMPO_OFFSET
+    TEMPO_SIZE = TEMPO_SIZE
+    QUANTIZE_OFFSET = QUANTIZE_OFFSET
+    NAME_OFFSET = NAME_OFFSET
+    NAME_LENGTH = NAME_LENGTH
+    KEY_OFFSET = KEY_OFFSET
+    BLOCK_SIZE = METADATA_BLOCK_SIZE
+
+    def __init__(self, directory=DEFAULT_DIRECTORY,
+                 transpose=DEFAULT_TRANSPOSE,
+                 tempo=DEFAULT_TEMPO,
+                 quantize=DEFAULT_QUANTIZE,
+                 name=DEFAULT_NAME,
+                 key=DEFAULT_KEY):
         self.directory = directory
         self.transpose = transpose
         self.tempo = tempo

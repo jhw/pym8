@@ -1,11 +1,18 @@
-from m8.core.format import load_format_config
+# FX configuration
+FX_BLOCK_SIZE = 2
+FX_BLOCK_COUNT = 3
 
-# Load configuration
-config = load_format_config()["fx"]
+# Field offsets within FX tuple
+FX_KEY_OFFSET = 0
+FX_VALUE_OFFSET = 1
+
+# Constants
+EMPTY_KEY = 255
+DEFAULT_VALUE = 0
 
 # Module-level constants
-BLOCK_SIZE = config["block_size"]
-BLOCK_COUNT = config["block_count"]
+BLOCK_SIZE = FX_BLOCK_SIZE
+BLOCK_COUNT = FX_BLOCK_COUNT
 
 # Hardcoded FX keys for supported effects
 FX_PITCH = 0x03         # PIT command (pitch)
@@ -15,11 +22,11 @@ FX_PLAY_MODE = 0x83     # PLY command (play mode)
 
 class M8FXTuple:
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
-    
-    KEY_OFFSET = config["fields"]["key"]["offset"]
-    VALUE_OFFSET = config["fields"]["value"]["offset"]
-    EMPTY_KEY = config["constants"]["empty_key"]
-    DEFAULT_VALUE = config["constants"]["default_value"]
+
+    KEY_OFFSET = FX_KEY_OFFSET
+    VALUE_OFFSET = FX_VALUE_OFFSET
+    EMPTY_KEY = EMPTY_KEY
+    DEFAULT_VALUE = DEFAULT_VALUE
     
     def __init__(self, key=EMPTY_KEY, value=DEFAULT_VALUE):
         self._data = bytearray([0, 0])  # Initialize with zeros
