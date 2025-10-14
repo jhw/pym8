@@ -69,30 +69,6 @@ class TestM8Version(unittest.TestCase):
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
 
-        # Write sampler to temporary file and read it back
-        sampler = project.instruments[slot]
-        with tempfile.NamedTemporaryFile(suffix='.m8i', delete=False) as tmp:
-            try:
-                tmp_path = tmp.name
-                sampler.write_to_file(tmp_path)
-
-                # Read it back
-                read_sampler = M8Sampler.read_from_file(tmp_path)
-
-                # Check version was preserved
-                self.assertEqual(str(read_sampler.version), "4.2.0")
-
-                # Try with version mismatch check
-                # Should pass with matching version
-                M8Sampler.read_from_file(tmp_path)
-
-                # We've removed version checking
-                M8Sampler.read_from_file(tmp_path)
-            finally:
-                # Clean up
-                if os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
-
 
 if __name__ == '__main__':
     unittest.main()

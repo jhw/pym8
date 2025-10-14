@@ -77,54 +77,6 @@ class M8Sampler:
         instrument.sample_path = _read_fixed_string(data, SAMPLE_PATH_OFFSET, SAMPLE_PATH_SIZE)
         return instrument
 
-    @classmethod
-    def read_from_file(cls, file_path):
-        """Read instrument from .m8i file."""
-        # Import here to avoid circular dependency
-        from m8.api.metadata import METADATA_OFFSET
-
-        with open(file_path, "rb") as f:
-            data = f.read()
-
-        # Read version
-        VERSION_OFFSET = 10
-        version = M8Version.read(data[VERSION_OFFSET:])
-
-        # Read instrument data
-        instrument_data = data[METADATA_OFFSET:]
-
-        instrument = cls.read(instrument_data)
-        instrument.version = version
-
-        return instrument
-
-    def write_to_file(self, file_path):
-        """Write instrument to .m8i file."""
-        import os
-
-        # Import here to avoid circular dependency
-        from m8.api.metadata import METADATA_OFFSET
-
-        # Create directory if needed
-        directory = os.path.dirname(file_path)
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory, exist_ok=True)
-
-        instrument_data = self.write()
-
-        # Get offsets
-        VERSION_OFFSET = 10
-
-        # Create file buffer
-        m8i_data = bytearray([0] * METADATA_OFFSET) + instrument_data
-
-        # Write version
-        version_data = self.version.write()
-        m8i_data[VERSION_OFFSET:VERSION_OFFSET + len(version_data)] = version_data
-
-        with open(file_path, "wb") as f:
-            f.write(m8i_data)
-
 
 # Legacy alias for backwards compatibility
 M8Instrument = M8Sampler
