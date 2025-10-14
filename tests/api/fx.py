@@ -1,5 +1,5 @@
 import unittest
-from m8.api.fx import M8FXTuple, M8FXTuples, BLOCK_SIZE, BLOCK_COUNT, FX_PITCH, FX_LENGTH, FX_RETRIGGER, FX_PLAY_MODE
+from m8.api.fx import M8FXTuple, M8FXTuples, BLOCK_SIZE, BLOCK_COUNT, FX_PITCH, FX_LENGTH, FX_RETRIGGER, FX_PLAY_MODE, EMPTY_KEY, DEFAULT_VALUE
 
 # Test FX values - use hardcoded integers since we removed enums
 TEST_FX_VOL = 0x01
@@ -19,10 +19,10 @@ class TestM8FXTuple(unittest.TestCase):
         self.assertEqual(fx_tuple.value, 20)
         
         # Test case 2: Empty tuple
-        test_data = bytes([M8FXTuple.EMPTY_KEY, 0])
+        test_data = bytes([EMPTY_KEY, 0])
         fx_tuple = M8FXTuple.read(test_data)
 
-        self.assertEqual(fx_tuple.key, M8FXTuple.EMPTY_KEY)
+        self.assertEqual(fx_tuple.key, EMPTY_KEY)
         self.assertEqual(fx_tuple.value, 0)
         
         # Test case 3: Extra data (should only read first 2 bytes)
@@ -43,15 +43,15 @@ class TestM8FXTuple(unittest.TestCase):
         # Test case 2: Empty tuple
         fx_tuple = M8FXTuple()  # Default is empty
         binary = fx_tuple.write()
-        
-        self.assertEqual(binary, bytes([M8FXTuple.EMPTY_KEY, M8FXTuple.DEFAULT_VALUE]))
+
+        self.assertEqual(binary, bytes([EMPTY_KEY, DEFAULT_VALUE]))
     
     def test_read_write_consistency(self):
         # Test binary serialization/deserialization consistency with enum values
         test_cases = [
             (TEST_FX_VOL, 20),  # WavSynth FX
             (TEST_FX_ARP, 30),  # Sequencer FX
-            (M8FXTuple.EMPTY_KEY, 0),  # Empty tuple
+            (EMPTY_KEY, 0),  # Empty tuple
             (0, 40)  # Numeric key
         ]
         
@@ -72,8 +72,8 @@ class TestM8FXTuple(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
         fx_tuple = M8FXTuple()
-        self.assertEqual(fx_tuple.key, M8FXTuple.EMPTY_KEY)
-        self.assertEqual(fx_tuple.value, M8FXTuple.DEFAULT_VALUE)
+        self.assertEqual(fx_tuple.key, EMPTY_KEY)
+        self.assertEqual(fx_tuple.value, DEFAULT_VALUE)
         
         # Test with enum value parameters
         fx_tuple = M8FXTuple(key=TEST_FX_VOL, value=20)
@@ -112,7 +112,7 @@ class TestM8FXTuples(unittest.TestCase):
         test_data.extend([TEST_FX_VOL, 20])
         
         # Tuple 1: empty
-        test_data.extend([M8FXTuple.EMPTY_KEY, 0])
+        test_data.extend([EMPTY_KEY, 0])
         
         # Tuple 2: key=ARP (sequencer FX), value=40
         test_data.extend([TEST_FX_ARP, 40])
@@ -124,7 +124,7 @@ class TestM8FXTuples(unittest.TestCase):
         self.assertEqual(fx_tuples[0].key, TEST_FX_VOL)
         self.assertEqual(fx_tuples[0].value, 20)
         
-        self.assertEqual(fx_tuples[1].key, M8FXTuple.EMPTY_KEY)
+        self.assertEqual(fx_tuples[1].key, EMPTY_KEY)
         self.assertEqual(fx_tuples[1].value, 0)
         
         self.assertEqual(fx_tuples[2].key, TEST_FX_ARP)
@@ -151,7 +151,7 @@ class TestM8FXTuples(unittest.TestCase):
         self.assertEqual(binary[0], TEST_FX_VOL)  # Tuple 0 key
         self.assertEqual(binary[1], 20)                     # Tuple 0 value
         
-        self.assertEqual(binary[2], M8FXTuple.EMPTY_KEY)    # Tuple 1 key (empty)
+        self.assertEqual(binary[2], EMPTY_KEY)    # Tuple 1 key (empty)
         self.assertEqual(binary[3], 0)                      # Tuple 1 value
         
         self.assertEqual(binary[4], TEST_FX_ARP)  # Tuple 2 key
@@ -185,7 +185,7 @@ class TestM8FXTuples(unittest.TestCase):
 
         # All tuples should have empty key by default
         for fx_tuple in fx_tuples:
-            self.assertEqual(fx_tuple.key, M8FXTuple.EMPTY_KEY)
+            self.assertEqual(fx_tuple.key, EMPTY_KEY)
     
 
 

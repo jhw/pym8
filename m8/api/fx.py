@@ -23,17 +23,12 @@ FX_PLAY_MODE = 0x83     # PLY command (play mode)
 class M8FXTuple:
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
 
-    KEY_OFFSET = FX_KEY_OFFSET
-    VALUE_OFFSET = FX_VALUE_OFFSET
-    EMPTY_KEY = EMPTY_KEY
-    DEFAULT_VALUE = DEFAULT_VALUE
-    
     def __init__(self, key=EMPTY_KEY, value=DEFAULT_VALUE):
         self._data = bytearray([0, 0])  # Initialize with zeros
-        
+
         # Set values directly - clients should pass enum.value for enum keys
-        self._data[self.KEY_OFFSET] = key
-        self._data[self.VALUE_OFFSET] = value
+        self._data[FX_KEY_OFFSET] = key
+        self._data[FX_VALUE_OFFSET] = value
     
     @classmethod
     def read(cls, data):
@@ -46,19 +41,19 @@ class M8FXTuple:
     
     @property
     def key(self):
-        return self._data[self.KEY_OFFSET]
-    
+        return self._data[FX_KEY_OFFSET]
+
     @key.setter
     def key(self, value):
-        self._data[self.KEY_OFFSET] = value
-    
+        self._data[FX_KEY_OFFSET] = value
+
     @property
     def value(self):
-        return self._data[self.VALUE_OFFSET]
-    
+        return self._data[FX_VALUE_OFFSET]
+
     @value.setter
     def value(self, value):
-        self._data[self.VALUE_OFFSET] = value
+        self._data[FX_VALUE_OFFSET] = value
     
     def clone(self):
         """Create a copy of this FX tuple."""

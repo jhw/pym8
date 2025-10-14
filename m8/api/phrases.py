@@ -31,19 +31,6 @@ PHRASE_COUNT = PHRASES_COUNT
 class M8PhraseStep:
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""
 
-    NOTE_OFFSET = NOTE_OFFSET
-    VELOCITY_OFFSET = VELOCITY_OFFSET
-    INSTRUMENT_OFFSET = INSTRUMENT_OFFSET
-    FX_OFFSET = FX_OFFSET
-
-    BASE_DATA_SIZE = BASE_DATA_SIZE
-
-    EMPTY_NOTE = EMPTY_NOTE
-    EMPTY_VELOCITY = EMPTY_VELOCITY
-    EMPTY_INSTRUMENT = EMPTY_INSTRUMENT
-
-    OFF_NOTE = OFF_NOTE
-    
     def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
         # Clients should pass enum.value directly for note values
         self._data = bytearray([note, velocity, instrument])
@@ -52,8 +39,8 @@ class M8PhraseStep:
     @classmethod
     def read(cls, data):
         instance = cls()
-        instance._data = bytearray(data[:cls.BASE_DATA_SIZE])
-        instance.fx = M8FXTuples.read(data[cls.FX_OFFSET:])
+        instance._data = bytearray(data[:BASE_DATA_SIZE])
+        instance.fx = M8FXTuples.read(data[FX_OFFSET:])
         return instance
 
     def clone(self):
@@ -69,36 +56,28 @@ class M8PhraseStep:
 
     @property
     def note(self):
-        return self._data[self.NOTE_OFFSET]
-    
+        return self._data[NOTE_OFFSET]
+
     @note.setter
     def note(self, value):
         # Clients should pass enum.value directly for enum note values
-        self._data[self.NOTE_OFFSET] = value
-    
+        self._data[NOTE_OFFSET] = value
+
     @property
     def velocity(self):
-        return self._data[self.VELOCITY_OFFSET]
-    
+        return self._data[VELOCITY_OFFSET]
+
     @velocity.setter
     def velocity(self, value):
-        self._data[self.VELOCITY_OFFSET] = value
-    
+        self._data[VELOCITY_OFFSET] = value
+
     @property
     def instrument(self):
-        return self._data[self.INSTRUMENT_OFFSET]
-    
+        return self._data[INSTRUMENT_OFFSET]
+
     @instrument.setter
     def instrument(self, value):
-        self._data[self.INSTRUMENT_OFFSET] = value
-
-    def off(self):
-        self._data[self.NOTE_OFFSET] = self.OFF_NOTE
-        self._data[self.VELOCITY_OFFSET] = self.EMPTY_VELOCITY
-        self._data[self.INSTRUMENT_OFFSET] = self.EMPTY_INSTRUMENT
-
-        for i in range(len(self.fx)):
-            self.fx[i] = M8FXTuple(key=M8FXTuple.EMPTY_KEY, value=M8FXTuple.DEFAULT_VALUE)
+        self._data[INSTRUMENT_OFFSET] = value
 
 class M8Phrase(list):
     """Collection of up to 16 steps that defines a musical pattern in the M8 tracker."""

@@ -76,7 +76,3 @@ class M8Sampler:
         instrument.name = _read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
         instrument.sample_path = _read_fixed_string(data, SAMPLE_PATH_OFFSET, SAMPLE_PATH_SIZE)
         return instrument
-
-
-# Legacy alias for backwards compatibility
-M8Instrument = M8Sampler

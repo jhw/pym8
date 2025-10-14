@@ -1,7 +1,8 @@
 import unittest
 from m8.api.phrases import (
     M8PhraseStep, M8Phrase, M8Phrases,
-    STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT
+    STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT,
+    EMPTY_NOTE, EMPTY_VELOCITY, EMPTY_INSTRUMENT
 )
 from m8.api.fx import M8FXTuple, M8FXTuples
 from m8.api import M8Block
@@ -17,9 +18,9 @@ class TestM8PhraseStepEssential(unittest.TestCase):
     def test_constructor_and_defaults(self):
         # Test default constructor
         step = M8PhraseStep()
-        self.assertEqual(step.note, M8PhraseStep.EMPTY_NOTE)
-        self.assertEqual(step.velocity, M8PhraseStep.EMPTY_VELOCITY)
-        self.assertEqual(step.instrument, M8PhraseStep.EMPTY_INSTRUMENT)
+        self.assertEqual(step.note, EMPTY_NOTE)
+        self.assertEqual(step.velocity, EMPTY_VELOCITY)
+        self.assertEqual(step.instrument, EMPTY_INSTRUMENT)
         self.assertEqual(len(step.fx), FX_BLOCK_COUNT)
         
         # Test with numeric note parameter (simplified enum system)
@@ -59,7 +60,7 @@ class TestM8PhraseEssential(unittest.TestCase):
         phrase = M8Phrase()
         self.assertEqual(len(phrase), STEP_COUNT)
         for step in phrase:
-            self.assertEqual(step.note, M8PhraseStep.EMPTY_NOTE)
+            self.assertEqual(step.note, EMPTY_NOTE)
     
     def test_read_write_consistency(self):
         # Create a phrase with some steps

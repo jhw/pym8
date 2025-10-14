@@ -21,11 +21,6 @@ CHAIN_COUNT = CHAINS_COUNT
 class M8ChainStep:
     """Represents a single step in an M8 chain that references a phrase with transposition."""
 
-    PHRASE_OFFSET = PHRASE_OFFSET
-    TRANSPOSE_OFFSET = TRANSPOSE_OFFSET
-    EMPTY_PHRASE = EMPTY_PHRASE
-    DEFAULT_TRANSPOSE = DEFAULT_TRANSPOSE
-    
     def __init__(self, phrase=EMPTY_PHRASE, transpose=DEFAULT_TRANSPOSE):
         self._data = bytearray([phrase, transpose])
     
@@ -40,19 +35,19 @@ class M8ChainStep:
     
     @property
     def phrase(self):
-        return self._data[self.PHRASE_OFFSET]
-    
+        return self._data[PHRASE_OFFSET]
+
     @phrase.setter
     def phrase(self, value):
-        self._data[self.PHRASE_OFFSET] = value
-    
+        self._data[PHRASE_OFFSET] = value
+
     @property
     def transpose(self):
-        return self._data[self.TRANSPOSE_OFFSET]
-    
+        return self._data[TRANSPOSE_OFFSET]
+
     @transpose.setter
     def transpose(self, value):
-        self._data[self.TRANSPOSE_OFFSET] = value
+        self._data[TRANSPOSE_OFFSET] = value
     
     def clone(self):
         return self.__class__(

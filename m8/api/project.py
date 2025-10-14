@@ -1,5 +1,3 @@
-import logging
-
 from m8.api import M8Block
 from m8.api.chains import M8Chains, CHAINS_OFFSET
 from m8.api.instruments import M8Instruments, INSTRUMENTS_OFFSET
@@ -7,9 +5,6 @@ from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.phrases import M8Phrases, PHRASES_OFFSET
 from m8.api.song import M8SongMatrix, SONG_OFFSET
 from m8.api.version import M8Version
-
-# Set up logging
-logger = logging.getLogger(__name__)
 
 # Reference: https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
 
@@ -55,9 +50,8 @@ class M8Project:
         instance = cls()
         instance.data = bytearray(data)
 
-        # Read version, store it, and log it
+        # Read version
         instance.version = M8Version.read(data[OFFSETS["version"]:])
-        logger.info(f"M8 file version: {instance.version}")
 
         instance.metadata = M8Metadata.read(data[OFFSETS["metadata"]:])
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
