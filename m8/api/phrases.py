@@ -22,9 +22,6 @@ EMPTY_VELOCITY = 255
 EMPTY_INSTRUMENT = 255
 OFF_NOTE = 0x80
 
-# Note values (notes start at C-1 = 0x00)
-NOTE_C4 = 36  # C-4 = C-1 + 3 octaves = 0 + (3 * 12) = 36
-
 # Module-level constants
 FX_BLOCK_COUNT = 3  # Number of FX slots per step (from fx config)
 STEP_BLOCK_SIZE = PHRASE_STEP_SIZE

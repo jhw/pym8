@@ -14,12 +14,6 @@ DEFAULT_VALUE = 0
 BLOCK_SIZE = FX_BLOCK_SIZE
 BLOCK_COUNT = FX_BLOCK_COUNT
 
-# Hardcoded FX keys for supported effects
-FX_PITCH = 0x03         # PIT command (pitch)
-FX_LENGTH = 0x86        # LEN command (sample length)
-FX_RETRIGGER = 0x08     # RET command (retrigger)
-FX_PLAY_MODE = 0x83     # PLY command (play mode)
-
 class M8FXTuple:
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
 
