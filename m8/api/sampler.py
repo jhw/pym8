@@ -105,4 +105,10 @@ class M8Sampler:
         instance = cls.__new__(cls)
         instance._data = bytearray(data[:BLOCK_SIZE])
         instance.version = M8Version()
+
+        # Apply non-zero defaults for parameters that are zero
+        for offset, default_value in DEFAULT_PARAMETERS:
+            if instance._data[offset] == 0:
+                instance._data[offset] = default_value
+
         return instance

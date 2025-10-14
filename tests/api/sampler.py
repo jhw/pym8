@@ -105,6 +105,45 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(cloned.get(29), original.get(29))
         self.assertEqual(cloned.get(30), original.get(30))
 
+    def test_read_with_zero_defaults(self):
+        # Simulate loading from a template with zeros for default parameters
+        # Create binary data with type=2 (sampler) but zeros for default params
+        from m8.api.sampler import BLOCK_SIZE
+        binary_data = bytearray([0] * BLOCK_SIZE)
+        binary_data[0] = 0x02  # Set type to SAMPLER
+
+        # Read it back
+        sampler = M8Sampler.read(binary_data)
+
+        # Check that non-zero defaults were applied despite zeros in template
+        self.assertEqual(sampler.get(0), 0x02)   # Type should be preserved
+        self.assertEqual(sampler.get(17), 0x80)  # FINETUNE should default to 128
+        self.assertEqual(sampler.get(22), 0xFF)  # LENGTH should default to 255
+        self.assertEqual(sampler.get(25), 0xFF)  # CUTOFF should default to 255
+        self.assertEqual(sampler.get(29), 0x80)  # PAN should default to 128
+        self.assertEqual(sampler.get(30), 0xC0)  # DRY should default to 192
+
+    def test_read_with_non_zero_values_preserved(self):
+        # Test that non-zero values from file are preserved (not overwritten)
+        from m8.api.sampler import BLOCK_SIZE
+        binary_data = bytearray([0] * BLOCK_SIZE)
+        binary_data[0] = 0x02   # Type
+        binary_data[17] = 0x70  # FINETUNE (non-default)
+        binary_data[22] = 0x80  # LENGTH (non-default)
+        binary_data[25] = 0xE0  # CUTOFF (non-default)
+        binary_data[29] = 0x60  # PAN (non-default)
+        binary_data[30] = 0xA0  # DRY (non-default)
+
+        # Read it back
+        sampler = M8Sampler.read(binary_data)
+
+        # Check that existing non-zero values were preserved
+        self.assertEqual(sampler.get(17), 0x70)  # Should preserve 0x70
+        self.assertEqual(sampler.get(22), 0x80)  # Should preserve 0x80
+        self.assertEqual(sampler.get(25), 0xE0)  # Should preserve 0xE0
+        self.assertEqual(sampler.get(29), 0x60)  # Should preserve 0x60
+        self.assertEqual(sampler.get(30), 0xA0)  # Should preserve 0xA0
+
 
 if __name__ == '__main__':
     unittest.main()
