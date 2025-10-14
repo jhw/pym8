@@ -20,19 +20,14 @@ NAME_LENGTH = 12
 SAMPLE_PATH_OFFSET = 87
 SAMPLE_PATH_SIZE = 128
 
-# Sampler parameter offsets (from v0.3.1 format config)
-FINETUNE_OFFSET = 17      # Common field, default: 0x80 (128)
-LENGTH_OFFSET = 22        # Sample length, default: 0xFF (255)
-CUTOFF_OFFSET = 25        # Filter cutoff, default: 0xFF (255)
-PAN_OFFSET = 29           # Amp/mixer pan, default: 0x80 (128)
-DRY_OFFSET = 30           # Amp/mixer dry, default: 0xC0 (192)
-
-# Default values for parameters with non-zero defaults
-DEFAULT_FINETUNE = 0x80   # 128
-DEFAULT_LENGTH = 0xFF     # 255
-DEFAULT_CUTOFF = 0xFF     # 255
-DEFAULT_PAN = 0x80        # 128
-DEFAULT_DRY = 0xC0        # 192
+# Default parameter values (offset, value) pairs for non-zero defaults
+DEFAULT_PARAMETERS = [
+    (17, 0x80),  # FINETUNE, default: 128
+    (22, 0xFF),  # LENGTH, default: 255
+    (25, 0xFF),  # CUTOFF, default: 255
+    (29, 0x80),  # PAN, default: 128
+    (30, 0xC0),  # DRY, default: 192
+]
 
 # Block sizes and counts for samplers
 BLOCK_SIZE = INSTRUMENTS_BLOCK_SIZE
@@ -42,74 +37,72 @@ BLOCK_COUNT = INSTRUMENTS_COUNT
 class M8Sampler:
     """M8 Sampler instrument - the only instrument type supported."""
 
-    def __init__(self, name="", sample_path="", length=DEFAULT_LENGTH, finetune=DEFAULT_FINETUNE,
-                 cutoff=DEFAULT_CUTOFF, pan=DEFAULT_PAN, dry=DEFAULT_DRY):
+    def __init__(self, name="", sample_path=""):
         """Initialize a sampler instrument with default parameters."""
-        # Type is always SAMPLER
-        self.type = SAMPLER_TYPE_ID
+        # Initialize buffer with zeros
+        self._data = bytearray([0] * BLOCK_SIZE)
+
+        # Set type
+        self._data[TYPE_OFFSET] = SAMPLER_TYPE_ID
+
+        # Set non-zero defaults
+        for offset, value in DEFAULT_PARAMETERS:
+            self._data[offset] = value
 
         # Version (set from project or file)
         self.version = M8Version()
 
-        # Common parameters
-        self.name = name
+        # Set name and sample path if provided
+        if name:
+            self.name = name
+        if sample_path:
+            self.sample_path = sample_path
 
-        # Sampler-specific parameters
-        self.sample_path = sample_path
-        self.length = length
-        self.finetune = finetune
-        self.cutoff = cutoff
-        self.pan = pan
-        self.dry = dry
+    def get(self, offset):
+        """Get parameter value at offset."""
+        return self._data[offset]
+
+    def set(self, offset, value):
+        """Set parameter value at offset."""
+        self._data[offset] = value & 0xFF
+
+    @property
+    def name(self):
+        """Get instrument name."""
+        return _read_fixed_string(self._data, NAME_OFFSET, NAME_LENGTH)
+
+    @name.setter
+    def name(self, value):
+        """Set instrument name."""
+        name_bytes = _write_fixed_string(value, NAME_LENGTH)
+        self._data[NAME_OFFSET:NAME_OFFSET + NAME_LENGTH] = name_bytes
+
+    @property
+    def sample_path(self):
+        """Get sample path."""
+        return _read_fixed_string(self._data, SAMPLE_PATH_OFFSET, SAMPLE_PATH_SIZE)
+
+    @sample_path.setter
+    def sample_path(self, value):
+        """Set sample path."""
+        path_bytes = _write_fixed_string(value, SAMPLE_PATH_SIZE)
+        self._data[SAMPLE_PATH_OFFSET:SAMPLE_PATH_OFFSET + SAMPLE_PATH_SIZE] = path_bytes
 
     def write(self):
         """Convert instrument to binary data."""
-        buffer = bytearray([0] * BLOCK_SIZE)
-
-        # Write type
-        buffer[TYPE_OFFSET] = SAMPLER_TYPE_ID
-
-        # Write name
-        name_bytes = _write_fixed_string(self.name, NAME_LENGTH)
-        buffer[NAME_OFFSET:NAME_OFFSET + NAME_LENGTH] = name_bytes
-
-        # Write parameters with non-zero defaults
-        buffer[FINETUNE_OFFSET] = self.finetune & 0xFF
-        buffer[LENGTH_OFFSET] = self.length & 0xFF
-        buffer[CUTOFF_OFFSET] = self.cutoff & 0xFF
-        buffer[PAN_OFFSET] = self.pan & 0xFF
-        buffer[DRY_OFFSET] = self.dry & 0xFF
-
-        # Write sample_path
-        sample_path_bytes = _write_fixed_string(self.sample_path, SAMPLE_PATH_SIZE)
-        buffer[SAMPLE_PATH_OFFSET:SAMPLE_PATH_OFFSET + SAMPLE_PATH_SIZE] = sample_path_bytes
-
-        return bytes(buffer)
+        return bytes(self._data)
 
     def clone(self):
         """Create a copy of this instrument."""
-        instance = M8Sampler(
-            name=self.name,
-            sample_path=self.sample_path,
-            length=self.length,
-            finetune=self.finetune,
-            cutoff=self.cutoff,
-            pan=self.pan,
-            dry=self.dry
-        )
+        instance = M8Sampler.__new__(M8Sampler)
+        instance._data = bytearray(self._data)
         instance.version = self.version
         return instance
 
     @classmethod
     def read(cls, data):
         """Read instrument from binary data."""
-        instrument = cls()
-        instrument.type = data[TYPE_OFFSET]
-        instrument.name = _read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
-        instrument.finetune = data[FINETUNE_OFFSET]
-        instrument.length = data[LENGTH_OFFSET]
-        instrument.cutoff = data[CUTOFF_OFFSET]
-        instrument.pan = data[PAN_OFFSET]
-        instrument.dry = data[DRY_OFFSET]
-        instrument.sample_path = _read_fixed_string(data, SAMPLE_PATH_OFFSET, SAMPLE_PATH_SIZE)
-        return instrument
+        instance = cls.__new__(cls)
+        instance._data = bytearray(data[:BLOCK_SIZE])
+        instance.version = M8Version()
+        return instance
