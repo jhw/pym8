@@ -1,5 +1,6 @@
 import unittest
-from m8.api.sampler import M8Sampler, DEFAULT_PARAMETERS, MODULATORS_OFFSET
+from m8.api.sampler import M8Sampler, DEFAULT_PARAMETERS
+from m8.api.instrument import MODULATORS_OFFSET
 from m8.api.modulator import M8Modulators
 
 
