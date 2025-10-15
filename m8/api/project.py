@@ -1,6 +1,6 @@
 from m8.api import M8Block
 from m8.api.chains import M8Chains, CHAINS_OFFSET
-from m8.api.instruments import M8Instruments, INSTRUMENTS_OFFSET
+from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.phrases import M8Phrases, PHRASES_OFFSET
 from m8.api.song import M8SongMatrix, SONG_OFFSET

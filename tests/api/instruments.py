@@ -3,7 +3,7 @@ import unittest
 import os
 import tempfile
 from m8.api.sampler import M8Sampler, BLOCK_SIZE, BLOCK_COUNT
-from m8.api.instruments import M8Instruments
+from m8.api.instrument import M8Instruments
 from m8.api import M8Block
 
 

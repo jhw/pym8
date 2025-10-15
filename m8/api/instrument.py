@@ -1,11 +1,12 @@
 # m8/api/instrument.py
-"""Base instrument class for all M8 instruments."""
+"""M8 Instrument classes - base class and collection."""
 
-from m8.api import _read_fixed_string, _write_fixed_string
+from m8.api import M8Block, _read_fixed_string, _write_fixed_string
 from m8.api.version import M8Version
 from m8.api.modulator import M8Modulators
 
 # Common instrument configuration
+INSTRUMENTS_OFFSET = 80446
 INSTRUMENTS_BLOCK_SIZE = 215
 INSTRUMENTS_COUNT = 128
 
@@ -108,3 +109,71 @@ class M8Instrument:
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
 
         return instance
+
+
+class M8Instruments(list):
+    """Collection of M8 instruments."""
+
+    def __init__(self, items=None):
+        """Initialize collection with optional instruments."""
+        super().__init__()
+        items = items or []
+
+        for item in items:
+            self.append(item)
+
+        # Fill remaining slots with empty blocks
+        while len(self) < BLOCK_COUNT:
+            self.append(M8Block())
+
+    @classmethod
+    def read(cls, data):
+        """Read instruments from binary data."""
+        from m8.api.sampler import M8Sampler, SAMPLER_TYPE_ID
+        
+        instance = cls.__new__(cls)
+        list.__init__(instance)
+
+        for i in range(BLOCK_COUNT):
+            start = i * BLOCK_SIZE
+            block_data = data[start:start + BLOCK_SIZE]
+
+            # Check instrument type
+            instr_type = block_data[0]
+            if instr_type == SAMPLER_TYPE_ID:
+                instance.append(M8Sampler.read(block_data))
+            else:
+                # Empty slot
+                instance.append(M8Block.read(block_data))
+
+        return instance
+
+    def clone(self):
+        """Create a copy of this collection."""
+        instance = self.__class__.__new__(self.__class__)
+        list.__init__(instance)
+
+        for instr in self:
+            if hasattr(instr, 'clone'):
+                instance.append(instr.clone())
+            else:
+                instance.append(instr)
+
+        return instance
+
+    def write(self):
+        """Write instruments to binary data."""
+        result = bytearray()
+
+        for instr in self:
+            instr_data = instr.write() if hasattr(instr, 'write') else bytes([0] * BLOCK_SIZE)
+
+            # Ensure exactly BLOCK_SIZE bytes
+            if len(instr_data) < BLOCK_SIZE:
+                instr_data = instr_data + bytes([0] * (BLOCK_SIZE - len(instr_data)))
+            elif len(instr_data) > BLOCK_SIZE:
+                instr_data = instr_data[:BLOCK_SIZE]
+
+            result.extend(instr_data)
+
+        return bytes(result)

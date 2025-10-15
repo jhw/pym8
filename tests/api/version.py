@@ -13,7 +13,7 @@ class TestM8Version(unittest.TestCase):
         project.version = M8Version(4, 1, 2)
         
         # Initialize instruments list
-        from m8.api.instruments import M8Instruments
+        from m8.api.instrument import M8Instruments
         project.instruments = M8Instruments()
 
         # Create sampler and directly assign to slot
