@@ -3,6 +3,7 @@
 
 from m8.api import M8Block, _read_fixed_string, _write_fixed_string
 from m8.api.version import M8Version
+from m8.api.modulator import M8Modulators
 
 # Instruments configuration (from instruments.py to avoid circular import)
 INSTRUMENTS_BLOCK_SIZE = 215
@@ -19,6 +20,9 @@ NAME_LENGTH = 12
 # Sample path configuration
 SAMPLE_PATH_OFFSET = 87
 SAMPLE_PATH_SIZE = 128
+
+# Modulators offset (from v0.3.1 config)
+MODULATORS_OFFSET = 63
 
 # Default parameter values (offset, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
@@ -58,6 +62,9 @@ class M8Sampler:
         if sample_path:
             self.sample_path = sample_path
 
+        # Initialize modulators (4 modulators: 2 AHD, 2 LFO)
+        self.modulators = M8Modulators()
+
     def get(self, offset):
         """Get parameter value at offset."""
         return self._data[offset]
@@ -90,13 +97,20 @@ class M8Sampler:
 
     def write(self):
         """Convert instrument to binary data."""
-        return bytes(self._data)
+        buffer = bytearray(self._data)
+
+        # Write modulators at offset 63
+        modulator_data = self.modulators.write()
+        buffer[MODULATORS_OFFSET:MODULATORS_OFFSET + len(modulator_data)] = modulator_data
+
+        return bytes(buffer)
 
     def clone(self):
         """Create a copy of this instrument."""
         instance = M8Sampler.__new__(M8Sampler)
         instance._data = bytearray(self._data)
         instance.version = self.version
+        instance.modulators = self.modulators.clone()
         return instance
 
     @classmethod
@@ -110,5 +124,8 @@ class M8Sampler:
         for offset, default_value in DEFAULT_PARAMETERS:
             if instance._data[offset] == 0:
                 instance._data[offset] = default_value
+
+        # Read modulators from offset 63
+        instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
 
         return instance

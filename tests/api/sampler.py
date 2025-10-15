@@ -1,5 +1,6 @@
 import unittest
-from m8.api.sampler import M8Sampler, DEFAULT_PARAMETERS
+from m8.api.sampler import M8Sampler, DEFAULT_PARAMETERS, MODULATORS_OFFSET
+from m8.api.modulator import M8Modulators
 
 
 class TestM8Sampler(unittest.TestCase):
@@ -143,6 +144,61 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(sampler.get(25), 0xE0)  # Should preserve 0xE0
         self.assertEqual(sampler.get(29), 0x60)  # Should preserve 0x60
         self.assertEqual(sampler.get(30), 0xA0)  # Should preserve 0xA0
+
+    def test_modulators_initialized(self):
+        """Test that modulators are initialized with defaults."""
+        sampler = M8Sampler()
+        
+        # Check modulators exist
+        self.assertIsInstance(sampler.modulators, M8Modulators)
+        
+        # Check 4 modulators
+        self.assertEqual(len(sampler.modulators), 4)
+        
+        # Check default types (2 AHD, 2 LFO)
+        self.assertEqual(sampler.modulators[0].mod_type, 0)  # AHD
+        self.assertEqual(sampler.modulators[1].mod_type, 0)  # AHD
+        self.assertEqual(sampler.modulators[2].mod_type, 3)  # LFO
+        self.assertEqual(sampler.modulators[3].mod_type, 3)  # LFO
+
+    def test_modulators_read_write(self):
+        """Test that modulators are read and written correctly."""
+        # Create sampler with custom modulator
+        original = M8Sampler(name="TEST")
+        original.modulators[0].destination = 1
+        original.modulators[0].set(2, 0x20)  # Attack
+        
+        # Write to binary
+        binary = original.write()
+        
+        # Check modulators are at correct offset
+        self.assertEqual(len(binary), 215)  # Full sampler block
+        
+        # Read back
+        deserialized = M8Sampler.read(binary)
+        
+        # Verify modulator preserved
+        self.assertEqual(deserialized.modulators[0].destination, 1)
+        self.assertEqual(deserialized.modulators[0].get(2), 0x20)
+
+    def test_modulators_clone(self):
+        """Test that modulators are cloned correctly."""
+        original = M8Sampler(name="TEST")
+        original.modulators[1].destination = 3
+        original.modulators[1].set(4, 0x40)  # Decay
+        
+        # Clone
+        cloned = original.clone()
+        
+        # Check modulator values match
+        self.assertEqual(cloned.modulators[1].destination, original.modulators[1].destination)
+        self.assertEqual(cloned.modulators[1].get(4), original.modulators[1].get(4))
+        
+        # Modify clone
+        cloned.modulators[1].destination = 5
+        
+        # Check original unchanged
+        self.assertEqual(original.modulators[1].destination, 3)
 
 
 if __name__ == '__main__':
