@@ -79,6 +79,15 @@ class M8PhraseStep:
     def instrument(self, value):
         self._data[INSTRUMENT_OFFSET] = value
 
+    def off(self):
+        """Set this step to OFF note, clearing all other fields."""
+        self._data[NOTE_OFFSET] = OFF_NOTE
+        self._data[VELOCITY_OFFSET] = EMPTY_VELOCITY
+        self._data[INSTRUMENT_OFFSET] = EMPTY_INSTRUMENT
+
+        for i in range(len(self.fx)):
+            self.fx[i] = M8FXTuple()
+
 class M8Phrase(list):
     """Collection of up to 16 steps that defines a musical pattern in the M8 tracker."""
     

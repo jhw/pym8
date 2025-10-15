@@ -2,7 +2,7 @@ import unittest
 from m8.api.phrases import (
     M8PhraseStep, M8Phrase, M8Phrases,
     STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT,
-    EMPTY_NOTE, EMPTY_VELOCITY, EMPTY_INSTRUMENT
+    EMPTY_NOTE, EMPTY_VELOCITY, EMPTY_INSTRUMENT, OFF_NOTE
 )
 from m8.api.fx import M8FXTuple, M8FXTuples
 from m8.api import M8Block
@@ -49,7 +49,25 @@ class TestM8PhraseStepEssential(unittest.TestCase):
         self.assertEqual(deserialized.fx[0].value, original.fx[0].value)
         self.assertEqual(deserialized.fx[1].key, original.fx[1].key)
         self.assertEqual(deserialized.fx[1].value, original.fx[1].value)
-    
+
+    def test_off_method(self):
+        # Create a step with note, velocity, instrument, and FX
+        step = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
+        step.fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
+        step.fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
+
+        # Call off() method
+        step.off()
+
+        # Verify all fields are cleared properly
+        self.assertEqual(step.note, OFF_NOTE)
+        self.assertEqual(step.velocity, EMPTY_VELOCITY)
+        self.assertEqual(step.instrument, EMPTY_INSTRUMENT)
+
+        # Verify all FX are cleared
+        for fx in step.fx:
+            self.assertEqual(fx.key, 0xFF)  # EMPTY_KEY
+            self.assertEqual(fx.value, 0x00)  # DEFAULT_VALUE
 
 
 class TestM8PhraseEssential(unittest.TestCase):
