@@ -1,3 +1,15 @@
+# Bit manipulation utilities
+
+def split_byte(byte_value):
+    """Split a byte into two nibbles (high 4 bits, low 4 bits)."""
+    high_nibble = (byte_value >> 4) & 0x0F
+    low_nibble = byte_value & 0x0F
+    return high_nibble, low_nibble
+
+def join_nibbles(high_nibble, low_nibble):
+    """Join two nibbles into a single byte."""
+    return ((high_nibble & 0x0F) << 4) | (low_nibble & 0x0F)
+
 # String utilities for binary serialization
 
 def _read_fixed_string(data, offset, length):
