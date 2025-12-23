@@ -1,5 +1,5 @@
 import unittest
-from m8.api.phrases import (
+from m8.api.phrase import (
     M8PhraseStep, M8Phrase, M8Phrases,
     STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT,
     EMPTY_NOTE, EMPTY_VELOCITY, EMPTY_INSTRUMENT, OFF_NOTE
