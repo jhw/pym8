@@ -18,10 +18,10 @@ import shutil
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.sampler import M8Sampler
+from m8.api.sampler import M8Sampler, M8SamplerParam
 from m8.api.phrase import M8Phrase, M8PhraseStep
 from m8.api.chain import M8Chain, M8ChainStep
-from m8.api.fx import M8FXTuple
+from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
 
 # Configuration
@@ -51,8 +51,8 @@ def create_demo():
         sample_path=f"samples/{SAMPLE_FILENAME}"
     )
 
-    # Set delay send on the instrument (offset 32)
-    sampler.set(32, 0x80)
+    # Set delay send on the instrument
+    sampler.set(M8SamplerParam.DELAY_SEND, 0x80)
 
     # Add sampler to instrument slot 0
     project.instruments[0] = sampler
@@ -63,10 +63,7 @@ def create_demo():
     # M8 phrases have 16 steps
     phrase = M8Phrase()
 
-    # FX codes for sampler
-    FX_LEN = 0x86  # Length/cut (sampler-specific)
-    FX_PLY = 0x83  # Play mode (sampler-specific)
-    FX_RET = 0x08  # Retrigger (global FX command, V3+ firmware)
+    # FX codes - now using enums instead of raw hex values
 
     # Use seed for reproducibility
     random.seed(42)
@@ -97,15 +94,15 @@ def create_demo():
 
             if fx_choice == 1:
                 # Reverse play
-                step.fx[0] = M8FXTuple(key=FX_PLY, value=0x01)
+                step.fx[0] = M8FXTuple(key=M8SamplerFX.PLY, value=0x01)
                 fx_applied.append("PLY:REV")
             elif fx_choice == 2:
                 # Retrigger
-                step.fx[0] = M8FXTuple(key=FX_RET, value=0x40)
+                step.fx[0] = M8FXTuple(key=M8SequenceFX.RET, value=0x40)
                 fx_applied.append("RET:40")
             elif fx_choice == 3:
                 # Length cut
-                step.fx[0] = M8FXTuple(key=FX_LEN, value=0xC0)
+                step.fx[0] = M8FXTuple(key=M8SamplerFX.LEN, value=0xC0)
                 fx_applied.append("LEN:C0")
             # else: fx_choice == 0, no FX
 

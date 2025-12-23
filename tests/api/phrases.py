@@ -4,13 +4,12 @@ from m8.api.phrase import (
     STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT,
     EMPTY_NOTE, EMPTY_VELOCITY, EMPTY_INSTRUMENT, OFF_NOTE
 )
-from m8.api.fx import M8FXTuple, M8FXTuples
+from m8.api.fx import M8FXTuple, M8FXTuples, M8SequenceFX
 from m8.api import M8Block
-# Test constants - using hardcoded values since we removed enums
+
+# Test constants
 TEST_NOTE_C6 = 72  # C_6 note value
 TEST_NOTE_C7 = 84  # C_7 note value
-TEST_FX_RMX = 0x08
-TEST_FX_DEL = 0x06
 
 class TestM8PhraseStepEssential(unittest.TestCase):
     """Essential phrase step tests focusing on core functionality."""
@@ -32,8 +31,8 @@ class TestM8PhraseStepEssential(unittest.TestCase):
     def test_read_write_consistency(self):
         # Create a step with some data
         original = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
-        original.fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
-        original.fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
+        original.fx[0] = M8FXTuple(key=M8SequenceFX.RET, value=20)  # 0x08
+        original.fx[1] = M8FXTuple(key=M8SequenceFX.RND, value=40)  # 0x06
         
         # Write to binary
         binary = original.write()
@@ -53,8 +52,8 @@ class TestM8PhraseStepEssential(unittest.TestCase):
     def test_off_method(self):
         # Create a step with note, velocity, instrument, and FX
         step = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
-        step.fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
-        step.fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
+        step.fx[0] = M8FXTuple(key=M8SequenceFX.RET, value=20)  # 0x08
+        step.fx[1] = M8FXTuple(key=M8SequenceFX.RND, value=40)  # 0x06
 
         # Call off() method
         step.off()
@@ -84,9 +83,9 @@ class TestM8PhraseEssential(unittest.TestCase):
         # Create a phrase with some steps
         original = M8Phrase()
         original[0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
-        original[0].fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
+        original[0].fx[0] = M8FXTuple(key=M8SequenceFX.RET, value=20)  # 0x08
         original[3] = M8PhraseStep(note=TEST_NOTE_C7, velocity=80, instrument=3)
-        original[3].fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
+        original[3].fx[1] = M8FXTuple(key=M8SequenceFX.RND, value=40)  # 0x06
         
         # Write to binary
         binary = original.write()
@@ -119,9 +118,9 @@ class TestM8PhrasesEssential(unittest.TestCase):
         # Create phrases with some data
         original = M8Phrases()
         original[0][0] = M8PhraseStep(note=TEST_NOTE_C6, velocity=100, instrument=5)
-        original[0][0].fx[0] = M8FXTuple(key=TEST_FX_RMX, value=20)
+        original[0][0].fx[0] = M8FXTuple(key=M8SequenceFX.RET, value=20)  # 0x08
         original[2][3] = M8PhraseStep(note=TEST_NOTE_C7, velocity=80, instrument=3)
-        original[2][3].fx[1] = M8FXTuple(key=TEST_FX_DEL, value=40)
+        original[2][3].fx[1] = M8FXTuple(key=M8SequenceFX.RND, value=40)  # 0x06
         
         # Write to binary
         binary = original.write()
