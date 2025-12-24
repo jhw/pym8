@@ -21,7 +21,7 @@ BLOCK_COUNT = FX_BLOCK_COUNT
 class M8SequenceFX(IntEnum):
     """Global FX commands that affect playback behavior across all instruments."""
     ARP = 0x00  # Arpeggio
-    CHA = 0x01  # Chord
+    CHA = 0x01  # Chance
     DEL = 0x02  # Delay
     GRV = 0x03  # Groove
     HOP = 0x04  # Jump to step

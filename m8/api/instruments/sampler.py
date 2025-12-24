@@ -81,9 +81,8 @@ class M8Sampler(M8Instrument):
         # Initialize base instrument
         super().__init__(SAMPLER_TYPE_ID)
 
-        # Set non-zero defaults
-        for offset, value in DEFAULT_PARAMETERS:
-            self._data[offset] = value
+        # Apply sampler-specific defaults
+        self._apply_defaults(DEFAULT_PARAMETERS)
 
         # Set name and sample path if provided
         if name:

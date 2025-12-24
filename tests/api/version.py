@@ -3,7 +3,7 @@ import tempfile
 import os
 from m8.api.version import M8Version
 from m8.api.project import M8Project
-from m8.api.sampler import M8Sampler
+from m8.api.instruments.sampler import M8Sampler
 
 class TestM8Version(unittest.TestCase):
     def test_version_state(self):

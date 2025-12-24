@@ -59,6 +59,15 @@ class M8Instrument:
         """Set parameter value at offset."""
         self._data[offset] = value & 0xFF
 
+    def _apply_defaults(self, defaults):
+        """Apply default parameter values.
+
+        Args:
+            defaults: List of (offset, value) tuples
+        """
+        for offset, value in defaults:
+            self._data[offset] = value
+
     @property
     def name(self):
         """Get instrument name."""
@@ -122,15 +131,18 @@ class M8Instruments(list):
         for item in items:
             self.append(item)
 
-        # Fill remaining slots with empty blocks
+        # Fill remaining slots with empty instrument blocks (type 0xFF)
         while len(self) < BLOCK_COUNT:
-            self.append(M8Block())
+            empty_block = M8Block()
+            empty_block.data = bytearray([0xFF] + [0] * (BLOCK_SIZE - 1))
+            self.append(empty_block)
 
     @classmethod
     def read(cls, data):
         """Read instruments from binary data."""
-        from m8.api.sampler import M8Sampler, SAMPLER_TYPE_ID
-        
+        from m8.api.instruments.sampler import M8Sampler, SAMPLER_TYPE_ID
+        from m8.api.instruments.wavsynth import M8Wavsynth, WAVSYNTH_TYPE_ID
+
         instance = cls.__new__(cls)
         list.__init__(instance)
 
@@ -140,10 +152,15 @@ class M8Instruments(list):
 
             # Check instrument type
             instr_type = block_data[0]
-            if instr_type == SAMPLER_TYPE_ID:
+            if instr_type == WAVSYNTH_TYPE_ID:
+                instance.append(M8Wavsynth.read(block_data))
+            elif instr_type == SAMPLER_TYPE_ID:
                 instance.append(M8Sampler.read(block_data))
-            else:
+            elif instr_type == 0xFF:
                 # Empty slot
+                instance.append(M8Block.read(block_data))
+            else:
+                # Unknown instrument type - treat as empty
                 instance.append(M8Block.read(block_data))
 
         return instance

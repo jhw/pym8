@@ -1,5 +1,5 @@
 import unittest
-from m8.api.sampler import M8Sampler, DEFAULT_PARAMETERS
+from m8.api.instruments.sampler import M8Sampler, DEFAULT_PARAMETERS
 from m8.api.instrument import MODULATORS_OFFSET
 from m8.api.modulator import M8Modulators
 
@@ -110,7 +110,7 @@ class TestM8Sampler(unittest.TestCase):
     def test_read_with_zero_defaults(self):
         # Simulate loading from a template with zeros for default parameters
         # Create binary data with type=2 (sampler) but zeros for default params
-        from m8.api.sampler import BLOCK_SIZE
+        from m8.api.instruments.sampler import BLOCK_SIZE
         binary_data = bytearray([0] * BLOCK_SIZE)
         binary_data[0] = 0x02  # Set type to SAMPLER
 
@@ -127,7 +127,7 @@ class TestM8Sampler(unittest.TestCase):
 
     def test_read_with_non_zero_values_preserved(self):
         # Test that non-zero values from file are preserved (not overwritten)
-        from m8.api.sampler import BLOCK_SIZE
+        from m8.api.instruments.sampler import BLOCK_SIZE
         binary_data = bytearray([0] * BLOCK_SIZE)
         binary_data[0] = 0x02   # Type
         binary_data[17] = 0x70  # FINETUNE (non-default)

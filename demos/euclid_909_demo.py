@@ -33,7 +33,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from m8.api.project import M8Project
-from m8.api.sampler import M8Sampler
+from m8.api.instruments.sampler import M8Sampler
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX

@@ -30,7 +30,7 @@ pip install -r requirements-dev.txt
 
 ```python
 from m8.api.project import M8Project
-from m8.api.sampler import M8Sampler, M8SamplerParam
+from m8.api.instruments.sampler import M8Sampler, M8SamplerParam
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
@@ -93,7 +93,7 @@ for i, instrument in enumerate(project.instruments):
 Currently supports M8 Sampler instruments with full parameter control:
 
 ```python
-from m8.api.sampler import M8Sampler, M8SamplerParam, M8PlayMode
+from m8.api.instruments.sampler import M8Sampler, M8SamplerParam, M8PlayMode
 
 sampler = M8Sampler(name="SNARE", sample_path="samples/snare.wav")
 
