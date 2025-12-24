@@ -16,30 +16,33 @@ class M8WavsynthParam(IntEnum):
     TYPE = 0          # Instrument type (always 0 for wavsynth)
     NAME = 1          # Name starts at offset 1 (12 bytes)
 
-    # Synth parameters (shared with other synths via SynthParams struct)
+    # Common synth parameters
     TRANSPOSE = 13    # Pitch transpose
     TABLE_TICK = 14   # Table tick rate
     VOLUME = 15       # Master volume
     PITCH = 16        # Pitch offset
     FINE_TUNE = 17    # Fine pitch adjustment (0x80 = center)
-    FILTER_TYPE = 18  # Filter type selection
-    CUTOFF = 19       # Filter cutoff frequency (0xFF = open)
-    RESONANCE = 20    # Filter resonance
-    AMP = 21          # Amplifier level
-    LIMIT = 22        # Limiter amount
-    PAN = 23          # Stereo pan (0x80 = center)
-    DRY = 24          # Dry/wet mix level
-    CHORUS_SEND = 25  # Send to chorus effect (mixer_mfx)
-    DELAY_SEND = 26   # Send to delay effect (mixer_delay)
-    REVERB_SEND = 27  # Send to reverb effect (mixer_reverb)
-    ASSOCIATED_EQ = 28  # Associated EQ number
 
-    # WavSynth-specific parameters (after SynthParams)
-    SHAPE = 29        # Waveform shape (see M8WavShape enum)
-    SIZE = 30         # Wavetable size
-    MULT = 31         # Frequency multiplier
-    WARP = 32         # Waveform warp amount
-    MIRROR = 33       # Waveform mirror amount (scan)
+    # WavSynth-specific parameters (come BEFORE filter/mixer)
+    SHAPE = 18        # Waveform shape (see M8WavShape enum)
+    SIZE = 19         # Wavetable size
+    MULT = 20         # Frequency multiplier
+    WARP = 21         # Waveform warp amount
+    MIRROR = 22       # Waveform mirror amount (scan in M8 UI)
+
+    # Filter parameters
+    FILTER_TYPE = 23  # Filter type selection
+    CUTOFF = 24       # Filter cutoff frequency (0xFF = open)
+    RESONANCE = 25    # Filter resonance
+
+    # Mixer parameters
+    AMP = 26          # Amplifier level
+    LIMIT = 27        # Limiter amount
+    PAN = 28          # Stereo pan (0x80 = center)
+    DRY = 29          # Dry/wet mix level
+    CHORUS_SEND = 30  # Send to chorus effect (mixer_mfx in M8)
+    DELAY_SEND = 31   # Send to delay effect
+    REVERB_SEND = 32  # Send to reverb effect
 
     # Modulators start at offset 63
 
@@ -125,10 +128,10 @@ class M8WavShape(IntEnum):
 # Default parameter values (offset, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
     (17, 0x80),  # FINE_TUNE, default: 128 (center)
-    (19, 0xFF),  # CUTOFF, default: 255 (fully open)
-    (23, 0x80),  # PAN, default: 128 (center)
-    (24, 0xC0),  # DRY, default: 192
-    (30, 0x20),  # SIZE, default: 32
+    (19, 0x20),  # SIZE, default: 32
+    (24, 0xFF),  # CUTOFF, default: 255 (fully open)
+    (28, 0x80),  # PAN, default: 128 (center)
+    (29, 0xC0),  # DRY, default: 192
 ]
 
 
