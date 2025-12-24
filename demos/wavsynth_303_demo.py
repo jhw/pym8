@@ -54,10 +54,12 @@ def create_wavsynth_303_project():
     wavsynth = M8Wavsynth(name="ACID-303")
 
     # Set synth parameters
+    wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.SAW)  # Sawtooth wave for classic acid sound
     wavsynth.set(M8WavsynthParam.FILTER_TYPE, 0x01)  # Low Pass filter
     wavsynth.set(M8WavsynthParam.CUTOFF, 0x20)       # Low cutoff for filter sweep
     wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)    # High resonance for 303-style sound
-    wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.SAW)  # Sawtooth wave for classic acid sound
+    wavsynth.set(M8WavsynthParam.AMP, 0x20)          # Amplifier level
+    wavsynth.set(M8WavsynthParam.LIMIT, 0x01)        # Limiter amount
 
     # Configure first modulator (ADSR) for volume envelope
     # Modulator 0 is already ADSR by default (type 0)
