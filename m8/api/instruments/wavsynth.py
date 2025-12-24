@@ -148,3 +148,16 @@ class M8Wavsynth(M8Instrument):
         # Set name if provided
         if name:
             self.name = name
+
+    @classmethod
+    def read(cls, data):
+        """Read instrument from binary data."""
+        # Use base class read for common functionality
+        instance = super(M8Wavsynth, cls).read(data)
+
+        # Apply non-zero defaults for parameters that are zero
+        for offset, default_value in DEFAULT_PARAMETERS:
+            if instance._data[offset] == 0:
+                instance._data[offset] = default_value
+
+        return instance
