@@ -1,5 +1,31 @@
+from enum import IntEnum
 from m8.api import M8Block
 from m8.api.fx import M8FXTuples, M8FXTuple
+
+# M8 Note Range: C1 to G11 (where byte 0 = C1, and C4 = 0x24 = 36)
+class M8Note(IntEnum):
+    """M8 note values from C1 (0) to G11 (127).
+
+    Byte value 0 = C1, so C4 = 36 (0x24) as expected.
+    Format: NOTE_OCTAVE (e.g., C_1, CS_1, D_1, ... C_4, ... G_11)
+    """
+    pass
+
+# Generate note enum dynamically
+_NOTE_NAMES = ['C', 'CS', 'D', 'DS', 'E', 'F', 'FS', 'G', 'GS', 'A', 'AS', 'B']
+_START_OCTAVE = 1  # Byte 0 = C1
+_END_OCTAVE = 11   # Ends at G11
+
+_note_value = 0
+for octave in range(_START_OCTAVE, _END_OCTAVE + 1):
+    for note_name in _NOTE_NAMES:
+        enum_name = f"{note_name}_{octave}"
+        setattr(M8Note, enum_name, _note_value)
+        _note_value += 1
+
+        # Stop at G11
+        if octave == _END_OCTAVE and note_name == 'G':
+            break
 
 # Phrases configuration
 PHRASES_OFFSET = 2798

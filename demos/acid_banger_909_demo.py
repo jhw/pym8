@@ -30,7 +30,7 @@ from typing import Dict, List
 
 from m8.api.project import M8Project
 from m8.api.sampler import M8Sampler
-from m8.api.phrase import M8Phrase, M8PhraseStep
+from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
@@ -50,7 +50,6 @@ SEED = 42
 NUM_ROWS = 16
 
 # M8 constants
-NOTE_C4 = 0x24
 MAX_VELOCITY = 0x7F
 
 
@@ -106,7 +105,7 @@ def create_phrase_from_pattern(pattern: List[float], instrument_idx: int,
             velocity_m8 = velocity_to_m8(velocity_float)
 
             step = M8PhraseStep(
-                note=NOTE_C4,
+                note=M8Note.C_4,
                 velocity=velocity_m8,
                 instrument=instrument_idx
             )

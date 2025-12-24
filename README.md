@@ -31,7 +31,7 @@ pip install -r requirements-dev.txt
 ```python
 from m8.api.project import M8Project
 from m8.api.sampler import M8Sampler, M8SamplerParam
-from m8.api.phrase import M8Phrase, M8PhraseStep
+from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
@@ -49,9 +49,9 @@ project.instruments[0] = kick
 phrase = M8Phrase()
 for step in [0, 4, 8, 12]:  # Four-on-the-floor
     phrase[step] = M8PhraseStep(
-        note=0x24,      # C-4
-        velocity=0x6F,  # Full velocity
-        instrument=0x00 # Use instrument slot 0
+        note=M8Note.C_4,  # C4
+        velocity=0x6F,    # Full velocity
+        instrument=0x00   # Use instrument slot 0
     )
 
 project.phrases[0] = phrase
@@ -187,7 +187,13 @@ pym8 provides typed enum classes for FX commands and sampler parameters, making 
 - **M8SamplerParam**: Byte offsets for sampler parameters (VOLUME, PITCH, FILTER_TYPE, CUTOFF, etc.)
 - **M8PlayMode**: Sample playback modes (FWD, REV, FWDLOOP, OSC, etc.)
 
-These enums are defined directly in the source code (m8/api/fx.py and m8/api/sampler.py) based on the M8 file format specification.
+### Notes
+
+- **M8Note**: Note values from C1 (0) to G11 (127)
+  - Dynamically generated with format: `C_1`, `CS_1`, `D_1`, ..., `C_4` (36/0x24), ..., `G_11`
+  - M8 octave numbering: byte 0 = C1, so C4 = 36 (0x24)
+
+These enums are defined directly in the source code (m8/api/fx.py, m8/api/sampler.py, and m8/api/phrase.py) based on the M8 file format specification.
 
 ## Examples
 
