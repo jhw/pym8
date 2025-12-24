@@ -17,7 +17,7 @@ import random
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape
+from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape, M8WavsynthModDest
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -30,10 +30,6 @@ SEED = 42
 
 # Note choices for random bass pattern
 BASS_NOTES = [M8Note.C_3, M8Note.C_4, M8Note.C_5]
-
-# Modulator destination values (from M8 file format)
-MOD_DEST_VOLUME = 1
-MOD_DEST_CUTOFF = 7  # Cutoff destination (not 5)
 
 
 def create_wavsynth_303_project():
@@ -63,12 +59,12 @@ def create_wavsynth_303_project():
 
     # Configure first modulator (ADSR) for volume envelope
     # Modulator 0 is already ADSR by default (type 0)
-    wavsynth.modulators[0].destination = MOD_DEST_VOLUME
+    wavsynth.modulators[0].destination = M8WavsynthModDest.VOLUME
     # Keep default ADSR values for volume (attack, hold, decay already set)
 
     # Configure second modulator (ADSR) for cutoff sweep
     # Modulator 1 is already ADSR by default (type 0)
-    wavsynth.modulators[1].destination = MOD_DEST_CUTOFF
+    wavsynth.modulators[1].destination = M8WavsynthModDest.CUTOFF
 
     # Get default values
     default_amount = wavsynth.modulators[1].amount
@@ -78,8 +74,8 @@ def create_wavsynth_303_project():
     wavsynth.modulators[1].amount = default_amount // 2
     wavsynth.modulators[1].set(4, default_decay // 2)  # Decay
 
-    print(f"  Modulator 1 (Volume): dest={MOD_DEST_VOLUME}, amount={wavsynth.modulators[0].amount}")
-    print(f"  Modulator 2 (Cutoff): dest={MOD_DEST_CUTOFF}, amount={wavsynth.modulators[1].amount}, decay={wavsynth.modulators[1].get(4)}")
+    print(f"  Modulator 1 (Volume): dest={M8WavsynthModDest.VOLUME}, amount={wavsynth.modulators[0].amount}")
+    print(f"  Modulator 2 (Cutoff): dest={M8WavsynthModDest.CUTOFF}, amount={wavsynth.modulators[1].amount}, decay={wavsynth.modulators[1].get(4)}")
 
     # Add instrument to project
     project.instruments[0x00] = wavsynth

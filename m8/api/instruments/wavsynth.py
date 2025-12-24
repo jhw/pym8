@@ -47,6 +47,22 @@ class M8WavsynthParam(IntEnum):
     # Modulators start at offset 63
 
 
+# Modulator Destination Values
+class M8WavsynthModDest(IntEnum):
+    """Wavsynth modulator destination parameters."""
+    OFF = 0x00       # No modulation
+    VOLUME = 0x01    # Volume modulation
+    PITCH = 0x02     # Pitch modulation
+    SIZE = 0x03      # Wavetable size
+    MULT = 0x04      # Frequency multiplier
+    WARP = 0x05      # Waveform warp
+    MIRROR = 0x06    # Waveform mirror (scan)
+    CUTOFF = 0x07    # Filter cutoff
+    RES = 0x08       # Filter resonance
+    AMP = 0x09       # Amplifier level
+    PAN = 0x0A       # Stereo pan
+
+
 # WavSynth Wave Shapes
 class M8WavShape(IntEnum):
     """WavSynth waveform shapes."""

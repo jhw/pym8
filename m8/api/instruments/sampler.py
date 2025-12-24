@@ -59,6 +59,21 @@ class M8PlayMode(IntEnum):
     OSC_REV = 0x07   # Oscillator reverse
     OSC_PP = 0x08    # Oscillator ping-pong
 
+
+# Modulator Destination Values
+class M8SamplerModDest(IntEnum):
+    """Sampler modulator destination parameters."""
+    OFF = 0x00       # No modulation
+    VOLUME = 0x01    # Volume modulation
+    PITCH = 0x02     # Pitch modulation
+    LOOP_ST = 0x03   # Loop start position
+    LENGTH = 0x04    # Sample length
+    DEGRADE = 0x05   # Bitcrusher amount
+    CUTOFF = 0x06    # Filter cutoff
+    RES = 0x07       # Filter resonance
+    AMP = 0x08       # Amplifier level
+    PAN = 0x09       # Stereo pan
+
 # Sample path configuration
 SAMPLE_PATH_OFFSET = 87
 SAMPLE_PATH_SIZE = 128
