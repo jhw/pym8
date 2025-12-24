@@ -198,16 +198,26 @@ See the `demos/` directory for complete working examples:
   - Random sample selection from Erica Pico sample packs (download first with `download_erica_pico_samples.py`)
   - Random FX on hats (cut, reverse, retrigger)
   - 48 instruments across 16 rows with proper M8 song/chain/phrase structure
+
+- **euclid_909_demo.py**: Euclidean rhythm patterns using the Bjorklund algorithm
+  - Uses Euclidean rhythm generators from `euclidean_patterns.py`
+  - Based on [Bjorklund algorithm](https://github.com/brianhouse/bjorklund) and [Toussaint's research](https://cgm.cs.mcgill.ca/~godfried/publications/banff.pdf)
+  - Traditional rhythms from world music (Cuban tresillo, African bell patterns, Brazilian rhythms)
+  - Groove algorithms inspired by Erica Synths Perkons HD-01 for volume variation
+  - Random sample selection from Erica Pico sample packs
+  - 48 instruments across 16 rows with proper M8 song/chain/phrase structure
+
 - **download_erica_pico_samples.py**: Downloads Erica Synths Pico Drum sample packs to `tmp/erica-pico-samples/`
 
 Run demos with:
 
 ```bash
-# Download samples first (required for acid_banger_909_demo)
+# Download samples first (required for both demos)
 python demos/download_erica_pico_samples.py
 
-# Run demo
+# Run demos
 python demos/acid_banger_909_demo.py
+python demos/euclid_909_demo.py
 ```
 
 Manage demos on your M8 device:
