@@ -24,6 +24,7 @@ class TestM8Wavsynth(unittest.TestCase):
         self.assertEqual(wavsynth.get(M8WavsynthParam.CUTOFF), 0xFF)    # CUTOFF
         self.assertEqual(wavsynth.get(M8WavsynthParam.PAN), 0x80)       # PAN
         self.assertEqual(wavsynth.get(M8WavsynthParam.DRY), 0xC0)       # DRY
+        self.assertEqual(wavsynth.get(M8WavsynthParam.SIZE), 0x20)      # SIZE
 
     def test_constructor_with_parameters(self):
         # Test with name

@@ -33,7 +33,7 @@ BASS_NOTES = [M8Note.C_3, M8Note.C_4, M8Note.C_5]
 
 # Modulator destination values (from M8 file format)
 MOD_DEST_VOLUME = 1
-MOD_DEST_CUTOFF = 5
+MOD_DEST_CUTOFF = 7  # Cutoff destination (not 5)
 
 
 def create_wavsynth_303_project():
