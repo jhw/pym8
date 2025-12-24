@@ -1,15 +1,71 @@
 import unittest
 from m8.api.phrase import (
-    M8PhraseStep, M8Phrase, M8Phrases,
+    M8PhraseStep, M8Phrase, M8Phrases, M8Note,
     STEP_BLOCK_SIZE, STEP_COUNT, PHRASE_BLOCK_SIZE, PHRASE_COUNT, FX_BLOCK_COUNT,
     EMPTY_NOTE, EMPTY_VELOCITY, EMPTY_INSTRUMENT, OFF_NOTE
 )
 from m8.api.fx import M8FXTuple, M8FXTuples, M8SequenceFX
 from m8.api import M8Block
 
-# Test constants
-TEST_NOTE_C6 = 72  # C_6 note value
-TEST_NOTE_C7 = 84  # C_7 note value
+# Test constants (corrected to match M8Note enum)
+TEST_NOTE_C6 = 60  # C_6 note value
+TEST_NOTE_C7 = 72  # C_7 note value
+
+
+class TestM8Note(unittest.TestCase):
+    """Tests for M8Note enum."""
+
+    def test_note_range(self):
+        """Test that note range is correct (C1 to G11)."""
+        # First note: C1
+        self.assertEqual(M8Note.C_1, 0)
+
+        # Last note: G11
+        self.assertEqual(M8Note.G_11, 127)
+
+    def test_c4_value(self):
+        """Test that C4 = 36 (0x24) as required."""
+        self.assertEqual(M8Note.C_4, 36)
+        self.assertEqual(M8Note.C_4, 0x24)
+
+    def test_octave_spacing(self):
+        """Test that octaves are spaced 12 semitones apart."""
+        self.assertEqual(M8Note.C_1, 0)
+        self.assertEqual(M8Note.C_2, 12)
+        self.assertEqual(M8Note.C_3, 24)
+        self.assertEqual(M8Note.C_4, 36)
+        self.assertEqual(M8Note.C_5, 48)
+        self.assertEqual(M8Note.C_6, 60)
+        self.assertEqual(M8Note.C_7, 72)
+        self.assertEqual(M8Note.C_8, 84)
+
+    def test_chromatic_notes(self):
+        """Test that all 12 semitones exist in an octave."""
+        # Test octave 4
+        self.assertEqual(M8Note.C_4, 36)
+        self.assertEqual(M8Note.CS_4, 37)
+        self.assertEqual(M8Note.D_4, 38)
+        self.assertEqual(M8Note.DS_4, 39)
+        self.assertEqual(M8Note.E_4, 40)
+        self.assertEqual(M8Note.F_4, 41)
+        self.assertEqual(M8Note.FS_4, 42)
+        self.assertEqual(M8Note.G_4, 43)
+        self.assertEqual(M8Note.GS_4, 44)
+        self.assertEqual(M8Note.A_4, 45)
+        self.assertEqual(M8Note.AS_4, 46)
+        self.assertEqual(M8Note.B_4, 47)
+
+    def test_note_in_phrase_step(self):
+        """Test that M8Note enum works in M8PhraseStep."""
+        step = M8PhraseStep(note=M8Note.C_4, velocity=100, instrument=0)
+        self.assertEqual(step.note, 36)
+        self.assertEqual(step.note, M8Note.C_4)
+
+    def test_enum_values_match_constants(self):
+        """Test that enum values match the test constants."""
+        self.assertEqual(M8Note.C_6, TEST_NOTE_C6)
+        self.assertEqual(M8Note.C_7, TEST_NOTE_C7)
+
 
 class TestM8PhraseStepEssential(unittest.TestCase):
     """Essential phrase step tests focusing on core functionality."""
