@@ -21,10 +21,10 @@ class TestM8Wavsynth(unittest.TestCase):
 
         # Check non-zero defaults using generic get
         self.assertEqual(wavsynth.get(M8WavsynthParam.FINE_TUNE), 0x80)  # FINETUNE
-        self.assertEqual(wavsynth.get(M8WavsynthParam.CUTOFF), 0xFF)    # CUTOFF
-        self.assertEqual(wavsynth.get(M8WavsynthParam.PAN), 0x80)       # PAN
-        self.assertEqual(wavsynth.get(M8WavsynthParam.DRY), 0xC0)       # DRY
-        self.assertEqual(wavsynth.get(M8WavsynthParam.SIZE), 0x20)      # SIZE
+        self.assertEqual(wavsynth.get(M8WavsynthParam.SIZE), 0x20)       # SIZE
+        self.assertEqual(wavsynth.get(M8WavsynthParam.CUTOFF), 0xFF)     # CUTOFF
+        self.assertEqual(wavsynth.get(M8WavsynthParam.PAN), 0x80)        # PAN
+        self.assertEqual(wavsynth.get(M8WavsynthParam.DRY), 0xC0)        # DRY
 
     def test_constructor_with_parameters(self):
         # Test with name
