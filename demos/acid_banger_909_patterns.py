@@ -1,11 +1,14 @@
 """
-Acid Banger Pattern Generators
+Acid Banger 909 Pattern Generators
 
-Python port of vitling's acid-banger drum patterns from:
+Python port of vitling's acid-banger drum patterns (909 drum machine patterns) from:
 https://github.com/vitling/acid-banger
 
 Each function generates a 16-step pattern with velocity values (0.0-1.0).
 Zero indicates no hit (off).
+
+Note: This module contains 909-style drum patterns. For 303-style acid basslines,
+see the separate acid_banger_303 module.
 """
 
 import random

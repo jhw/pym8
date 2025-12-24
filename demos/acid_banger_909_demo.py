@@ -1,22 +1,30 @@
 #!/usr/bin/env python
 
 """
-Acid Banger Demo - Algorithmic drum patterns inspired by vitling's acid-banger
+Acid Banger 909 Demo - Algorithmic 909 drum patterns inspired by vitling's acid-banger
 
 Creates a 16-row M8 project with kick, snare, and hat patterns using:
-- Vitling's acid-banger pattern generators
+- Vitling's acid-banger 909 pattern generators
 - Random sample selection from Erica Pico sample packs
 - Random FX on hats (cut, reverse, retrigger)
+
+Prerequisites:
+- Download Erica Pico samples first: python demos/download_erica_pico_samples.py
+- Samples will be saved to tmp/erica-pico-samples/
 
 Project structure:
 - Row 0: songs 0x10,0x20,0x30 -> chains 0x10,0x20,0x30 -> phrases 0x10,0x20,0x30 -> instruments 0x00,0x01,0x02
 - Row 1: songs 0x11,0x21,0x31 -> chains 0x11,0x21,0x31 -> phrases 0x11,0x21,0x31 -> instruments 0x03,0x04,0x05
 - ... (continues for 16 rows total)
+
+Note: This demo uses 909-style drum patterns. For 303-style acid basslines,
+see the separate acid_banger_303 demo.
 """
 
 import random
 import shutil
 import re
+import sys
 from pathlib import Path
 from typing import Dict, List
 
@@ -26,7 +34,7 @@ from m8.api.phrase import M8Phrase, M8PhraseStep
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
-from acid_banger_patterns import (
+from acid_banger_909_patterns import (
     get_random_kick_pattern,
     get_random_snare_pattern,
     get_random_hat_pattern
@@ -34,9 +42,9 @@ from acid_banger_patterns import (
 
 
 # Configuration
-PROJECT_NAME = "ACID-BANGER"
-OUTPUT_DIR = Path("tmp/demos/acid_banger")
-SAMPLES_BASE = Path("/Users/jhw/work/gists/music/6014d1500bd8089900b63af39e6d7d8d/tmp/samples/erica-pico")
+PROJECT_NAME = "ACID-BANGER-909"
+OUTPUT_DIR = Path("tmp/demos/acid_banger_909")
+SAMPLES_BASE = Path("tmp/erica-pico-samples")
 BPM = 130
 SEED = 42
 NUM_ROWS = 16
@@ -123,15 +131,23 @@ def create_phrase_from_pattern(pattern: List[float], instrument_idx: int,
 
 
 def create_acid_banger_project():
-    """Create the full acid banger M8 project."""
-    print(f"Creating Acid Banger demo: {PROJECT_NAME}")
+    """Create the full acid banger 909 M8 project."""
+    print(f"Creating Acid Banger 909 demo: {PROJECT_NAME}")
     print(f"BPM: {BPM}, Seed: {SEED}, Rows: {NUM_ROWS}")
+
+    # Check if samples exist
+    if not SAMPLES_BASE.exists():
+        print(f"\n✗ Error: Sample directory not found: {SAMPLES_BASE.absolute()}")
+        print(f"\nPlease download Erica Pico samples first:")
+        print(f"  python demos/download_erica_pico_samples.py")
+        print(f"\nThis will download sample packs to: {SAMPLES_BASE.absolute()}")
+        sys.exit(1)
 
     # Initialize RNG with seed
     rng = random.Random(SEED)
 
     # Find available samples
-    print(f"\nScanning samples from: {SAMPLES_BASE}")
+    print(f"\nScanning samples from: {SAMPLES_BASE.absolute()}")
     samples_by_type = find_samples_by_type(SAMPLES_BASE)
 
     print(f"Found samples:")
@@ -140,13 +156,19 @@ def create_acid_banger_project():
     print(f"  Hats: {len(samples_by_type['hat'])}")
 
     if not all(samples_by_type.values()):
-        raise ValueError("Not enough samples found in all categories!")
+        print(f"\n✗ Error: Not enough samples found in all categories!")
+        print(f"  Kicks: {len(samples_by_type['kick'])}")
+        print(f"  Snares: {len(samples_by_type['snare'])}")
+        print(f"  Hats: {len(samples_by_type['hat'])}")
+        print(f"\nPlease ensure Erica Pico samples are downloaded:")
+        print(f"  python demos/download_erica_pico_samples.py")
+        sys.exit(1)
 
     # Initialize project
     project = M8Project.initialise()
     project.metadata.name = PROJECT_NAME
     project.metadata.tempo = BPM
-    project.metadata.directory = "/Songs/pym8-demos/acid-banger/"
+    project.metadata.directory = "/Songs/pym8-demos/acid-banger-909/"
 
     # Track which samples we're using (for copying later)
     used_samples: Dict[int, Path] = {}  # instrument_idx -> sample_path
