@@ -194,11 +194,17 @@ These enums are defined directly in the source code (m8/api/fx.py and m8/api/sam
 See the `demos/` directory for complete working examples:
 
 - **sampler_demo.py**: Creates a project with a sampler instrument, random beats, FX commands, and chain/song arrangement
+- **acid_banger_demo.py**: Algorithmic techno project with 16 rows of kick/snare/hat patterns inspired by vitling's acid-banger
+  - Uses pattern generators from `acid_banger_patterns.py`
+  - Random sample selection from Erica Pico sample packs
+  - Random FX on hats (cut, reverse, retrigger)
+  - 48 instruments across 16 rows with proper M8 song/chain/phrase structure
 
 Run demos with:
 
 ```bash
 python demos/sampler_demo.py
+python demos/acid_banger_demo.py
 ```
 
 Copy demos to your M8 device:
