@@ -100,28 +100,7 @@ def create_303_wavsynth_preset(wave_shape, name_suffix=""):
                     'DECAY': 0x40,   # Half of default decay
                 }
             },
-            {
-                'type': M8ModulatorType.LFO,
-                'destination': 0,
-                'amount': 0xFF,
-                'params': {
-                    'SHAPE': 0x00,
-                    'TRIGGER_MODE': 0x00,
-                    'FREQ': 0x10,
-                    'RETRIGGER': 0x00,
-                }
-            },
-            {
-                'type': M8ModulatorType.LFO,
-                'destination': 0,
-                'amount': 0xFF,
-                'params': {
-                    'SHAPE': 0x00,
-                    'TRIGGER_MODE': 0x00,
-                    'FREQ': 0x10,
-                    'RETRIGGER': 0x00,
-                }
-            },
+            # Modulators 2 and 3 will be default LFOs (unassigned)
         ]
     }
 
