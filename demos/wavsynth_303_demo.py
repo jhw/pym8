@@ -3,12 +3,12 @@
 """
 Wavsynth 303 Demo - Acid bassline-style demo using M8 Wavsynth
 
-Creates a simple M8 project with:
-- Single wavsynth instrument with two ADSR modulators
-- First modulator assigned to volume
-- Second modulator assigned to cutoff with reduced level and decay
-- 16-step phrase with random notes from C3, C4, C5
-- Chance FX on each note for variation
+Creates an M8 project with:
+- 16 wavsynth instruments (0x00-0x0F), each with a different wave shape
+- Each instrument has two ADSR modulators (volume and cutoff)
+- 16 phrases (0x00-0x0F), each with different random note patterns
+- 16 chains (0x00-0x0F), each referencing the corresponding phrase
+- Song arrangement: all 16 chains stacked vertically in track 0
 
 Output: tmp/demos/wavsynth_303/WAVSYNTH-303.m8s
 """
@@ -29,14 +29,35 @@ OUTPUT_DIR = Path("tmp/demos/wavsynth_303")
 BPM = 135
 SEED = 42
 
-# Note choices for random bass pattern
-BASS_NOTES = [M8Note.C_3, M8Note.C_4, M8Note.C_5]
+# Note choices for random bass pattern (C and D# at octaves 3 and 4, plus C5)
+BASS_NOTES = [M8Note.C_3, M8Note.DS_3, M8Note.C_4, M8Note.DS_4, M8Note.C_5]
+
+# Wave shapes for each of the 16 instruments
+WAVE_SHAPES = [
+    M8WavShape.PULSE12,      # 0x00
+    M8WavShape.PULSE25,      # 0x01
+    M8WavShape.PULSE50,      # 0x02
+    M8WavShape.PULSE75,      # 0x03
+    M8WavShape.SAW,          # 0x04
+    M8WavShape.TRIANGLE,     # 0x05
+    M8WavShape.SINE,         # 0x06
+    M8WavShape.NOISE_PITCHED,# 0x07
+    M8WavShape.WT_CRUSH,     # 0x08
+    M8WavShape.WT_FOLDING,   # 0x09
+    M8WavShape.WT_FUZZY,     # 0x0A
+    M8WavShape.WT_LIQUID,    # 0x0B
+    M8WavShape.WT_MORPHING,  # 0x0C
+    M8WavShape.WT_MYSTIC,    # 0x0D
+    M8WavShape.WT_TIDAL,     # 0x0E
+    M8WavShape.WT_WAVES,     # 0x0F
+]
 
 
 def create_wavsynth_303_project():
-    """Create the Wavsynth 303 M8 project."""
+    """Create the Wavsynth 303 M8 project with 16 variations."""
     print(f"Creating Wavsynth 303 demo: {PROJECT_NAME}")
     print(f"BPM: {BPM}, Seed: {SEED}")
+    print(f"Creating 16 instruments, phrases, and chains (0x00-0x0F)")
 
     # Initialize RNG with seed for reproducible results
     rng = random.Random(SEED)
@@ -47,72 +68,72 @@ def create_wavsynth_303_project():
     project.metadata.tempo = BPM
     project.metadata.directory = "/Songs/pym8-demos/wavsynth-303/"
 
-    # Create wavsynth instrument at slot 0x00
-    wavsynth = M8Wavsynth(name="ACID-303")
+    # Create 16 variations (0x00-0x0F)
+    for idx in range(16):
+        print(f"\n[{idx:02X}] Creating variation {idx + 1}/16")
 
-    # Set synth parameters
-    wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.SAW)  # Sawtooth wave for classic acid sound
-    wavsynth.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.LOWPASS)  # Low pass filter
-    wavsynth.set(M8WavsynthParam.CUTOFF, 0x20)       # Low cutoff for filter sweep
-    wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)    # High resonance for 303-style sound
-    wavsynth.set(M8WavsynthParam.AMP, 0x20)          # Amplifier level
-    wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)  # Sine wave limiter
+        # Create wavsynth instrument with unique wave shape
+        wave_shape = WAVE_SHAPES[idx]
+        wave_name = wave_shape.name
+        wavsynth = M8Wavsynth(name=f"AC-{wave_name[:8]}")  # Truncate to fit M8 name limit
 
-    # Configure first modulator (ADSR) for volume envelope
-    # Modulator 0 is already ADSR by default (type 0)
-    wavsynth.modulators[0].destination = M8WavsynthModDest.VOLUME
-    # Keep default ADSR values for volume (attack, hold, decay already set)
+        # Set synth parameters
+        wavsynth.set(M8WavsynthParam.SHAPE, wave_shape)
+        wavsynth.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.LOWPASS)  # Low pass filter
+        wavsynth.set(M8WavsynthParam.CUTOFF, 0x20)       # Low cutoff for filter sweep
+        wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)    # High resonance for 303-style sound
+        wavsynth.set(M8WavsynthParam.AMP, 0x20)          # Amplifier level
+        wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)  # Sine wave limiter
 
-    # Configure second modulator (ADSR) for cutoff sweep
-    # Modulator 1 is already ADSR by default (type 0)
-    wavsynth.modulators[1].destination = M8WavsynthModDest.CUTOFF
+        # Configure first modulator (ADSR) for volume envelope
+        wavsynth.modulators[0].destination = M8WavsynthModDest.VOLUME
 
-    # Get default values
-    default_amount = wavsynth.modulators[1].amount
-    default_decay = wavsynth.modulators[1].get(4)  # Decay is at offset 4 for ADSR
+        # Configure second modulator (ADSR) for cutoff sweep
+        wavsynth.modulators[1].destination = M8WavsynthModDest.CUTOFF
+        default_amount = wavsynth.modulators[1].amount
+        default_decay = wavsynth.modulators[1].get(4)
+        wavsynth.modulators[1].amount = default_amount // 2
+        wavsynth.modulators[1].set(4, default_decay // 2)
 
-    # Set to half the default values
-    wavsynth.modulators[1].amount = default_amount // 2
-    wavsynth.modulators[1].set(4, default_decay // 2)  # Decay
+        print(f"  Instrument: {wavsynth.name} (shape={wave_name})")
 
-    print(f"  Modulator 1 (Volume): dest={M8WavsynthModDest.VOLUME}, amount={wavsynth.modulators[0].amount}")
-    print(f"  Modulator 2 (Cutoff): dest={M8WavsynthModDest.CUTOFF}, amount={wavsynth.modulators[1].amount}, decay={wavsynth.modulators[1].get(4)}")
+        # Add instrument to project
+        project.instruments[idx] = wavsynth
 
-    # Add instrument to project
-    project.instruments[0x00] = wavsynth
+        # Create phrase with random notes (use different seed per phrase)
+        phrase = M8Phrase()
+        phrase_notes = []
+        for step in range(16):
+            # Choose random note from C3, C4, C5
+            note = rng.choice(BASS_NOTES)
+            phrase_notes.append(M8Note(note).name)
 
-    # Create phrase with random notes
-    phrase = M8Phrase()
-    print(f"\n  Phrase pattern (16 steps):")
-    for step in range(16):
-        # Choose random note from C3, C4, C5
-        note = rng.choice(BASS_NOTES)
+            # Create step with note and full velocity
+            step_obj = M8PhraseStep(
+                note=note,
+                velocity=0x7F,  # Full velocity
+                instrument=idx   # Use corresponding instrument
+            )
 
-        # Create step with note and full velocity
-        step_obj = M8PhraseStep(
-            note=note,
-            velocity=0x7F,  # Full velocity
-            instrument=0x00  # Use wavsynth at slot 0
-        )
+            # Add Chance FX (CHA) with value 0x80
+            step_obj.fx[0] = M8FXTuple(key=M8SequenceFX.CHA, value=0x80)
 
-        # Add Chord FX (CHA) with value 0x80
-        step_obj.fx[0] = M8FXTuple(key=M8SequenceFX.CHA, value=0x80)
+            phrase[step] = step_obj
 
-        phrase[step] = step_obj
+        print(f"  Phrase: {', '.join(phrase_notes[:8])} ...")
+        project.phrases[idx] = phrase
 
-        # Print note name for visualization (find enum name from value)
-        note_name = M8Note(note).name
-        print(f"    Step {step:2d}: {note_name:5s} (CHA=0x80)")
+        # Create chain referencing the phrase
+        chain = M8Chain()
+        chain[0] = M8ChainStep(phrase=idx, transpose=0x00)
+        project.chains[idx] = chain
+        print(f"  Chain: references phrase 0x{idx:02X}")
 
-    project.phrases[0x00] = phrase
-
-    # Create chain referencing the phrase
-    chain = M8Chain()
-    chain[0] = M8ChainStep(phrase=0x00, transpose=0x00)
-    project.chains[0x00] = chain
-
-    # Add chain to song matrix
-    project.song[0][0] = 0x00  # Chain 0 at row 0, track 0
+    # Add all chains to song matrix (stacked vertically in track 0)
+    print(f"\nArranging song: stacking 16 chains in track 0, rows 0-15")
+    for row in range(16):
+        project.song[row][0] = row  # Chain idx at row idx, track 0
+        print(f"  Row {row:2d}: Chain 0x{row:02X}")
 
     return project
 
@@ -129,8 +150,10 @@ def save_project(project: M8Project):
 
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
-    print(f"  Instrument: ACID-303 wavsynth with cutoff modulation")
-    print(f"  Pattern: 16 random steps (C3/C4/C5) with Chance FX")
+    print(f"  Instruments: 16 wavsynth variations (0x00-0x0F) with different wave shapes")
+    print(f"  Phrases: 16 unique patterns with random notes (C3/D#3/C4/D#4/C5) and Chance FX")
+    print(f"  Chains: 16 chains stacked vertically in track 0")
+    print(f"  Song: 16 rows x 1 track arrangement")
 
 
 def main():
