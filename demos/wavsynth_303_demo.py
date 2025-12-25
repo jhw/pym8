@@ -28,8 +28,8 @@ OUTPUT_DIR = Path("tmp/demos/wavsynth_303")
 BPM = 135
 SEED = 42
 
-# Note choices for random bass pattern
-BASS_NOTES = [M8Note.C_3, M8Note.C_4, M8Note.C_5]
+# Note choices for random bass pattern (C and D# at octaves 3 and 4, plus C5)
+BASS_NOTES = [M8Note.C_3, M8Note.DS_3, M8Note.C_4, M8Note.DS_4, M8Note.C_5]
 
 # Wave shapes for each of the 16 instruments
 WAVE_SHAPES = [
@@ -150,7 +150,7 @@ def save_project(project: M8Project):
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
     print(f"  Instruments: 16 wavsynth variations (0x00-0x0F) with different wave shapes")
-    print(f"  Phrases: 16 unique patterns with random notes (C3/C4/C5) and Chance FX")
+    print(f"  Phrases: 16 unique patterns with random notes (C3/D#3/C4/D#4/C5) and Chance FX")
     print(f"  Chains: 16 chains stacked vertically in track 0")
     print(f"  Song: 16 rows x 1 track arrangement")
 
