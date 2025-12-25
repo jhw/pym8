@@ -129,6 +129,7 @@ class M8Macrosynth(M8Instrument):
 
     # Configuration for base class dict serialization
     PARAM_ENUM_CLASS = M8MacrosynthParam
+    MOD_DEST_ENUM_CLASS = M8MacrosynthModDest
     PARAM_ENUM_TYPES = {
         'SHAPE': M8MacroShape,
         'FILTER_TYPE': None,  # Will be set below to avoid circular import

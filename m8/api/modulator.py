@@ -205,25 +205,36 @@ class M8Modulator:
         instance._data = bytearray(self._data)
         return instance
 
-    def to_dict(self, enum_mode='value'):
+    def to_dict(self, enum_mode='value', dest_enum_class=None):
         """Export modulator parameters to a dictionary.
 
         Args:
             enum_mode: How to serialize enum values:
                       'value' (default) - use integer values
                       'name' - use enum names as strings (human-readable)
+            dest_enum_class: Optional enum class for destination parameter
+                           (e.g., M8SamplerModDest, M8WavsynthModDest)
 
         Returns a dict with:
         - type: modulator type (int or enum name)
-        - destination: destination parameter (int)
+        - destination: destination parameter (int or enum name)
         - amount: modulation amount (int)
         - params: dict of type-specific parameters using enum names as keys
         """
         mod_type_value = self.mod_type
 
+        # Convert destination to enum name if requested and enum class provided
+        destination_value = self.destination
+        if enum_mode == 'name' and dest_enum_class is not None:
+            try:
+                destination_value = dest_enum_class(destination_value).name
+            except (ValueError, KeyError):
+                # If value doesn't map to enum, keep as integer
+                pass
+
         result = {
             'type': M8ModulatorType(mod_type_value).name if enum_mode == 'name' else mod_type_value,
-            'destination': self.destination,
+            'destination': destination_value,
             'amount': self.amount,
             'params': {}
         }
@@ -266,13 +277,16 @@ class M8Modulator:
         return result
 
     @classmethod
-    def from_dict(cls, params):
+    def from_dict(cls, params, dest_enum_class=None):
         """Create a modulator from a parameter dictionary.
 
         Args:
             params: Dict with keys: type, destination, amount, params
                    - type can be int, M8ModulatorType enum value, or string name
+                   - destination can be int or string name (if dest_enum_class provided)
                    - params is a dict with parameter names as keys
+            dest_enum_class: Optional enum class for destination parameter
+                           (e.g., M8SamplerModDest, M8WavsynthModDest)
 
         Returns:
             M8Modulator instance configured with given parameters
@@ -290,9 +304,18 @@ class M8Modulator:
         # Create modulator with specified type
         instance = cls(mod_type=mod_type)
 
-        # Set common parameters
+        # Set destination (handle string enum names if dest_enum_class provided)
         if 'destination' in params:
-            instance.destination = params['destination']
+            destination = params['destination']
+            if isinstance(destination, str) and dest_enum_class is not None:
+                try:
+                    destination = dest_enum_class[destination].value
+                except KeyError:
+                    # Unknown destination name, keep as-is (will be 0 if conversion fails)
+                    pass
+            instance.destination = destination
+
+        # Set amount
         if 'amount' in params:
             instance.amount = params['amount']
 
@@ -387,20 +410,22 @@ class M8Modulators(list):
 
         return instance
 
-    def to_dict(self, enum_mode='value'):
+    def to_dict(self, enum_mode='value', dest_enum_class=None):
         """Export all modulators to a list of dictionaries.
 
         Args:
             enum_mode: How to serialize enum values ('value' or 'name')
+            dest_enum_class: Optional enum class for destination parameter
         """
-        return [mod.to_dict(enum_mode=enum_mode) for mod in self]
+        return [mod.to_dict(enum_mode=enum_mode, dest_enum_class=dest_enum_class) for mod in self]
 
     @classmethod
-    def from_dict(cls, modulators_list):
+    def from_dict(cls, modulators_list, dest_enum_class=None):
         """Create modulators collection from a list of parameter dicts.
 
         Args:
             modulators_list: List of dicts, each containing modulator params
+            dest_enum_class: Optional enum class for destination parameter
 
         Returns:
             M8Modulators instance with configured modulators
@@ -409,7 +434,7 @@ class M8Modulators(list):
         list.__init__(instance)
 
         for mod_params in modulators_list:
-            instance.append(M8Modulator.from_dict(mod_params))
+            instance.append(M8Modulator.from_dict(mod_params, dest_enum_class=dest_enum_class))
 
         # Pad to 4 modulators if needed
         while len(instance) < BLOCK_COUNT:

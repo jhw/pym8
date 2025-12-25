@@ -67,6 +67,7 @@ class M8Instrument:
 
     # Subclasses should override these
     PARAM_ENUM_CLASS = None
+    MOD_DEST_ENUM_CLASS = None
     PARAM_ENUM_TYPES = {}
     EXTRA_FIELDS = []
 
@@ -195,7 +196,7 @@ class M8Instrument:
         result = {
             'name': self.name,
             'params': {},
-            'modulators': self.modulators.to_dict(enum_mode=enum_mode)
+            'modulators': self.modulators.to_dict(enum_mode=enum_mode, dest_enum_class=self.MOD_DEST_ENUM_CLASS)
         }
 
         # Add any extra fields from subclass
@@ -274,7 +275,7 @@ class M8Instrument:
         # Apply modulator configuration
         modulators_list = params.get('modulators')
         if modulators_list:
-            instance.modulators = M8Modulators.from_dict(modulators_list)
+            instance.modulators = M8Modulators.from_dict(modulators_list, dest_enum_class=cls.MOD_DEST_ENUM_CLASS)
 
         return instance
 

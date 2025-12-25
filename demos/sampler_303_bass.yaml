@@ -31,7 +31,7 @@ params:
 # Only the two AHD envelopes are active - the remaining 2 slots use defaults
 modulators:
 - type: AHD_ENVELOPE       # Readable modulator type
-  destination: 1           # Volume envelope
+  destination: VOLUME      # Volume envelope
   amount: 255
   params:
     ATTACK: 0
@@ -39,7 +39,7 @@ modulators:
     DECAY: 128
 
 - type: AHD_ENVELOPE       # Second envelope for cutoff sweep
-  destination: 6           # Cutoff modulation (0x06 for sampler)
+  destination: CUTOFF      # Cutoff modulation
   amount: 127
   params:
     ATTACK: 0

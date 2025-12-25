@@ -99,6 +99,7 @@ class M8Sampler(M8Instrument):
 
     # Configuration for base class dict serialization
     PARAM_ENUM_CLASS = M8SamplerParam
+    MOD_DEST_ENUM_CLASS = M8SamplerModDest
     PARAM_ENUM_TYPES = {
         'PLAY_MODE': M8PlayMode,
         'FILTER_TYPE': None,  # Will be set below to avoid circular import
