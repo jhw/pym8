@@ -1,6 +1,7 @@
 import unittest
 from m8.api.modulator import (
     M8Modulator, M8Modulators,
+    M8ModulatorType, M8LFOShape, M8LFOTriggerMode,
     BLOCK_SIZE, BLOCK_COUNT,
     DEFAULT_AMOUNT, DEFAULT_DESTINATION, DEFAULT_AHD_DECAY, DEFAULT_LFO_FREQUENCY,
     AHD_ATTACK_OFFSET, AHD_HOLD_OFFSET, AHD_DECAY_OFFSET,
@@ -308,6 +309,91 @@ class TestM8Modulators(unittest.TestCase):
         self.assertEqual(deserialized[2].destination, original[2].destination)
         self.assertEqual(deserialized[2].get(LFO_OSCILLATOR_OFFSET), original[2].get(LFO_OSCILLATOR_OFFSET))
         self.assertEqual(deserialized[2].get(LFO_FREQUENCY_OFFSET), original[2].get(LFO_FREQUENCY_OFFSET))
+
+
+class TestModulatorEnums(unittest.TestCase):
+    """Tests for modulator enum classes."""
+
+    def test_m8_modulator_type_values(self):
+        """Test M8ModulatorType enum has correct values."""
+        self.assertEqual(M8ModulatorType.AHD_ENVELOPE, 0)
+        self.assertEqual(M8ModulatorType.ADSR_ENVELOPE, 1)
+        self.assertEqual(M8ModulatorType.DRUM_ENVELOPE, 2)
+        self.assertEqual(M8ModulatorType.LFO, 3)
+        self.assertEqual(M8ModulatorType.TRIG_ENVELOPE, 4)
+        self.assertEqual(M8ModulatorType.TRACKING_ENVELOPE, 5)
+
+    def test_m8_modulator_type_with_modulator(self):
+        """Test M8ModulatorType enum works with M8Modulator."""
+        # Test with AHD
+        mod_ahd = M8Modulator(mod_type=M8ModulatorType.AHD_ENVELOPE)
+        self.assertEqual(mod_ahd.mod_type, 0)
+        self.assertEqual(mod_ahd.mod_type, M8ModulatorType.AHD_ENVELOPE)
+
+        # Test with LFO
+        mod_lfo = M8Modulator(mod_type=M8ModulatorType.LFO)
+        self.assertEqual(mod_lfo.mod_type, 3)
+        self.assertEqual(mod_lfo.mod_type, M8ModulatorType.LFO)
+
+        # Test with ADSR
+        mod_adsr = M8Modulator(mod_type=M8ModulatorType.ADSR_ENVELOPE)
+        self.assertEqual(mod_adsr.mod_type, 1)
+        self.assertEqual(mod_adsr.mod_type, M8ModulatorType.ADSR_ENVELOPE)
+
+    def test_m8_lfo_shape_values(self):
+        """Test M8LFOShape enum has correct values."""
+        # Basic shapes (0-9)
+        self.assertEqual(M8LFOShape.TRI, 0)
+        self.assertEqual(M8LFOShape.SIN, 1)
+        self.assertEqual(M8LFOShape.RAMP_DOWN, 2)
+        self.assertEqual(M8LFOShape.RAMP_UP, 3)
+        self.assertEqual(M8LFOShape.EXP_DN, 4)
+        self.assertEqual(M8LFOShape.EXP_UP, 5)
+        self.assertEqual(M8LFOShape.SQR_DN, 6)
+        self.assertEqual(M8LFOShape.SQR_UP, 7)
+        self.assertEqual(M8LFOShape.RANDOM, 8)
+        self.assertEqual(M8LFOShape.DRUNK, 9)
+
+        # Triggered shapes (10-19)
+        self.assertEqual(M8LFOShape.TRI_T, 10)
+        self.assertEqual(M8LFOShape.SIN_T, 11)
+        self.assertEqual(M8LFOShape.RAMPD_T, 12)
+        self.assertEqual(M8LFOShape.RAMPU_T, 13)
+        self.assertEqual(M8LFOShape.EXPD_T, 14)
+        self.assertEqual(M8LFOShape.EXPU_T, 15)
+        self.assertEqual(M8LFOShape.SQ_D_T, 16)
+        self.assertEqual(M8LFOShape.SQ_U_T, 17)
+        self.assertEqual(M8LFOShape.RAND_T, 18)
+        self.assertEqual(M8LFOShape.DRNK_T, 19)
+
+    def test_m8_lfo_shape_range(self):
+        """Test M8LFOShape enum covers full range 0-19."""
+        # Check we have all 20 shapes
+        all_values = [shape.value for shape in M8LFOShape]
+        self.assertEqual(len(all_values), 20)
+        self.assertEqual(min(all_values), 0)
+        self.assertEqual(max(all_values), 19)
+
+    def test_m8_lfo_trigger_mode_values(self):
+        """Test M8LFOTriggerMode enum has correct values."""
+        self.assertEqual(M8LFOTriggerMode.FREE, 0)
+        self.assertEqual(M8LFOTriggerMode.RETRIG, 1)
+        self.assertEqual(M8LFOTriggerMode.HOLD, 2)
+        self.assertEqual(M8LFOTriggerMode.ONCE, 3)
+
+    def test_enums_with_modulator_lfo_params(self):
+        """Test that enums can be used to set LFO parameters."""
+        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
+
+        # Set LFO shape using enum
+        mod.set(LFO_OSCILLATOR_OFFSET, M8LFOShape.SIN)
+        self.assertEqual(mod.get(LFO_OSCILLATOR_OFFSET), 1)
+        self.assertEqual(mod.get(LFO_OSCILLATOR_OFFSET), M8LFOShape.SIN)
+
+        # Set LFO trigger mode using enum
+        mod.set(LFO_TRIGGER_OFFSET, M8LFOTriggerMode.RETRIG)
+        self.assertEqual(mod.get(LFO_TRIGGER_OFFSET), 1)
+        self.assertEqual(mod.get(LFO_TRIGGER_OFFSET), M8LFOTriggerMode.RETRIG)
 
 
 if __name__ == '__main__':

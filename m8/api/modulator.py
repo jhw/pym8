@@ -1,3 +1,4 @@
+from enum import IntEnum
 from m8.api import M8Block, split_byte, join_nibbles
 
 # Modulator configuration
@@ -26,11 +27,58 @@ DEFAULT_AHD_DECAY = 0x80
 DEFAULT_LFO_FREQUENCY = 0x10
 
 # Default modulator configurations (mods 0,1 = AHD, mods 2,3 = LFO)
-DEFAULT_MODULATOR_TYPES = [0, 0, 3, 3]
+# Note: Using raw integers here for backward compatibility, but M8ModulatorType enum can be used
+DEFAULT_MODULATOR_TYPES = [0, 0, 3, 3]  # [AHD_ENVELOPE, AHD_ENVELOPE, LFO, LFO]
 
 # Block sizes
 BLOCK_SIZE = MODULATOR_BLOCK_SIZE
 BLOCK_COUNT = MODULATOR_COUNT
+
+
+# Modulator Type Enums
+class M8ModulatorType(IntEnum):
+    """Modulator type values (instrument-independent)."""
+    AHD_ENVELOPE = 0x00     # Attack, Hold, Decay envelope
+    ADSR_ENVELOPE = 0x01    # Attack, Decay, Sustain, Release envelope
+    DRUM_ENVELOPE = 0x02    # Drum envelope
+    LFO = 0x03              # Low-Frequency Oscillator
+    TRIG_ENVELOPE = 0x04    # Trigger envelope
+    TRACKING_ENVELOPE = 0x05  # Tracking envelope
+
+
+class M8LFOShape(IntEnum):
+    """LFO oscillator waveform shapes."""
+    # Basic shapes (free-running)
+    TRI = 0x00          # Triangle
+    SIN = 0x01          # Sine
+    RAMP_DOWN = 0x02    # Ramp down
+    RAMP_UP = 0x03      # Ramp up
+    EXP_DN = 0x04       # Exponential down
+    EXP_UP = 0x05       # Exponential up
+    SQR_DN = 0x06       # Square down
+    SQR_UP = 0x07       # Square up
+    RANDOM = 0x08       # Random
+    DRUNK = 0x09        # Drunk walk
+
+    # Triggered shapes
+    TRI_T = 0x0A        # Triangle (triggered)
+    SIN_T = 0x0B        # Sine (triggered)
+    RAMPD_T = 0x0C      # Ramp down (triggered)
+    RAMPU_T = 0x0D      # Ramp up (triggered)
+    EXPD_T = 0x0E       # Exponential down (triggered)
+    EXPU_T = 0x0F       # Exponential up (triggered)
+    SQ_D_T = 0x10       # Square down (triggered)
+    SQ_U_T = 0x11       # Square up (triggered)
+    RAND_T = 0x12       # Random (triggered)
+    DRNK_T = 0x13       # Drunk (triggered)
+
+
+class M8LFOTriggerMode(IntEnum):
+    """LFO trigger mode values."""
+    FREE = 0x00      # Free-running
+    RETRIG = 0x01    # Retrigger on note
+    HOLD = 0x02      # Hold
+    ONCE = 0x03      # One-shot
 
 
 class M8Modulator:
