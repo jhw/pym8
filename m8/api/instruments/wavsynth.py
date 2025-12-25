@@ -165,8 +165,13 @@ class M8Wavsynth(M8Instrument):
         if name:
             self.name = name
 
-    def to_dict(self):
+    def to_dict(self, enum_mode='value'):
         """Export wavsynth parameters to a dictionary.
+
+        Args:
+            enum_mode: How to serialize enum values:
+                      'value' (default) - use integer values
+                      'name' - use enum names as strings (human-readable)
 
         Returns a dict with:
         - name: instrument name
@@ -176,13 +181,32 @@ class M8Wavsynth(M8Instrument):
         result = {
             'name': self.name,
             'params': {},
-            'modulators': self.modulators.to_dict()
+            'modulators': self.modulators.to_dict(enum_mode=enum_mode)
+        }
+
+        # Mapping of parameters to their enum types (for human-readable mode)
+        from m8.api.instrument import M8FilterType, M8LimiterType
+        param_enum_types = {
+            'SHAPE': M8WavShape,
+            'FILTER_TYPE': M8FilterType,
+            'LIMIT': M8LimiterType,
         }
 
         # Export all wavsynth parameters (excluding TYPE and NAME which are handled separately)
         for param in M8WavsynthParam:
             if param != M8WavsynthParam.TYPE and param != M8WavsynthParam.NAME:
-                result['params'][param.name] = self.get(param)
+                value = self.get(param)
+
+                # Convert enum values to names if requested
+                if enum_mode == 'name' and param.name in param_enum_types:
+                    try:
+                        enum_type = param_enum_types[param.name]
+                        value = enum_type(value).name
+                    except (ValueError, KeyError):
+                        # If value doesn't map to enum, keep as integer
+                        pass
+
+                result['params'][param.name] = value
 
         return result
 
@@ -193,6 +217,7 @@ class M8Wavsynth(M8Instrument):
         Args:
             params: Dict with keys: name, params, modulators
                    - params is a dict with M8WavsynthParam names as keys
+                   - param values can be integers or enum names (strings)
                    - modulators is a list of modulator parameter dicts
 
         Returns:
@@ -202,11 +227,29 @@ class M8Wavsynth(M8Instrument):
         name = params.get('name', '')
         instance = cls(name=name)
 
+        # Mapping of parameters to their enum types
+        from m8.api.instrument import M8FilterType, M8LimiterType
+        param_enum_types = {
+            'SHAPE': M8WavShape,
+            'FILTER_TYPE': M8FilterType,
+            'LIMIT': M8LimiterType,
+        }
+
         # Apply parameter overrides
         wavsynth_params = params.get('params', {})
         for param_name, value in wavsynth_params.items():
             try:
                 param_offset = M8WavsynthParam[param_name]
+
+                # Handle string enum names
+                if isinstance(value, str) and param_name in param_enum_types:
+                    try:
+                        enum_type = param_enum_types[param_name]
+                        value = enum_type[value].value
+                    except KeyError:
+                        # Unknown enum name, skip
+                        continue
+
                 instance.set(param_offset, value)
             except KeyError:
                 # Skip unknown parameter names

@@ -543,6 +543,126 @@ class TestSamplerDictSerialization(unittest.TestCase):
             original.modulators[0].get(M8AHDParam.DECAY)
         )
 
+    def test_sampler_to_dict_default_enum_mode(self):
+        """Test sampler to_dict() with default enum_mode='value' returns integer values."""
+        sampler = M8Sampler(name="EnumTest", sample_path="/test.wav")
+        sampler.set(M8SamplerParam.PLAY_MODE, M8PlayMode.FWDLOOP)
+        sampler.set(M8SamplerParam.FILTER_TYPE, M8FilterType.LOWPASS)
+        sampler.set(M8SamplerParam.LIMIT, M8LimiterType.SIN)
+
+        # Export with default enum_mode
+        result = sampler.to_dict()
+
+        # Verify enum values are integers (backward compatibility)
+        self.assertEqual(result['params']['PLAY_MODE'], M8PlayMode.FWDLOOP.value)
+        self.assertEqual(result['params']['FILTER_TYPE'], M8FilterType.LOWPASS.value)
+        self.assertEqual(result['params']['LIMIT'], M8LimiterType.SIN.value)
+        self.assertIsInstance(result['params']['PLAY_MODE'], int)
+        self.assertIsInstance(result['params']['FILTER_TYPE'], int)
+        self.assertIsInstance(result['params']['LIMIT'], int)
+
+    def test_sampler_to_dict_enum_mode_name(self):
+        """Test sampler to_dict() with enum_mode='name' returns human-readable enum names."""
+        sampler = M8Sampler(name="EnumTest", sample_path="/test.wav")
+        sampler.set(M8SamplerParam.PLAY_MODE, M8PlayMode.FWDLOOP)
+        sampler.set(M8SamplerParam.FILTER_TYPE, M8FilterType.LOWPASS)
+        sampler.set(M8SamplerParam.LIMIT, M8LimiterType.SIN)
+
+        # Export with enum_mode='name'
+        result = sampler.to_dict(enum_mode='name')
+
+        # Verify enum values are human-readable strings
+        self.assertEqual(result['params']['PLAY_MODE'], 'FWDLOOP')
+        self.assertEqual(result['params']['FILTER_TYPE'], 'LOWPASS')
+        self.assertEqual(result['params']['LIMIT'], 'SIN')
+        self.assertIsInstance(result['params']['PLAY_MODE'], str)
+        self.assertIsInstance(result['params']['FILTER_TYPE'], str)
+        self.assertIsInstance(result['params']['LIMIT'], str)
+
+    def test_sampler_from_dict_with_integer_values(self):
+        """Test sampler from_dict() accepts integer enum values (backward compatibility)."""
+        params = {
+            'name': 'IntTest',
+            'sample_path': '/test.wav',
+            'params': {
+                'PLAY_MODE': M8PlayMode.OSC.value,
+                'FILTER_TYPE': M8FilterType.HIGHPASS.value,
+                'LIMIT': M8LimiterType.CLIP.value,
+                'CUTOFF': 0x40,
+            },
+            'modulators': []
+        }
+
+        sampler = M8Sampler.from_dict(params)
+
+        # Verify values were set correctly
+        self.assertEqual(sampler.name, 'IntTest')
+        self.assertEqual(sampler.get(M8SamplerParam.PLAY_MODE), M8PlayMode.OSC.value)
+        self.assertEqual(sampler.get(M8SamplerParam.FILTER_TYPE), M8FilterType.HIGHPASS.value)
+        self.assertEqual(sampler.get(M8SamplerParam.LIMIT), M8LimiterType.CLIP.value)
+        self.assertEqual(sampler.get(M8SamplerParam.CUTOFF), 0x40)
+
+    def test_sampler_from_dict_with_string_enum_names(self):
+        """Test sampler from_dict() accepts string enum names (human-readable YAML)."""
+        params = {
+            'name': 'StringTest',
+            'sample_path': '/test.wav',
+            'params': {
+                'PLAY_MODE': 'OSC',
+                'FILTER_TYPE': 'HIGHPASS',
+                'LIMIT': 'CLIP',
+                'CUTOFF': 0x40,
+            },
+            'modulators': []
+        }
+
+        sampler = M8Sampler.from_dict(params)
+
+        # Verify values were set correctly
+        self.assertEqual(sampler.name, 'StringTest')
+        self.assertEqual(sampler.get(M8SamplerParam.PLAY_MODE), M8PlayMode.OSC.value)
+        self.assertEqual(sampler.get(M8SamplerParam.FILTER_TYPE), M8FilterType.HIGHPASS.value)
+        self.assertEqual(sampler.get(M8SamplerParam.LIMIT), M8LimiterType.CLIP.value)
+        self.assertEqual(sampler.get(M8SamplerParam.CUTOFF), 0x40)
+
+    def test_sampler_round_trip_serialization_with_enum_names(self):
+        """Test sampler round-trip: to_dict(enum_mode='name') -> from_dict() -> to_dict()."""
+        # Create original sampler
+        original = M8Sampler(name="RoundTrip", sample_path="/test.wav")
+        original.set(M8SamplerParam.PLAY_MODE, M8PlayMode.REV_PP)
+        original.set(M8SamplerParam.FILTER_TYPE, M8FilterType.BANDPASS)
+        original.set(M8SamplerParam.LIMIT, M8LimiterType.FOLD)
+        original.set(M8SamplerParam.CUTOFF, 0x60)
+        original.set(M8SamplerParam.RESONANCE, 0xA0)
+
+        # Export with enum_mode='name'
+        dict_with_names = original.to_dict(enum_mode='name')
+
+        # Verify enum names are strings
+        self.assertEqual(dict_with_names['params']['PLAY_MODE'], 'REV_PP')
+        self.assertEqual(dict_with_names['params']['FILTER_TYPE'], 'BANDPASS')
+        self.assertEqual(dict_with_names['params']['LIMIT'], 'FOLD')
+
+        # Import from dict
+        restored = M8Sampler.from_dict(dict_with_names)
+
+        # Verify all values match
+        self.assertEqual(restored.name, original.name)
+        self.assertEqual(restored.sample_path, original.sample_path)
+        self.assertEqual(restored.get(M8SamplerParam.PLAY_MODE), original.get(M8SamplerParam.PLAY_MODE))
+        self.assertEqual(restored.get(M8SamplerParam.FILTER_TYPE), original.get(M8SamplerParam.FILTER_TYPE))
+        self.assertEqual(restored.get(M8SamplerParam.LIMIT), original.get(M8SamplerParam.LIMIT))
+        self.assertEqual(restored.get(M8SamplerParam.CUTOFF), original.get(M8SamplerParam.CUTOFF))
+        self.assertEqual(restored.get(M8SamplerParam.RESONANCE), original.get(M8SamplerParam.RESONANCE))
+
+        # Export again with enum_mode='name'
+        dict_restored = restored.to_dict(enum_mode='name')
+
+        # Verify enum names are preserved
+        self.assertEqual(dict_restored['params']['PLAY_MODE'], 'REV_PP')
+        self.assertEqual(dict_restored['params']['FILTER_TYPE'], 'BANDPASS')
+        self.assertEqual(dict_restored['params']['LIMIT'], 'FOLD')
+
 
 if __name__ == '__main__':
     unittest.main()

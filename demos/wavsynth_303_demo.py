@@ -3,9 +3,16 @@
 """
 Wavsynth 303 Demo - Acid bassline-style demo using M8 Wavsynth
 
+This demo demonstrates loading instrument presets from human-readable YAML files.
+The base 303 preset (demos/wavsynth_303_bass.yaml) uses readable enum names like:
+- SHAPE: PULSE12 (instead of integer 0)
+- FILTER_TYPE: LOWPASS (instead of integer 0)
+- Modulator type: AHD_ENVELOPE (instead of integer 0)
+- LFO SHAPE: TRI, TRIGGER_MODE: FREE (instead of integers)
+
 Creates an M8 project with:
 - 16 wavsynth instruments (0x00-0x0F), each with a different wave shape
-- Each instrument has two ADSR modulators (volume and cutoff)
+- Base preset loaded from YAML, then cloned and customized
 - 16 phrases (0x00-0x0F), each with different random note patterns
 - 16 chains (0x00-0x0F), each referencing the corresponding phrase
 - Song arrangement: all 16 chains stacked vertically in track 0
@@ -17,12 +24,11 @@ import random
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape, M8WavsynthModDest
-from m8.api.instrument import M8FilterType, M8LimiterType
-from m8.api.modulator import M8AHDParam, M8ModulatorType
+from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
+from preset_yaml import load_preset_yaml
 
 # Configuration
 PROJECT_NAME = "WAVSYNTH-303"
@@ -54,38 +60,19 @@ WAVE_SHAPES = [
 ]
 
 
-def create_base_303_wavsynth():
-    """Create a base 303-style wavsynth instrument.
+def load_base_303_wavsynth():
+    """Load the base 303-style wavsynth instrument from YAML preset.
 
-    This creates the template instrument with all common parameters
-    configured. Individual variations can clone this and modify the
-    wave shape.
+    This loads the template instrument from demos/wavsynth_303_bass.yaml,
+    which contains human-readable enum names like PULSE12, LOWPASS, etc.
+    Individual variations clone this and modify the wave shape.
 
     Returns:
-        M8Wavsynth configured with 303-style parameters
+        M8Wavsynth configured with 303-style parameters from YAML
     """
-    # Create base wavsynth with common name
-    wavsynth = M8Wavsynth(name="AC-BASE")
-
-    # Set synth parameters
-    wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.PULSE12)  # Default shape
-    wavsynth.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.LOWPASS)
-    wavsynth.set(M8WavsynthParam.CUTOFF, 0x20)       # Low cutoff for filter sweep
-    wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)    # High resonance for 303-style sound
-    wavsynth.set(M8WavsynthParam.AMP, 0x20)          # Amplifier level
-    wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)
-    wavsynth.set(M8WavsynthParam.CHORUS_SEND, 0xC0)  # Chorus send (mixer_mfx)
-    wavsynth.set(M8WavsynthParam.DELAY_SEND, 0x80)   # Delay send
-
-    # Configure first modulator (AHD envelope) for volume envelope
-    wavsynth.modulators[0].destination = M8WavsynthModDest.VOLUME
-
-    # Configure second modulator (AHD envelope) for cutoff sweep
-    wavsynth.modulators[1].destination = M8WavsynthModDest.CUTOFF
-    wavsynth.modulators[1].amount = 0x7F              # Half of default amount
-    wavsynth.modulators[1].set(M8AHDParam.DECAY, 0x40)  # Half of default decay
-
-    return wavsynth
+    # Load preset from YAML file (located in demos directory)
+    preset_path = Path(__file__).parent / "wavsynth_303_bass.yaml"
+    return load_preset_yaml(M8Wavsynth, preset_path)
 
 
 def create_wavsynth_303_project():
@@ -103,8 +90,14 @@ def create_wavsynth_303_project():
     project.metadata.tempo = BPM
     project.metadata.directory = "/Songs/pym8-demos/wavsynth-303/"
 
-    # Create base 303-style wavsynth template
-    base_wavsynth = create_base_303_wavsynth()
+    # Load base 303-style wavsynth template from YAML preset
+    # This demonstrates loading presets with human-readable enum names
+    base_wavsynth = load_base_303_wavsynth()
+    print(f"\nLoaded base preset from: demos/wavsynth_303_bass.yaml")
+    print(f"  Preset demonstrates human-readable YAML with enum names:")
+    print(f"    SHAPE: {M8WavShape(base_wavsynth.get(M8WavsynthParam.SHAPE)).name}")
+    print(f"    FILTER_TYPE: LOWPASS, LIMIT: SIN")
+    print(f"    Modulators: 2x AHD_ENVELOPE (volume & cutoff sweep)")
 
     # Create 16 variations (0x00-0x0F) by cloning and changing wave shape
     for idx in range(16):
@@ -176,6 +169,7 @@ def save_project(project: M8Project):
 
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
+    print(f"  Base preset: Loaded from demos/wavsynth_303_bass.yaml (human-readable YAML)")
     print(f"  Instruments: 16 wavsynth variations (0x00-0x0F) with different wave shapes")
     print(f"  Phrases: 16 unique patterns with random notes (C3/D#3/C4/D#4/C5) and Chance FX")
     print(f"  Chains: 16 chains stacked vertically in track 0")

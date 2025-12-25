@@ -763,6 +763,160 @@ class TestModulatorDictSerialization(unittest.TestCase):
         self.assertEqual(restored[2].get(M8LFOParam.SHAPE), original[2].get(M8LFOParam.SHAPE))
         self.assertEqual(restored[2].get(M8LFOParam.FREQ), original[2].get(M8LFOParam.FREQ))
 
+    def test_modulator_to_dict_default_enum_mode(self):
+        """Test modulator to_dict() with default enum_mode='value' returns integer values."""
+        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
+        mod.destination = 5
+        mod.amount = 0x80
+        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
+        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
+        mod.set(M8LFOParam.FREQ, 0x20)
+
+        # Export with default enum_mode
+        result = mod.to_dict()
+
+        # Verify modulator type is integer
+        self.assertEqual(result['type'], M8ModulatorType.LFO.value)
+        self.assertIsInstance(result['type'], int)
+
+        # Verify LFO parameters are integers
+        self.assertEqual(result['params']['SHAPE'], M8LFOShape.SIN.value)
+        self.assertEqual(result['params']['TRIGGER_MODE'], M8LFOTriggerMode.RETRIG.value)
+        self.assertIsInstance(result['params']['SHAPE'], int)
+        self.assertIsInstance(result['params']['TRIGGER_MODE'], int)
+
+    def test_modulator_to_dict_enum_mode_name(self):
+        """Test modulator to_dict() with enum_mode='name' returns human-readable enum names."""
+        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
+        mod.destination = 5
+        mod.amount = 0x80
+        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
+        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
+        mod.set(M8LFOParam.FREQ, 0x20)
+
+        # Export with enum_mode='name'
+        result = mod.to_dict(enum_mode='name')
+
+        # Verify modulator type is string
+        self.assertEqual(result['type'], 'LFO')
+        self.assertIsInstance(result['type'], str)
+
+        # Verify LFO parameters are strings
+        self.assertEqual(result['params']['SHAPE'], 'SIN')
+        self.assertEqual(result['params']['TRIGGER_MODE'], 'RETRIG')
+        self.assertIsInstance(result['params']['SHAPE'], str)
+        self.assertIsInstance(result['params']['TRIGGER_MODE'], str)
+
+    def test_modulator_from_dict_with_integer_values(self):
+        """Test modulator from_dict() accepts integer enum values (backward compatibility)."""
+        params = {
+            'type': M8ModulatorType.LFO.value,
+            'destination': 5,
+            'amount': 0x80,
+            'params': {
+                'SHAPE': M8LFOShape.RAMP_DOWN.value,
+                'TRIGGER_MODE': M8LFOTriggerMode.HOLD.value,
+                'FREQ': 0x25,
+                'RETRIGGER': 0x00,
+            }
+        }
+
+        mod = M8Modulator.from_dict(params)
+
+        # Verify values were set correctly
+        self.assertEqual(mod.mod_type, M8ModulatorType.LFO.value)
+        self.assertEqual(mod.destination, 5)
+        self.assertEqual(mod.amount, 0x80)
+        self.assertEqual(mod.get(M8LFOParam.SHAPE), M8LFOShape.RAMP_DOWN.value)
+        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), M8LFOTriggerMode.HOLD.value)
+        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x25)
+
+    def test_modulator_from_dict_with_string_enum_names(self):
+        """Test modulator from_dict() accepts string enum names (human-readable YAML)."""
+        params = {
+            'type': 'LFO',
+            'destination': 5,
+            'amount': 0x80,
+            'params': {
+                'SHAPE': 'RAMP_DOWN',
+                'TRIGGER_MODE': 'HOLD',
+                'FREQ': 0x25,
+                'RETRIGGER': 0x00,
+            }
+        }
+
+        mod = M8Modulator.from_dict(params)
+
+        # Verify values were set correctly
+        self.assertEqual(mod.mod_type, M8ModulatorType.LFO.value)
+        self.assertEqual(mod.destination, 5)
+        self.assertEqual(mod.amount, 0x80)
+        self.assertEqual(mod.get(M8LFOParam.SHAPE), M8LFOShape.RAMP_DOWN.value)
+        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), M8LFOTriggerMode.HOLD.value)
+        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x25)
+
+    def test_modulator_round_trip_serialization_with_enum_names(self):
+        """Test modulator round-trip: to_dict(enum_mode='name') -> from_dict() -> to_dict()."""
+        # Create original modulator
+        original = M8Modulator(mod_type=M8ModulatorType.LFO)
+        original.destination = 7
+        original.amount = 0x90
+        original.set(M8LFOParam.SHAPE, M8LFOShape.EXP_UP)
+        original.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.ONCE)
+        original.set(M8LFOParam.FREQ, 0x18)
+
+        # Export with enum_mode='name'
+        dict_with_names = original.to_dict(enum_mode='name')
+
+        # Verify enum names are strings
+        self.assertEqual(dict_with_names['type'], 'LFO')
+        self.assertEqual(dict_with_names['params']['SHAPE'], 'EXP_UP')
+        self.assertEqual(dict_with_names['params']['TRIGGER_MODE'], 'ONCE')
+
+        # Import from dict
+        restored = M8Modulator.from_dict(dict_with_names)
+
+        # Verify all values match
+        self.assertEqual(restored.mod_type, original.mod_type)
+        self.assertEqual(restored.destination, original.destination)
+        self.assertEqual(restored.amount, original.amount)
+        self.assertEqual(restored.get(M8LFOParam.SHAPE), original.get(M8LFOParam.SHAPE))
+        self.assertEqual(restored.get(M8LFOParam.TRIGGER_MODE), original.get(M8LFOParam.TRIGGER_MODE))
+        self.assertEqual(restored.get(M8LFOParam.FREQ), original.get(M8LFOParam.FREQ))
+
+        # Export again with enum_mode='name'
+        dict_restored = restored.to_dict(enum_mode='name')
+
+        # Verify enum names are preserved
+        self.assertEqual(dict_restored['type'], 'LFO')
+        self.assertEqual(dict_restored['params']['SHAPE'], 'EXP_UP')
+        self.assertEqual(dict_restored['params']['TRIGGER_MODE'], 'ONCE')
+
+    def test_modulators_to_dict_enum_mode_name(self):
+        """Test M8Modulators to_dict() passes enum_mode to individual modulators."""
+        modulators = M8Modulators()
+        modulators[0].mod_type = M8ModulatorType.AHD_ENVELOPE
+        modulators[0].destination = 1
+        modulators[2].mod_type = M8ModulatorType.LFO
+        modulators[2].destination = 5
+        modulators[2].set(M8LFOParam.SHAPE, M8LFOShape.RANDOM)
+        modulators[2].set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.FREE)
+
+        # Export with enum_mode='name'
+        result = modulators.to_dict(enum_mode='name')
+
+        # Verify modulator types are strings
+        self.assertEqual(result[0]['type'], 'AHD_ENVELOPE')
+        self.assertEqual(result[2]['type'], 'LFO')
+        self.assertIsInstance(result[0]['type'], str)
+        self.assertIsInstance(result[2]['type'], str)
+
+        # Verify LFO parameters are strings
+        self.assertEqual(result[2]['params']['SHAPE'], 'RANDOM')
+        self.assertEqual(result[2]['params']['TRIGGER_MODE'], 'FREE')
+        self.assertIsInstance(result[2]['params']['SHAPE'], str)
+        self.assertIsInstance(result[2]['params']['TRIGGER_MODE'], str)
+
 
 if __name__ == '__main__':
     unittest.main()

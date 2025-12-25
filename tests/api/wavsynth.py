@@ -156,6 +156,133 @@ class TestM8Wavsynth(unittest.TestCase):
         wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.WT_CRUSH)
         self.assertEqual(wavsynth.get(M8WavsynthParam.SHAPE), M8WavShape.WT_CRUSH)
 
+    def test_to_dict_default_enum_mode(self):
+        """Test to_dict() with default enum_mode='value' returns integer values."""
+        from m8.api.instrument import M8FilterType, M8LimiterType
+
+        wavsynth = M8Wavsynth(name="EnumTest")
+        wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.TRIANGLE)
+        wavsynth.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.LOWPASS)
+        wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)
+
+        # Export with default enum_mode
+        result = wavsynth.to_dict()
+
+        # Verify enum values are integers (backward compatibility)
+        self.assertEqual(result['params']['SHAPE'], M8WavShape.TRIANGLE.value)
+        self.assertEqual(result['params']['FILTER_TYPE'], M8FilterType.LOWPASS.value)
+        self.assertEqual(result['params']['LIMIT'], M8LimiterType.SIN.value)
+        self.assertIsInstance(result['params']['SHAPE'], int)
+        self.assertIsInstance(result['params']['FILTER_TYPE'], int)
+        self.assertIsInstance(result['params']['LIMIT'], int)
+
+    def test_to_dict_enum_mode_name(self):
+        """Test to_dict() with enum_mode='name' returns human-readable enum names."""
+        from m8.api.instrument import M8FilterType, M8LimiterType
+
+        wavsynth = M8Wavsynth(name="EnumTest")
+        wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.TRIANGLE)
+        wavsynth.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.LOWPASS)
+        wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)
+
+        # Export with enum_mode='name'
+        result = wavsynth.to_dict(enum_mode='name')
+
+        # Verify enum values are human-readable strings
+        self.assertEqual(result['params']['SHAPE'], 'TRIANGLE')
+        self.assertEqual(result['params']['FILTER_TYPE'], 'LOWPASS')
+        self.assertEqual(result['params']['LIMIT'], 'SIN')
+        self.assertIsInstance(result['params']['SHAPE'], str)
+        self.assertIsInstance(result['params']['FILTER_TYPE'], str)
+        self.assertIsInstance(result['params']['LIMIT'], str)
+
+    def test_from_dict_with_integer_values(self):
+        """Test from_dict() accepts integer enum values (backward compatibility)."""
+        from m8.api.instrument import M8FilterType, M8LimiterType
+
+        params = {
+            'name': 'IntTest',
+            'params': {
+                'SHAPE': M8WavShape.SAW.value,
+                'FILTER_TYPE': M8FilterType.HIGHPASS.value,
+                'LIMIT': M8LimiterType.CLIP.value,
+                'CUTOFF': 0x40,
+            },
+            'modulators': []
+        }
+
+        wavsynth = M8Wavsynth.from_dict(params)
+
+        # Verify values were set correctly
+        self.assertEqual(wavsynth.name, 'IntTest')
+        self.assertEqual(wavsynth.get(M8WavsynthParam.SHAPE), M8WavShape.SAW.value)
+        self.assertEqual(wavsynth.get(M8WavsynthParam.FILTER_TYPE), M8FilterType.HIGHPASS.value)
+        self.assertEqual(wavsynth.get(M8WavsynthParam.LIMIT), M8LimiterType.CLIP.value)
+        self.assertEqual(wavsynth.get(M8WavsynthParam.CUTOFF), 0x40)
+
+    def test_from_dict_with_string_enum_names(self):
+        """Test from_dict() accepts string enum names (human-readable YAML)."""
+        from m8.api.instrument import M8FilterType, M8LimiterType
+
+        params = {
+            'name': 'StringTest',
+            'params': {
+                'SHAPE': 'SAW',
+                'FILTER_TYPE': 'HIGHPASS',
+                'LIMIT': 'CLIP',
+                'CUTOFF': 0x40,
+            },
+            'modulators': []
+        }
+
+        wavsynth = M8Wavsynth.from_dict(params)
+
+        # Verify values were set correctly
+        self.assertEqual(wavsynth.name, 'StringTest')
+        self.assertEqual(wavsynth.get(M8WavsynthParam.SHAPE), M8WavShape.SAW.value)
+        self.assertEqual(wavsynth.get(M8WavsynthParam.FILTER_TYPE), M8FilterType.HIGHPASS.value)
+        self.assertEqual(wavsynth.get(M8WavsynthParam.LIMIT), M8LimiterType.CLIP.value)
+        self.assertEqual(wavsynth.get(M8WavsynthParam.CUTOFF), 0x40)
+
+    def test_round_trip_serialization_with_enum_names(self):
+        """Test round-trip: to_dict(enum_mode='name') -> from_dict() -> to_dict()."""
+        from m8.api.instrument import M8FilterType, M8LimiterType
+
+        # Create original wavsynth
+        original = M8Wavsynth(name="RoundTrip")
+        original.set(M8WavsynthParam.SHAPE, M8WavShape.SINE)
+        original.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.BANDPASS)
+        original.set(M8WavsynthParam.LIMIT, M8LimiterType.FOLD)
+        original.set(M8WavsynthParam.CUTOFF, 0x60)
+        original.set(M8WavsynthParam.RESONANCE, 0xA0)
+
+        # Export with enum_mode='name'
+        dict_with_names = original.to_dict(enum_mode='name')
+
+        # Verify enum names are strings
+        self.assertEqual(dict_with_names['params']['SHAPE'], 'SINE')
+        self.assertEqual(dict_with_names['params']['FILTER_TYPE'], 'BANDPASS')
+        self.assertEqual(dict_with_names['params']['LIMIT'], 'FOLD')
+
+        # Import from dict
+        restored = M8Wavsynth.from_dict(dict_with_names)
+
+        # Verify all values match
+        self.assertEqual(restored.name, original.name)
+        self.assertEqual(restored.get(M8WavsynthParam.SHAPE), original.get(M8WavsynthParam.SHAPE))
+        self.assertEqual(restored.get(M8WavsynthParam.FILTER_TYPE), original.get(M8WavsynthParam.FILTER_TYPE))
+        self.assertEqual(restored.get(M8WavsynthParam.LIMIT), original.get(M8WavsynthParam.LIMIT))
+        self.assertEqual(restored.get(M8WavsynthParam.CUTOFF), original.get(M8WavsynthParam.CUTOFF))
+        self.assertEqual(restored.get(M8WavsynthParam.RESONANCE), original.get(M8WavsynthParam.RESONANCE))
+
+        # Export again with enum_mode='name'
+        dict_restored = restored.to_dict(enum_mode='name')
+
+        # Verify enum names are preserved
+        self.assertEqual(dict_restored['params']['SHAPE'], 'SINE')
+        self.assertEqual(dict_restored['params']['FILTER_TYPE'], 'BANDPASS')
+        self.assertEqual(dict_restored['params']['LIMIT'], 'FOLD')
+
 
 if __name__ == '__main__':
     unittest.main()

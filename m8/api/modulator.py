@@ -205,8 +205,13 @@ class M8Modulator:
         instance._data = bytearray(self._data)
         return instance
 
-    def to_dict(self):
+    def to_dict(self, enum_mode='value'):
         """Export modulator parameters to a dictionary.
+
+        Args:
+            enum_mode: How to serialize enum values:
+                      'value' (default) - use integer values
+                      'name' - use enum names as strings (human-readable)
 
         Returns a dict with:
         - type: modulator type (int or enum name)
@@ -214,32 +219,47 @@ class M8Modulator:
         - amount: modulation amount (int)
         - params: dict of type-specific parameters using enum names as keys
         """
+        mod_type_value = self.mod_type
+
         result = {
-            'type': self.mod_type,
+            'type': M8ModulatorType(mod_type_value).name if enum_mode == 'name' else mod_type_value,
             'destination': self.destination,
             'amount': self.amount,
             'params': {}
         }
 
-        # Add type-specific parameters based on modulator type
-        mod_type = self.mod_type
+        # Mapping of LFO parameters to their enum types (for human-readable mode)
+        lfo_param_enum_types = {
+            'SHAPE': M8LFOShape,
+            'TRIGGER_MODE': M8LFOTriggerMode,
+        }
 
-        if mod_type == M8ModulatorType.AHD_ENVELOPE:
+        # Add type-specific parameters based on modulator type
+        if mod_type_value == M8ModulatorType.AHD_ENVELOPE:
             for param in M8AHDParam:
                 result['params'][param.name] = self.get(param)
-        elif mod_type == M8ModulatorType.ADSR_ENVELOPE:
+        elif mod_type_value == M8ModulatorType.ADSR_ENVELOPE:
             for param in M8ADSRParam:
                 result['params'][param.name] = self.get(param)
-        elif mod_type == M8ModulatorType.DRUM_ENVELOPE:
+        elif mod_type_value == M8ModulatorType.DRUM_ENVELOPE:
             for param in M8DrumParam:
                 result['params'][param.name] = self.get(param)
-        elif mod_type == M8ModulatorType.LFO:
+        elif mod_type_value == M8ModulatorType.LFO:
             for param in M8LFOParam:
-                result['params'][param.name] = self.get(param)
-        elif mod_type == M8ModulatorType.TRIG_ENVELOPE:
+                value = self.get(param)
+                # Convert enum values to names if requested
+                if enum_mode == 'name' and param.name in lfo_param_enum_types:
+                    try:
+                        enum_type = lfo_param_enum_types[param.name]
+                        value = enum_type(value).name
+                    except (ValueError, KeyError):
+                        # If value doesn't map to enum, keep as integer
+                        pass
+                result['params'][param.name] = value
+        elif mod_type_value == M8ModulatorType.TRIG_ENVELOPE:
             for param in M8TrigParam:
                 result['params'][param.name] = self.get(param)
-        elif mod_type == M8ModulatorType.TRACKING_ENVELOPE:
+        elif mod_type_value == M8ModulatorType.TRACKING_ENVELOPE:
             for param in M8TrackingParam:
                 result['params'][param.name] = self.get(param)
 
@@ -251,13 +271,21 @@ class M8Modulator:
 
         Args:
             params: Dict with keys: type, destination, amount, params
-                   - type can be int or M8ModulatorType enum value
+                   - type can be int, M8ModulatorType enum value, or string name
                    - params is a dict with parameter names as keys
 
         Returns:
             M8Modulator instance configured with given parameters
         """
         mod_type = params.get('type', 0)
+
+        # Handle string enum names (e.g., 'AHD_ENVELOPE')
+        if isinstance(mod_type, str):
+            try:
+                mod_type = M8ModulatorType[mod_type].value
+            except KeyError:
+                # Unknown type name, default to 0
+                mod_type = 0
 
         # Create modulator with specified type
         instance = cls(mod_type=mod_type)
@@ -272,6 +300,12 @@ class M8Modulator:
         type_params = params.get('params', {})
         if not type_params:
             return instance
+
+        # Mapping of LFO parameters to their enum types (for string value parsing)
+        lfo_param_enum_types = {
+            'SHAPE': M8LFOShape,
+            'TRIGGER_MODE': M8LFOTriggerMode,
+        }
 
         # Map parameter names to enum values based on type
         param_enum = None
@@ -293,6 +327,16 @@ class M8Modulator:
                 # Try to get enum member by name
                 try:
                     param_offset = param_enum[param_name]
+
+                    # Handle string enum names for LFO parameters
+                    if mod_type == M8ModulatorType.LFO and isinstance(value, str) and param_name in lfo_param_enum_types:
+                        try:
+                            enum_type = lfo_param_enum_types[param_name]
+                            value = enum_type[value].value
+                        except KeyError:
+                            # Unknown enum name, skip
+                            continue
+
                     instance.set(param_offset, value)
                 except KeyError:
                     # Skip unknown parameter names
@@ -343,9 +387,13 @@ class M8Modulators(list):
 
         return instance
 
-    def to_dict(self):
-        """Export all modulators to a list of dictionaries."""
-        return [mod.to_dict() for mod in self]
+    def to_dict(self, enum_mode='value'):
+        """Export all modulators to a list of dictionaries.
+
+        Args:
+            enum_mode: How to serialize enum values ('value' or 'name')
+        """
+        return [mod.to_dict(enum_mode=enum_mode) for mod in self]
 
     @classmethod
     def from_dict(cls, modulators_list):
