@@ -314,6 +314,7 @@ class M8Instruments(list):
         """Read instruments from binary data."""
         from m8.api.instruments.sampler import M8Sampler, SAMPLER_TYPE_ID
         from m8.api.instruments.wavsynth import M8Wavsynth, WAVSYNTH_TYPE_ID
+        from m8.api.instruments.macrosynth import M8Macrosynth, MACROSYNTH_TYPE_ID
 
         instance = cls.__new__(cls)
         list.__init__(instance)
@@ -326,6 +327,8 @@ class M8Instruments(list):
             instr_type = block_data[0]
             if instr_type == WAVSYNTH_TYPE_ID:
                 instance.append(M8Wavsynth.read(block_data))
+            elif instr_type == MACROSYNTH_TYPE_ID:
+                instance.append(M8Macrosynth.read(block_data))
             elif instr_type == SAMPLER_TYPE_ID:
                 instance.append(M8Sampler.read(block_data))
             elif instr_type == 0xFF:
