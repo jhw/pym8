@@ -276,7 +276,10 @@ The M8 file format is a binary format with fixed offsets for different data sect
 
 ### Additional References
 
-- **[m8-js](https://github.com/whitlockjc/m8-js)** - JavaScript implementation with good format documentation
+- **[m8-js](https://github.com/whitlockjc/m8-js)** - JavaScript implementation with comprehensive enum documentation
+
+  This project is particularly valuable for enum information (FX commands, parameter values, play modes, etc.). However, it targets M8 firmware version 4.0 and is no longer actively maintained. Since the M8 is now at firmware 6.2+, **do not use m8-js for offset information** as binary structure layouts change between versions. The enum data (command codes, parameter ranges, mode values) remains reliable and stable.
+
 - **[m8-files](https://github.com/AlexCharlton/m8-files)** - Original Rust parser that inspired m8-file-parser
 
 ### Official Resources
