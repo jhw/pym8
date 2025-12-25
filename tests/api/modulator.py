@@ -2,6 +2,7 @@ import unittest
 from m8.api.modulator import (
     M8Modulator, M8Modulators,
     M8ModulatorType, M8LFOShape, M8LFOTriggerMode,
+    M8AHDParam, M8ADSRParam, M8DrumParam, M8LFOParam, M8TrigParam, M8TrackingParam,
     BLOCK_SIZE, BLOCK_COUNT,
     DEFAULT_AMOUNT, DEFAULT_DESTINATION, DEFAULT_AHD_DECAY, DEFAULT_LFO_FREQUENCY,
     AHD_ATTACK_OFFSET, AHD_HOLD_OFFSET, AHD_DECAY_OFFSET,
@@ -394,6 +395,187 @@ class TestModulatorEnums(unittest.TestCase):
         mod.set(LFO_TRIGGER_OFFSET, M8LFOTriggerMode.RETRIG)
         self.assertEqual(mod.get(LFO_TRIGGER_OFFSET), 1)
         self.assertEqual(mod.get(LFO_TRIGGER_OFFSET), M8LFOTriggerMode.RETRIG)
+
+
+class TestModulatorParameterEnums(unittest.TestCase):
+    """Tests for modulator parameter enum classes."""
+
+    def test_ahd_param_values(self):
+        """Test M8AHDParam enum has correct offset values."""
+        self.assertEqual(M8AHDParam.ATTACK, 2)
+        self.assertEqual(M8AHDParam.HOLD, 3)
+        self.assertEqual(M8AHDParam.DECAY, 4)
+
+        # Verify count
+        self.assertEqual(len(M8AHDParam), 3)
+
+    def test_ahd_param_usage(self):
+        """Test using M8AHDParam enum with AHD modulator."""
+        mod = M8Modulator(mod_type=M8ModulatorType.AHD_ENVELOPE)
+
+        # Set parameters using enum
+        mod.set(M8AHDParam.ATTACK, 0x20)
+        mod.set(M8AHDParam.HOLD, 0x30)
+        mod.set(M8AHDParam.DECAY, 0x40)
+
+        # Verify values
+        self.assertEqual(mod.get(M8AHDParam.ATTACK), 0x20)
+        self.assertEqual(mod.get(M8AHDParam.HOLD), 0x30)
+        self.assertEqual(mod.get(M8AHDParam.DECAY), 0x40)
+
+    def test_adsr_param_values(self):
+        """Test M8ADSRParam enum has correct offset values."""
+        self.assertEqual(M8ADSRParam.ATTACK, 2)
+        self.assertEqual(M8ADSRParam.DECAY, 3)
+        self.assertEqual(M8ADSRParam.SUSTAIN, 4)
+        self.assertEqual(M8ADSRParam.RELEASE, 5)
+
+        # Verify count
+        self.assertEqual(len(M8ADSRParam), 4)
+
+    def test_adsr_param_usage(self):
+        """Test using M8ADSRParam enum with ADSR modulator."""
+        mod = M8Modulator(mod_type=M8ModulatorType.ADSR_ENVELOPE)
+
+        # Set parameters using enum
+        mod.set(M8ADSRParam.ATTACK, 0x10)
+        mod.set(M8ADSRParam.DECAY, 0x20)
+        mod.set(M8ADSRParam.SUSTAIN, 0x80)
+        mod.set(M8ADSRParam.RELEASE, 0x30)
+
+        # Verify values
+        self.assertEqual(mod.get(M8ADSRParam.ATTACK), 0x10)
+        self.assertEqual(mod.get(M8ADSRParam.DECAY), 0x20)
+        self.assertEqual(mod.get(M8ADSRParam.SUSTAIN), 0x80)
+        self.assertEqual(mod.get(M8ADSRParam.RELEASE), 0x30)
+
+    def test_drum_param_values(self):
+        """Test M8DrumParam enum has correct offset values."""
+        self.assertEqual(M8DrumParam.PEAK, 2)
+        self.assertEqual(M8DrumParam.BODY, 3)
+        self.assertEqual(M8DrumParam.DECAY, 4)
+
+        # Verify count
+        self.assertEqual(len(M8DrumParam), 3)
+
+    def test_drum_param_usage(self):
+        """Test using M8DrumParam enum with Drum modulator."""
+        mod = M8Modulator(mod_type=M8ModulatorType.DRUM_ENVELOPE)
+
+        # Set parameters using enum
+        mod.set(M8DrumParam.PEAK, 0x40)
+        mod.set(M8DrumParam.BODY, 0x50)
+        mod.set(M8DrumParam.DECAY, 0x60)
+
+        # Verify values
+        self.assertEqual(mod.get(M8DrumParam.PEAK), 0x40)
+        self.assertEqual(mod.get(M8DrumParam.BODY), 0x50)
+        self.assertEqual(mod.get(M8DrumParam.DECAY), 0x60)
+
+    def test_lfo_param_values(self):
+        """Test M8LFOParam enum has correct offset values."""
+        self.assertEqual(M8LFOParam.SHAPE, 2)
+        self.assertEqual(M8LFOParam.TRIGGER_MODE, 3)
+        self.assertEqual(M8LFOParam.FREQ, 4)
+        self.assertEqual(M8LFOParam.RETRIGGER, 5)
+
+        # Verify count
+        self.assertEqual(len(M8LFOParam), 4)
+
+    def test_lfo_param_usage(self):
+        """Test using M8LFOParam enum with LFO modulator."""
+        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
+
+        # Set parameters using enum
+        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
+        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
+        mod.set(M8LFOParam.FREQ, 0x20)
+        mod.set(M8LFOParam.RETRIGGER, 0x00)
+
+        # Verify values
+        self.assertEqual(mod.get(M8LFOParam.SHAPE), M8LFOShape.SIN)
+        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), M8LFOTriggerMode.RETRIG)
+        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x20)
+        self.assertEqual(mod.get(M8LFOParam.RETRIGGER), 0x00)
+
+    def test_trig_param_values(self):
+        """Test M8TrigParam enum has correct offset values."""
+        self.assertEqual(M8TrigParam.ATTACK, 2)
+        self.assertEqual(M8TrigParam.HOLD, 3)
+        self.assertEqual(M8TrigParam.DECAY, 4)
+        self.assertEqual(M8TrigParam.SRC, 5)
+
+        # Verify count
+        self.assertEqual(len(M8TrigParam), 4)
+
+    def test_trig_param_usage(self):
+        """Test using M8TrigParam enum with Trig modulator."""
+        mod = M8Modulator(mod_type=M8ModulatorType.TRIG_ENVELOPE)
+
+        # Set parameters using enum
+        mod.set(M8TrigParam.ATTACK, 0x15)
+        mod.set(M8TrigParam.HOLD, 0x25)
+        mod.set(M8TrigParam.DECAY, 0x35)
+        mod.set(M8TrigParam.SRC, 0x01)
+
+        # Verify values
+        self.assertEqual(mod.get(M8TrigParam.ATTACK), 0x15)
+        self.assertEqual(mod.get(M8TrigParam.HOLD), 0x25)
+        self.assertEqual(mod.get(M8TrigParam.DECAY), 0x35)
+        self.assertEqual(mod.get(M8TrigParam.SRC), 0x01)
+
+    def test_tracking_param_values(self):
+        """Test M8TrackingParam enum has correct offset values."""
+        self.assertEqual(M8TrackingParam.SRC, 2)
+        self.assertEqual(M8TrackingParam.LVAL, 3)
+        self.assertEqual(M8TrackingParam.HVAL, 4)
+
+        # Verify count
+        self.assertEqual(len(M8TrackingParam), 3)
+
+    def test_tracking_param_usage(self):
+        """Test using M8TrackingParam enum with Tracking modulator."""
+        mod = M8Modulator(mod_type=M8ModulatorType.TRACKING_ENVELOPE)
+
+        # Set parameters using enum
+        mod.set(M8TrackingParam.SRC, 0x02)
+        mod.set(M8TrackingParam.LVAL, 0x40)
+        mod.set(M8TrackingParam.HVAL, 0xC0)
+
+        # Verify values
+        self.assertEqual(mod.get(M8TrackingParam.SRC), 0x02)
+        self.assertEqual(mod.get(M8TrackingParam.LVAL), 0x40)
+        self.assertEqual(mod.get(M8TrackingParam.HVAL), 0xC0)
+
+    def test_param_serialization(self):
+        """Test that parameter values are preserved through write/read cycle."""
+        # Create modulator with each type and verify serialization
+        test_cases = [
+            (M8ModulatorType.AHD_ENVELOPE, M8AHDParam.ATTACK, 0x20),
+            (M8ModulatorType.ADSR_ENVELOPE, M8ADSRParam.SUSTAIN, 0x80),
+            (M8ModulatorType.DRUM_ENVELOPE, M8DrumParam.PEAK, 0x50),
+            (M8ModulatorType.LFO, M8LFOParam.FREQ, 0x30),
+            (M8ModulatorType.TRIG_ENVELOPE, M8TrigParam.SRC, 0x03),
+            (M8ModulatorType.TRACKING_ENVELOPE, M8TrackingParam.HVAL, 0xA0),
+        ]
+
+        for mod_type, param, value in test_cases:
+            with self.subTest(mod_type=mod_type, param=param):
+                # Create and configure modulator
+                original = M8Modulator(mod_type=mod_type)
+                original.destination = 2
+                original.amount = 0x90
+                original.set(param, value)
+
+                # Write and read
+                binary = original.write()
+                deserialized = M8Modulator.read(binary)
+
+                # Verify parameter preserved
+                self.assertEqual(deserialized.mod_type, mod_type)
+                self.assertEqual(deserialized.destination, 2)
+                self.assertEqual(deserialized.amount, 0x90)
+                self.assertEqual(deserialized.get(param), value)
 
 
 if __name__ == '__main__':

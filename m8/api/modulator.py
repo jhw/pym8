@@ -9,7 +9,7 @@ MODULATOR_COUNT = 4
 TYPE_DEST_OFFSET = 0  # Combined type (high nibble) and destination (low nibble)
 AMOUNT_OFFSET = 1
 
-# Type-specific parameter offsets (from v0.3.1 config)
+# Type-specific parameter offsets (offsets 0-1 are type/dest and amount, shared by all)
 # AHD_ENVELOPE (type 0)
 AHD_ATTACK_OFFSET = 2
 AHD_HOLD_OFFSET = 3
@@ -19,6 +19,7 @@ AHD_DECAY_OFFSET = 4
 LFO_OSCILLATOR_OFFSET = 2
 LFO_TRIGGER_OFFSET = 3
 LFO_FREQUENCY_OFFSET = 4
+LFO_RETRIGGER_OFFSET = 5
 
 # Default values
 DEFAULT_AMOUNT = 0xFF
@@ -79,6 +80,54 @@ class M8LFOTriggerMode(IntEnum):
     RETRIG = 0x01    # Retrigger on note
     HOLD = 0x02      # Hold
     ONCE = 0x03      # One-shot
+
+
+# Modulator Parameter Enums (type-specific parameters at offsets 2+)
+# Note: Offsets 0-1 (type/dest and amount) are common to all modulator types
+
+class M8AHDParam(IntEnum):
+    """AHD Envelope parameters (Attack, Hold, Decay)."""
+    ATTACK = 2
+    HOLD = 3
+    DECAY = 4
+
+
+class M8ADSRParam(IntEnum):
+    """ADSR Envelope parameters (Attack, Decay, Sustain, Release)."""
+    ATTACK = 2
+    DECAY = 3
+    SUSTAIN = 4
+    RELEASE = 5
+
+
+class M8DrumParam(IntEnum):
+    """Drum Envelope parameters."""
+    PEAK = 2
+    BODY = 3
+    DECAY = 4
+
+
+class M8LFOParam(IntEnum):
+    """LFO parameters (Low-Frequency Oscillator)."""
+    SHAPE = 2          # Oscillator waveform shape (see M8LFOShape)
+    TRIGGER_MODE = 3   # Trigger mode (see M8LFOTriggerMode)
+    FREQ = 4           # Frequency
+    RETRIGGER = 5      # Retrigger value
+
+
+class M8TrigParam(IntEnum):
+    """Trigger Envelope parameters."""
+    ATTACK = 2
+    HOLD = 3
+    DECAY = 4
+    SRC = 5            # Source
+
+
+class M8TrackingParam(IntEnum):
+    """Tracking Envelope parameters."""
+    SRC = 2            # Source
+    LVAL = 3           # Low value
+    HVAL = 4           # High value
 
 
 class M8Modulator:

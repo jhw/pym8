@@ -19,6 +19,7 @@ from pathlib import Path
 from m8.api.project import M8Project
 from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape, M8WavsynthModDest
 from m8.api.instrument import M8FilterType, M8LimiterType
+from m8.api.modulator import M8AHDParam
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -87,15 +88,15 @@ def create_wavsynth_303_project():
         wavsynth.set(M8WavsynthParam.CHORUS_SEND, 0xC0)  # Chorus send (mixer_mfx)
         wavsynth.set(M8WavsynthParam.DELAY_SEND, 0x80)   # Delay send
 
-        # Configure first modulator (ADSR) for volume envelope
+        # Configure first modulator (AHD envelope) for volume envelope
         wavsynth.modulators[0].destination = M8WavsynthModDest.VOLUME
 
-        # Configure second modulator (ADSR) for cutoff sweep
+        # Configure second modulator (AHD envelope) for cutoff sweep
         wavsynth.modulators[1].destination = M8WavsynthModDest.CUTOFF
         default_amount = wavsynth.modulators[1].amount
-        default_decay = wavsynth.modulators[1].get(4)
+        default_decay = wavsynth.modulators[1].get(M8AHDParam.DECAY)
         wavsynth.modulators[1].amount = default_amount // 2
-        wavsynth.modulators[1].set(4, default_decay // 2)
+        wavsynth.modulators[1].set(M8AHDParam.DECAY, default_decay // 2)
 
         print(f"  Instrument: {wavsynth.name} (shape={wave_name})")
 
