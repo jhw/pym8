@@ -19,7 +19,7 @@ from pathlib import Path
 from m8.api.project import M8Project
 from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape, M8WavsynthModDest
 from m8.api.instrument import M8FilterType, M8LimiterType
-from m8.api.modulator import M8AHDParam
+from m8.api.modulator import M8AHDParam, M8ModulatorType
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -54,6 +54,78 @@ WAVE_SHAPES = [
 ]
 
 
+def create_303_wavsynth_preset(wave_shape, name_suffix=""):
+    """Create a base 303-style wavsynth preset configuration.
+
+    Args:
+        wave_shape: M8WavShape enum value for waveform
+        name_suffix: Optional suffix for instrument name
+
+    Returns:
+        Dict of instrument parameters suitable for M8Wavsynth.from_dict()
+    """
+    shape_name = M8WavShape(wave_shape).name
+    name = f"AC-{shape_name[:8]}{name_suffix}"
+
+    return {
+        'name': name,
+        'params': {
+            'SHAPE': wave_shape,
+            'FILTER_TYPE': M8FilterType.LOWPASS,
+            'CUTOFF': 0x20,         # Low cutoff for filter sweep
+            'RESONANCE': 0xC0,      # High resonance for 303-style sound
+            'AMP': 0x20,            # Amplifier level
+            'LIMIT': M8LimiterType.SIN,
+            'CHORUS_SEND': 0xC0,    # Chorus send (mixer_mfx)
+            'DELAY_SEND': 0x80,     # Delay send
+        },
+        'modulators': [
+            {
+                'type': M8ModulatorType.AHD_ENVELOPE,
+                'destination': M8WavsynthModDest.VOLUME,
+                'amount': 0xFF,
+                'params': {
+                    'ATTACK': 0x00,
+                    'HOLD': 0x00,
+                    'DECAY': 0x80,
+                }
+            },
+            {
+                'type': M8ModulatorType.AHD_ENVELOPE,
+                'destination': M8WavsynthModDest.CUTOFF,
+                'amount': 0x7F,      # Half of default amount
+                'params': {
+                    'ATTACK': 0x00,
+                    'HOLD': 0x00,
+                    'DECAY': 0x40,   # Half of default decay
+                }
+            },
+            {
+                'type': M8ModulatorType.LFO,
+                'destination': 0,
+                'amount': 0xFF,
+                'params': {
+                    'SHAPE': 0x00,
+                    'TRIGGER_MODE': 0x00,
+                    'FREQ': 0x10,
+                    'RETRIGGER': 0x00,
+                }
+            },
+            {
+                'type': M8ModulatorType.LFO,
+                'destination': 0,
+                'amount': 0xFF,
+                'params': {
+                    'SHAPE': 0x00,
+                    'TRIGGER_MODE': 0x00,
+                    'FREQ': 0x10,
+                    'RETRIGGER': 0x00,
+                }
+            },
+        ]
+    }
+
+
 def create_wavsynth_303_project():
     """Create the Wavsynth 303 M8 project with 16 variations."""
     print(f"Creating Wavsynth 303 demo: {PROJECT_NAME}")
@@ -69,34 +141,19 @@ def create_wavsynth_303_project():
     project.metadata.tempo = BPM
     project.metadata.directory = "/Songs/pym8-demos/wavsynth-303/"
 
-    # Create 16 variations (0x00-0x0F)
+    # Create 16 variations (0x00-0x0F) using parameterization
     for idx in range(16):
         print(f"\n[{idx:02X}] Creating variation {idx + 1}/16")
 
-        # Create wavsynth instrument with unique wave shape
+        # Get wave shape for this instrument
         wave_shape = WAVE_SHAPES[idx]
         wave_name = wave_shape.name
-        wavsynth = M8Wavsynth(name=f"AC-{wave_name[:8]}")  # Truncate to fit M8 name limit
 
-        # Set synth parameters
-        wavsynth.set(M8WavsynthParam.SHAPE, wave_shape)
-        wavsynth.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.LOWPASS)  # Low pass filter
-        wavsynth.set(M8WavsynthParam.CUTOFF, 0x20)       # Low cutoff for filter sweep
-        wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)    # High resonance for 303-style sound
-        wavsynth.set(M8WavsynthParam.AMP, 0x20)          # Amplifier level
-        wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)  # Sine wave limiter
-        wavsynth.set(M8WavsynthParam.CHORUS_SEND, 0xC0)  # Chorus send (mixer_mfx)
-        wavsynth.set(M8WavsynthParam.DELAY_SEND, 0x80)   # Delay send
+        # Create preset configuration dict
+        preset = create_303_wavsynth_preset(wave_shape)
 
-        # Configure first modulator (AHD envelope) for volume envelope
-        wavsynth.modulators[0].destination = M8WavsynthModDest.VOLUME
-
-        # Configure second modulator (AHD envelope) for cutoff sweep
-        wavsynth.modulators[1].destination = M8WavsynthModDest.CUTOFF
-        default_amount = wavsynth.modulators[1].amount
-        default_decay = wavsynth.modulators[1].get(M8AHDParam.DECAY)
-        wavsynth.modulators[1].amount = default_amount // 2
-        wavsynth.modulators[1].set(M8AHDParam.DECAY, default_decay // 2)
+        # Create instrument from preset
+        wavsynth = M8Wavsynth.from_dict(preset)
 
         print(f"  Instrument: {wavsynth.name} (shape={wave_name})")
 

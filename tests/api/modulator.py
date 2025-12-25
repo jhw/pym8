@@ -578,5 +578,191 @@ class TestModulatorParameterEnums(unittest.TestCase):
                 self.assertEqual(deserialized.get(param), value)
 
 
+class TestModulatorDictSerialization(unittest.TestCase):
+    """Tests for modulator dict serialization (to_dict/from_dict)."""
+
+    def test_modulator_to_dict_ahd(self):
+        """Test exporting AHD modulator to dict."""
+        mod = M8Modulator(mod_type=M8ModulatorType.AHD_ENVELOPE)
+        mod.destination = 3
+        mod.amount = 0x90
+        mod.set(M8AHDParam.ATTACK, 0x20)
+        mod.set(M8AHDParam.HOLD, 0x30)
+        mod.set(M8AHDParam.DECAY, 0x40)
+
+        result = mod.to_dict()
+
+        # Check structure
+        self.assertIn('type', result)
+        self.assertIn('destination', result)
+        self.assertIn('amount', result)
+        self.assertIn('params', result)
+
+        # Check values
+        self.assertEqual(result['type'], 0)
+        self.assertEqual(result['destination'], 3)
+        self.assertEqual(result['amount'], 0x90)
+        self.assertEqual(result['params']['ATTACK'], 0x20)
+        self.assertEqual(result['params']['HOLD'], 0x30)
+        self.assertEqual(result['params']['DECAY'], 0x40)
+
+    def test_modulator_to_dict_lfo(self):
+        """Test exporting LFO modulator to dict."""
+        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
+        mod.destination = 5
+        mod.amount = 0x80
+        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
+        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
+        mod.set(M8LFOParam.FREQ, 0x25)
+        mod.set(M8LFOParam.RETRIGGER, 0x00)
+
+        result = mod.to_dict()
+
+        # Check LFO-specific params
+        self.assertEqual(result['type'], 3)
+        self.assertEqual(result['destination'], 5)
+        self.assertEqual(result['params']['SHAPE'], 1)  # SIN
+        self.assertEqual(result['params']['TRIGGER_MODE'], 1)  # RETRIG
+        self.assertEqual(result['params']['FREQ'], 0x25)
+        self.assertEqual(result['params']['RETRIGGER'], 0x00)
+
+    def test_modulator_from_dict_ahd(self):
+        """Test creating AHD modulator from dict."""
+        params = {
+            'type': 0,
+            'destination': 3,
+            'amount': 0x90,
+            'params': {
+                'ATTACK': 0x20,
+                'HOLD': 0x30,
+                'DECAY': 0x40
+            }
+        }
+
+        mod = M8Modulator.from_dict(params)
+
+        # Verify all values
+        self.assertEqual(mod.mod_type, 0)
+        self.assertEqual(mod.destination, 3)
+        self.assertEqual(mod.amount, 0x90)
+        self.assertEqual(mod.get(M8AHDParam.ATTACK), 0x20)
+        self.assertEqual(mod.get(M8AHDParam.HOLD), 0x30)
+        self.assertEqual(mod.get(M8AHDParam.DECAY), 0x40)
+
+    def test_modulator_from_dict_lfo(self):
+        """Test creating LFO modulator from dict."""
+        params = {
+            'type': 3,
+            'destination': 5,
+            'amount': 0x80,
+            'params': {
+                'SHAPE': 1,
+                'TRIGGER_MODE': 1,
+                'FREQ': 0x25,
+                'RETRIGGER': 0x00
+            }
+        }
+
+        mod = M8Modulator.from_dict(params)
+
+        # Verify all values
+        self.assertEqual(mod.mod_type, 3)
+        self.assertEqual(mod.destination, 5)
+        self.assertEqual(mod.amount, 0x80)
+        self.assertEqual(mod.get(M8LFOParam.SHAPE), 1)
+        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), 1)
+        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x25)
+
+    def test_modulator_roundtrip(self):
+        """Test that to_dict -> from_dict preserves all values."""
+        original = M8Modulator(mod_type=M8ModulatorType.ADSR_ENVELOPE)
+        original.destination = 2
+        original.amount = 0xA0
+        original.set(M8ADSRParam.ATTACK, 0x10)
+        original.set(M8ADSRParam.DECAY, 0x20)
+        original.set(M8ADSRParam.SUSTAIN, 0x80)
+        original.set(M8ADSRParam.RELEASE, 0x30)
+
+        # Export and re-import
+        params = original.to_dict()
+        restored = M8Modulator.from_dict(params)
+
+        # Verify everything matches
+        self.assertEqual(restored.mod_type, original.mod_type)
+        self.assertEqual(restored.destination, original.destination)
+        self.assertEqual(restored.amount, original.amount)
+        self.assertEqual(restored.get(M8ADSRParam.ATTACK), original.get(M8ADSRParam.ATTACK))
+        self.assertEqual(restored.get(M8ADSRParam.DECAY), original.get(M8ADSRParam.DECAY))
+        self.assertEqual(restored.get(M8ADSRParam.SUSTAIN), original.get(M8ADSRParam.SUSTAIN))
+        self.assertEqual(restored.get(M8ADSRParam.RELEASE), original.get(M8ADSRParam.RELEASE))
+
+    def test_modulators_to_dict(self):
+        """Test exporting modulators collection to dict."""
+        modulators = M8Modulators()
+        modulators[0].destination = 1
+        modulators[0].set(M8AHDParam.ATTACK, 0x20)
+        modulators[2].destination = 5
+        modulators[2].set(M8LFOParam.FREQ, 0x30)
+
+        result = modulators.to_dict()
+
+        # Check structure
+        self.assertEqual(len(result), 4)
+        self.assertIsInstance(result, list)
+
+        # Check first modulator
+        self.assertEqual(result[0]['destination'], 1)
+        self.assertEqual(result[0]['params']['ATTACK'], 0x20)
+
+        # Check third modulator (LFO)
+        self.assertEqual(result[2]['destination'], 5)
+        self.assertEqual(result[2]['params']['FREQ'], 0x30)
+
+    def test_modulators_from_dict(self):
+        """Test creating modulators collection from dict."""
+        params = [
+            {'type': 0, 'destination': 1, 'amount': 0xFF, 'params': {'ATTACK': 0x20}},
+            {'type': 0, 'destination': 2, 'amount': 0xFF, 'params': {'DECAY': 0x40}},
+            {'type': 3, 'destination': 5, 'amount': 0xFF, 'params': {'FREQ': 0x30}},
+            {'type': 3, 'destination': 6, 'amount': 0xFF, 'params': {'FREQ': 0x40}}
+        ]
+
+        modulators = M8Modulators.from_dict(params)
+
+        # Check count
+        self.assertEqual(len(modulators), 4)
+
+        # Verify first modulator
+        self.assertEqual(modulators[0].destination, 1)
+        self.assertEqual(modulators[0].get(M8AHDParam.ATTACK), 0x20)
+
+        # Verify third modulator
+        self.assertEqual(modulators[2].destination, 5)
+        self.assertEqual(modulators[2].get(M8LFOParam.FREQ), 0x30)
+
+    def test_modulators_roundtrip(self):
+        """Test that modulators to_dict -> from_dict preserves all values."""
+        original = M8Modulators()
+        original[0].destination = 1
+        original[0].set(M8AHDParam.ATTACK, 0x20)
+        original[0].set(M8AHDParam.DECAY, 0x40)
+        original[2].destination = 5
+        original[2].set(M8LFOParam.SHAPE, M8LFOShape.TRI)
+        original[2].set(M8LFOParam.FREQ, 0x35)
+
+        # Export and re-import
+        params = original.to_dict()
+        restored = M8Modulators.from_dict(params)
+
+        # Verify everything matches
+        self.assertEqual(len(restored), len(original))
+        self.assertEqual(restored[0].destination, original[0].destination)
+        self.assertEqual(restored[0].get(M8AHDParam.ATTACK), original[0].get(M8AHDParam.ATTACK))
+        self.assertEqual(restored[0].get(M8AHDParam.DECAY), original[0].get(M8AHDParam.DECAY))
+        self.assertEqual(restored[2].destination, original[2].destination)
+        self.assertEqual(restored[2].get(M8LFOParam.SHAPE), original[2].get(M8LFOParam.SHAPE))
+        self.assertEqual(restored[2].get(M8LFOParam.FREQ), original[2].get(M8LFOParam.FREQ))
+
+
 if __name__ == '__main__':
     unittest.main()

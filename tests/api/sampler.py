@@ -1,7 +1,7 @@
 import unittest
 from m8.api.instruments.sampler import M8Sampler, M8SamplerParam, M8PlayMode, DEFAULT_PARAMETERS
 from m8.api.instrument import M8FilterType, M8LimiterType, MODULATORS_OFFSET
-from m8.api.modulator import M8Modulators
+from m8.api.modulator import M8Modulators, M8AHDParam
 
 
 class TestM8Sampler(unittest.TestCase):
@@ -409,6 +409,139 @@ class TestM8SamplerEnums(unittest.TestCase):
             M8LimiterType.SIN
         )
         self.assertEqual(restored.get(M8SamplerParam.AMP), 0x30)
+
+
+class TestSamplerDictSerialization(unittest.TestCase):
+    """Tests for sampler dict serialization (to_dict/from_dict)."""
+
+    def test_sampler_to_dict(self):
+        """Test exporting sampler to dict."""
+        sampler = M8Sampler(name="KICK", sample_path="/samples/kick.wav")
+        sampler.set(M8SamplerParam.VOLUME, 0xFF)
+        sampler.set(M8SamplerParam.PLAY_MODE, M8PlayMode.FWDLOOP)
+        sampler.set(M8SamplerParam.FILTER_TYPE, M8FilterType.LOWPASS)
+        sampler.set(M8SamplerParam.CUTOFF, 0xC0)
+
+        # Configure a modulator
+        sampler.modulators[0].destination = 1
+        sampler.modulators[0].set(M8AHDParam.ATTACK, 0x20)
+
+        result = sampler.to_dict()
+
+        # Check structure
+        self.assertIn('name', result)
+        self.assertIn('sample_path', result)
+        self.assertIn('params', result)
+        self.assertIn('modulators', result)
+
+        # Check values
+        self.assertEqual(result['name'], "KICK")
+        self.assertEqual(result['sample_path'], "/samples/kick.wav")
+        self.assertEqual(result['params']['VOLUME'], 0xFF)
+        self.assertEqual(result['params']['PLAY_MODE'], M8PlayMode.FWDLOOP)
+        self.assertEqual(result['params']['FILTER_TYPE'], M8FilterType.LOWPASS)
+        self.assertEqual(result['params']['CUTOFF'], 0xC0)
+
+        # Check modulators
+        self.assertEqual(len(result['modulators']), 4)
+        self.assertEqual(result['modulators'][0]['destination'], 1)
+        self.assertEqual(result['modulators'][0]['params']['ATTACK'], 0x20)
+
+    def test_sampler_from_dict(self):
+        """Test creating sampler from dict."""
+        params = {
+            'name': "SNARE",
+            'sample_path': "/samples/snare.wav",
+            'params': {
+                'VOLUME': 0xF0,
+                'PLAY_MODE': 2,  # FWDLOOP
+                'FILTER_TYPE': 1,  # LOWPASS
+                'CUTOFF': 0xA0,
+                'RESONANCE': 0x40
+            },
+            'modulators': [
+                {
+                    'type': 0,
+                    'destination': 1,
+                    'amount': 0xFF,
+                    'params': {'ATTACK': 0x10, 'DECAY': 0x40}
+                }
+            ]
+        }
+
+        sampler = M8Sampler.from_dict(params)
+
+        # Verify basic properties
+        self.assertEqual(sampler.name, "SNARE")
+        self.assertEqual(sampler.sample_path, "/samples/snare.wav")
+
+        # Verify parameters
+        self.assertEqual(sampler.get(M8SamplerParam.VOLUME), 0xF0)
+        self.assertEqual(sampler.get(M8SamplerParam.PLAY_MODE), 2)
+        self.assertEqual(sampler.get(M8SamplerParam.FILTER_TYPE), 1)
+        self.assertEqual(sampler.get(M8SamplerParam.CUTOFF), 0xA0)
+        self.assertEqual(sampler.get(M8SamplerParam.RESONANCE), 0x40)
+
+        # Verify modulators
+        self.assertEqual(sampler.modulators[0].destination, 1)
+        self.assertEqual(sampler.modulators[0].get(M8AHDParam.ATTACK), 0x10)
+        self.assertEqual(sampler.modulators[0].get(M8AHDParam.DECAY), 0x40)
+
+    def test_sampler_roundtrip(self):
+        """Test that sampler to_dict -> from_dict preserves all values."""
+        original = M8Sampler(name="TEST", sample_path="/test.wav")
+        original.set(M8SamplerParam.VOLUME, 0xE0)
+        original.set(M8SamplerParam.PLAY_MODE, M8PlayMode.OSC)
+        original.set(M8SamplerParam.FILTER_TYPE, M8FilterType.HIGHPASS)
+        original.set(M8SamplerParam.CUTOFF, 0x80)
+        original.set(M8SamplerParam.LIMIT, M8LimiterType.SIN)
+
+        # Configure modulators
+        original.modulators[0].destination = 2
+        original.modulators[0].set(M8AHDParam.ATTACK, 0x15)
+        original.modulators[0].set(M8AHDParam.DECAY, 0x50)
+
+        # Export and re-import
+        params = original.to_dict()
+        restored = M8Sampler.from_dict(params)
+
+        # Verify everything matches
+        self.assertEqual(restored.name, original.name)
+        self.assertEqual(restored.sample_path, original.sample_path)
+        self.assertEqual(
+            restored.get(M8SamplerParam.VOLUME),
+            original.get(M8SamplerParam.VOLUME)
+        )
+        self.assertEqual(
+            restored.get(M8SamplerParam.PLAY_MODE),
+            original.get(M8SamplerParam.PLAY_MODE)
+        )
+        self.assertEqual(
+            restored.get(M8SamplerParam.FILTER_TYPE),
+            original.get(M8SamplerParam.FILTER_TYPE)
+        )
+        self.assertEqual(
+            restored.get(M8SamplerParam.CUTOFF),
+            original.get(M8SamplerParam.CUTOFF)
+        )
+        self.assertEqual(
+            restored.get(M8SamplerParam.LIMIT),
+            original.get(M8SamplerParam.LIMIT)
+        )
+
+        # Verify modulators
+        self.assertEqual(
+            restored.modulators[0].destination,
+            original.modulators[0].destination
+        )
+        self.assertEqual(
+            restored.modulators[0].get(M8AHDParam.ATTACK),
+            original.modulators[0].get(M8AHDParam.ATTACK)
+        )
+        self.assertEqual(
+            restored.modulators[0].get(M8AHDParam.DECAY),
+            original.modulators[0].get(M8AHDParam.DECAY)
+        )
 
 
 if __name__ == '__main__':

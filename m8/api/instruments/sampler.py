@@ -122,6 +122,64 @@ class M8Sampler(M8Instrument):
         path_bytes = _write_fixed_string(value, SAMPLE_PATH_SIZE)
         self._data[SAMPLE_PATH_OFFSET:SAMPLE_PATH_OFFSET + SAMPLE_PATH_SIZE] = path_bytes
 
+    def to_dict(self):
+        """Export sampler parameters to a dictionary.
+
+        Returns a dict with:
+        - name: instrument name
+        - sample_path: path to sample file
+        - params: dict of sampler parameters using M8SamplerParam names as keys
+        - modulators: list of modulator parameter dicts
+        """
+        result = {
+            'name': self.name,
+            'sample_path': self.sample_path,
+            'params': {},
+            'modulators': self.modulators.to_dict()
+        }
+
+        # Export all sampler parameters (excluding TYPE and NAME which are handled separately)
+        for param in M8SamplerParam:
+            if param != M8SamplerParam.TYPE and param != M8SamplerParam.NAME:
+                result['params'][param.name] = self.get(param)
+
+        return result
+
+    @classmethod
+    def from_dict(cls, params):
+        """Create a sampler from a parameter dictionary.
+
+        Args:
+            params: Dict with keys: name, sample_path, params, modulators
+                   - params is a dict with M8SamplerParam names as keys
+                   - modulators is a list of modulator parameter dicts
+
+        Returns:
+            M8Sampler instance configured with given parameters
+        """
+        # Create instance with name and sample_path
+        name = params.get('name', '')
+        sample_path = params.get('sample_path', '')
+        instance = cls(name=name, sample_path=sample_path)
+
+        # Apply parameter overrides
+        sampler_params = params.get('params', {})
+        for param_name, value in sampler_params.items():
+            try:
+                param_offset = M8SamplerParam[param_name]
+                instance.set(param_offset, value)
+            except KeyError:
+                # Skip unknown parameter names
+                pass
+
+        # Apply modulator configuration
+        modulators_list = params.get('modulators')
+        if modulators_list:
+            from m8.api.modulator import M8Modulators
+            instance.modulators = M8Modulators.from_dict(modulators_list)
+
+        return instance
+
     @classmethod
     def read(cls, data):
         """Read instrument from binary data."""

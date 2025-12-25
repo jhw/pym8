@@ -165,6 +165,61 @@ class M8Wavsynth(M8Instrument):
         if name:
             self.name = name
 
+    def to_dict(self):
+        """Export wavsynth parameters to a dictionary.
+
+        Returns a dict with:
+        - name: instrument name
+        - params: dict of wavsynth parameters using M8WavsynthParam names as keys
+        - modulators: list of modulator parameter dicts
+        """
+        result = {
+            'name': self.name,
+            'params': {},
+            'modulators': self.modulators.to_dict()
+        }
+
+        # Export all wavsynth parameters (excluding TYPE and NAME which are handled separately)
+        for param in M8WavsynthParam:
+            if param != M8WavsynthParam.TYPE and param != M8WavsynthParam.NAME:
+                result['params'][param.name] = self.get(param)
+
+        return result
+
+    @classmethod
+    def from_dict(cls, params):
+        """Create a wavsynth from a parameter dictionary.
+
+        Args:
+            params: Dict with keys: name, params, modulators
+                   - params is a dict with M8WavsynthParam names as keys
+                   - modulators is a list of modulator parameter dicts
+
+        Returns:
+            M8Wavsynth instance configured with given parameters
+        """
+        # Create instance with name
+        name = params.get('name', '')
+        instance = cls(name=name)
+
+        # Apply parameter overrides
+        wavsynth_params = params.get('params', {})
+        for param_name, value in wavsynth_params.items():
+            try:
+                param_offset = M8WavsynthParam[param_name]
+                instance.set(param_offset, value)
+            except KeyError:
+                # Skip unknown parameter names
+                pass
+
+        # Apply modulator configuration
+        modulators_list = params.get('modulators')
+        if modulators_list:
+            from m8.api.modulator import M8Modulators
+            instance.modulators = M8Modulators.from_dict(modulators_list)
+
+        return instance
+
     @classmethod
     def read(cls, data):
         """Read instrument from binary data."""

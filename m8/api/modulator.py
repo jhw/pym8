@@ -205,6 +205,101 @@ class M8Modulator:
         instance._data = bytearray(self._data)
         return instance
 
+    def to_dict(self):
+        """Export modulator parameters to a dictionary.
+
+        Returns a dict with:
+        - type: modulator type (int or enum name)
+        - destination: destination parameter (int)
+        - amount: modulation amount (int)
+        - params: dict of type-specific parameters using enum names as keys
+        """
+        result = {
+            'type': self.mod_type,
+            'destination': self.destination,
+            'amount': self.amount,
+            'params': {}
+        }
+
+        # Add type-specific parameters based on modulator type
+        mod_type = self.mod_type
+
+        if mod_type == M8ModulatorType.AHD_ENVELOPE:
+            for param in M8AHDParam:
+                result['params'][param.name] = self.get(param)
+        elif mod_type == M8ModulatorType.ADSR_ENVELOPE:
+            for param in M8ADSRParam:
+                result['params'][param.name] = self.get(param)
+        elif mod_type == M8ModulatorType.DRUM_ENVELOPE:
+            for param in M8DrumParam:
+                result['params'][param.name] = self.get(param)
+        elif mod_type == M8ModulatorType.LFO:
+            for param in M8LFOParam:
+                result['params'][param.name] = self.get(param)
+        elif mod_type == M8ModulatorType.TRIG_ENVELOPE:
+            for param in M8TrigParam:
+                result['params'][param.name] = self.get(param)
+        elif mod_type == M8ModulatorType.TRACKING_ENVELOPE:
+            for param in M8TrackingParam:
+                result['params'][param.name] = self.get(param)
+
+        return result
+
+    @classmethod
+    def from_dict(cls, params):
+        """Create a modulator from a parameter dictionary.
+
+        Args:
+            params: Dict with keys: type, destination, amount, params
+                   - type can be int or M8ModulatorType enum value
+                   - params is a dict with parameter names as keys
+
+        Returns:
+            M8Modulator instance configured with given parameters
+        """
+        mod_type = params.get('type', 0)
+
+        # Create modulator with specified type
+        instance = cls(mod_type=mod_type)
+
+        # Set common parameters
+        if 'destination' in params:
+            instance.destination = params['destination']
+        if 'amount' in params:
+            instance.amount = params['amount']
+
+        # Set type-specific parameters
+        type_params = params.get('params', {})
+        if not type_params:
+            return instance
+
+        # Map parameter names to enum values based on type
+        param_enum = None
+        if mod_type == M8ModulatorType.AHD_ENVELOPE:
+            param_enum = M8AHDParam
+        elif mod_type == M8ModulatorType.ADSR_ENVELOPE:
+            param_enum = M8ADSRParam
+        elif mod_type == M8ModulatorType.DRUM_ENVELOPE:
+            param_enum = M8DrumParam
+        elif mod_type == M8ModulatorType.LFO:
+            param_enum = M8LFOParam
+        elif mod_type == M8ModulatorType.TRIG_ENVELOPE:
+            param_enum = M8TrigParam
+        elif mod_type == M8ModulatorType.TRACKING_ENVELOPE:
+            param_enum = M8TrackingParam
+
+        if param_enum:
+            for param_name, value in type_params.items():
+                # Try to get enum member by name
+                try:
+                    param_offset = param_enum[param_name]
+                    instance.set(param_offset, value)
+                except KeyError:
+                    # Skip unknown parameter names
+                    pass
+
+        return instance
+
     @classmethod
     def read(cls, data):
         """Read modulator from binary data."""
@@ -245,6 +340,32 @@ class M8Modulators(list):
 
         for mod in self:
             instance.append(mod.clone())
+
+        return instance
+
+    def to_dict(self):
+        """Export all modulators to a list of dictionaries."""
+        return [mod.to_dict() for mod in self]
+
+    @classmethod
+    def from_dict(cls, modulators_list):
+        """Create modulators collection from a list of parameter dicts.
+
+        Args:
+            modulators_list: List of dicts, each containing modulator params
+
+        Returns:
+            M8Modulators instance with configured modulators
+        """
+        instance = cls.__new__(cls)
+        list.__init__(instance)
+
+        for mod_params in modulators_list:
+            instance.append(M8Modulator.from_dict(mod_params))
+
+        # Pad to 4 modulators if needed
+        while len(instance) < BLOCK_COUNT:
+            instance.append(M8Modulator())
 
         return instance
 
