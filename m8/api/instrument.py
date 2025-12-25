@@ -57,7 +57,18 @@ class M8Instrument:
     - Modulators at offset 63
     - Version tracking
     - Binary buffer management (_data)
+    - Generic dict serialization (to_dict/from_dict)
+
+    Subclasses should define:
+    - PARAM_ENUM_CLASS: The parameter enum class (e.g., M8WavsynthParam)
+    - PARAM_ENUM_TYPES: Dict mapping parameter names to their enum types
+    - EXTRA_FIELDS: List of additional dict fields beyond 'name' and 'params'
     """
+
+    # Subclasses should override these
+    PARAM_ENUM_CLASS = None
+    PARAM_ENUM_TYPES = {}
+    EXTRA_FIELDS = []
 
     def __init__(self, instrument_type_id, block_size=BLOCK_SIZE):
         """Initialize instrument with type and buffer.
@@ -145,6 +156,140 @@ class M8Instrument:
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
 
         return instance
+
+    def _get_extra_dict_fields(self):
+        """Get extra fields for dict export (subclasses can override).
+
+        Returns:
+            Dict with additional fields beyond 'name', 'params', 'modulators'
+        """
+        return {}
+
+    def _set_extra_dict_fields(self, fields):
+        """Set extra fields from dict import (subclasses can override).
+
+        Args:
+            fields: Dict with additional fields
+        """
+        pass
+
+    def to_dict(self, enum_mode='value'):
+        """Export instrument parameters to a dictionary.
+
+        Args:
+            enum_mode: How to serialize enum values:
+                      'value' (default) - use integer values
+                      'name' - use enum names as strings (human-readable)
+
+        Returns a dict with:
+        - name: instrument name
+        - params: dict of instrument parameters using param enum names as keys
+        - modulators: list of modulator parameter dicts
+        - (additional fields from _get_extra_dict_fields)
+        """
+        if self.PARAM_ENUM_CLASS is None:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} must define PARAM_ENUM_CLASS"
+            )
+
+        result = {
+            'name': self.name,
+            'params': {},
+            'modulators': self.modulators.to_dict(enum_mode=enum_mode)
+        }
+
+        # Add any extra fields from subclass
+        result.update(self._get_extra_dict_fields())
+
+        # Export all parameters (excluding TYPE and NAME which are handled separately)
+        for param in self.PARAM_ENUM_CLASS:
+            param_name = param.name
+            if param_name in ('TYPE', 'NAME'):
+                continue
+
+            value = self.get(param)
+
+            # Convert enum values to names if requested
+            if enum_mode == 'name' and param_name in self.PARAM_ENUM_TYPES:
+                try:
+                    enum_type = self.PARAM_ENUM_TYPES[param_name]
+                    value = enum_type(value).name
+                except (ValueError, KeyError):
+                    # If value doesn't map to enum, keep as integer
+                    pass
+
+            result['params'][param_name] = value
+
+        return result
+
+    @classmethod
+    def from_dict(cls, params):
+        """Create an instrument from a parameter dictionary.
+
+        Args:
+            params: Dict with keys: name, params, modulators
+                   - params is a dict with parameter names as keys
+                   - param values can be integers or enum names (strings)
+                   - modulators is a list of modulator parameter dicts
+
+        Returns:
+            Instrument instance configured with given parameters
+        """
+        if cls.PARAM_ENUM_CLASS is None:
+            raise NotImplementedError(
+                f"{cls.__name__} must define PARAM_ENUM_CLASS"
+            )
+
+        # Extract basic fields
+        name = params.get('name', '')
+
+        # Create instance with basic parameters
+        # Subclasses will handle their specific __init__ parameters
+        instance = cls._create_from_dict(params)
+        instance.name = name
+
+        # Set extra fields (like sample_path for sampler)
+        instance._set_extra_dict_fields(params)
+
+        # Apply parameter overrides
+        instrument_params = params.get('params', {})
+        for param_name, value in instrument_params.items():
+            try:
+                param_offset = cls.PARAM_ENUM_CLASS[param_name]
+
+                # Handle string enum names
+                if isinstance(value, str) and param_name in cls.PARAM_ENUM_TYPES:
+                    try:
+                        enum_type = cls.PARAM_ENUM_TYPES[param_name]
+                        value = enum_type[value].value
+                    except KeyError:
+                        # Unknown enum name, skip
+                        continue
+
+                instance.set(param_offset, value)
+            except KeyError:
+                # Skip unknown parameter names
+                pass
+
+        # Apply modulator configuration
+        modulators_list = params.get('modulators')
+        if modulators_list:
+            instance.modulators = M8Modulators.from_dict(modulators_list)
+
+        return instance
+
+    @classmethod
+    def _create_from_dict(cls, params):
+        """Create instance for from_dict (subclasses can override).
+
+        Args:
+            params: Full params dict
+
+        Returns:
+            New instance of the class
+        """
+        # Default: just call constructor with name
+        return cls(name=params.get('name', ''))
 
 
 class M8Instruments(list):

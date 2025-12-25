@@ -154,6 +154,14 @@ DEFAULT_PARAMETERS = [
 class M8Wavsynth(M8Instrument):
     """M8 WavSynth instrument - wavetable synthesizer."""
 
+    # Configuration for base class dict serialization
+    PARAM_ENUM_CLASS = M8WavsynthParam
+    PARAM_ENUM_TYPES = {
+        'SHAPE': M8WavShape,
+        'FILTER_TYPE': None,  # Will be set below to avoid circular import
+        'LIMIT': None,        # Will be set below to avoid circular import
+    }
+
     def __init__(self, name=""):
         """Initialize a wavsynth instrument with default parameters."""
         super().__init__(WAVSYNTH_TYPE_ID)
@@ -164,6 +172,14 @@ class M8Wavsynth(M8Instrument):
         # Set name if provided
         if name:
             self.name = name
+
+    @classmethod
+    def _setup_enum_types(cls):
+        """Setup enum types (called lazily to avoid circular imports)."""
+        if cls.PARAM_ENUM_TYPES['FILTER_TYPE'] is None:
+            from m8.api.instrument import M8FilterType, M8LimiterType
+            cls.PARAM_ENUM_TYPES['FILTER_TYPE'] = M8FilterType
+            cls.PARAM_ENUM_TYPES['LIMIT'] = M8LimiterType
 
     def to_dict(self, enum_mode='value'):
         """Export wavsynth parameters to a dictionary.
@@ -178,37 +194,8 @@ class M8Wavsynth(M8Instrument):
         - params: dict of wavsynth parameters using M8WavsynthParam names as keys
         - modulators: list of modulator parameter dicts
         """
-        result = {
-            'name': self.name,
-            'params': {},
-            'modulators': self.modulators.to_dict(enum_mode=enum_mode)
-        }
-
-        # Mapping of parameters to their enum types (for human-readable mode)
-        from m8.api.instrument import M8FilterType, M8LimiterType
-        param_enum_types = {
-            'SHAPE': M8WavShape,
-            'FILTER_TYPE': M8FilterType,
-            'LIMIT': M8LimiterType,
-        }
-
-        # Export all wavsynth parameters (excluding TYPE and NAME which are handled separately)
-        for param in M8WavsynthParam:
-            if param != M8WavsynthParam.TYPE and param != M8WavsynthParam.NAME:
-                value = self.get(param)
-
-                # Convert enum values to names if requested
-                if enum_mode == 'name' and param.name in param_enum_types:
-                    try:
-                        enum_type = param_enum_types[param.name]
-                        value = enum_type(value).name
-                    except (ValueError, KeyError):
-                        # If value doesn't map to enum, keep as integer
-                        pass
-
-                result['params'][param.name] = value
-
-        return result
+        self._setup_enum_types()
+        return super().to_dict(enum_mode=enum_mode)
 
     @classmethod
     def from_dict(cls, params):
@@ -223,45 +210,8 @@ class M8Wavsynth(M8Instrument):
         Returns:
             M8Wavsynth instance configured with given parameters
         """
-        # Create instance with name
-        name = params.get('name', '')
-        instance = cls(name=name)
-
-        # Mapping of parameters to their enum types
-        from m8.api.instrument import M8FilterType, M8LimiterType
-        param_enum_types = {
-            'SHAPE': M8WavShape,
-            'FILTER_TYPE': M8FilterType,
-            'LIMIT': M8LimiterType,
-        }
-
-        # Apply parameter overrides
-        wavsynth_params = params.get('params', {})
-        for param_name, value in wavsynth_params.items():
-            try:
-                param_offset = M8WavsynthParam[param_name]
-
-                # Handle string enum names
-                if isinstance(value, str) and param_name in param_enum_types:
-                    try:
-                        enum_type = param_enum_types[param_name]
-                        value = enum_type[value].value
-                    except KeyError:
-                        # Unknown enum name, skip
-                        continue
-
-                instance.set(param_offset, value)
-            except KeyError:
-                # Skip unknown parameter names
-                pass
-
-        # Apply modulator configuration
-        modulators_list = params.get('modulators')
-        if modulators_list:
-            from m8.api.modulator import M8Modulators
-            instance.modulators = M8Modulators.from_dict(modulators_list)
-
-        return instance
+        cls._setup_enum_types()
+        return super(M8Wavsynth, cls).from_dict(params)
 
     @classmethod
     def read(cls, data):

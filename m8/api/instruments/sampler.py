@@ -97,6 +97,14 @@ DEFAULT_PARAMETERS = [
 class M8Sampler(M8Instrument):
     """M8 Sampler instrument - the only instrument type supported."""
 
+    # Configuration for base class dict serialization
+    PARAM_ENUM_CLASS = M8SamplerParam
+    PARAM_ENUM_TYPES = {
+        'PLAY_MODE': M8PlayMode,
+        'FILTER_TYPE': None,  # Will be set below to avoid circular import
+        'LIMIT': None,        # Will be set below to avoid circular import
+    }
+
     def __init__(self, name="", sample_path=""):
         """Initialize a sampler instrument with default parameters."""
         # Initialize base instrument
@@ -111,6 +119,14 @@ class M8Sampler(M8Instrument):
         if sample_path:
             self.sample_path = sample_path
 
+    @classmethod
+    def _setup_enum_types(cls):
+        """Setup enum types (called lazily to avoid circular imports)."""
+        if cls.PARAM_ENUM_TYPES['FILTER_TYPE'] is None:
+            from m8.api.instrument import M8FilterType, M8LimiterType
+            cls.PARAM_ENUM_TYPES['FILTER_TYPE'] = M8FilterType
+            cls.PARAM_ENUM_TYPES['LIMIT'] = M8LimiterType
+
     @property
     def sample_path(self):
         """Get sample path."""
@@ -121,6 +137,23 @@ class M8Sampler(M8Instrument):
         """Set sample path."""
         path_bytes = _write_fixed_string(value, SAMPLE_PATH_SIZE)
         self._data[SAMPLE_PATH_OFFSET:SAMPLE_PATH_OFFSET + SAMPLE_PATH_SIZE] = path_bytes
+
+    def _get_extra_dict_fields(self):
+        """Get extra fields for dict export (sample_path)."""
+        return {'sample_path': self.sample_path}
+
+    def _set_extra_dict_fields(self, fields):
+        """Set extra fields from dict import (sample_path)."""
+        if 'sample_path' in fields:
+            self.sample_path = fields['sample_path']
+
+    @classmethod
+    def _create_from_dict(cls, params):
+        """Create instance for from_dict with sample_path."""
+        return cls(
+            name=params.get('name', ''),
+            sample_path=params.get('sample_path', '')
+        )
 
     def to_dict(self, enum_mode='value'):
         """Export sampler parameters to a dictionary.
@@ -136,38 +169,8 @@ class M8Sampler(M8Instrument):
         - params: dict of sampler parameters using M8SamplerParam names as keys
         - modulators: list of modulator parameter dicts
         """
-        result = {
-            'name': self.name,
-            'sample_path': self.sample_path,
-            'params': {},
-            'modulators': self.modulators.to_dict(enum_mode=enum_mode)
-        }
-
-        # Mapping of parameters to their enum types (for human-readable mode)
-        from m8.api.instrument import M8FilterType, M8LimiterType
-        param_enum_types = {
-            'PLAY_MODE': M8PlayMode,
-            'FILTER_TYPE': M8FilterType,
-            'LIMIT': M8LimiterType,
-        }
-
-        # Export all sampler parameters (excluding TYPE and NAME which are handled separately)
-        for param in M8SamplerParam:
-            if param != M8SamplerParam.TYPE and param != M8SamplerParam.NAME:
-                value = self.get(param)
-
-                # Convert enum values to names if requested
-                if enum_mode == 'name' and param.name in param_enum_types:
-                    try:
-                        enum_type = param_enum_types[param.name]
-                        value = enum_type(value).name
-                    except (ValueError, KeyError):
-                        # If value doesn't map to enum, keep as integer
-                        pass
-
-                result['params'][param.name] = value
-
-        return result
+        self._setup_enum_types()
+        return super().to_dict(enum_mode=enum_mode)
 
     @classmethod
     def from_dict(cls, params):
@@ -182,46 +185,8 @@ class M8Sampler(M8Instrument):
         Returns:
             M8Sampler instance configured with given parameters
         """
-        # Create instance with name and sample_path
-        name = params.get('name', '')
-        sample_path = params.get('sample_path', '')
-        instance = cls(name=name, sample_path=sample_path)
-
-        # Mapping of parameters to their enum types
-        from m8.api.instrument import M8FilterType, M8LimiterType
-        param_enum_types = {
-            'PLAY_MODE': M8PlayMode,
-            'FILTER_TYPE': M8FilterType,
-            'LIMIT': M8LimiterType,
-        }
-
-        # Apply parameter overrides
-        sampler_params = params.get('params', {})
-        for param_name, value in sampler_params.items():
-            try:
-                param_offset = M8SamplerParam[param_name]
-
-                # Handle string enum names
-                if isinstance(value, str) and param_name in param_enum_types:
-                    try:
-                        enum_type = param_enum_types[param_name]
-                        value = enum_type[value].value
-                    except KeyError:
-                        # Unknown enum name, skip
-                        continue
-
-                instance.set(param_offset, value)
-            except KeyError:
-                # Skip unknown parameter names
-                pass
-
-        # Apply modulator configuration
-        modulators_list = params.get('modulators')
-        if modulators_list:
-            from m8.api.modulator import M8Modulators
-            instance.modulators = M8Modulators.from_dict(modulators_list)
-
-        return instance
+        cls._setup_enum_types()
+        return super(M8Sampler, cls).from_dict(params)
 
     @classmethod
     def read(cls, data):
