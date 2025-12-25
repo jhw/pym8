@@ -1,6 +1,6 @@
 import unittest
-from m8.api.instruments.sampler import M8Sampler, DEFAULT_PARAMETERS
-from m8.api.instrument import MODULATORS_OFFSET
+from m8.api.instruments.sampler import M8Sampler, M8SamplerParam, M8PlayMode, DEFAULT_PARAMETERS
+from m8.api.instrument import M8FilterType, M8LimiterType, MODULATORS_OFFSET
 from m8.api.modulator import M8Modulators
 
 
@@ -200,6 +200,215 @@ class TestM8Sampler(unittest.TestCase):
         
         # Check original unchanged
         self.assertEqual(original.modulators[1].destination, 3)
+
+
+class TestM8SamplerEnums(unittest.TestCase):
+    """Test sampler-related enum values and usage."""
+
+    def test_play_mode_enum_values(self):
+        """Test all M8PlayMode enum values are defined correctly."""
+        # Basic modes
+        self.assertEqual(M8PlayMode.FWD, 0x00)
+        self.assertEqual(M8PlayMode.REV, 0x01)
+        self.assertEqual(M8PlayMode.FWDLOOP, 0x02)
+        self.assertEqual(M8PlayMode.REVLOOP, 0x03)
+
+        # Ping-pong modes
+        self.assertEqual(M8PlayMode.FWD_PP, 0x04)
+        self.assertEqual(M8PlayMode.REV_PP, 0x05)
+
+        # Oscillator modes
+        self.assertEqual(M8PlayMode.OSC, 0x06)
+        self.assertEqual(M8PlayMode.OSC_REV, 0x07)
+        self.assertEqual(M8PlayMode.OSC_PP, 0x08)
+
+        # Repitch modes
+        self.assertEqual(M8PlayMode.REPITCH, 0x09)
+        self.assertEqual(M8PlayMode.REP_REV, 0x0A)
+        self.assertEqual(M8PlayMode.REP_PP, 0x0B)
+
+        # BPM sync modes
+        self.assertEqual(M8PlayMode.REP_BPM, 0x0C)
+        self.assertEqual(M8PlayMode.BPM_REV, 0x0D)
+        self.assertEqual(M8PlayMode.BPM_PP, 0x0E)
+
+        # Verify total count
+        self.assertEqual(len(M8PlayMode), 15)
+
+    def test_play_mode_default(self):
+        """Test that default play mode is FWD (0x00)."""
+        sampler = M8Sampler()
+        self.assertEqual(sampler.get(M8SamplerParam.PLAY_MODE), M8PlayMode.FWD)
+
+    def test_play_mode_set_and_get(self):
+        """Test setting and getting different play modes."""
+        sampler = M8Sampler(name="TEST")
+
+        # Test each mode
+        test_modes = [
+            M8PlayMode.REV,
+            M8PlayMode.FWDLOOP,
+            M8PlayMode.OSC,
+            M8PlayMode.REPITCH,
+            M8PlayMode.BPM_PP,
+        ]
+
+        for mode in test_modes:
+            sampler.set(M8SamplerParam.PLAY_MODE, mode)
+            self.assertEqual(sampler.get(M8SamplerParam.PLAY_MODE), mode)
+
+    def test_play_mode_serialization(self):
+        """Test that play mode is preserved through write/read cycle."""
+        original = M8Sampler(name="LOOP-TEST")
+        original.set(M8SamplerParam.PLAY_MODE, M8PlayMode.FWDLOOP)
+
+        # Write to binary
+        binary = original.write()
+
+        # Read back
+        deserialized = M8Sampler.read(binary)
+
+        # Verify play mode preserved
+        self.assertEqual(
+            deserialized.get(M8SamplerParam.PLAY_MODE),
+            M8PlayMode.FWDLOOP
+        )
+
+    def test_filter_type_enum_values(self):
+        """Test all M8FilterType enum values are defined correctly."""
+        self.assertEqual(M8FilterType.OFF, 0x00)
+        self.assertEqual(M8FilterType.LOWPASS, 0x01)
+        self.assertEqual(M8FilterType.HIGHPASS, 0x02)
+        self.assertEqual(M8FilterType.BANDPASS, 0x03)
+        self.assertEqual(M8FilterType.BANDSTOP, 0x04)
+        self.assertEqual(M8FilterType.LP_HP, 0x05)
+        self.assertEqual(M8FilterType.ZDF_LP, 0x06)
+        self.assertEqual(M8FilterType.ZDF_HP, 0x07)
+
+        # Verify total count
+        self.assertEqual(len(M8FilterType), 8)
+
+    def test_filter_type_set_and_get(self):
+        """Test setting and getting filter types."""
+        sampler = M8Sampler(name="FILTER")
+
+        # Test different filter types
+        test_filters = [
+            M8FilterType.OFF,
+            M8FilterType.LOWPASS,
+            M8FilterType.HIGHPASS,
+            M8FilterType.BANDPASS,
+            M8FilterType.ZDF_LP,
+        ]
+
+        for filter_type in test_filters:
+            sampler.set(M8SamplerParam.FILTER_TYPE, filter_type)
+            self.assertEqual(sampler.get(M8SamplerParam.FILTER_TYPE), filter_type)
+
+    def test_filter_type_serialization(self):
+        """Test that filter type is preserved through write/read cycle."""
+        original = M8Sampler(name="LP-FILTER")
+        original.set(M8SamplerParam.FILTER_TYPE, M8FilterType.LOWPASS)
+        original.set(M8SamplerParam.CUTOFF, 0xC0)
+        original.set(M8SamplerParam.RESONANCE, 0x40)
+
+        # Write to binary
+        binary = original.write()
+
+        # Read back
+        deserialized = M8Sampler.read(binary)
+
+        # Verify filter settings preserved
+        self.assertEqual(
+            deserialized.get(M8SamplerParam.FILTER_TYPE),
+            M8FilterType.LOWPASS
+        )
+        self.assertEqual(deserialized.get(M8SamplerParam.CUTOFF), 0xC0)
+        self.assertEqual(deserialized.get(M8SamplerParam.RESONANCE), 0x40)
+
+    def test_limiter_type_enum_values(self):
+        """Test all M8LimiterType enum values are defined correctly."""
+        self.assertEqual(M8LimiterType.CLIP, 0x00)
+        self.assertEqual(M8LimiterType.SIN, 0x01)
+        self.assertEqual(M8LimiterType.FOLD, 0x02)
+        self.assertEqual(M8LimiterType.WRAP, 0x03)
+        self.assertEqual(M8LimiterType.POST, 0x04)
+        self.assertEqual(M8LimiterType.POSTAD, 0x05)
+        self.assertEqual(M8LimiterType.POST_W1, 0x06)
+        self.assertEqual(M8LimiterType.POST_W2, 0x07)
+        self.assertEqual(M8LimiterType.POST_W3, 0x08)
+
+        # Verify total count
+        self.assertEqual(len(M8LimiterType), 9)
+
+    def test_limiter_type_set_and_get(self):
+        """Test setting and getting limiter types."""
+        sampler = M8Sampler(name="LIMIT")
+
+        # Test different limiter types
+        test_limiters = [
+            M8LimiterType.CLIP,
+            M8LimiterType.SIN,
+            M8LimiterType.FOLD,
+            M8LimiterType.WRAP,
+            M8LimiterType.POST,
+        ]
+
+        for limiter_type in test_limiters:
+            sampler.set(M8SamplerParam.LIMIT, limiter_type)
+            self.assertEqual(sampler.get(M8SamplerParam.LIMIT), limiter_type)
+
+    def test_limiter_type_serialization(self):
+        """Test that limiter type is preserved through write/read cycle."""
+        original = M8Sampler(name="SIN-LIMIT")
+        original.set(M8SamplerParam.LIMIT, M8LimiterType.SIN)
+        original.set(M8SamplerParam.AMP, 0x20)
+
+        # Write to binary
+        binary = original.write()
+
+        # Read back
+        deserialized = M8Sampler.read(binary)
+
+        # Verify limiter settings preserved
+        self.assertEqual(
+            deserialized.get(M8SamplerParam.LIMIT),
+            M8LimiterType.SIN
+        )
+        self.assertEqual(deserialized.get(M8SamplerParam.AMP), 0x20)
+
+    def test_combined_enum_usage(self):
+        """Test using all three enums together in a realistic scenario."""
+        sampler = M8Sampler(name="COMBO", sample_path="/samples/test.wav")
+
+        # Configure sampler with all three enums
+        sampler.set(M8SamplerParam.PLAY_MODE, M8PlayMode.FWDLOOP)
+        sampler.set(M8SamplerParam.FILTER_TYPE, M8FilterType.LOWPASS)
+        sampler.set(M8SamplerParam.CUTOFF, 0x80)
+        sampler.set(M8SamplerParam.LIMIT, M8LimiterType.SIN)
+        sampler.set(M8SamplerParam.AMP, 0x30)
+
+        # Write and read
+        binary = sampler.write()
+        restored = M8Sampler.read(binary)
+
+        # Verify all settings
+        self.assertEqual(restored.name, "COMBO")
+        self.assertEqual(restored.sample_path, "/samples/test.wav")
+        self.assertEqual(
+            restored.get(M8SamplerParam.PLAY_MODE),
+            M8PlayMode.FWDLOOP
+        )
+        self.assertEqual(
+            restored.get(M8SamplerParam.FILTER_TYPE),
+            M8FilterType.LOWPASS
+        )
+        self.assertEqual(restored.get(M8SamplerParam.CUTOFF), 0x80)
+        self.assertEqual(
+            restored.get(M8SamplerParam.LIMIT),
+            M8LimiterType.SIN
+        )
+        self.assertEqual(restored.get(M8SamplerParam.AMP), 0x30)
 
 
 if __name__ == '__main__':

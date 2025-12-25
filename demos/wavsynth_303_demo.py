@@ -84,6 +84,8 @@ def create_wavsynth_303_project():
         wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)    # High resonance for 303-style sound
         wavsynth.set(M8WavsynthParam.AMP, 0x20)          # Amplifier level
         wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)  # Sine wave limiter
+        wavsynth.set(M8WavsynthParam.CHORUS_SEND, 0xC0)  # Chorus send (mixer_mfx)
+        wavsynth.set(M8WavsynthParam.DELAY_SEND, 0x80)   # Delay send
 
         # Configure first modulator (ADSR) for volume envelope
         wavsynth.modulators[0].destination = M8WavsynthModDest.VOLUME
