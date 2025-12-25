@@ -1,6 +1,7 @@
 # m8/api/instrument.py
 """M8 Instrument classes - base class and collection."""
 
+from enum import IntEnum
 from m8.api import M8Block, _read_fixed_string, _write_fixed_string
 from m8.api.version import M8Version
 from m8.api.modulator import M8Modulators
@@ -19,6 +20,32 @@ MODULATORS_OFFSET = 63
 # Block sizes
 BLOCK_SIZE = INSTRUMENTS_BLOCK_SIZE
 BLOCK_COUNT = INSTRUMENTS_COUNT
+
+
+# Common Parameter Value Enums (shared across instrument types)
+class M8FilterType(IntEnum):
+    """Filter type values (common across all synthesizer instruments)."""
+    OFF = 0x00       # No filter
+    LOWPASS = 0x01   # Low pass filter
+    HIGHPASS = 0x02  # High pass filter
+    BANDPASS = 0x03  # Band pass filter
+    BANDSTOP = 0x04  # Band stop filter
+    LP_HP = 0x05     # LP > HP filter
+    ZDF_LP = 0x06    # Zero-delay feedback low pass
+    ZDF_HP = 0x07    # Zero-delay feedback high pass
+
+
+class M8LimiterType(IntEnum):
+    """Limiter/clipping type values (common across all synthesizer instruments)."""
+    CLIP = 0x00      # Hard clipping
+    SIN = 0x01       # Sine wave limiting
+    FOLD = 0x02      # Wave folding
+    WRAP = 0x03      # Wave wrapping
+    POST = 0x04      # Post-processing limiter
+    POSTAD = 0x05    # Post-processing with adaptive limiting
+    POST_W1 = 0x06   # Post-processing variant 1
+    POST_W2 = 0x07   # Post-processing variant 2
+    POST_W3 = 0x08   # Post-processing variant 3
 
 
 class M8Instrument:

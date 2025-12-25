@@ -58,6 +58,12 @@ class M8PlayMode(IntEnum):
     OSC = 0x06       # Oscillator
     OSC_REV = 0x07   # Oscillator reverse
     OSC_PP = 0x08    # Oscillator ping-pong
+    REPITCH = 0x09   # Repitch
+    REP_REV = 0x0A   # Repitch reverse
+    REP_PP = 0x0B    # Repitch ping-pong
+    REP_BPM = 0x0C   # Repitch BPM sync
+    BPM_REV = 0x0D   # BPM sync reverse
+    BPM_PP = 0x0E    # BPM sync ping-pong
 
 
 # Modulator Destination Values

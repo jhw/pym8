@@ -18,6 +18,7 @@ from pathlib import Path
 
 from m8.api.project import M8Project
 from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape, M8WavsynthModDest
+from m8.api.instrument import M8FilterType, M8LimiterType
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -51,11 +52,11 @@ def create_wavsynth_303_project():
 
     # Set synth parameters
     wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.SAW)  # Sawtooth wave for classic acid sound
-    wavsynth.set(M8WavsynthParam.FILTER_TYPE, 0x01)  # Low Pass filter
+    wavsynth.set(M8WavsynthParam.FILTER_TYPE, M8FilterType.LOWPASS)  # Low pass filter
     wavsynth.set(M8WavsynthParam.CUTOFF, 0x20)       # Low cutoff for filter sweep
     wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)    # High resonance for 303-style sound
     wavsynth.set(M8WavsynthParam.AMP, 0x20)          # Amplifier level
-    wavsynth.set(M8WavsynthParam.LIMIT, 0x01)        # Limiter amount
+    wavsynth.set(M8WavsynthParam.LIMIT, M8LimiterType.SIN)  # Sine wave limiter
 
     # Configure first modulator (ADSR) for volume envelope
     # Modulator 0 is already ADSR by default (type 0)
