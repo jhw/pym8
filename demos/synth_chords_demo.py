@@ -17,10 +17,9 @@ across multiple tracks. Includes progressions from:
 
 Creates an M8 project with:
 - 1 macrosynth instrument (0x00) with WTX4 shape (0x26) and volume envelope
-- 120 phrases (0x00-0x77) split across 30 chains for triads
-  - 10 rows × 12 phrases per row
-  - Each row: 3 chains (root, 3rd, 5th) × 4 chords
-- 30 chains (0x00-0x1D) - 3 per song row
+- 30 phrases (0x00-0x1D) - 3 per song row (one per voice)
+  - Each phrase contains all 4 chord changes with varied timing
+- 30 chains (0x00-0x1D) - 3 per song row, each loops a single phrase
 - Song arrangement: 10 rows with 3 chains each playing in parallel
 - Various rhythmic patterns (regular and irregular)
 
@@ -45,137 +44,128 @@ OUTPUT_DIR = Path("tmp/demos/synth_chords")
 BPM = 128
 SEED = 42
 
-# 10 famous EDM/electronic chord progressions
-# Each progression has 4 chords split into root, 3rd, and 5th notes
+# 10 famous EDM/electronic chord progressions with mid-phrase changes
+# Each progression defines when each chord plays (step positions across 64 steps)
+# Steps span 0-63 (4 phrases × 16 steps)
 CHORD_PROGRESSIONS = [
-    # Row 0: Classic EDM (I-vi-IV-V in C major)
+    # Row 0: Orbital - Halcyon + On + On (syncopated changes)
     {
-        'name': 'Classic EDM',
-        'song': 'Generic EDM progression',
+        'name': 'Halcyon',
+        'song': 'Orbital - Halcyon + On + On',
         'chords': [
-            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5},
-            {'name': 'A min', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5},
-            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
+            {'name': 'D maj', 'root': M8Note.D_5, 'third': M8Note.FS_5, 'fifth': M8Note.A_5, 'steps': [0, 4, 16, 20, 32, 36, 48, 52]},
+            {'name': 'Bm', 'root': M8Note.B_4, 'third': M8Note.D_5, 'fifth': M8Note.FS_5, 'steps': [8, 12, 24, 28, 40, 44, 56, 60]},
+            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5, 'steps': [6, 22, 38, 54]},
+            {'name': 'A maj', 'root': M8Note.A_4, 'third': M8Note.CS_5, 'fifth': M8Note.E_5, 'steps': [2, 10, 14, 18, 26, 30, 34, 42, 46, 50, 58, 62]},
         ],
-        'pattern': [0, 4, 8, 12]  # Regular quarter notes
     },
 
-    # Row 1: Kraftwerk - Computer World (vi-IV-I-V in C major)
+    # Row 1: Underworld - Born Slippy (fast, driving changes)
+    {
+        'name': 'Born Slippy',
+        'song': 'Underworld - Born Slippy',
+        'chords': [
+            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5, 'steps': [0, 2, 16, 18, 32, 34, 48, 50]},
+            {'name': 'Am', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5, 'steps': [4, 6, 20, 22, 36, 38, 52, 54]},
+            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5, 'steps': [8, 24, 40, 56]},
+            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5, 'steps': [10, 11, 12, 14, 26, 27, 28, 30, 42, 43, 44, 46, 58, 59, 60, 62]},
+        ],
+    },
+
+    # Row 2: Chemical Brothers - Block Rockin' Beats (syncopated breaks)
+    {
+        'name': 'Block Rockin',
+        'song': 'Chemical Brothers - Block Rockin\' Beats',
+        'chords': [
+            {'name': 'Em', 'root': M8Note.E_5, 'third': M8Note.G_5, 'fifth': M8Note.B_5, 'steps': [0, 3, 6, 16, 19, 22, 32, 35, 38, 48, 51, 54]},
+            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5, 'steps': [8, 11, 24, 27, 40, 43, 56, 59]},
+            {'name': 'D maj', 'root': M8Note.D_5, 'third': M8Note.FS_5, 'fifth': M8Note.A_5, 'steps': [13, 29, 45, 61]},
+            {'name': 'Am', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5, 'steps': [15, 31, 47, 63]},
+        ],
+    },
+
+    # Row 3: Boards of Canada - Roygbiv (irregular, nostalgic timing)
+    {
+        'name': 'Roygbiv',
+        'song': 'Boards of Canada - Roygbiv',
+        'chords': [
+            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5, 'steps': [0, 1, 2, 5, 16, 17, 18, 21, 32, 33, 34, 37, 48, 49, 50, 53]},
+            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5, 'steps': [7, 9, 23, 25, 39, 41, 55, 57]},
+            {'name': 'Dm', 'root': M8Note.D_5, 'third': M8Note.F_5, 'fifth': M8Note.A_5, 'steps': [11, 27, 43, 59]},
+            {'name': 'Bb maj', 'root': M8Note.AS_4, 'third': M8Note.D_5, 'fifth': M8Note.F_5, 'steps': [13, 14, 29, 30, 45, 46, 61, 62]},
+        ],
+    },
+
+    # Row 4: LCD Soundsystem - Dance Yrself Clean (off-beat, building)
+    {
+        'name': 'Dance Clean',
+        'song': 'LCD Soundsystem - Dance Yrself Clean',
+        'chords': [
+            {'name': 'Em', 'root': M8Note.E_5, 'third': M8Note.G_5, 'fifth': M8Note.B_5, 'steps': [0, 3, 16, 19, 32, 35, 48, 51]},
+            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5, 'steps': [5, 7, 21, 23, 37, 39, 53, 55]},
+            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5, 'steps': [9, 25, 41, 57]},
+            {'name': 'D maj', 'root': M8Note.D_5, 'third': M8Note.FS_5, 'fifth': M8Note.A_5, 'steps': [12, 14, 15, 28, 30, 31, 44, 46, 47, 60, 62, 63]},
+        ],
+    },
+
+    # Row 5: Daft Punk - Harder Better Faster Stronger (staccato, quick)
+    {
+        'name': 'Harder Better',
+        'song': 'Daft Punk - Harder Better Faster Stronger',
+        'chords': [
+            {'name': 'Eb maj', 'root': M8Note.DS_5, 'third': M8Note.G_5, 'fifth': M8Note.AS_5, 'steps': [0, 2, 4, 16, 18, 20, 32, 34, 36, 48, 50, 52]},
+            {'name': 'Cm', 'root': M8Note.C_5, 'third': M8Note.DS_5, 'fifth': M8Note.G_5, 'steps': [6, 22, 38, 54]},
+            {'name': 'Ab maj', 'root': M8Note.GS_4, 'third': M8Note.C_5, 'fifth': M8Note.DS_5, 'steps': [8, 10, 24, 26, 40, 42, 56, 58]},
+            {'name': 'Bb maj', 'root': M8Note.AS_4, 'third': M8Note.D_5, 'fifth': M8Note.F_5, 'steps': [11, 13, 15, 27, 29, 31, 43, 45, 47, 59, 61, 63]},
+        ],
+    },
+
+    # Row 6: Porter Robinson - Sad Machine (emotional, complex)
+    {
+        'name': 'Sad Machine',
+        'song': 'Porter Robinson - Sad Machine',
+        'chords': [
+            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5, 'steps': [0, 4, 16, 20, 32, 36, 48, 52]},
+            {'name': 'Em', 'root': M8Note.E_5, 'third': M8Note.G_5, 'fifth': M8Note.B_5, 'steps': [6, 7, 22, 23, 38, 39, 54, 55]},
+            {'name': 'Am', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5, 'steps': [9, 11, 25, 27, 41, 43, 57, 59]},
+            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5, 'steps': [13, 14, 15, 29, 30, 31, 45, 46, 47, 61, 62, 63]},
+        ],
+    },
+
+    # Row 7: Flume - Say It (modern, glitchy syncopation)
+    {
+        'name': 'Say It',
+        'song': 'Flume - Say It',
+        'chords': [
+            {'name': 'Gb maj', 'root': M8Note.FS_4, 'third': M8Note.AS_4, 'fifth': M8Note.CS_5, 'steps': [0, 1, 3, 16, 17, 19, 32, 33, 35, 48, 49, 51]},
+            {'name': 'Ebm', 'root': M8Note.DS_5, 'third': M8Note.FS_5, 'fifth': M8Note.AS_5, 'steps': [5, 8, 21, 24, 37, 40, 53, 56]},
+            {'name': 'Db maj', 'root': M8Note.CS_5, 'third': M8Note.F_5, 'fifth': M8Note.GS_5, 'steps': [10, 26, 42, 58]},
+            {'name': 'Ab maj', 'root': M8Note.GS_4, 'third': M8Note.C_5, 'fifth': M8Note.DS_5, 'steps': [12, 14, 28, 30, 44, 46, 60, 62]},
+        ],
+    },
+
+    # Row 8: ODESZA - Say My Name (future bass, uplifting)
+    {
+        'name': 'Say My Name',
+        'song': 'ODESZA - Say My Name',
+        'chords': [
+            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5, 'steps': [0, 2, 5, 16, 18, 21, 32, 34, 37, 48, 50, 53]},
+            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5, 'steps': [7, 23, 39, 55]},
+            {'name': 'Dm', 'root': M8Note.D_5, 'third': M8Note.F_5, 'fifth': M8Note.A_5, 'steps': [9, 11, 25, 27, 41, 43, 57, 59]},
+            {'name': 'Bb maj', 'root': M8Note.AS_4, 'third': M8Note.D_5, 'fifth': M8Note.F_5, 'steps': [12, 13, 15, 28, 29, 31, 44, 45, 47, 60, 61, 63]},
+        ],
+    },
+
+    # Row 9: Kraftwerk - Computer World (staccato, robotic, mechanical)
     {
         'name': 'Computer World',
         'song': 'Kraftwerk - Computer World',
         'chords': [
-            {'name': 'A min', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5},
-            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5},
-            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
+            {'name': 'Am', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5, 'steps': [0, 3, 5, 16, 19, 21, 32, 35, 37, 48, 51, 53]},
+            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5, 'steps': [7, 23, 39, 55]},
+            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5, 'steps': [9, 10, 25, 26, 41, 42, 57, 58]},
+            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5, 'steps': [12, 15, 28, 31, 44, 47, 60, 63]},
         ],
-        'pattern': [0, 3, 6, 9, 12]  # Irregular timing
-    },
-
-    # Row 2: Daft Punk - Around The World (i-VII-VI-VII in A minor)
-    {
-        'name': 'Around The World',
-        'song': 'Daft Punk - Around The World',
-        'chords': [
-            {'name': 'A min', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
-            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
-        ],
-        'pattern': [0, 4, 8, 12]  # Regular
-    },
-
-    # Row 3: Deadmau5 - Strobe (vi-IV-I-V in E major, transposed)
-    {
-        'name': 'Strobe',
-        'song': 'Deadmau5 - Strobe',
-        'chords': [
-            {'name': 'Cs min', 'root': M8Note.CS_5, 'third': M8Note.E_5, 'fifth': M8Note.GS_5},
-            {'name': 'A maj', 'root': M8Note.A_4, 'third': M8Note.CS_5, 'fifth': M8Note.E_5},
-            {'name': 'E maj', 'root': M8Note.E_5, 'third': M8Note.GS_5, 'fifth': M8Note.B_5},
-            {'name': 'B maj', 'root': M8Note.B_4, 'third': M8Note.DS_5, 'fifth': M8Note.FS_5},
-        ],
-        'pattern': [0, 6, 10, 14]  # Irregular
-    },
-
-    # Row 4: Avicii - Levels (I-V-vi-IV in D major)
-    {
-        'name': 'Levels',
-        'song': 'Avicii - Levels',
-        'chords': [
-            {'name': 'D maj', 'root': M8Note.D_5, 'third': M8Note.FS_5, 'fifth': M8Note.A_5},
-            {'name': 'A maj', 'root': M8Note.A_4, 'third': M8Note.CS_5, 'fifth': M8Note.E_5},
-            {'name': 'B min', 'root': M8Note.B_4, 'third': M8Note.D_5, 'fifth': M8Note.FS_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
-        ],
-        'pattern': [0, 4, 8, 12]  # Regular
-    },
-
-    # Row 5: The Prodigy - Breathe (i-VI-III-VII in E minor)
-    {
-        'name': 'Breathe',
-        'song': 'The Prodigy - Breathe',
-        'chords': [
-            {'name': 'E min', 'root': M8Note.E_5, 'third': M8Note.G_5, 'fifth': M8Note.B_5},
-            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
-            {'name': 'D maj', 'root': M8Note.D_5, 'third': M8Note.FS_5, 'fifth': M8Note.A_5},
-        ],
-        'pattern': [0, 2, 5, 8, 11, 14]  # Very irregular
-    },
-
-    # Row 6: Calvin Harris - Feel So Close (vi-IV-I-V in G major)
-    {
-        'name': 'Feel So Close',
-        'song': 'Calvin Harris - Feel So Close',
-        'chords': [
-            {'name': 'E min', 'root': M8Note.E_5, 'third': M8Note.G_5, 'fifth': M8Note.B_5},
-            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
-            {'name': 'D maj', 'root': M8Note.D_5, 'third': M8Note.FS_5, 'fifth': M8Note.A_5},
-        ],
-        'pattern': [0, 4, 8, 12]  # Regular
-    },
-
-    # Row 7: M83 - Midnight City (I-vi-iii-IV in Eb major)
-    {
-        'name': 'Midnight City',
-        'song': 'M83 - Midnight City',
-        'chords': [
-            {'name': 'Eb maj', 'root': M8Note.DS_5, 'third': M8Note.G_5, 'fifth': M8Note.AS_5},
-            {'name': 'C min', 'root': M8Note.C_5, 'third': M8Note.DS_5, 'fifth': M8Note.G_5},
-            {'name': 'G min', 'root': M8Note.G_4, 'third': M8Note.AS_4, 'fifth': M8Note.D_5},
-            {'name': 'Ab maj', 'root': M8Note.GS_4, 'third': M8Note.C_5, 'fifth': M8Note.DS_5},
-        ],
-        'pattern': [0, 3, 7, 11]  # Irregular
-    },
-
-    # Row 8: Justice - D.A.N.C.E. (I-V-vi-iii-IV-I-IV-V in C major)
-    {
-        'name': 'D.A.N.C.E.',
-        'song': 'Justice - D.A.N.C.E.',
-        'chords': [
-            {'name': 'C maj', 'root': M8Note.C_5, 'third': M8Note.E_5, 'fifth': M8Note.G_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
-            {'name': 'A min', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5},
-            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5},
-        ],
-        'pattern': [0, 2, 4, 7, 9, 11, 13, 15]  # Complex timing
-    },
-
-    # Row 9: Röyksopp - Eple (i-VII-VI-V in A minor)
-    {
-        'name': 'Eple',
-        'song': 'Röyksopp - Eple',
-        'chords': [
-            {'name': 'A min', 'root': M8Note.A_4, 'third': M8Note.C_5, 'fifth': M8Note.E_5},
-            {'name': 'G maj', 'root': M8Note.G_4, 'third': M8Note.B_4, 'fifth': M8Note.D_5},
-            {'name': 'F maj', 'root': M8Note.F_4, 'third': M8Note.A_4, 'fifth': M8Note.C_5},
-            {'name': 'E maj', 'root': M8Note.E_5, 'third': M8Note.GS_5, 'fifth': M8Note.B_5},
-        ],
-        'pattern': [0, 5, 9, 13]  # Irregular
     },
 ]
 
@@ -243,33 +233,46 @@ def create_macrosynth_instrument():
     return macrosynth
 
 
-def create_single_note_phrase(note, velocity, pattern):
-    """Create a phrase with a single note playing at specified steps.
+def create_multi_chord_phrase(chords, voice_name, phrase_idx, start_step, end_step):
+    """Create a phrase with multiple chords playing at different steps.
 
     Args:
-        note: The MIDI note to play
-        velocity: Note velocity
-        pattern: List of step positions where notes play
+        chords: List of chord dicts with 'root', 'third', 'fifth', and 'steps' keys
+        voice_name: Which voice to extract ('root', 'third', or 'fifth')
+        phrase_idx: Phrase index (0-3) for velocity variation
+        start_step: Starting global step for this phrase (e.g., 0, 16, 32, 48)
+        end_step: Ending global step for this phrase (exclusive)
 
     Returns:
-        M8Phrase with single note pattern
+        M8Phrase with multiple chord changes
     """
     phrase = M8Phrase()
 
-    for step in pattern:
-        # Vary velocity slightly for dynamics
-        step_velocity = velocity + random.randint(-8, 8)
-        step_velocity = max(0x40, min(0x7F, step_velocity))  # Clamp to reasonable range
+    # Iterate through all chords and place notes if their steps fall in this phrase's range
+    for chord_idx, chord in enumerate(chords):
+        # Get the note for this voice
+        note = chord[voice_name]
 
-        phrase_step = M8PhraseStep(
-            note=note,
-            velocity=step_velocity,
-            instrument=0x00  # Use instrument 0
-        )
+        # Get base velocity for this chord (varies per chord)
+        base_velocity = VELOCITIES[chord_idx]
 
-        # No FX - chords are created by parallel playback
+        # Check which of this chord's steps fall within this phrase's range
+        for global_step in chord['steps']:
+            if start_step <= global_step < end_step:
+                # Calculate local step position within the phrase (0-15)
+                local_step = global_step - start_step
 
-        phrase[step] = phrase_step
+                # Vary velocity slightly for dynamics
+                step_velocity = base_velocity + random.randint(-8, 8)
+                step_velocity = max(0x40, min(0x7F, step_velocity))  # Clamp to reasonable range
+
+                phrase_step = M8PhraseStep(
+                    note=note,
+                    velocity=step_velocity,
+                    instrument=0x00  # Use instrument 0
+                )
+
+                phrase[local_step] = phrase_step
 
     return phrase
 
@@ -280,6 +283,7 @@ def create_synth_chords_project():
     print(f"BPM: {BPM}, Seed: {SEED}")
     print(f"Creating 10 famous EDM chord progressions across 10 rows")
     print(f"Total: 30 chains (3 per row), 120 phrases (12 per row)")
+    print(f"Each row: 64 steps (4 phrases × 16 steps) with chord changes mid-phrase")
 
     # Initialize project
     project = M8Project.initialise()
@@ -302,42 +306,46 @@ def create_synth_chords_project():
         print(f"\n{'='*60}")
         print(f"Row {prog_idx}: {progression['name']}")
         print(f"  Song: {progression['song']}")
-        print(f"  Pattern: {progression['pattern']}")
 
         # Calculate base indices for this progression
         base_chain_idx = prog_idx * NUM_CHAINS  # 3 chains per progression
-        base_phrase_idx = prog_idx * 12  # 12 phrases per progression (3 chains × 4 chords)
+        base_phrase_idx = prog_idx * 12  # 12 phrases per progression (3 voices × 4 phrases)
 
         # Create phrases for each voice (root, 3rd, 5th)
         for voice_idx in range(NUM_CHAINS):
             voice_name = voice_names[voice_idx]
 
-            for chord_idx in range(4):
-                chord = progression['chords'][chord_idx]
-                phrase_idx = base_phrase_idx + (voice_idx * 4) + chord_idx
+            # Create 4 phrases for this voice (16 steps each = 64 total)
+            for phrase_num in range(4):
+                phrase_idx = base_phrase_idx + (voice_idx * 4) + phrase_num
 
-                # Get the note for this voice
-                if voice_name == 'root':
-                    note = chord['root']
-                elif voice_name == 'third':
-                    note = chord['third']
-                else:  # fifth
-                    note = chord['fifth']
+                # Calculate step range for this phrase
+                start_step = phrase_num * 16  # 0, 16, 32, 48
+                end_step = start_step + 16    # 16, 32, 48, 64
 
-                # Create phrase with single note and progression's pattern
-                phrase = create_single_note_phrase(note, VELOCITIES[chord_idx], progression['pattern'])
+                # Create phrase with multiple chord changes
+                phrase = create_multi_chord_phrase(
+                    progression['chords'],
+                    voice_name,
+                    phrase_num,
+                    start_step,
+                    end_step
+                )
                 project.phrases[phrase_idx] = phrase
 
-                print(f"  Phrase 0x{phrase_idx:02X}: {chord['name']} {voice_name} = {M8Note(note).name}")
+                # Count how many notes are in this phrase (skip empty steps)
+                note_count = sum(1 for step in phrase if step.note != 255)
+                print(f"  Phrase 0x{phrase_idx:02X}: {voice_name} steps {start_step}-{end_step-1} ({note_count} notes)")
 
-        # Create 3 chains for this progression
+        # Create 3 chains for this progression (one per voice)
         for voice_idx in range(NUM_CHAINS):
             chain_idx = base_chain_idx + voice_idx
             chain = M8Chain()
 
-            for chord_idx in range(4):
-                phrase_idx = base_phrase_idx + (voice_idx * 4) + chord_idx
-                chain[chord_idx] = M8ChainStep(phrase=phrase_idx, transpose=0x00)
+            # Each chain has 4 steps, pointing to the 4 phrases for this voice
+            for phrase_num in range(4):
+                phrase_idx = base_phrase_idx + (voice_idx * 4) + phrase_num
+                chain[phrase_num] = M8ChainStep(phrase=phrase_idx, transpose=0x00)
 
             project.chains[chain_idx] = chain
 
@@ -346,7 +354,7 @@ def create_synth_chords_project():
             chain_idx = base_chain_idx + voice_idx
             project.song[prog_idx][voice_idx] = chain_idx
 
-        print(f"  Chains: 0x{base_chain_idx:02X}-0x{base_chain_idx+2:02X} at song row {prog_idx}")
+        print(f"  Chains: 0x{base_chain_idx:02X}-0x{base_chain_idx+2:02X} at song row {prog_idx}, 64 steps total")
 
     print(f"\n{'='*60}")
     print(f"Song arrangement: 10 rows × 3 chains (polyphonic chords)")
@@ -367,8 +375,9 @@ def save_project(project: M8Project):
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
     print(f"  Structure: 1 instrument, 120 phrases, 30 chains, 10 song rows")
-    print(f"  Progressions: 10 famous EDM chord progressions")
+    print(f"  Progressions: 10 famous EDM chord progressions with mid-phrase changes")
     print(f"  Rendering: Polyphonic chords across 3 parallel tracks per row")
+    print(f"  Pattern style: Each row has 64 steps (4×16) with syncopated chord changes")
     print(f"  Total length: 10 rows × 64 steps = 640 steps (40 bars)")
 
 
