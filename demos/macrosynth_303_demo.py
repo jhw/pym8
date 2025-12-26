@@ -3,8 +3,8 @@
 """
 Macrosynth 303 Demo - Acid bassline-style demo using M8 Macrosynth
 
-This demo demonstrates loading instrument presets from human-readable YAML files.
-The base 303 preset (demos/macrosynth_303_bass.yaml) uses readable enum names like:
+This demo demonstrates loading instrument presets from human-readable inline YAML.
+The base 303 preset uses readable enum names like:
 - SHAPE: CSAW (instead of integer 0)
 - FILTER_TYPE: LOWPASS (instead of integer 1)
 - Modulator type: AHD_ENVELOPE (instead of integer 0)
@@ -21,6 +21,7 @@ Output: tmp/demos/macrosynth_303/MACROSYNTH-303.m8s
 """
 
 import random
+import yaml
 from pathlib import Path
 
 from m8.api.project import M8Project
@@ -28,7 +29,6 @@ from m8.api.instruments.macrosynth import M8Macrosynth, M8MacrosynthParam, M8Mac
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
-from preset_yaml import load_preset_yaml
 
 # Configuration
 PROJECT_NAME = "MACROSYNTH-303"
@@ -59,20 +59,68 @@ MACRO_SHAPES = [
     M8MacroShape.CLOU,       # 0x0F - Granular cloud
 ]
 
+# 303-style Macrosynth preset (human-readable YAML with enum names)
+PRESET_303_YAML = """
+# M8 Macrosynth Preset - 303-style Acid Bass
+# This preset demonstrates human-readable YAML serialization with enum names
+# instead of opaque integer values.
+
+name: AC-BASS
+params:
+  TRANSPOSE: 0
+  TABLE_TICK: 0
+  VOLUME: 0
+  PITCH: 0
+  FINE_TUNE: 128
+  SHAPE: CSAW              # Oscillator shape - CS80-like sawtooth
+  TIMBRE: 128              # Timbre control (synthesis parameter 1)
+  COLOUR: 128              # Colour control (synthesis parameter 2)
+  DEGRADE: 0               # Bitcrusher/degradation amount
+  REDUX: 0                 # Sample rate reduction amount
+  FILTER_TYPE: LOWPASS     # Filter type - readable enum name
+  CUTOFF: 32               # Low cutoff for filter sweep
+  RESONANCE: 192           # High resonance for 303-style sound
+  AMP: 32
+  LIMIT: SIN               # Limiter type - readable enum name
+  PAN: 128
+  DRY: 192
+  CHORUS_SEND: 192
+  DELAY_SEND: 128
+  REVERB_SEND: 0
+
+# Modulators with readable type and parameter names
+# Only the two AHD envelopes are active - the remaining 2 slots use defaults
+modulators:
+- type: AHD_ENVELOPE       # Readable modulator type
+  destination: VOLUME      # Volume envelope
+  amount: 255
+  params:
+    ATTACK: 0
+    HOLD: 0
+    DECAY: 128
+
+- type: AHD_ENVELOPE       # Second envelope for cutoff sweep
+  destination: CUTOFF      # Cutoff modulation
+  amount: 127
+  params:
+    ATTACK: 0
+    HOLD: 0
+    DECAY: 64
+"""
+
 
 def load_base_303_macrosynth():
-    """Load the base 303-style macrosynth instrument from YAML preset.
+    """Load the base 303-style macrosynth instrument from inline YAML preset.
 
-    This loads the template instrument from demos/macrosynth_303_bass.yaml,
-    which contains human-readable enum names like CSAW, LOWPASS, etc.
+    The template contains human-readable enum names like CSAW, LOWPASS, etc.
     Individual variations clone this and modify the oscillator shape.
 
     Returns:
         M8Macrosynth configured with 303-style parameters from YAML
     """
-    # Load preset from YAML file (located in demos directory)
-    preset_path = Path(__file__).parent / "macrosynth_303_bass.yaml"
-    return load_preset_yaml(M8Macrosynth, preset_path)
+    # Load preset from inline YAML string
+    preset_dict = yaml.safe_load(PRESET_303_YAML)
+    return M8Macrosynth.from_dict(preset_dict)
 
 
 def create_macrosynth_303_project():
@@ -90,10 +138,10 @@ def create_macrosynth_303_project():
     project.metadata.tempo = BPM
     project.metadata.directory = "/Songs/pym8-demos/macrosynth-303/"
 
-    # Load base 303-style macrosynth template from YAML preset
+    # Load base 303-style macrosynth template from inline YAML preset
     # This demonstrates loading presets with human-readable enum names
     base_macrosynth = load_base_303_macrosynth()
-    print(f"\nLoaded base preset from: demos/macrosynth_303_bass.yaml")
+    print(f"\nLoaded base preset from inline YAML")
     print(f"  Preset demonstrates human-readable YAML with enum names:")
     print(f"    SHAPE: {M8MacroShape(base_macrosynth.get(M8MacrosynthParam.SHAPE)).name}")
     print(f"    FILTER_TYPE: LOWPASS, LIMIT: SIN")
@@ -169,7 +217,7 @@ def save_project(project: M8Project):
 
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
-    print(f"  Base preset: Loaded from demos/macrosynth_303_bass.yaml (human-readable YAML)")
+    print(f"  Base preset: Loaded from inline YAML (human-readable with enum names)")
     print(f"  Instruments: 16 macrosynth variations (0x00-0x0F) with different Braids shapes")
     print(f"  Phrases: 16 unique patterns with random notes (C3/D#3/C4/D#4/C5) and Chance FX")
     print(f"  Chains: 16 chains stacked vertically in track 0")

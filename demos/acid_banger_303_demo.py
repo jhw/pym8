@@ -26,6 +26,7 @@ Output: tmp/demos/acid_banger_303/ACID-BANGER-303.m8s
 
 import random
 import shutil
+import yaml
 from pathlib import Path
 from typing import Dict, List
 
@@ -34,7 +35,6 @@ from m8.api.instruments.sampler import M8Sampler
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
-from preset_yaml import load_preset_yaml
 
 from acid_banger_303_patterns import get_random_303_pattern, AcidPattern
 
@@ -56,6 +56,57 @@ MAX_VELOCITY = 0x7F
 # 303 samples (must exist in demos/samples/)
 SAMPLE_303_SAW = "303 VCO SAW.wav"
 SAMPLE_303_SQR = "303 VCO SQR.wav"
+
+# 303-style Sampler preset (human-readable YAML with enum names)
+PRESET_303_YAML = """
+# M8 Sampler Preset - 303-style Acid Bass
+# This preset demonstrates human-readable YAML serialization with enum names
+# instead of opaque integer values.
+# Uses 303 VCO samples for authentic TB-303 sound
+
+name: AC-303
+params:
+  TRANSPOSE: 0
+  TABLE_TICK: 0
+  VOLUME: 0
+  PITCH: 0
+  FINE_TUNE: 128
+  PLAY_MODE: FWD          # Forward playback
+  SLICE: 0
+  START: 0
+  LOOP_START: 0
+  LENGTH: 255             # Full sample length
+  DEGRADE: 0              # No degradation
+  FILTER_TYPE: LOWPASS    # Filter type - readable enum name
+  CUTOFF: 32              # Low cutoff for filter sweep
+  RESONANCE: 192          # High resonance for 303-style sound
+  AMP: 32
+  LIMIT: SIN              # Limiter type - readable enum name
+  PAN: 128
+  DRY: 192
+  CHORUS_SEND: 192
+  DELAY_SEND: 128
+  REVERB_SEND: 0
+
+# Modulators with readable type and parameter names
+# Only the two AHD envelopes are active - the remaining 2 slots use defaults
+modulators:
+- type: AHD_ENVELOPE       # Readable modulator type
+  destination: VOLUME      # Volume envelope
+  amount: 255
+  params:
+    ATTACK: 0
+    HOLD: 0
+    DECAY: 128
+
+- type: AHD_ENVELOPE       # Second envelope for cutoff sweep
+  destination: CUTOFF      # Cutoff modulation
+  amount: 127
+  params:
+    ATTACK: 0
+    HOLD: 0
+    DECAY: 64
+"""
 
 
 def velocity_to_m8(velocity_float: float) -> int:
@@ -117,10 +168,9 @@ def create_phrases_from_303_pattern(pattern: AcidPattern, instrument_idx: int,
 
 
 def load_base_303_sampler(sample_name: str) -> M8Sampler:
-    """Load the base 303-style sampler instrument from YAML preset.
+    """Load the base 303-style sampler instrument from inline YAML preset.
 
-    This loads the template instrument from demos/sampler_303_bass.yaml,
-    which contains human-readable enum names and 303-optimized parameters.
+    The template contains human-readable enum names and 303-optimized parameters.
 
     Args:
         sample_name: Name of the sample file (e.g., "303 VCO SAW.wav")
@@ -128,8 +178,9 @@ def load_base_303_sampler(sample_name: str) -> M8Sampler:
     Returns:
         M8Sampler configured with 303-style parameters from YAML
     """
-    preset_path = Path(__file__).parent / "sampler_303_bass.yaml"
-    sampler = load_preset_yaml(M8Sampler, preset_path)
+    # Load preset from inline YAML string
+    preset_dict = yaml.safe_load(PRESET_303_YAML)
+    sampler = M8Sampler.from_dict(preset_dict)
 
     # Update sample path
     sampler.sample_path = f"samples/{sample_name}"
