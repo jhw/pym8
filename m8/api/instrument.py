@@ -22,6 +22,15 @@ BLOCK_SIZE = INSTRUMENTS_BLOCK_SIZE
 BLOCK_COUNT = INSTRUMENTS_COUNT
 
 
+# Instrument Type Enum
+class M8InstrumentType(IntEnum):
+    """Instrument type IDs."""
+    SAMPLER = 2
+    WAVSYNTH = 3
+    FMSYNTH = 4
+    MACROSYNTH = 5
+
+
 # Common Parameter Value Enums (shared across instrument types)
 class M8FilterType(IntEnum):
     """Filter type values (common across all synthesizer instruments)."""
@@ -231,6 +240,7 @@ class M8Instrument:
                       'name' - use enum names as strings (human-readable)
 
         Returns a dict with:
+        - type: instrument type (as string name or integer value)
         - name: instrument name
         - params: dict of instrument parameters using param enum names as keys
         - modulators: list of modulator parameter dicts
@@ -241,7 +251,21 @@ class M8Instrument:
                 f"{self.__class__.__name__} must define PARAM_ENUM_CLASS"
             )
 
+        # Get instrument type from byte 0
+        type_byte = self._data[TYPE_OFFSET]
+
+        # Serialize type based on enum_mode
+        if enum_mode == 'name':
+            try:
+                type_value = M8InstrumentType(type_byte).name
+            except ValueError:
+                # Unknown type, use integer
+                type_value = type_byte
+        else:
+            type_value = type_byte
+
         result = {
+            'type': type_value,
             'name': self.name,
             'params': {},
             'modulators': self.modulators.to_dict(enum_mode=enum_mode, dest_enum_class=self.MOD_DEST_ENUM_CLASS)
@@ -275,8 +299,13 @@ class M8Instrument:
     def from_dict(cls, params):
         """Create an instrument from a parameter dictionary.
 
+        When called on base M8Instrument class with a 'type' field present,
+        acts as a factory method that creates the appropriate subclass instance.
+        When called on a specific subclass, the 'type' field is optional and ignored.
+
         Args:
-            params: Dict with keys: name, params, modulators
+            params: Dict with keys: type (optional), name, params, modulators
+                   - type: instrument type (string name or integer) - required for factory pattern
                    - params is a dict with parameter names as keys
                    - param values can be integers or enum names (strings)
                    - modulators is a list of modulator parameter dicts
@@ -284,6 +313,38 @@ class M8Instrument:
         Returns:
             Instrument instance configured with given parameters
         """
+        # Factory pattern: if called on base class with type field, dispatch to subclass
+        if cls.__name__ == 'M8Instrument' and 'type' in params:
+            type_value = params['type']
+
+            # Handle both string and integer type values
+            if isinstance(type_value, str):
+                try:
+                    type_id = M8InstrumentType[type_value].value
+                except KeyError:
+                    raise ValueError(f"Unknown instrument type name: {type_value}")
+            else:
+                type_id = type_value
+
+            # Import instrument classes (avoid circular imports)
+            from m8.api.instruments.sampler import M8Sampler, SAMPLER_TYPE_ID
+            from m8.api.instruments.wavsynth import M8Wavsynth, WAVSYNTH_TYPE_ID
+            from m8.api.instruments.macrosynth import M8Macrosynth, MACROSYNTH_TYPE_ID
+            from m8.api.instruments.fmsynth import M8FMSynth, FMSYNTH_TYPE_ID
+
+            # Dispatch to appropriate subclass
+            if type_id == SAMPLER_TYPE_ID:
+                return M8Sampler.from_dict(params)
+            elif type_id == WAVSYNTH_TYPE_ID:
+                return M8Wavsynth.from_dict(params)
+            elif type_id == MACROSYNTH_TYPE_ID:
+                return M8Macrosynth.from_dict(params)
+            elif type_id == FMSYNTH_TYPE_ID:
+                return M8FMSynth.from_dict(params)
+            else:
+                raise ValueError(f"Unknown instrument type ID: {type_id}")
+
+        # Regular subclass instantiation
         if cls.PARAM_ENUM_CLASS is None:
             raise NotImplementedError(
                 f"{cls.__name__} must define PARAM_ENUM_CLASS"
