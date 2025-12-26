@@ -3,19 +3,24 @@
 """
 Synth Chords Demo - EDM chord progression using M8 Wavsynth
 
-Demonstrates creating chord progressions using the ARP (arpeggio) FX command.
+Demonstrates creating chord progressions polyphonically across multiple tracks.
 Uses a classic EDM chord progression: C major - A minor - F major - G major
 (I - vi - IV - V in C major scale)
 
 Creates an M8 project with:
 - 1 wavsynth instrument (0x00) with random shape and volume envelope
-- 4 phrases (0x00-0x03) containing the chord progression
-- 1 chain (0x00) referencing all 4 phrases
-- Song arrangement: chain 0x00 at position [0,0] (top-left)
+- 12 phrases (0x00-0x0B) split across 3 chains for triads
+  - Chain 0 (phrases 00-03): root notes
+  - Chain 1 (phrases 04-07): 3rd notes
+  - Chain 2 (phrases 08-0B): 5th notes
+- 3 chains (0x00-0x02) placed in first row of song matrix
+- Song arrangement: chains at [0,0], [0,1], [0,2] play in parallel
 
-Each chord uses the ARP FX command with values:
-- Major chord: 0x47 (+4 and +7 semitones for major 3rd and perfect 5th)
-- Minor chord: 0x37 (+3 and +7 semitones for minor 3rd and perfect 5th)
+Chords are rendered polyphonically:
+- Phrases 00, 04, 08 play together = C major (C-E-G)
+- Phrases 01, 05, 09 play together = A minor (A-C-E)
+- Phrases 02, 06, 0A play together = F major (F-A-C)
+- Phrases 03, 07, 0B play together = G major (G-B-D)
 
 Output: tmp/demos/synth_chords/SYNTH-CHORDS.m8s
 """
@@ -37,25 +42,40 @@ BPM = 128
 SEED = 42
 
 # Chord progression: C major - A minor - F major - G major (I - vi - IV - V)
-# Root notes for each phrase
-CHORD_ROOTS = [
-    M8Note.C_4,   # Phrase 0: C major
-    M8Note.A_3,   # Phrase 1: A minor
-    M8Note.F_3,   # Phrase 2: F major
-    M8Note.G_3,   # Phrase 3: G major
+# Each chord is split into root, 3rd, and 5th notes
+CHORDS = [
+    # C major: C-E-G
+    {
+        'name': 'C major',
+        'root': M8Note.C_4,
+        'third': M8Note.E_4,
+        'fifth': M8Note.G_4,
+    },
+    # A minor: A-C-E
+    {
+        'name': 'A minor',
+        'root': M8Note.A_3,
+        'third': M8Note.C_4,
+        'fifth': M8Note.E_4,
+    },
+    # F major: F-A-C
+    {
+        'name': 'F major',
+        'root': M8Note.F_3,
+        'third': M8Note.A_3,
+        'fifth': M8Note.C_4,
+    },
+    # G major: G-B-D
+    {
+        'name': 'G major',
+        'root': M8Note.G_3,
+        'third': M8Note.B_3,
+        'fifth': M8Note.D_4,
+    },
 ]
 
-# ARP FX values for chord types
-ARP_MAJOR = 0x47  # +4 and +7 semitones (major 3rd and perfect 5th)
-ARP_MINOR = 0x37  # +3 and +7 semitones (minor 3rd and perfect 5th)
-
-# Chord types for each phrase (True = major, False = minor)
-CHORD_TYPES = [
-    True,   # C major
-    False,  # A minor
-    True,   # F major
-    True,   # G major
-]
+# Number of chains (one per chord voice)
+NUM_CHAINS = 3  # Root, 3rd, 5th
 
 # Velocities for variation (creating dynamics)
 VELOCITIES = [
@@ -111,22 +131,19 @@ def create_wavsynth_instrument(rng):
     return wavsynth, chosen_shape
 
 
-def create_chord_phrase(phrase_idx, root_note, is_major, velocity):
-    """Create a phrase with chord progression using ARP FX.
+def create_single_note_phrase(note, velocity):
+    """Create a phrase with a single note playing on quarter notes.
 
     Args:
-        phrase_idx: Index of the phrase (0-3)
-        root_note: Root note of the chord
-        is_major: True for major chord, False for minor
+        note: The MIDI note to play
         velocity: Note velocity
 
     Returns:
-        M8Phrase with chord pattern
+        M8Phrase with single note pattern
     """
     phrase = M8Phrase()
-    arp_value = ARP_MAJOR if is_major else ARP_MINOR
 
-    # Create chord pattern - play on steps 0, 4, 8, 12 (quarter notes)
+    # Create pattern - play on steps 0, 4, 8, 12 (quarter notes)
     chord_steps = [0, 4, 8, 12]
 
     for step in chord_steps:
@@ -135,13 +152,12 @@ def create_chord_phrase(phrase_idx, root_note, is_major, velocity):
         step_velocity = max(0x40, min(0x7F, step_velocity))  # Clamp to reasonable range
 
         phrase_step = M8PhraseStep(
-            note=root_note,
+            note=note,
             velocity=step_velocity,
             instrument=0x00  # Use instrument 0
         )
 
-        # Add arpeggio FX to create the chord
-        phrase_step.fx[0] = M8FXTuple(key=M8SequenceFX.ARP, value=arp_value)
+        # No FX - chords are created by parallel playback
 
         phrase[step] = phrase_step
 
@@ -153,6 +169,7 @@ def create_synth_chords_project():
     print(f"Creating Synth Chords demo: {PROJECT_NAME}")
     print(f"BPM: {BPM}, Seed: {SEED}")
     print(f"Chord progression: C major - A minor - F major - G major (I-vi-IV-V)")
+    print(f"Rendering chords polyphonically across {NUM_CHAINS} parallel tracks")
 
     # Initialize RNG with seed for reproducible results
     rng = random.Random(SEED)
@@ -170,32 +187,57 @@ def create_synth_chords_project():
     print(f"  Modulator 0: AHD_ENVELOPE -> VOLUME")
     print(f"  Chorus send: 0xC0")
 
-    # Create 4 phrases with chord progression
-    chord_names = ["C major", "A minor", "F major", "G major"]
-    for i in range(4):
-        phrase = create_chord_phrase(
-            phrase_idx=i,
-            root_note=CHORD_ROOTS[i],
-            is_major=CHORD_TYPES[i],
-            velocity=VELOCITIES[i]
-        )
-        project.phrases[i] = phrase
+    # Create 12 phrases (3 chains × 4 chords)
+    # Chain 0: phrases 00-03 (root notes)
+    # Chain 1: phrases 04-07 (3rd notes)
+    # Chain 2: phrases 08-0B (5th notes)
 
-        arp_type = "major (0x47)" if CHORD_TYPES[i] else "minor (0x37)"
-        print(f"\nPhrase 0x{i:02X}: {chord_names[i]} - root={M8Note(CHORD_ROOTS[i]).name}")
-        print(f"  ARP FX: {arp_type}")
-        print(f"  Pattern: quarter notes on steps 0, 4, 8, 12")
+    voice_names = ['root', 'third', 'fifth']
 
-    # Create chain referencing all 4 phrases
-    chain = M8Chain()
-    for i in range(4):
-        chain[i] = M8ChainStep(phrase=i, transpose=0x00)
-    project.chains[0x00] = chain
-    print(f"\nChain 0x00: phrases 0x00-0x03 (64 steps total)")
+    for chain_idx in range(NUM_CHAINS):
+        voice_name = voice_names[chain_idx]
+        print(f"\nChain {chain_idx} - {voice_name} notes:")
 
-    # Add chain to song matrix at top-left position [0,0]
-    project.song[0][0] = 0x00
-    print(f"\nSong arrangement: Chain 0x00 at position [row=0, track=0] (top-left)")
+        for chord_idx in range(4):
+            chord = CHORDS[chord_idx]
+            phrase_idx = chain_idx * 4 + chord_idx
+
+            # Get the note for this voice
+            if voice_name == 'root':
+                note = chord['root']
+            elif voice_name == 'third':
+                note = chord['third']
+            else:  # fifth
+                note = chord['fifth']
+
+            # Create phrase with single note
+            phrase = create_single_note_phrase(note, VELOCITIES[chord_idx])
+            project.phrases[phrase_idx] = phrase
+
+            print(f"  Phrase 0x{phrase_idx:02X}: {chord['name']} {voice_name} = {M8Note(note).name}")
+
+    # Create 3 chains, each containing 4 phrases
+    for chain_idx in range(NUM_CHAINS):
+        chain = M8Chain()
+        for phrase_offset in range(4):
+            phrase_idx = chain_idx * 4 + phrase_offset
+            chain[phrase_offset] = M8ChainStep(phrase=phrase_idx, transpose=0x00)
+        project.chains[chain_idx] = chain
+
+        phrase_range = f"0x{chain_idx * 4:02X}-0x{chain_idx * 4 + 3:02X}"
+        print(f"\nChain 0x{chain_idx:02X}: phrases {phrase_range}")
+
+    # Add all 3 chains to first row of song matrix (parallel playback)
+    for chain_idx in range(NUM_CHAINS):
+        project.song[0][chain_idx] = chain_idx
+
+    print(f"\nSong arrangement:")
+    print(f"  Row 0: Chains 0x00, 0x01, 0x02 (playing in parallel)")
+    print(f"  Chords rendered polyphonically:")
+    print(f"    Phrases 00+04+08 = C major (C-E-G)")
+    print(f"    Phrases 01+05+09 = A minor (A-C-E)")
+    print(f"    Phrases 02+06+0A = F major (F-A-C)")
+    print(f"    Phrases 03+07+0B = G major (G-B-D)")
 
     return project
 
@@ -212,8 +254,9 @@ def save_project(project: M8Project):
 
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
-    print(f"  Structure: 1 instrument, 4 phrases, 1 chain")
+    print(f"  Structure: 1 instrument, 12 phrases, 3 chains")
     print(f"  Progression: C major - A minor - F major - G major (I-vi-IV-V)")
+    print(f"  Rendering: Polyphonic chords across 3 parallel tracks")
     print(f"  Total length: 64 steps (4 bars)")
 
 
