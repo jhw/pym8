@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 
 """
-Synth Chords Demo - EDM chord progression using M8 Wavsynth
+Synth Chords Demo - EDM chord progression using M8 Macrosynth
 
 Demonstrates creating chord progressions polyphonically across multiple tracks.
 Uses a classic EDM chord progression: C major - A minor - F major - G major
 (I - vi - IV - V in C major scale)
 
 Creates an M8 project with:
-- 1 wavsynth instrument (0x00) with random shape and volume envelope
+- 1 macrosynth instrument (0x00) with WTX4 shape (0x26) and volume envelope
 - 12 phrases (0x00-0x0B) split across 3 chains for triads
   - Chain 0 (phrases 00-03): root notes
   - Chain 1 (phrases 04-07): 3rd notes
   - Chain 2 (phrases 08-0B): 5th notes
 - 3 chains (0x00-0x02) placed in first row of song matrix
 - Song arrangement: chains at [0,0], [0,1], [0,2] play in parallel
+- All notes shifted up one octave
 
 Chords are rendered polyphonically:
-- Phrases 00, 04, 08 play together = C major (C-E-G)
-- Phrases 01, 05, 09 play together = A minor (A-C-E)
-- Phrases 02, 06, 0A play together = F major (F-A-C)
-- Phrases 03, 07, 0B play together = G major (G-B-D)
+- Phrases 00, 04, 08 play together = C major (C5-E5-G5)
+- Phrases 01, 05, 09 play together = A minor (A4-C5-E5)
+- Phrases 02, 06, 0A play together = F major (F4-A4-C5)
+- Phrases 03, 07, 0B play together = G major (G4-B4-D5)
 
 Output: tmp/demos/synth_chords/SYNTH-CHORDS.m8s
 """
@@ -29,7 +30,7 @@ import random
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape, M8WavsynthModDest
+from m8.api.instruments.macrosynth import M8Macrosynth, M8MacrosynthParam, M8MacroShape, M8MacrosynthModDest
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -43,34 +44,35 @@ SEED = 42
 
 # Chord progression: C major - A minor - F major - G major (I - vi - IV - V)
 # Each chord is split into root, 3rd, and 5th notes
+# All notes shifted up one octave
 CHORDS = [
     # C major: C-E-G
     {
         'name': 'C major',
-        'root': M8Note.C_4,
-        'third': M8Note.E_4,
-        'fifth': M8Note.G_4,
+        'root': M8Note.C_5,
+        'third': M8Note.E_5,
+        'fifth': M8Note.G_5,
     },
     # A minor: A-C-E
     {
         'name': 'A minor',
-        'root': M8Note.A_3,
-        'third': M8Note.C_4,
-        'fifth': M8Note.E_4,
+        'root': M8Note.A_4,
+        'third': M8Note.C_5,
+        'fifth': M8Note.E_5,
     },
     # F major: F-A-C
     {
         'name': 'F major',
-        'root': M8Note.F_3,
-        'third': M8Note.A_3,
-        'fifth': M8Note.C_4,
+        'root': M8Note.F_4,
+        'third': M8Note.A_4,
+        'fifth': M8Note.C_5,
     },
     # G major: G-B-D
     {
         'name': 'G major',
-        'root': M8Note.G_3,
-        'third': M8Note.B_3,
-        'fifth': M8Note.D_4,
+        'root': M8Note.G_4,
+        'third': M8Note.B_4,
+        'fifth': M8Note.D_5,
     },
 ]
 
@@ -86,51 +88,44 @@ VELOCITIES = [
 ]
 
 
-def create_wavsynth_instrument(rng):
-    """Create a wavsynth instrument with random shape and volume envelope.
-
-    Args:
-        rng: Random number generator
+def create_macrosynth_instrument():
+    """Create a macrosynth instrument with WTX4 shape and volume envelope.
 
     Returns:
-        M8Wavsynth configured for chord playing
+        M8Macrosynth configured for chord playing
     """
-    # Choose random wave shape
-    wave_shapes = [
-        M8WavShape.PULSE12, M8WavShape.PULSE25, M8WavShape.PULSE50,
-        M8WavShape.SAW, M8WavShape.TRIANGLE, M8WavShape.SINE,
-        M8WavShape.WT_CRUSH, M8WavShape.WT_FOLDING, M8WavShape.WT_LIQUID,
-    ]
-    chosen_shape = rng.choice(wave_shapes)
+    # Create macrosynth with basic settings
+    macrosynth = M8Macrosynth(name="CHORDS")
 
-    # Create wavsynth with basic settings
-    wavsynth = M8Wavsynth(name="CHORDS")
+    # Set shape to 0x26 (WTX4 - Wavetable 4X)
+    macrosynth.set(M8MacrosynthParam.SHAPE, 0x26)
+    macrosynth.set(M8MacrosynthParam.VOLUME, 0x00)
+    macrosynth.set(M8MacrosynthParam.PITCH, 0x00)
+    macrosynth.set(M8MacrosynthParam.FINE_TUNE, 0x80)  # Center
+    macrosynth.set(M8MacrosynthParam.PAN, 0x80)  # Center pan
 
-    # Set basic parameters
-    wavsynth.set(M8WavsynthParam.SHAPE, chosen_shape)
-    wavsynth.set(M8WavsynthParam.VOLUME, 0x00)
-    wavsynth.set(M8WavsynthParam.PITCH, 0x00)
-    wavsynth.set(M8WavsynthParam.FINE_TUNE, 0x80)  # Center
-    wavsynth.set(M8WavsynthParam.PAN, 0x80)  # Center pan
+    # Timbre and colour (synthesis parameters)
+    macrosynth.set(M8MacrosynthParam.TIMBRE, 0x80)  # Center
+    macrosynth.set(M8MacrosynthParam.COLOUR, 0x80)  # Center
 
     # Effects sends - only chorus enabled
-    wavsynth.set(M8WavsynthParam.CHORUS_SEND, 0xC0)  # Chorus to 0xC0
-    wavsynth.set(M8WavsynthParam.DELAY_SEND, 0x00)   # Delay off
-    wavsynth.set(M8WavsynthParam.REVERB_SEND, 0x00)  # Reverb off
+    macrosynth.set(M8MacrosynthParam.CHORUS_SEND, 0xC0)  # Chorus to 0xC0
+    macrosynth.set(M8MacrosynthParam.DELAY_SEND, 0x00)   # Delay off
+    macrosynth.set(M8MacrosynthParam.REVERB_SEND, 0x00)  # Reverb off
 
     # Filter off
-    wavsynth.set(M8WavsynthParam.FILTER_TYPE, 0x00)  # Filter off
-    wavsynth.set(M8WavsynthParam.CUTOFF, 0xFF)       # Cutoff fully open
-    wavsynth.set(M8WavsynthParam.RESONANCE, 0x00)    # No resonance
+    macrosynth.set(M8MacrosynthParam.FILTER_TYPE, 0x00)  # Filter off
+    macrosynth.set(M8MacrosynthParam.CUTOFF, 0xFF)       # Cutoff fully open
+    macrosynth.set(M8MacrosynthParam.RESONANCE, 0x00)    # No resonance
 
     # Limiter off
-    wavsynth.set(M8WavsynthParam.LIMIT, 0x00)        # Limiter off
-    wavsynth.set(M8WavsynthParam.AMP, 0x00)          # Amp at default
+    macrosynth.set(M8MacrosynthParam.LIMIT, 0x00)        # Limiter off
+    macrosynth.set(M8MacrosynthParam.AMP, 0x00)          # Amp at default
 
     # Create AHD envelope for volume (first modulator only)
-    mod_volume = wavsynth.modulators[0]
+    mod_volume = macrosynth.modulators[0]
     mod_volume.mod_type = M8ModulatorType.AHD_ENVELOPE
-    mod_volume.destination = M8WavsynthModDest.VOLUME  # Use enum instead of integer
+    mod_volume.destination = M8MacrosynthModDest.VOLUME  # Use enum instead of integer
     mod_volume.amount = 0xFF  # Full amount
 
     # Set AHD envelope parameters using the enum offsets
@@ -140,9 +135,9 @@ def create_wavsynth_instrument(rng):
 
     # Turn off other modulators (set destination to OFF)
     for i in range(1, 4):
-        wavsynth.modulators[i].destination = M8WavsynthModDest.OFF
+        macrosynth.modulators[i].destination = M8MacrosynthModDest.OFF
 
-    return wavsynth, chosen_shape
+    return macrosynth
 
 
 def create_single_note_phrase(note, velocity):
@@ -185,19 +180,16 @@ def create_synth_chords_project():
     print(f"Chord progression: C major - A minor - F major - G major (I-vi-IV-V)")
     print(f"Rendering chords polyphonically across {NUM_CHAINS} parallel tracks")
 
-    # Initialize RNG with seed for reproducible results
-    rng = random.Random(SEED)
-
     # Initialize project
     project = M8Project.initialise()
     project.metadata.name = PROJECT_NAME
     project.metadata.tempo = BPM
     project.metadata.directory = "/Songs/pym8-demos/synth-chords/"
 
-    # Create wavsynth instrument
-    wavsynth, chosen_shape = create_wavsynth_instrument(rng)
-    project.instruments[0x00] = wavsynth
-    print(f"\nInstrument 0x00: CHORDS (shape={M8WavShape(chosen_shape).name})")
+    # Create macrosynth instrument
+    macrosynth = create_macrosynth_instrument()
+    project.instruments[0x00] = macrosynth
+    print(f"\nInstrument 0x00: CHORDS (shape=WTX4/0x26)")
     print(f"  Modulator 0: AHD_ENVELOPE -> VOLUME (others OFF)")
     print(f"  Filter: OFF, Limiter: OFF")
     print(f"  Effects: Chorus=0xC0, Delay=OFF, Reverb=OFF")
