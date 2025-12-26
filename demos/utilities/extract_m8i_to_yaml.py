@@ -6,14 +6,24 @@ parameters to YAML files using the to_dict() method. Optionally filters by
 instrument type.
 
 Usage:
-    python extract_m8i_to_yaml.py [--type TYPE_ID]
+    # Extract all instruments from default directory
+    python extract_m8i_to_yaml.py
 
-Options:
-    --type TYPE_ID    Only process instruments of this type (e.g., 4 for FM Synth)
+    # Extract only FM Synths (type 4)
+    python extract_m8i_to_yaml.py --type 4
 
-The script expects:
+    # Use custom input/output directories
+    python extract_m8i_to_yaml.py --input-dir path/to/m8i --output-dir path/to/yaml
+
+Default paths:
     Input: tmp/dw01-synthdrums/m8i/*.m8i
-    Output: tmp/dw01-synthdrums/yaml/*.yaml
+    Output: tmp/dw01-synthdrums/yaml/*.yaml (auto-created if needed)
+
+Instrument types:
+    2 = Sampler
+    3 = Wavsynth
+    4 = FM Synth
+    5 = Macrosynth
 """
 
 import os
@@ -57,16 +67,15 @@ def extract_instrument_to_yaml(m8i_path, output_dir, instrument_type_filter=None
         output_filename = input_filename.replace('.m8i', '.yaml')
         output_path = os.path.join(output_dir, output_filename)
 
-        # Write YAML file
-        os.makedirs(output_dir, exist_ok=True)
+        # Write YAML file (directory should already exist)
         with open(output_path, 'w') as f:
             yaml.dump(params, f, default_flow_style=False, sort_keys=False)
 
-        print(f"Extracted: {input_filename} -> {output_filename}")
+        print(f"  {input_filename} -> {output_filename}")
         return True
 
     except Exception as e:
-        print(f"Error processing {m8i_path}: {e}")
+        print(f"  Error processing {os.path.basename(m8i_path)}: {e}")
         return False
 
 
@@ -99,21 +108,46 @@ def main():
     input_dir = repo_root / args.input_dir
     output_dir = repo_root / args.output_dir
 
-    # Check input directory exists
+    # Validate input directory
     if not input_dir.exists():
-        print(f"Error: Input directory not found: {input_dir}")
+        print(f"Error: Input directory does not exist: {input_dir}")
+        print()
+        print("Please ensure the directory exists or specify a different path with --input-dir")
+        print(f"Example: python {Path(__file__).name} --input-dir path/to/m8i")
+        return 1
+
+    if not input_dir.is_dir():
+        print(f"Error: Input path is not a directory: {input_dir}")
         return 1
 
     # Find all .m8i files
     m8i_files = sorted(input_dir.glob('*.m8i'))
 
     if not m8i_files:
-        print(f"No .m8i files found in {input_dir}")
+        print(f"No .m8i files found in: {input_dir}")
+        print()
+        print("Please check the directory contains .m8i instrument files.")
         return 1
 
-    print(f"Found {len(m8i_files)} .m8i files in {input_dir}")
+    # Create output directory if needed
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        print(f"Error: Could not create output directory: {output_dir}")
+        print(f"Reason: {e}")
+        return 1
+
+    # Print configuration
+    print("M8i to YAML Extraction")
+    print("=" * 60)
+    print(f"Input directory:  {input_dir}")
+    print(f"Output directory: {output_dir}")
+    print(f"Found {len(m8i_files)} .m8i file(s)")
     if args.type is not None:
-        print(f"Filtering for instrument type: {args.type}")
+        type_names = {2: "Sampler", 3: "Wavsynth", 4: "FM Synth", 5: "Macrosynth"}
+        type_name = type_names.get(args.type, f"Unknown ({args.type})")
+        print(f"Filter: Type {args.type} ({type_name})")
+    print("=" * 60)
     print()
 
     # Process each file
@@ -127,10 +161,17 @@ def main():
             skipped_count += 1
 
     print()
-    print(f"Processed: {processed_count} files")
+    print("=" * 60)
+    print(f"Processed: {processed_count} file(s)")
     if skipped_count > 0:
-        print(f"Skipped: {skipped_count} files (type filter)")
-    print(f"Output directory: {output_dir}")
+        print(f"Skipped:   {skipped_count} file(s) (type filter)")
+    print(f"Output:    {output_dir}")
+    print("=" * 60)
+
+    if processed_count == 0:
+        print()
+        print("Warning: No files were processed. Check the --type filter if specified.")
+        return 1
 
     return 0
 
