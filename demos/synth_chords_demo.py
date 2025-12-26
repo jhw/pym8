@@ -112,12 +112,22 @@ def create_wavsynth_instrument(rng):
     wavsynth.set(M8WavsynthParam.PITCH, 0x00)
     wavsynth.set(M8WavsynthParam.FINE_TUNE, 0x80)  # Center
     wavsynth.set(M8WavsynthParam.PAN, 0x80)  # Center pan
-    wavsynth.set(M8WavsynthParam.CHORUS_SEND, 0xC0)  # Set chorus to 0xC0
-    wavsynth.set(M8WavsynthParam.DELAY_SEND, 0x40)
-    wavsynth.set(M8WavsynthParam.REVERB_SEND, 0x60)
 
-    # Create AHD envelope for volume (first modulator)
-    # Using the default modulator and just changing the destination to VOLUME
+    # Effects sends - only chorus enabled
+    wavsynth.set(M8WavsynthParam.CHORUS_SEND, 0xC0)  # Chorus to 0xC0
+    wavsynth.set(M8WavsynthParam.DELAY_SEND, 0x00)   # Delay off
+    wavsynth.set(M8WavsynthParam.REVERB_SEND, 0x00)  # Reverb off
+
+    # Filter off
+    wavsynth.set(M8WavsynthParam.FILTER_TYPE, 0x00)  # Filter off
+    wavsynth.set(M8WavsynthParam.CUTOFF, 0xFF)       # Cutoff fully open
+    wavsynth.set(M8WavsynthParam.RESONANCE, 0x00)    # No resonance
+
+    # Limiter off
+    wavsynth.set(M8WavsynthParam.LIMIT, 0x00)        # Limiter off
+    wavsynth.set(M8WavsynthParam.AMP, 0x00)          # Amp at default
+
+    # Create AHD envelope for volume (first modulator only)
     mod_volume = wavsynth.modulators[0]
     mod_volume.mod_type = M8ModulatorType.AHD_ENVELOPE
     mod_volume.destination = M8WavsynthModDest.VOLUME  # Use enum instead of integer
@@ -127,6 +137,10 @@ def create_wavsynth_instrument(rng):
     mod_volume.set(M8AHDParam.ATTACK, 0x00)  # Attack: 0
     mod_volume.set(M8AHDParam.HOLD, 0x00)    # Hold: 0
     mod_volume.set(M8AHDParam.DECAY, 0x80)   # Decay: medium
+
+    # Turn off other modulators (set destination to OFF)
+    for i in range(1, 4):
+        wavsynth.modulators[i].destination = M8WavsynthModDest.OFF
 
     return wavsynth, chosen_shape
 
@@ -184,8 +198,9 @@ def create_synth_chords_project():
     wavsynth, chosen_shape = create_wavsynth_instrument(rng)
     project.instruments[0x00] = wavsynth
     print(f"\nInstrument 0x00: CHORDS (shape={M8WavShape(chosen_shape).name})")
-    print(f"  Modulator 0: AHD_ENVELOPE -> VOLUME")
-    print(f"  Chorus send: 0xC0")
+    print(f"  Modulator 0: AHD_ENVELOPE -> VOLUME (others OFF)")
+    print(f"  Filter: OFF, Limiter: OFF")
+    print(f"  Effects: Chorus=0xC0, Delay=OFF, Reverb=OFF")
 
     # Create 12 phrases (3 chains × 4 chords)
     # Chain 0: phrases 00-03 (root notes)
