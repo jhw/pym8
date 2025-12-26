@@ -33,12 +33,16 @@ class M8FMSynthParam(IntEnum):
     OP_C_SHAPE = 21   # Operator C waveform shape
     OP_D_SHAPE = 22   # Operator D waveform shape
 
-    # Interleaved operator data (need more reverse engineering)
-    # Ratios appear at even offsets: 0x18, 0x1A, 0x1C, 0x1E
-    OP_A_RATIO = 24   # Operator A frequency ratio (0-255 = 0.00-25.5x)
-    OP_B_RATIO = 26   # Operator B frequency ratio
-    OP_C_RATIO = 28   # Operator C frequency ratio
-    OP_D_RATIO = 30   # Operator D frequency ratio
+    # Interleaved ratio/ratio_fine pairs
+    # Display format: {ratio}.{ratio_fine} (e.g., 01.10, 02.20)
+    OP_A_RATIO = 23       # Operator A ratio (integer part)
+    OP_A_RATIO_FINE = 24  # Operator A ratio fine (fractional part)
+    OP_B_RATIO = 25       # Operator B ratio
+    OP_B_RATIO_FINE = 26  # Operator B ratio fine
+    OP_C_RATIO = 27       # Operator C ratio
+    OP_C_RATIO_FINE = 28  # Operator C ratio fine
+    OP_D_RATIO = 29       # Operator D ratio
+    OP_D_RATIO_FINE = 30  # Operator D ratio fine
 
     # Level and feedback (interleaved)
     OP_A_LEVEL = 31   # Operator A output level
@@ -49,6 +53,17 @@ class M8FMSynthParam(IntEnum):
     OP_C_FEEDBACK = 36  # Operator C feedback amount
     OP_D_LEVEL = 37   # Operator D output level
     OP_D_FEEDBACK = 38  # Operator D feedback amount
+
+    # Operator modulation routing (mod_a/mod_b per operator)
+    # Each operator can have 2 modulation routings connecting M8 modulators to operator params
+    OP_A_MOD_A = 39   # Operator A modulation A (M8FMOperatorModDest)
+    OP_B_MOD_A = 40   # Operator B modulation A
+    OP_C_MOD_A = 41   # Operator C modulation A
+    OP_D_MOD_A = 42   # Operator D modulation A
+    OP_A_MOD_B = 43   # Operator A modulation B (M8FMOperatorModDest)
+    OP_B_MOD_B = 44   # Operator B modulation B
+    OP_C_MOD_B = 45   # Operator C modulation B
+    OP_D_MOD_B = 46   # Operator D modulation B
 
     # Modulator values (0x2F-0x32)
     MOD1_VALUE = 47   # Modulator 1 amount
@@ -204,6 +219,38 @@ class M8FMSynthModDest(IntEnum):
     MOD_BINV = 0x0E  # Modulator bipolar inversion
 
 
+# Operator Modulation Routing Values (mod_a/mod_b)
+class M8FMOperatorModDest(IntEnum):
+    """FM operator modulation routing destinations.
+
+    Each operator (A, B, C, D) has two modulation routing slots (mod_a, mod_b)
+    that connect one of the 4 M8 modulators to one of the 4 operator parameters.
+
+    Format: {modulator_number}/{parameter}
+    - Modulator: 1-4 (which M8 modulator controls this)
+    - Parameter: LEV (level), RAT (ratio), PIT (pitch), FBK (feedback)
+
+    Values 0-16 (17 total options).
+    """
+    OFF = 0x00       # No modulation (displayed as "--")
+    MOD1_LEV = 0x01  # Modulator 1 → Operator Level
+    MOD1_RAT = 0x02  # Modulator 1 → Operator Ratio
+    MOD1_PIT = 0x03  # Modulator 1 → Operator Pitch
+    MOD1_FBK = 0x04  # Modulator 1 → Operator Feedback
+    MOD2_LEV = 0x05  # Modulator 2 → Operator Level
+    MOD2_RAT = 0x06  # Modulator 2 → Operator Ratio
+    MOD2_PIT = 0x07  # Modulator 2 → Operator Pitch
+    MOD2_FBK = 0x08  # Modulator 2 → Operator Feedback
+    MOD3_LEV = 0x09  # Modulator 3 → Operator Level
+    MOD3_RAT = 0x0A  # Modulator 3 → Operator Ratio
+    MOD3_PIT = 0x0B  # Modulator 3 → Operator Pitch
+    MOD3_FBK = 0x0C  # Modulator 3 → Operator Feedback
+    MOD4_LEV = 0x0D  # Modulator 4 → Operator Level
+    MOD4_RAT = 0x0E  # Modulator 4 → Operator Ratio
+    MOD4_PIT = 0x0F  # Modulator 4 → Operator Pitch
+    MOD4_FBK = 0x10  # Modulator 4 → Operator Feedback
+
+
 # Default parameter values (offset, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
     (17, 0x80),  # FINE_TUNE, default: 128 (center)
@@ -225,6 +272,14 @@ class M8FMSynth(M8Instrument):
         'OP_B_SHAPE': M8FMWave,
         'OP_C_SHAPE': M8FMWave,
         'OP_D_SHAPE': M8FMWave,
+        'OP_A_MOD_A': M8FMOperatorModDest,
+        'OP_B_MOD_A': M8FMOperatorModDest,
+        'OP_C_MOD_A': M8FMOperatorModDest,
+        'OP_D_MOD_A': M8FMOperatorModDest,
+        'OP_A_MOD_B': M8FMOperatorModDest,
+        'OP_B_MOD_B': M8FMOperatorModDest,
+        'OP_C_MOD_B': M8FMOperatorModDest,
+        'OP_D_MOD_B': M8FMOperatorModDest,
         'FILTER_TYPE': None,  # Will be set below to avoid circular import
         'LIMIT': None,        # Will be set below to avoid circular import
     }

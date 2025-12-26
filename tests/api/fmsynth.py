@@ -356,5 +356,63 @@ class TestM8FMSynth(unittest.TestCase):
         )
 
 
+    def test_operator_mod_routing(self):
+        """Test operator modulation routing (mod_a/mod_b)."""
+        from m8.api.instruments.fmsynth import M8FMOperatorModDest
+
+        fmsynth = M8FMSynth()
+
+        # Set operator A mod_a to MOD1_LEV (1/LEV)
+        fmsynth.set(M8FMSynthParam.OP_A_MOD_A, M8FMOperatorModDest.MOD1_LEV)
+        self.assertEqual(fmsynth.get(M8FMSynthParam.OP_A_MOD_A), M8FMOperatorModDest.MOD1_LEV)
+
+        # Set operator B mod_a to MOD2_RAT (2/RAT)
+        fmsynth.set(M8FMSynthParam.OP_B_MOD_A, M8FMOperatorModDest.MOD2_RAT)
+        self.assertEqual(fmsynth.get(M8FMSynthParam.OP_B_MOD_A), M8FMOperatorModDest.MOD2_RAT)
+
+        # Set operator C mod_a to MOD3_PIT (3/PIT)
+        fmsynth.set(M8FMSynthParam.OP_C_MOD_A, M8FMOperatorModDest.MOD3_PIT)
+        self.assertEqual(fmsynth.get(M8FMSynthParam.OP_C_MOD_A), M8FMOperatorModDest.MOD3_PIT)
+
+        # Set operator D mod_a to MOD4_FBK (4/FBK)
+        fmsynth.set(M8FMSynthParam.OP_D_MOD_A, M8FMOperatorModDest.MOD4_FBK)
+        self.assertEqual(fmsynth.get(M8FMSynthParam.OP_D_MOD_A), M8FMOperatorModDest.MOD4_FBK)
+
+        # Test mod_b parameters
+        fmsynth.set(M8FMSynthParam.OP_A_MOD_B, M8FMOperatorModDest.MOD1_RAT)
+        self.assertEqual(fmsynth.get(M8FMSynthParam.OP_A_MOD_B), M8FMOperatorModDest.MOD1_RAT)
+
+        # Test OFF value
+        fmsynth.set(M8FMSynthParam.OP_B_MOD_B, M8FMOperatorModDest.OFF)
+        self.assertEqual(fmsynth.get(M8FMSynthParam.OP_B_MOD_B), M8FMOperatorModDest.OFF)
+
+    def test_operator_mod_routing_binary(self):
+        """Test operator modulation routing binary serialization."""
+        from m8.api.instruments.fmsynth import M8FMOperatorModDest
+
+        fmsynth = M8FMSynth()
+
+        # Set distinctive mod_a values
+        fmsynth.set(M8FMSynthParam.OP_A_MOD_A, M8FMOperatorModDest.MOD1_LEV)  # 0x01
+        fmsynth.set(M8FMSynthParam.OP_B_MOD_A, M8FMOperatorModDest.MOD2_RAT)  # 0x06
+        fmsynth.set(M8FMSynthParam.OP_C_MOD_A, M8FMOperatorModDest.MOD3_PIT)  # 0x0B
+        fmsynth.set(M8FMSynthParam.OP_D_MOD_A, M8FMOperatorModDest.MOD4_FBK)  # 0x10
+
+        # Serialize to binary
+        binary = fmsynth.write()
+
+        # Check mod_a bytes at offsets 0x27-0x2A (39-42)
+        self.assertEqual(binary[39], 0x01)  # OP_A_MOD_A
+        self.assertEqual(binary[40], 0x06)  # OP_B_MOD_A
+        self.assertEqual(binary[41], 0x0B)  # OP_C_MOD_A
+        self.assertEqual(binary[42], 0x10)  # OP_D_MOD_A
+
+        # Check mod_b bytes at offsets 0x2B-0x2E (43-46) - should be default (0x00)
+        self.assertEqual(binary[43], 0x00)  # OP_A_MOD_B
+        self.assertEqual(binary[44], 0x00)  # OP_B_MOD_B
+        self.assertEqual(binary[45], 0x00)  # OP_C_MOD_B
+        self.assertEqual(binary[46], 0x00)  # OP_D_MOD_B
+
+
 if __name__ == '__main__':
     unittest.main()
