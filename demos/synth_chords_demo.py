@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Synth Chords Demo - 10 Famous EDM Chord Progressions using M8 Macrosynth

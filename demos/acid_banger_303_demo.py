@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Acid Banger 303 Demo - Algorithmic TB-303 acid basslines inspired by vitling's acid-banger

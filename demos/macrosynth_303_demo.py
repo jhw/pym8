@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Macrosynth 303 Demo - Acid bassline-style demo using M8 Macrosynth

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Wavsynth 303 Demo - Acid bassline-style demo using M8 Wavsynth

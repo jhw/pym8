@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Download Erica Synths Pico Drum sample packs from their official server.

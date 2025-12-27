@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Acid Banger 909 Demo - Algorithmic 909 drum patterns inspired by vitling's acid-banger

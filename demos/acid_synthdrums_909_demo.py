@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Acid Synthdrums 909 Demo - Algorithmic 909 drum patterns with DW01 synthdrums

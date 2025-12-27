@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Euclid 909 Demo - Euclidean rhythm patterns using the Bjorklund algorithm
