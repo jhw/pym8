@@ -369,9 +369,66 @@ class M8Modulator:
 
     @classmethod
     def read(cls, data):
-        """Read modulator from binary data."""
+        """Read modulator from binary data (M8s format)."""
         instance = cls.__new__(cls)
         instance._data = bytearray(data[:BLOCK_SIZE])
+        return instance
+
+    @classmethod
+    def read_m8i(cls, data, mod_type):
+        """Read modulator from M8i binary data and convert to M8s format.
+
+        M8i format differences:
+        - Type is not stored (comes from DEFAULT_MODULATOR_TYPES)
+        - AHD format: dest, amt, atk, hold, dec, ???
+        - LFO format: osc, dest, trig, freq, amt, retrig
+
+        M8s format:
+        - AHD format: type+dest, amt, atk, hold, dec, ???
+        - LFO format: type+dest, amt, osc, trig, freq, retrig
+
+        Args:
+            data: Raw 6-byte modulator data from M8i file
+            mod_type: Modulator type (from DEFAULT_MODULATOR_TYPES)
+
+        Returns:
+            M8Modulator instance with data converted to M8s format
+        """
+        m8i_data = data[:BLOCK_SIZE]
+        m8s_data = bytearray(BLOCK_SIZE)
+
+        if mod_type == M8ModulatorType.AHD_ENVELOPE:  # 0
+            # M8i AHD: dest, amt, atk, hold, dec, ???
+            # M8s AHD: type+dest, amt, atk, hold, dec, ???
+            dest = m8i_data[0]
+            m8s_data[0] = join_nibbles(mod_type, dest)  # Pack type+dest
+            m8s_data[1:] = m8i_data[1:]  # Copy remaining bytes as-is
+
+        elif mod_type == M8ModulatorType.LFO:  # 3
+            # M8i LFO: osc, dest, trig, freq, amt, retrig
+            # M8s LFO: type+dest, amt, osc, trig, freq, retrig
+            osc = m8i_data[0]
+            dest = m8i_data[1]
+            trig = m8i_data[2]
+            freq = m8i_data[3]
+            amt = m8i_data[4]
+            retrig = m8i_data[5]
+
+            m8s_data[0] = join_nibbles(mod_type, dest)  # Pack type+dest
+            m8s_data[1] = amt      # Reorder: amt comes second
+            m8s_data[2] = osc      # Reorder: osc comes third
+            m8s_data[3] = trig     # Reorder: trig comes fourth
+            m8s_data[4] = freq     # Reorder: freq comes fifth
+            m8s_data[5] = retrig   # retrig stays last
+
+        else:
+            # For other types, assume same format (pack type+dest and copy rest)
+            dest = m8i_data[0]
+            m8s_data[0] = join_nibbles(mod_type, dest)
+            m8s_data[1:] = m8i_data[1:]
+
+        instance = cls.__new__(cls)
+        instance._data = m8s_data
         return instance
 
 
@@ -386,6 +443,7 @@ class M8Modulators(list):
 
     @classmethod
     def read(cls, data):
+        """Read modulators from binary data (M8s format)."""
         instance = cls.__new__(cls)
         list.__init__(instance)
 
@@ -398,6 +456,38 @@ class M8Modulators(list):
                 block_data = block_data + bytes([0] * (BLOCK_SIZE - len(block_data)))
 
             instance.append(M8Modulator.read(block_data))
+
+        return instance
+
+    @classmethod
+    def read_m8i(cls, data):
+        """Read modulators from M8i binary data and convert to M8s format.
+
+        M8i files don't store modulator types - they use DEFAULT_MODULATOR_TYPES.
+        M8i also uses different parameter ordering for LFO modulators.
+
+        Args:
+            data: Raw modulator data from M8i file (24 bytes = 4 * 6)
+
+        Returns:
+            M8Modulators instance with data converted to M8s format
+        """
+        instance = cls.__new__(cls)
+        list.__init__(instance)
+
+        for i in range(BLOCK_COUNT):
+            start = i * BLOCK_SIZE
+            block_data = data[start:start + BLOCK_SIZE]
+
+            if len(block_data) < BLOCK_SIZE:
+                # Pad with zeros if insufficient data
+                block_data = block_data + bytes([0] * (BLOCK_SIZE - len(block_data)))
+
+            # Get type from defaults (M8i doesn't store types)
+            mod_type = DEFAULT_MODULATOR_TYPES[i]
+
+            # Convert M8i format to M8s format
+            instance.append(M8Modulator.read_m8i(block_data, mod_type))
 
         return instance
 
