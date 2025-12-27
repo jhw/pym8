@@ -413,6 +413,93 @@ class TestM8FMSynth(unittest.TestCase):
         self.assertEqual(binary[45], 0x00)  # OP_C_MOD_B
         self.assertEqual(binary[46], 0x00)  # OP_D_MOD_B
 
+    def test_m8i_file_round_trip_with_modulators(self):
+        """Test M8i file read -> to_dict -> from_dict preserves all parameters and modulators."""
+        import os
+        from pathlib import Path
+
+        # Path to test M8i file (KICK_MORPH has interesting modulators)
+        test_file = Path(__file__).parent.parent.parent / "tmp/dw01-synthdrums/m8i/KICK_MORPH.m8i"
+
+        # Skip test if file doesn't exist
+        if not test_file.exists():
+            self.skipTest(f"Test M8i file not found: {test_file}")
+
+        # Read from M8i file (uses M8i format conversion)
+        original = M8FMSynth.read_from_file(str(test_file))
+
+        # Convert to dict with enum names
+        params_dict = original.to_dict(enum_mode='name')
+
+        # Recreate from dict
+        restored = M8FMSynth.from_dict(params_dict)
+
+        # Verify instrument parameters are preserved
+        self.assertEqual(restored.name, original.name)
+
+        # Check key FM synth parameters
+        self.assertEqual(
+            restored.get(M8FMSynthParam.ALGO),
+            original.get(M8FMSynthParam.ALGO)
+        )
+        self.assertEqual(
+            restored.get(M8FMSynthParam.OP_A_SHAPE),
+            original.get(M8FMSynthParam.OP_A_SHAPE)
+        )
+        self.assertEqual(
+            restored.get(M8FMSynthParam.OP_B_SHAPE),
+            original.get(M8FMSynthParam.OP_B_SHAPE)
+        )
+        self.assertEqual(
+            restored.get(M8FMSynthParam.OP_A_LEVEL),
+            original.get(M8FMSynthParam.OP_A_LEVEL)
+        )
+        self.assertEqual(
+            restored.get(M8FMSynthParam.CUTOFF),
+            original.get(M8FMSynthParam.CUTOFF)
+        )
+
+        # Verify ALL instrument parameters byte by byte
+        for offset in range(M8FMSynth.MODULATORS_OFFSET):
+            self.assertEqual(
+                restored.get(offset),
+                original.get(offset),
+                f"Mismatch at offset {offset}"
+            )
+
+        # Verify modulators are preserved
+        self.assertEqual(len(restored.modulators), len(original.modulators))
+
+        for i, (orig_mod, rest_mod) in enumerate(zip(original.modulators, restored.modulators)):
+            # Check modulator type
+            self.assertEqual(
+                rest_mod.mod_type,
+                orig_mod.mod_type,
+                f"Modulator {i} type mismatch"
+            )
+
+            # Check destination
+            self.assertEqual(
+                rest_mod.destination,
+                orig_mod.destination,
+                f"Modulator {i} destination mismatch"
+            )
+
+            # Check amount
+            self.assertEqual(
+                rest_mod.amount,
+                orig_mod.amount,
+                f"Modulator {i} amount mismatch"
+            )
+
+            # Check all modulator parameters byte by byte
+            for byte_idx in range(len(orig_mod._data)):
+                self.assertEqual(
+                    rest_mod._data[byte_idx],
+                    orig_mod._data[byte_idx],
+                    f"Modulator {i} byte {byte_idx} mismatch"
+                )
+
 
 if __name__ == '__main__':
     unittest.main()
