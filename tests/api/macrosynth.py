@@ -45,12 +45,23 @@ class TestM8Macrosynth(unittest.TestCase):
         self.assertEqual(macrosynth.get(M8MacrosynthParam.TIMBRE), 0x40)
 
     def test_binary_serialization(self):
+        """Test write/read round-trip preserves all parameters AND modulators."""
         # Create macrosynth with custom parameters
         macrosynth = M8Macrosynth(name="TEST")
         macrosynth.set(M8MacrosynthParam.CUTOFF, 0x20)
         macrosynth.set(M8MacrosynthParam.RESONANCE, 0xC0)
         macrosynth.set(M8MacrosynthParam.SHAPE, M8MacroShape.BELL)
         macrosynth.set(M8MacrosynthParam.TIMBRE, 0x80)
+
+        # Customize modulators
+        macrosynth.modulators[0].destination = 1  # VOLUME
+        macrosynth.modulators[0].amount = 200
+        macrosynth.modulators[0].set(2, 0x05)  # Attack
+        macrosynth.modulators[0].set(4, 0x70)  # Decay
+
+        macrosynth.modulators[2].destination = 9  # AMP
+        macrosynth.modulators[2].amount = 120
+        macrosynth.modulators[2].set(2, 0x02)  # LFO shape (RAMP_DOWN)
 
         # Write to binary
         binary = macrosynth.write()
@@ -64,6 +75,16 @@ class TestM8Macrosynth(unittest.TestCase):
         self.assertEqual(read_macrosynth.get(M8MacrosynthParam.RESONANCE), 0xC0)
         self.assertEqual(read_macrosynth.get(M8MacrosynthParam.SHAPE), M8MacroShape.BELL)
         self.assertEqual(read_macrosynth.get(M8MacrosynthParam.TIMBRE), 0x80)
+
+        # Check modulators were preserved
+        self.assertEqual(read_macrosynth.modulators[0].destination, 1)
+        self.assertEqual(read_macrosynth.modulators[0].amount, 200)
+        self.assertEqual(read_macrosynth.modulators[0].get(2), 0x05)
+        self.assertEqual(read_macrosynth.modulators[0].get(4), 0x70)
+
+        self.assertEqual(read_macrosynth.modulators[2].destination, 9)
+        self.assertEqual(read_macrosynth.modulators[2].amount, 120)
+        self.assertEqual(read_macrosynth.modulators[2].get(2), 0x02)
 
     def test_clone(self):
         # Create macrosynth with custom parameters

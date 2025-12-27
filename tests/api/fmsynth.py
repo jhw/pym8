@@ -105,7 +105,7 @@ class TestM8FMSynth(unittest.TestCase):
         self.assertEqual(fmsynth.get(M8FMSynthParam.REVERB_SEND), 0xB0)
 
     def test_binary_serialization(self):
-        """Test write/read round-trip preserves all parameters."""
+        """Test write/read round-trip preserves all parameters AND modulators."""
         # Create FM synth with custom parameters
         fmsynth = M8FMSynth(name="ACIDFM")
         fmsynth.set(M8FMSynthParam.ALGO, M8FMAlgo.A_B_C_D)
@@ -116,6 +116,16 @@ class TestM8FMSynth(unittest.TestCase):
         fmsynth.set(M8FMSynthParam.CUTOFF, 0x20)
         fmsynth.set(M8FMSynthParam.RESONANCE, 0xC0)
         fmsynth.set(M8FMSynthParam.CHORUS_SEND, 0x80)
+
+        # Customize modulators
+        fmsynth.modulators[0].destination = 2  # PITCH
+        fmsynth.modulators[0].amount = 200
+        fmsynth.modulators[0].set(2, 0x10)  # Attack
+        fmsynth.modulators[0].set(4, 0x40)  # Decay
+
+        fmsynth.modulators[2].destination = 9  # AMP
+        fmsynth.modulators[2].amount = 100
+        fmsynth.modulators[2].set(2, 0x03)  # LFO shape (RAMP_UP)
 
         # Write to binary
         binary = fmsynth.write()
@@ -133,6 +143,16 @@ class TestM8FMSynth(unittest.TestCase):
         self.assertEqual(read_fmsynth.get(M8FMSynthParam.CUTOFF), 0x20)
         self.assertEqual(read_fmsynth.get(M8FMSynthParam.RESONANCE), 0xC0)
         self.assertEqual(read_fmsynth.get(M8FMSynthParam.CHORUS_SEND), 0x80)
+
+        # Check modulators were preserved
+        self.assertEqual(read_fmsynth.modulators[0].destination, 2)
+        self.assertEqual(read_fmsynth.modulators[0].amount, 200)
+        self.assertEqual(read_fmsynth.modulators[0].get(2), 0x10)
+        self.assertEqual(read_fmsynth.modulators[0].get(4), 0x40)
+
+        self.assertEqual(read_fmsynth.modulators[2].destination, 9)
+        self.assertEqual(read_fmsynth.modulators[2].amount, 100)
+        self.assertEqual(read_fmsynth.modulators[2].get(2), 0x03)
 
     def test_clone(self):
         """Test cloning creates independent copy."""

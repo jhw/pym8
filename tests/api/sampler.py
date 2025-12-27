@@ -54,6 +54,7 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(sampler.get(30), 0xA0)
 
     def test_binary_serialization(self):
+        """Test write/read round-trip preserves all parameters AND modulators."""
         # Create sampler with custom parameters
         sampler = M8Sampler(
             name="TEST",
@@ -64,6 +65,16 @@ class TestM8Sampler(unittest.TestCase):
         sampler.set(25, 0xE0)  # CUTOFF
         sampler.set(29, 0x60)  # PAN
         sampler.set(30, 0xA0)  # DRY
+
+        # Customize modulators
+        sampler.modulators[0].destination = 1  # VOLUME
+        sampler.modulators[0].amount = 255
+        sampler.modulators[0].set(2, 0x00)  # Attack
+        sampler.modulators[0].set(4, 0x60)  # Decay
+
+        sampler.modulators[2].destination = 7  # CUTOFF
+        sampler.modulators[2].amount = 80
+        sampler.modulators[2].set(2, 0x00)  # LFO shape (TRI)
 
         # Write to binary
         binary = sampler.write()
@@ -79,6 +90,16 @@ class TestM8Sampler(unittest.TestCase):
         self.assertEqual(read_sampler.get(25), 0xE0)
         self.assertEqual(read_sampler.get(29), 0x60)
         self.assertEqual(read_sampler.get(30), 0xA0)
+
+        # Check modulators were preserved
+        self.assertEqual(read_sampler.modulators[0].destination, 1)
+        self.assertEqual(read_sampler.modulators[0].amount, 255)
+        self.assertEqual(read_sampler.modulators[0].get(2), 0x00)
+        self.assertEqual(read_sampler.modulators[0].get(4), 0x60)
+
+        self.assertEqual(read_sampler.modulators[2].destination, 7)
+        self.assertEqual(read_sampler.modulators[2].amount, 80)
+        self.assertEqual(read_sampler.modulators[2].get(2), 0x00)
 
     def test_clone(self):
         # Create sampler with custom parameters

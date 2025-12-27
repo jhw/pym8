@@ -46,12 +46,23 @@ class TestM8Wavsynth(unittest.TestCase):
         self.assertEqual(wavsynth.get(M8WavsynthParam.SIZE), 0x40)
 
     def test_binary_serialization(self):
+        """Test write/read round-trip preserves all parameters AND modulators."""
         # Create wavsynth with custom parameters
         wavsynth = M8Wavsynth(name="TEST")
         wavsynth.set(M8WavsynthParam.CUTOFF, 0x20)
         wavsynth.set(M8WavsynthParam.RESONANCE, 0xC0)
         wavsynth.set(M8WavsynthParam.SHAPE, M8WavShape.SINE)
         wavsynth.set(M8WavsynthParam.SIZE, 0x80)
+
+        # Customize modulators
+        wavsynth.modulators[0].destination = 2  # PITCH
+        wavsynth.modulators[0].amount = 150
+        wavsynth.modulators[0].set(2, 0x10)  # Attack
+        wavsynth.modulators[0].set(4, 0x50)  # Decay
+
+        wavsynth.modulators[2].destination = 7  # CUTOFF
+        wavsynth.modulators[2].amount = 90
+        wavsynth.modulators[2].set(2, 0x01)  # LFO shape (SIN)
 
         # Write to binary
         binary = wavsynth.write()
@@ -65,6 +76,16 @@ class TestM8Wavsynth(unittest.TestCase):
         self.assertEqual(read_wavsynth.get(M8WavsynthParam.RESONANCE), 0xC0)
         self.assertEqual(read_wavsynth.get(M8WavsynthParam.SHAPE), M8WavShape.SINE)
         self.assertEqual(read_wavsynth.get(M8WavsynthParam.SIZE), 0x80)
+
+        # Check modulators were preserved
+        self.assertEqual(read_wavsynth.modulators[0].destination, 2)
+        self.assertEqual(read_wavsynth.modulators[0].amount, 150)
+        self.assertEqual(read_wavsynth.modulators[0].get(2), 0x10)
+        self.assertEqual(read_wavsynth.modulators[0].get(4), 0x50)
+
+        self.assertEqual(read_wavsynth.modulators[2].destination, 7)
+        self.assertEqual(read_wavsynth.modulators[2].amount, 90)
+        self.assertEqual(read_wavsynth.modulators[2].get(2), 0x01)
 
     def test_clone(self):
         # Create wavsynth with custom parameters
