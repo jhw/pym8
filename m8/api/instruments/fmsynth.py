@@ -263,10 +263,6 @@ DEFAULT_PARAMETERS = [
 class M8FMSynth(M8Instrument):
     """M8 FM Synth instrument - 4-operator frequency modulation synthesizer."""
 
-    # FM Synth has modulators at offset 61 (not 63 like other synths)
-    # This is because FM parameters end at offset 60 (REVERB_SEND)
-    MODULATORS_OFFSET = 61
-
     # Configuration for base class dict serialization
     PARAM_ENUM_CLASS = M8FMSynthParam
     MOD_DEST_ENUM_CLASS = M8FMSynthModDest

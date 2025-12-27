@@ -480,7 +480,11 @@ class TestM8FMSynth(unittest.TestCase):
         )
 
         # Verify ALL instrument parameters byte by byte
-        for offset in range(M8FMSynth.MODULATORS_OFFSET):
+        # Note: M8i files have modulators at offset 61, M8s at offset 63
+        # After round-trip, we get M8s format, so only check up to offset 61
+        # (offsets 61-62 in M8i are modulator data, not instrument parameters)
+        M8I_MODULATORS_OFFSET = 61
+        for offset in range(M8I_MODULATORS_OFFSET):
             self.assertEqual(
                 restored.get(offset),
                 original.get(offset),

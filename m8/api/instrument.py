@@ -72,7 +72,6 @@ class M8Instrument:
     - PARAM_ENUM_CLASS: The parameter enum class (e.g., M8WavsynthParam)
     - PARAM_ENUM_TYPES: Dict mapping parameter names to their enum types
     - EXTRA_FIELDS: List of additional dict fields beyond 'name' and 'params'
-    - MODULATORS_OFFSET: Offset for modulators (default 63, FM synth uses 61)
     """
 
     # Subclasses should override these
@@ -80,7 +79,6 @@ class M8Instrument:
     MOD_DEST_ENUM_CLASS = None
     PARAM_ENUM_TYPES = {}
     EXTRA_FIELDS = []
-    MODULATORS_OFFSET = 63  # Default offset, can be overridden by subclasses
 
     def __init__(self, instrument_type_id, block_size=BLOCK_SIZE):
         """Initialize instrument with type and buffer.
@@ -137,10 +135,9 @@ class M8Instrument:
         """
         buffer = bytearray(self._data)
 
-        # Write modulators at class-specific offset (default 63, FM synth uses 61)
-        mod_offset = self.__class__.MODULATORS_OFFSET
+        # Write modulators at offset 63 (standard for all M8s instruments)
         modulator_data = self.modulators.write()
-        buffer[mod_offset:mod_offset + len(modulator_data)] = modulator_data
+        buffer[MODULATORS_OFFSET:MODULATORS_OFFSET + len(modulator_data)] = modulator_data
 
         return bytes(buffer)
 
@@ -157,7 +154,7 @@ class M8Instrument:
 
     @classmethod
     def read(cls, data):
-        """Read instrument from binary data.
+        """Read instrument from binary data (M8s format).
 
         Subclasses should override this to handle their specific initialization.
         """
@@ -165,9 +162,8 @@ class M8Instrument:
         instance._data = bytearray(data[:BLOCK_SIZE])
         instance.version = M8Version()
 
-        # Read modulators from class-specific offset (default 63, FM synth uses 61)
-        mod_offset = cls.MODULATORS_OFFSET
-        instance.modulators = M8Modulators.read(data[mod_offset:])
+        # Read modulators from offset 63 (standard for all M8s instruments)
+        instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
 
         return instance
 
@@ -218,10 +214,12 @@ class M8Instrument:
 
         instrument.version = version
 
-        # M8i files use a different modulator format than M8s files
-        # Convert M8i modulator format to M8s format
-        mod_offset = instrument.__class__.MODULATORS_OFFSET
-        instrument.modulators = M8Modulators.read_m8i(instrument_data[mod_offset:])
+        # M8i files use a different modulator format than M8s files:
+        # - M8i: modulators at offset 61 (ALL instruments)
+        # - M8s: modulators at offset 63 (ALL instruments)
+        # Convert M8i modulator format (at offset 61) to M8s format
+        M8I_MODULATORS_OFFSET = 61
+        instrument.modulators = M8Modulators.read_m8i(instrument_data[M8I_MODULATORS_OFFSET:])
 
         return instrument
 
