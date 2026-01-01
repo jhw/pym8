@@ -85,14 +85,23 @@ class ChainBuilder:
             processed_segments.append(segment)
             slice_index_mapping[idx] = idx
 
-        # Calculate slice positions (in samples, not milliseconds)
+        # Pre-allocate silent buffer for entire chain at exact duration
+        # Calculate precise slice positions - no concatenation = no cumulative errors
         samples_per_slice = int(self.slice_duration_ms * self.frame_rate / 1000)
-        slice_positions = [i * samples_per_slice for i in range(len(processed_segments))]
+        num_slices = len(processed_segments)
+        slice_positions = [i * samples_per_slice for i in range(num_slices)]
 
-        # Concatenate all segments into a single chain
-        chain = processed_segments[0]
-        for segment in processed_segments[1:]:
-            chain = chain + segment
+        # Create silent buffer with exact total duration
+        total_duration_ms = self.slice_duration_ms * num_slices
+        chain = AudioSegment.silent(
+            duration=int(total_duration_ms),
+            frame_rate=self.frame_rate
+        )
+
+        # Overlay each segment at its precise slice position
+        for i, segment in enumerate(processed_segments):
+            position_ms = i * self.slice_duration_ms
+            chain = chain.overlay(segment, position=int(position_ms))
 
         # Export chain to WAV format in memory
         wav_buffer = BytesIO()
