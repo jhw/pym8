@@ -48,18 +48,18 @@ OUTPUT_DIR = Path("tmp/demos/acid_banger_909_chain")
 SAMPLES_BASE = Path("tmp/erica-pico-samples")
 BPM = 130
 SEED = 42
-NUM_ROWS = 4  # Reduced for debugging clipping issues
+NUM_ROWS = 16
 NOTE_DIVISION = 4  # 4=16th notes (4 ticks per beat), 2=8th notes, 8=32nd notes
-LENGTH_MULTIPLIER = 4  # Increased to 4x for debugging (was 2)
+LENGTH_MULTIPLIER = 2  # Sample duration multiplier (allows ring-out)
 
 # M8 constants
 MAX_VELOCITY = 0x7F
 SLICE_MODE_FILE = 0x01
 
-# Slice organization: 4 kicks (0-3), 4 snares (4-7), 4 hats (8-11)
+# Slice organization: 16 kicks (0-15), 16 snares (16-31), 16 hats (32-47)
 KICK_SLICE_OFFSET = 0
-SNARE_SLICE_OFFSET = 4
-HAT_SLICE_OFFSET = 8
+SNARE_SLICE_OFFSET = 16
+HAT_SLICE_OFFSET = 32
 
 
 def find_samples_by_type(samples_dir: Path) -> Dict[str, List[Path]]:
