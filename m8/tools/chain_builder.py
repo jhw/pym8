@@ -99,9 +99,16 @@ class ChainBuilder:
     def from_bpm(cls, bpm, note_division=4, fade_ms=3, frame_rate=44100):
         """Create a ChainBuilder with sample duration based on BPM and note division.
 
+        The note_division parameter represents "ticks per beat" - how many sample slices
+        fit within one beat at the given BPM.
+
         Args:
             bpm: Beats per minute
-            note_division: Note division (4=16th notes, 2=8th notes, 8=32nd notes, 1=quarter notes)
+            note_division: Ticks per beat (default: 4)
+                - 4 = 16th notes (4 ticks per beat)
+                - 2 = 8th notes (2 ticks per beat)
+                - 8 = 32nd notes (8 ticks per beat)
+                - 1 = quarter notes (1 tick per beat)
             fade_ms: Fade in/out duration in milliseconds (default: 3)
             frame_rate: Sample rate in Hz (default: 44100)
 
@@ -109,13 +116,14 @@ class ChainBuilder:
             ChainBuilder instance configured for the given BPM
 
         Examples:
-            16th notes (default): note_division=4
-            8th notes: note_division=2
-            32nd notes: note_division=8
-            Quarter notes: note_division=1
+            At 120 BPM, 1 beat = 500ms (1/2 second):
+            - note_division=4 (16ths) → 4 ticks/beat → 125ms per sample
+            - note_division=2 (8ths)  → 2 ticks/beat → 250ms per sample
+            - note_division=8 (32nds) → 8 ticks/beat → 62.5ms per sample
         """
-        # Calculate duration based on note division
-        # 16th note = beat / 4, 8th note = beat / 2, etc.
+        # Calculate duration per tick
+        # note_division represents "ticks per beat"
+        # At 120 BPM: beat = 500ms, note_division=4 → 500ms / 4 = 125ms per tick
         beat_duration_ms = (60.0 / bpm) * 1000
         sample_duration_ms = beat_duration_ms / note_division
 
