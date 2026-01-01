@@ -16,9 +16,9 @@ class TestChainBuilder(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.sample_duration_ms = 100
+        self.slice_duration_ms = 100
         self.builder = ChainBuilder(
-            sample_duration_ms=self.sample_duration_ms,
+            slice_duration_ms=self.slice_duration_ms,
             fade_ms=3,
             frame_rate=44100
         )
@@ -66,8 +66,8 @@ class TestChainBuilder(unittest.TestCase):
         result_wav.seek(0)
         chain = AudioSegment.from_wav(result_wav)
 
-        # Total duration should be 2 * sample_duration_ms
-        expected_duration_ms = 2 * self.sample_duration_ms
+        # Total duration should be 2 * slice_duration_ms
+        expected_duration_ms = 2 * self.slice_duration_ms
         # Allow small tolerance for rounding
         self.assertAlmostEqual(len(chain), expected_duration_ms, delta=5)
 
@@ -93,51 +93,22 @@ class TestChainBuilder(unittest.TestCase):
         self.assertEqual(num_cues, 3)
 
         # Verify slice positions are evenly spaced
-        samples_per_segment = int(self.sample_duration_ms * 44100 / 1000)
+        samples_per_slice = int(self.slice_duration_ms * 44100 / 1000)
 
         for i in range(3):
             offset = cue_pos + 12 + (i * 24)  # Each cue point is 24 bytes
             position = struct.unpack('<I', wav_data[offset+4:offset+8])[0]
-            expected_position = i * samples_per_segment
+            expected_position = i * samples_per_slice
             self.assertEqual(position, expected_position)
 
-    def test_from_bpm_factory(self):
-        """Test BPM-based factory method."""
-        bpm = 120
-        note_division = 4  # 16th notes
+    def test_direct_instantiation(self):
+        """Test that ChainBuilder can be instantiated with slice_duration_ms."""
+        slice_duration = 250.0  # 250ms slices
+        builder = ChainBuilder(slice_duration_ms=slice_duration)
 
-        builder = ChainBuilder.from_bpm(bpm=bpm, note_division=note_division)
-
-        # Calculate expected sample duration
-        # 16th note = beat / 4
-        beat_duration_ms = (60.0 / bpm) * 1000
-        expected_duration = beat_duration_ms / note_division
-
-        self.assertAlmostEqual(
-            builder.sample_duration_ms,
-            expected_duration,
-            places=2
-        )
+        self.assertEqual(builder.slice_duration_ms, slice_duration)
         self.assertEqual(builder.fade_ms, 3)
         self.assertEqual(builder.frame_rate, 44100)
-
-    def test_from_bpm_different_values(self):
-        """Test BPM factory with different BPM values and note divisions."""
-        # Test 16th notes at 120 BPM (default)
-        builder_16th = ChainBuilder.from_bpm(bpm=120, note_division=4)
-        beat_duration = (60.0 / 120) * 1000
-        expected_16th = beat_duration / 4  # 125ms
-        self.assertAlmostEqual(builder_16th.sample_duration_ms, expected_16th, places=2)
-
-        # Test 8th notes at 120 BPM
-        builder_8th = ChainBuilder.from_bpm(bpm=120, note_division=2)
-        expected_8th = beat_duration / 2  # 250ms
-        self.assertAlmostEqual(builder_8th.sample_duration_ms, expected_8th, places=2)
-
-        # Test quarter notes at 120 BPM
-        builder_quarter = ChainBuilder.from_bpm(bpm=120, note_division=1)
-        expected_quarter = beat_duration / 1  # 500ms
-        self.assertAlmostEqual(builder_quarter.sample_duration_ms, expected_quarter, places=2)
 
     def test_build_chain_empty_list(self):
         """Test error handling for empty sample list."""
@@ -189,7 +160,7 @@ class TestChainBuilder(unittest.TestCase):
         # Verify WAV is valid
         result_wav.seek(0)
         chain = AudioSegment.from_wav(result_wav)
-        self.assertAlmostEqual(len(chain), self.sample_duration_ms, delta=5)
+        self.assertAlmostEqual(len(chain), self.slice_duration_ms, delta=5)
 
     def test_build_chain_max_samples(self):
         """Test building chain with maximum allowed samples (255)."""
@@ -214,7 +185,7 @@ class TestChainBuilder(unittest.TestCase):
 
         # Build chain with fade
         builder_with_fade = ChainBuilder(
-            sample_duration_ms=100,
+            slice_duration_ms=100,
             fade_ms=10,  # Longer fade for testing
             frame_rate=44100
         )

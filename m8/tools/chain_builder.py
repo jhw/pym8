@@ -8,23 +8,32 @@ from m8.tools.wav_slicer import WAVSlicer
 
 
 class ChainBuilder:
-    """Build sample chains with slice metadata for M8 tracker."""
+    """Build sample chains with slice metadata for M8 tracker.
 
-    def __init__(self, sample_duration_ms, fade_ms=3, frame_rate=44100):
+    Simple audio concatenator that normalizes samples to a fixed duration and
+    concatenates them with slice metadata. All musical/timing calculations should
+    be handled by the caller.
+    """
+
+    def __init__(self, slice_duration_ms, fade_ms=3, frame_rate=44100):
         """Initialize chain builder.
 
         Args:
-            sample_duration_ms: Duration of each sample slice in milliseconds
+            slice_duration_ms: Fixed duration for each slice in milliseconds
+                               Each sample will be normalized (truncated/padded) to this length
             fade_ms: Fade in/out duration in milliseconds (default: 3)
             frame_rate: Sample rate in Hz (default: 44100)
         """
-        self.sample_duration_ms = sample_duration_ms
+        self.slice_duration_ms = slice_duration_ms
         self.fade_ms = fade_ms
         self.frame_rate = frame_rate
         self.wav_slicer = WAVSlicer()
 
     def build_chain(self, samples):
         """Build a sample chain from a list of audio samples.
+
+        Loads samples, normalizes each to slice_duration_ms (padding or truncating),
+        applies fade in/out, and concatenates with slice metadata.
 
         Args:
             samples: List of AudioSegment objects or file paths (Path/str)
@@ -56,11 +65,11 @@ class ChainBuilder:
             if segment.frame_rate != self.frame_rate:
                 segment = segment.set_frame_rate(self.frame_rate)
 
-            # Normalize to sample duration (truncate or pad)
-            if len(segment) > self.sample_duration_ms:
-                segment = segment[:int(self.sample_duration_ms)]
-            elif len(segment) < self.sample_duration_ms:
-                silence_duration = int(self.sample_duration_ms - len(segment))
+            # Normalize to slice duration (truncate or pad)
+            if len(segment) > self.slice_duration_ms:
+                segment = segment[:int(self.slice_duration_ms)]
+            elif len(segment) < self.slice_duration_ms:
+                silence_duration = int(self.slice_duration_ms - len(segment))
                 silence = AudioSegment.silent(
                     duration=silence_duration,
                     frame_rate=self.frame_rate
@@ -77,8 +86,8 @@ class ChainBuilder:
             slice_index_mapping[idx] = idx
 
         # Calculate slice positions (in samples, not milliseconds)
-        samples_per_segment = int(self.sample_duration_ms * self.frame_rate / 1000)
-        slice_positions = [i * samples_per_segment for i in range(len(processed_segments))]
+        samples_per_slice = int(self.slice_duration_ms * self.frame_rate / 1000)
+        slice_positions = [i * samples_per_slice for i in range(len(processed_segments))]
 
         # Concatenate all segments into a single chain
         chain = processed_segments[0]
@@ -94,41 +103,3 @@ class ChainBuilder:
         sliced_wav = self.wav_slicer.add_slice_points(wav_data, slice_positions)
 
         return sliced_wav, slice_index_mapping
-
-    @classmethod
-    def from_bpm(cls, bpm, note_division=4, fade_ms=3, frame_rate=44100):
-        """Create a ChainBuilder with sample duration based on BPM and note division.
-
-        The note_division parameter represents "ticks per beat" - how many sample slices
-        fit within one beat at the given BPM.
-
-        Args:
-            bpm: Beats per minute
-            note_division: Ticks per beat (default: 4)
-                - 4 = 16th notes (4 ticks per beat)
-                - 2 = 8th notes (2 ticks per beat)
-                - 8 = 32nd notes (8 ticks per beat)
-                - 1 = quarter notes (1 tick per beat)
-            fade_ms: Fade in/out duration in milliseconds (default: 3)
-            frame_rate: Sample rate in Hz (default: 44100)
-
-        Returns:
-            ChainBuilder instance configured for the given BPM
-
-        Examples:
-            At 120 BPM, 1 beat = 500ms (1/2 second):
-            - note_division=4 (16ths) → 4 ticks/beat → 125ms per sample
-            - note_division=2 (8ths)  → 2 ticks/beat → 250ms per sample
-            - note_division=8 (32nds) → 8 ticks/beat → 62.5ms per sample
-        """
-        # Calculate duration per tick
-        # note_division represents "ticks per beat"
-        # At 120 BPM: beat = 500ms, note_division=4 → 500ms / 4 = 125ms per tick
-        beat_duration_ms = (60.0 / bpm) * 1000
-        sample_duration_ms = beat_duration_ms / note_division
-
-        return cls(
-            sample_duration_ms=sample_duration_ms,
-            fade_ms=fade_ms,
-            frame_rate=frame_rate
-        )

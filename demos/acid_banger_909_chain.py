@@ -27,7 +27,6 @@ import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
-from pydub import AudioSegment
 
 from m8.api.project import M8Project
 from m8.api.instruments.sampler import M8Sampler, M8SamplerParam
@@ -50,7 +49,8 @@ SAMPLES_BASE = Path("tmp/erica-pico-samples")
 BPM = 130
 SEED = 42
 NUM_ROWS = 16
-NOTE_DIVISION = 4  # 4=16th notes, 2=8th notes, 8=32nd notes, 1=quarter notes
+NOTE_DIVISION = 4  # 4=16th notes (4 ticks per beat), 2=8th notes, 8=32nd notes
+LENGTH_MULTIPLIER = 2  # Sample duration multiplier (allows ring-out)
 
 # M8 constants
 MAX_VELOCITY = 0x7F
@@ -159,53 +159,21 @@ def create_phrase_from_pattern(pattern: List[float], slice_index: int,
     return phrase
 
 
-def load_and_normalize_samples(sample_paths: List[Path], sample_duration_ms: float) -> List[AudioSegment]:
-    """Load samples and normalize them to sample duration.
-
-    Samples longer than sample duration are truncated.
-    Samples shorter than sample duration are padded with silence.
-
-    Args:
-        sample_paths: List of paths to sample files
-        sample_duration_ms: Target duration in milliseconds
-
-    Returns:
-        List of normalized AudioSegment objects
-    """
-    normalized_samples = []
-
-    for sample_path in sample_paths:
-        # Load sample
-        segment = AudioSegment.from_file(str(sample_path))
-
-        # Normalize duration (truncate or pad)
-        if len(segment) > sample_duration_ms:
-            segment = segment[:int(sample_duration_ms)]
-        elif len(segment) < sample_duration_ms:
-            silence_duration = int(sample_duration_ms - len(segment))
-            silence = AudioSegment.silent(duration=silence_duration)
-            segment = segment + silence
-
-        normalized_samples.append(segment)
-
-    return normalized_samples
-
-
 def create_sample_chain(samples_by_type: Dict[str, List[Path]], rng: random.Random,
-                       sample_duration_ms: float) -> Tuple[bytes, Dict[str, List[int]]]:
+                       slice_duration_ms: float) -> Tuple[bytes, Dict[str, List[int]]]:
     """Create the sample chain WAV with slice metadata.
 
     Args:
         samples_by_type: Dict mapping type (kick/snare/hat) to sample paths
         rng: Random number generator for sample selection
-        sample_duration_ms: Duration of each sample slice
+        slice_duration_ms: Duration for each slice in milliseconds
 
     Returns:
         Tuple of (chain_wav_bytes, slice_mapping)
         slice_mapping is dict mapping type to list of slice indices
     """
     print(f"\nBuilding sample chain...")
-    print(f"  Sample duration: {sample_duration_ms:.2f}ms (16th note @ {BPM} BPM)")
+    print(f"  Slice duration: {slice_duration_ms:.2f}ms")
 
     # Select samples for all rows
     selected_samples = []
@@ -236,19 +204,15 @@ def create_sample_chain(samples_by_type: Dict[str, List[Path]], rng: random.Rand
         slice_mapping['hat'].append(HAT_SLICE_OFFSET + i)
         print(f"  Hat {i:2d} (slice {HAT_SLICE_OFFSET + i:2d}): {hat_sample.name[:40]}")
 
-    # Load and normalize all samples
-    print(f"\nLoading and normalizing {len(selected_samples)} samples...")
-    normalized_samples = load_and_normalize_samples(selected_samples, sample_duration_ms)
-
-    # Build chain using ChainBuilder
+    # Build chain using ChainBuilder (it handles all normalization/padding/fade)
     print(f"\nBuilding chain with ChainBuilder...")
     builder = ChainBuilder(
-        sample_duration_ms=sample_duration_ms,
+        slice_duration_ms=slice_duration_ms,
         fade_ms=3,
         frame_rate=44100
     )
 
-    chain_wav_io, _ = builder.build_chain(normalized_samples)
+    chain_wav_io, _ = builder.build_chain(selected_samples)
     chain_wav_bytes = chain_wav_io.getvalue()
 
     print(f"  Chain created: {len(chain_wav_bytes)} bytes")
@@ -286,14 +250,16 @@ def create_acid_banger_chain_project():
         print(f"\n✗ Error: Not enough samples found in all categories!")
         sys.exit(1)
 
-    # Calculate sample duration based on BPM and note division
-    # For 16th notes: beat_duration / 4
+    # Calculate slice duration: (60s / BPM) * 1000ms * (1 / note_division) * length_multiplier
+    # At 130 BPM with note_division=4 and length_multiplier=2:
+    #   beat = 461ms, tick = 115ms, slice_duration = 231ms
     beat_duration_ms = (60.0 / BPM) * 1000
-    sample_duration_ms = beat_duration_ms / NOTE_DIVISION
+    tick_duration_ms = beat_duration_ms / NOTE_DIVISION
+    slice_duration_ms = tick_duration_ms * LENGTH_MULTIPLIER
 
-    # Create sample chain
+    # Create sample chain (ChainBuilder handles all normalization/padding/fade)
     chain_wav_bytes, slice_mapping = create_sample_chain(
-        samples_by_type, rng, sample_duration_ms
+        samples_by_type, rng, slice_duration_ms
     )
 
     # Initialize project
