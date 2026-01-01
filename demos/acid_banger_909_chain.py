@@ -50,7 +50,7 @@ SAMPLES_BASE = Path("tmp/erica-pico-samples")
 BPM = 130
 SEED = 42
 NUM_ROWS = 16
-TICKS_PER_BEAT = 16
+NOTE_DIVISION = 4  # 4=16th notes, 2=8th notes, 8=32nd notes, 1=quarter notes
 
 # M8 constants
 MAX_VELOCITY = 0x7F
@@ -159,15 +159,15 @@ def create_phrase_from_pattern(pattern: List[float], slice_index: int,
     return phrase
 
 
-def load_and_normalize_samples(sample_paths: List[Path], tick_duration_ms: float) -> List[AudioSegment]:
-    """Load samples and normalize them to tick duration.
+def load_and_normalize_samples(sample_paths: List[Path], sample_duration_ms: float) -> List[AudioSegment]:
+    """Load samples and normalize them to sample duration.
 
-    Samples longer than tick duration are truncated.
-    Samples shorter than tick duration are padded with silence.
+    Samples longer than sample duration are truncated.
+    Samples shorter than sample duration are padded with silence.
 
     Args:
         sample_paths: List of paths to sample files
-        tick_duration_ms: Target duration in milliseconds
+        sample_duration_ms: Target duration in milliseconds
 
     Returns:
         List of normalized AudioSegment objects
@@ -179,10 +179,10 @@ def load_and_normalize_samples(sample_paths: List[Path], tick_duration_ms: float
         segment = AudioSegment.from_file(str(sample_path))
 
         # Normalize duration (truncate or pad)
-        if len(segment) > tick_duration_ms:
-            segment = segment[:int(tick_duration_ms)]
-        elif len(segment) < tick_duration_ms:
-            silence_duration = int(tick_duration_ms - len(segment))
+        if len(segment) > sample_duration_ms:
+            segment = segment[:int(sample_duration_ms)]
+        elif len(segment) < sample_duration_ms:
+            silence_duration = int(sample_duration_ms - len(segment))
             silence = AudioSegment.silent(duration=silence_duration)
             segment = segment + silence
 
@@ -192,20 +192,20 @@ def load_and_normalize_samples(sample_paths: List[Path], tick_duration_ms: float
 
 
 def create_sample_chain(samples_by_type: Dict[str, List[Path]], rng: random.Random,
-                       tick_duration_ms: float) -> Tuple[bytes, Dict[str, List[int]]]:
+                       sample_duration_ms: float) -> Tuple[bytes, Dict[str, List[int]]]:
     """Create the sample chain WAV with slice metadata.
 
     Args:
         samples_by_type: Dict mapping type (kick/snare/hat) to sample paths
         rng: Random number generator for sample selection
-        tick_duration_ms: Duration of each sample slice
+        sample_duration_ms: Duration of each sample slice
 
     Returns:
         Tuple of (chain_wav_bytes, slice_mapping)
         slice_mapping is dict mapping type to list of slice indices
     """
     print(f"\nBuilding sample chain...")
-    print(f"  Tick duration: {tick_duration_ms:.2f}ms")
+    print(f"  Sample duration: {sample_duration_ms:.2f}ms (16th note @ {BPM} BPM)")
 
     # Select samples for all rows
     selected_samples = []
@@ -238,12 +238,12 @@ def create_sample_chain(samples_by_type: Dict[str, List[Path]], rng: random.Rand
 
     # Load and normalize all samples
     print(f"\nLoading and normalizing {len(selected_samples)} samples...")
-    normalized_samples = load_and_normalize_samples(selected_samples, tick_duration_ms)
+    normalized_samples = load_and_normalize_samples(selected_samples, sample_duration_ms)
 
     # Build chain using ChainBuilder
     print(f"\nBuilding chain with ChainBuilder...")
     builder = ChainBuilder(
-        sample_duration_ms=tick_duration_ms,
+        sample_duration_ms=sample_duration_ms,
         fade_ms=3,
         frame_rate=44100
     )
@@ -286,13 +286,14 @@ def create_acid_banger_chain_project():
         print(f"\n✗ Error: Not enough samples found in all categories!")
         sys.exit(1)
 
-    # Calculate tick duration based on BPM
+    # Calculate sample duration based on BPM and note division
+    # For 16th notes: beat_duration / 4
     beat_duration_ms = (60.0 / BPM) * 1000
-    tick_duration_ms = beat_duration_ms / TICKS_PER_BEAT
+    sample_duration_ms = beat_duration_ms / NOTE_DIVISION
 
     # Create sample chain
     chain_wav_bytes, slice_mapping = create_sample_chain(
-        samples_by_type, rng, tick_duration_ms
+        samples_by_type, rng, sample_duration_ms
     )
 
     # Initialize project

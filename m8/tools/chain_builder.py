@@ -96,24 +96,31 @@ class ChainBuilder:
         return sliced_wav, slice_index_mapping
 
     @classmethod
-    def from_bpm(cls, bpm, ticks_per_beat=16, fade_ms=3, frame_rate=44100):
-        """Create a ChainBuilder with sample duration based on BPM and ticks.
+    def from_bpm(cls, bpm, note_division=4, fade_ms=3, frame_rate=44100):
+        """Create a ChainBuilder with sample duration based on BPM and note division.
 
         Args:
             bpm: Beats per minute
-            ticks_per_beat: Number of ticks per beat (default: 16)
+            note_division: Note division (4=16th notes, 2=8th notes, 8=32nd notes, 1=quarter notes)
             fade_ms: Fade in/out duration in milliseconds (default: 3)
             frame_rate: Sample rate in Hz (default: 44100)
 
         Returns:
             ChainBuilder instance configured for the given BPM
+
+        Examples:
+            16th notes (default): note_division=4
+            8th notes: note_division=2
+            32nd notes: note_division=8
+            Quarter notes: note_division=1
         """
-        # Calculate duration of one tick in milliseconds
+        # Calculate duration based on note division
+        # 16th note = beat / 4, 8th note = beat / 2, etc.
         beat_duration_ms = (60.0 / bpm) * 1000
-        tick_duration_ms = beat_duration_ms / ticks_per_beat
+        sample_duration_ms = beat_duration_ms / note_division
 
         return cls(
-            sample_duration_ms=tick_duration_ms,
+            sample_duration_ms=sample_duration_ms,
             fade_ms=fade_ms,
             frame_rate=frame_rate
         )

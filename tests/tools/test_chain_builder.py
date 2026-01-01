@@ -104,35 +104,40 @@ class TestChainBuilder(unittest.TestCase):
     def test_from_bpm_factory(self):
         """Test BPM-based factory method."""
         bpm = 120
-        ticks_per_beat = 16
+        note_division = 4  # 16th notes
 
-        builder = ChainBuilder.from_bpm(bpm=bpm, ticks_per_beat=ticks_per_beat)
+        builder = ChainBuilder.from_bpm(bpm=bpm, note_division=note_division)
 
         # Calculate expected sample duration
+        # 16th note = beat / 4
         beat_duration_ms = (60.0 / bpm) * 1000
-        expected_tick_duration = beat_duration_ms / ticks_per_beat
+        expected_duration = beat_duration_ms / note_division
 
         self.assertAlmostEqual(
             builder.sample_duration_ms,
-            expected_tick_duration,
+            expected_duration,
             places=2
         )
         self.assertEqual(builder.fade_ms, 3)
         self.assertEqual(builder.frame_rate, 44100)
 
     def test_from_bpm_different_values(self):
-        """Test BPM factory with different BPM values."""
-        # Test slow BPM
-        builder_slow = ChainBuilder.from_bpm(bpm=80, ticks_per_beat=16)
-        beat_duration_slow = (60.0 / 80) * 1000
-        expected_slow = beat_duration_slow / 16
-        self.assertAlmostEqual(builder_slow.sample_duration_ms, expected_slow, places=2)
+        """Test BPM factory with different BPM values and note divisions."""
+        # Test 16th notes at 120 BPM (default)
+        builder_16th = ChainBuilder.from_bpm(bpm=120, note_division=4)
+        beat_duration = (60.0 / 120) * 1000
+        expected_16th = beat_duration / 4  # 125ms
+        self.assertAlmostEqual(builder_16th.sample_duration_ms, expected_16th, places=2)
 
-        # Test fast BPM
-        builder_fast = ChainBuilder.from_bpm(bpm=160, ticks_per_beat=16)
-        beat_duration_fast = (60.0 / 160) * 1000
-        expected_fast = beat_duration_fast / 16
-        self.assertAlmostEqual(builder_fast.sample_duration_ms, expected_fast, places=2)
+        # Test 8th notes at 120 BPM
+        builder_8th = ChainBuilder.from_bpm(bpm=120, note_division=2)
+        expected_8th = beat_duration / 2  # 250ms
+        self.assertAlmostEqual(builder_8th.sample_duration_ms, expected_8th, places=2)
+
+        # Test quarter notes at 120 BPM
+        builder_quarter = ChainBuilder.from_bpm(bpm=120, note_division=1)
+        expected_quarter = beat_duration / 1  # 500ms
+        self.assertAlmostEqual(builder_quarter.sample_duration_ms, expected_quarter, places=2)
 
     def test_build_chain_empty_list(self):
         """Test error handling for empty sample list."""
