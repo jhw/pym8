@@ -3,10 +3,7 @@
 
 from enum import IntEnum
 from m8.api import _read_fixed_string, _write_fixed_string
-from m8.api.instrument import M8Instrument, BLOCK_SIZE, BLOCK_COUNT
-
-# Sampler configuration
-SAMPLER_TYPE_ID = 2
+from m8.api.instrument import M8Instrument, M8InstrumentType, BLOCK_SIZE, BLOCK_COUNT
 
 
 # Sampler Parameter Offsets
@@ -109,7 +106,7 @@ class M8Sampler(M8Instrument):
     def __init__(self, name="", sample_path=""):
         """Initialize a sampler instrument with default parameters."""
         # Initialize base instrument
-        super().__init__(SAMPLER_TYPE_ID)
+        super().__init__(M8InstrumentType.SAMPLER)
 
         # Apply sampler-specific defaults
         self._apply_defaults(DEFAULT_PARAMETERS)

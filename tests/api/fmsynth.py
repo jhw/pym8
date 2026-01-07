@@ -439,11 +439,7 @@ class TestM8FMSynth(unittest.TestCase):
         from pathlib import Path
 
         # Path to test M8i file (KICK_MORPH has interesting modulators)
-        test_file = Path(__file__).parent.parent.parent / "tmp/dw01-synthdrums/m8i/KICK_MORPH.m8i"
-
-        # Skip test if file doesn't exist
-        if not test_file.exists():
-            self.skipTest(f"Test M8i file not found: {test_file}")
+        test_file = Path(__file__).parent.parent / "fixtures/KICK_MORPH.m8i"
 
         # Read from M8i file (uses M8i format conversion)
         original = M8FMSynth.read_from_file(str(test_file))

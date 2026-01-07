@@ -3,10 +3,7 @@
 
 from enum import IntEnum
 from m8.api import _read_fixed_string, _write_fixed_string
-from m8.api.instrument import M8Instrument, BLOCK_SIZE, BLOCK_COUNT
-
-# FM Synth configuration
-FMSYNTH_TYPE_ID = 4
+from m8.api.instrument import M8Instrument, M8InstrumentType, BLOCK_SIZE, BLOCK_COUNT
 
 
 # FM Synth Parameter Offsets
@@ -286,7 +283,7 @@ class M8FMSynth(M8Instrument):
 
     def __init__(self, name=""):
         """Initialize an FM synth instrument with default parameters."""
-        super().__init__(FMSYNTH_TYPE_ID)
+        super().__init__(M8InstrumentType.FMSYNTH)
 
         # Apply FM synth-specific defaults
         self._apply_defaults(DEFAULT_PARAMETERS)

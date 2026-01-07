@@ -3,10 +3,7 @@
 
 from enum import IntEnum
 from m8.api import _read_fixed_string, _write_fixed_string
-from m8.api.instrument import M8Instrument, BLOCK_SIZE, BLOCK_COUNT
-
-# MacroSynth configuration
-MACROSYNTH_TYPE_ID = 1
+from m8.api.instrument import M8Instrument, M8InstrumentType, BLOCK_SIZE, BLOCK_COUNT
 
 
 # MacroSynth Parameter Offsets
@@ -138,7 +135,7 @@ class M8Macrosynth(M8Instrument):
 
     def __init__(self, name=""):
         """Initialize a macrosynth instrument with default parameters."""
-        super().__init__(MACROSYNTH_TYPE_ID)
+        super().__init__(M8InstrumentType.MACROSYNTH)
 
         # Apply macrosynth-specific defaults
         self._apply_defaults(DEFAULT_PARAMETERS)

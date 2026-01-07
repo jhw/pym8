@@ -3,10 +3,7 @@
 
 from enum import IntEnum
 from m8.api import _read_fixed_string, _write_fixed_string
-from m8.api.instrument import M8Instrument, BLOCK_SIZE, BLOCK_COUNT
-
-# WavSynth configuration
-WAVSYNTH_TYPE_ID = 0
+from m8.api.instrument import M8Instrument, M8InstrumentType, BLOCK_SIZE, BLOCK_COUNT
 
 
 # WavSynth Parameter Offsets
@@ -165,7 +162,7 @@ class M8Wavsynth(M8Instrument):
 
     def __init__(self, name=""):
         """Initialize a wavsynth instrument with default parameters."""
-        super().__init__(WAVSYNTH_TYPE_ID)
+        super().__init__(M8InstrumentType.WAVSYNTH)
 
         # Apply wavsynth-specific defaults
         self._apply_defaults(DEFAULT_PARAMETERS)

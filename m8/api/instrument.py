@@ -25,10 +25,13 @@ BLOCK_COUNT = INSTRUMENTS_COUNT
 # Instrument Type Enum
 class M8InstrumentType(IntEnum):
     """Instrument type IDs."""
+    WAVSYNTH = 0
+    MACROSYNTH = 1
     SAMPLER = 2
-    WAVSYNTH = 3
+    MIDIOUT = 3
     FMSYNTH = 4
-    MACROSYNTH = 5
+    HYPERSYNTH = 5
+    EXTERNAL = 6
 
 
 # Common Parameter Value Enums (shared across instrument types)
@@ -195,20 +198,23 @@ class M8Instrument:
         instr_type = instrument_data[TYPE_OFFSET]
 
         # Import instrument types (avoid circular imports)
-        from m8.api.instruments.sampler import M8Sampler, SAMPLER_TYPE_ID
-        from m8.api.instruments.wavsynth import M8Wavsynth, WAVSYNTH_TYPE_ID
-        from m8.api.instruments.macrosynth import M8Macrosynth, MACROSYNTH_TYPE_ID
-        from m8.api.instruments.fmsynth import M8FMSynth, FMSYNTH_TYPE_ID
+        from m8.api.instruments.sampler import M8Sampler
+        from m8.api.instruments.wavsynth import M8Wavsynth
+        from m8.api.instruments.macrosynth import M8Macrosynth
+        from m8.api.instruments.fmsynth import M8FMSynth
+        from m8.api.instruments.external import M8External
 
         # Create appropriate instrument type
-        if instr_type == SAMPLER_TYPE_ID:
+        if instr_type == M8InstrumentType.SAMPLER:
             instrument = M8Sampler.read(instrument_data)
-        elif instr_type == WAVSYNTH_TYPE_ID:
+        elif instr_type == M8InstrumentType.WAVSYNTH:
             instrument = M8Wavsynth.read(instrument_data)
-        elif instr_type == MACROSYNTH_TYPE_ID:
+        elif instr_type == M8InstrumentType.MACROSYNTH:
             instrument = M8Macrosynth.read(instrument_data)
-        elif instr_type == FMSYNTH_TYPE_ID:
+        elif instr_type == M8InstrumentType.FMSYNTH:
             instrument = M8FMSynth.read(instrument_data)
+        elif instr_type == M8InstrumentType.EXTERNAL:
+            instrument = M8External.read(instrument_data)
         else:
             raise ValueError(f"Unknown instrument type: {instr_type}")
 
@@ -335,20 +341,23 @@ class M8Instrument:
                 type_id = type_value
 
             # Import instrument classes (avoid circular imports)
-            from m8.api.instruments.sampler import M8Sampler, SAMPLER_TYPE_ID
-            from m8.api.instruments.wavsynth import M8Wavsynth, WAVSYNTH_TYPE_ID
-            from m8.api.instruments.macrosynth import M8Macrosynth, MACROSYNTH_TYPE_ID
-            from m8.api.instruments.fmsynth import M8FMSynth, FMSYNTH_TYPE_ID
+            from m8.api.instruments.sampler import M8Sampler
+            from m8.api.instruments.wavsynth import M8Wavsynth
+            from m8.api.instruments.macrosynth import M8Macrosynth
+            from m8.api.instruments.fmsynth import M8FMSynth
+            from m8.api.instruments.external import M8External
 
             # Dispatch to appropriate subclass
-            if type_id == SAMPLER_TYPE_ID:
+            if type_id == M8InstrumentType.SAMPLER:
                 return M8Sampler.from_dict(params)
-            elif type_id == WAVSYNTH_TYPE_ID:
+            elif type_id == M8InstrumentType.WAVSYNTH:
                 return M8Wavsynth.from_dict(params)
-            elif type_id == MACROSYNTH_TYPE_ID:
+            elif type_id == M8InstrumentType.MACROSYNTH:
                 return M8Macrosynth.from_dict(params)
-            elif type_id == FMSYNTH_TYPE_ID:
+            elif type_id == M8InstrumentType.FMSYNTH:
                 return M8FMSynth.from_dict(params)
+            elif type_id == M8InstrumentType.EXTERNAL:
+                return M8External.from_dict(params)
             else:
                 raise ValueError(f"Unknown instrument type ID: {type_id}")
 
@@ -430,10 +439,11 @@ class M8Instruments(list):
     @classmethod
     def read(cls, data):
         """Read instruments from binary data."""
-        from m8.api.instruments.sampler import M8Sampler, SAMPLER_TYPE_ID
-        from m8.api.instruments.wavsynth import M8Wavsynth, WAVSYNTH_TYPE_ID
-        from m8.api.instruments.macrosynth import M8Macrosynth, MACROSYNTH_TYPE_ID
-        from m8.api.instruments.fmsynth import M8FMSynth, FMSYNTH_TYPE_ID
+        from m8.api.instruments.sampler import M8Sampler
+        from m8.api.instruments.wavsynth import M8Wavsynth
+        from m8.api.instruments.macrosynth import M8Macrosynth
+        from m8.api.instruments.fmsynth import M8FMSynth
+        from m8.api.instruments.external import M8External
 
         instance = cls.__new__(cls)
         list.__init__(instance)
@@ -444,14 +454,16 @@ class M8Instruments(list):
 
             # Check instrument type
             instr_type = block_data[0]
-            if instr_type == WAVSYNTH_TYPE_ID:
+            if instr_type == M8InstrumentType.WAVSYNTH:
                 instance.append(M8Wavsynth.read(block_data))
-            elif instr_type == MACROSYNTH_TYPE_ID:
+            elif instr_type == M8InstrumentType.MACROSYNTH:
                 instance.append(M8Macrosynth.read(block_data))
-            elif instr_type == FMSYNTH_TYPE_ID:
+            elif instr_type == M8InstrumentType.FMSYNTH:
                 instance.append(M8FMSynth.read(block_data))
-            elif instr_type == SAMPLER_TYPE_ID:
+            elif instr_type == M8InstrumentType.SAMPLER:
                 instance.append(M8Sampler.read(block_data))
+            elif instr_type == M8InstrumentType.EXTERNAL:
+                instance.append(M8External.read(block_data))
             elif instr_type == 0xFF:
                 # Empty slot
                 instance.append(M8Block.read(block_data))
