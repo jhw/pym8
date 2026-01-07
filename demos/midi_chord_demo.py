@@ -49,7 +49,18 @@ Before running this demo, configure your JU-06A as follows:
    - Turn the [VALUE] knob to select "1"
    - Press ARPEGGIO [ON/OFF] again to confirm and exit
 
-3. CLEAR THE CURRENT PATTERN
+3. SELECT A PATTERN
+   ------------------
+   The JU-06A has 8 banks with 8 patches each. Patterns are stored per-patch.
+
+   - Press BANK [1]-[4] to select banks 1-4
+   - Press the same BANK button again to toggle to banks 5-8
+     (e.g., press [1] twice to switch between bank 1 and bank 5)
+   - Press PATCH [1]-[8] to select a patch within the current bank
+
+   Alternative: Hold [START] and turn [VALUE] knob to scroll through patterns.
+
+4. CLEAR THE CURRENT PATTERN
    --------------------------
    The JU-06A's internal sequencer should be empty, otherwise it will play
    its own notes on top of what the M8 sends.
@@ -66,8 +77,8 @@ Before running this demo, configure your JU-06A as follows:
    TIP: Keep pattern 1 blank so the sequencer doesn't auto-play when
    receiving MIDI clock.
 
-Reference: Roland JU-06A Owner's Manual
-         https://www.roland.com/global/support/by_product/ju-06a/owners_manuals/
+Reference: Roland JU-06A Owner's Manual (PDF)
+         https://static.roland.com/assets/media/pdf/JU-06A_eng02_W.pdf
 ================================================================================
 """
 
