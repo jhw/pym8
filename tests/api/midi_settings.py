@@ -156,6 +156,7 @@ class TestM8MidiSettings(unittest.TestCase):
         self.assertEqual(M8TransportMode.OFF, 0x00)
         self.assertEqual(M8TransportMode.PATTERN, 0x01)
         self.assertEqual(M8TransportMode.SONG, 0x02)
+        self.assertEqual(M8TransportMode.SONG_WITH_CLOCK, 0x03)
 
     def test_track_input_mode_enum(self):
         """Test M8TrackInputMode enum values."""

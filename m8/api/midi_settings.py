@@ -11,9 +11,10 @@ MIDI_SETTINGS_SIZE = 27  # Total size of MIDI settings block
 
 class M8TransportMode(IntEnum):
     """MIDI transport behavior modes."""
-    OFF = 0x00      # No transport messages
-    PATTERN = 0x01  # Send transport at pattern level
-    SONG = 0x02     # Send transport at song level
+    OFF = 0x00              # No transport messages
+    PATTERN = 0x01          # Send transport at pattern level
+    SONG = 0x02             # Send transport at song level
+    SONG_WITH_CLOCK = 0x03  # Send transport and MIDI clock
 
 
 class M8TrackInputMode(IntEnum):

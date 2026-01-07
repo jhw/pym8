@@ -57,9 +57,8 @@ def main():
     # Initialize project from template
     project = M8Project.initialise()
 
-    # Configure MIDI settings
-    project.midi_settings.send_sync = True
-    project.midi_settings.send_transport = M8TransportMode.SONG
+    # Configure MIDI settings - use SONG_WITH_CLOCK for clock + transport
+    project.midi_settings.send_transport = M8TransportMode.SONG_WITH_CLOCK
 
     # Create 3 External instruments (one per voice/chain)
     voice_names = ["ROOT", "3RD", "5TH"]
@@ -124,8 +123,7 @@ def main():
     print("Project written to:", output_path)
     print()
     print("Configuration:")
-    print(f"  MIDI Clock: {'ON' if project.midi_settings.send_sync else 'OFF'}")
-    print(f"  MIDI Transport: {M8TransportMode(project.midi_settings.send_transport).name}")
+    print(f"  MIDI Send: {M8TransportMode(project.midi_settings.send_transport).name}")
     print()
     print("Instruments (all on MIDI Ch 1):")
     for i in range(3):
