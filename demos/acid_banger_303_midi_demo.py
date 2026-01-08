@@ -278,7 +278,7 @@ def create_external_instrument(name: str, midi_channel: int) -> M8External:
     inst.name = name
 
     # MIDI output settings
-    inst.set(M8ExternalParam.PORT, M8ExternalPort.USB)
+    inst.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)  # Hardware MIDI output
     inst.set(M8ExternalParam.CHANNEL, midi_channel - 1)  # M8 uses 0-indexed channels
     inst.set(M8ExternalParam.BANK, 0)
     inst.set(M8ExternalParam.PROGRAM, 0)
@@ -320,7 +320,7 @@ def create_acid_banger_303_midi_project(midi_channel: int, off_probability: floa
     external = create_external_instrument("TB-03", midi_channel)
     project.instruments[0x00] = external
     print(f"  [00] TB-03 on MIDI channel {midi_channel}")
-    print(f"       Input: LINE_IN_L, AMP: 0x20, LIMIT: SIN")
+    print(f"       Port: MIDI, Input: LINE_IN_L, AMP: 0x20, LIMIT: SIN")
 
     # Create 16 rows of 303 patterns
     print(f"\nGenerating {NUM_ROWS} rows of 303 acid basslines...")

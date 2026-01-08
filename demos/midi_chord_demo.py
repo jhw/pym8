@@ -77,7 +77,7 @@ Reference: Roland JU-06A Owner's Manual (PDF)
 import argparse
 
 from m8.api.project import M8Project
-from m8.api.instruments.external import M8External, M8ExternalParam, M8ExternalPort, M8ExternalInput
+from m8.api.instruments.external import M8External, M8ExternalParam, M8ExternalPort
 from m8.api.phrase import OFF_NOTE
 
 # MIDI note values
@@ -103,9 +103,8 @@ def create_external_instrument(name, midi_channel=1):
     """Create an External instrument configured for MIDI output."""
     inst = M8External()
     inst.name = name
-    inst.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_L)
-    inst.set(M8ExternalParam.PORT, M8ExternalPort.USB)
-    inst.set(M8ExternalParam.CHANNEL, midi_channel)
+    inst.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)  # Hardware MIDI output
+    inst.set(M8ExternalParam.CHANNEL, midi_channel - 1)  # M8 uses 0-indexed channels
     inst.set(M8ExternalParam.BANK, 0)
     inst.set(M8ExternalParam.PROGRAM, 0)
     return inst
