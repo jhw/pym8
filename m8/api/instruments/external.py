@@ -54,13 +54,13 @@ class M8ExternalParam(IntEnum):
     # Modulators start at offset 63
 
 
-# MIDI Input Source Values
+# Audio Input Source Values
 class M8ExternalInput(IntEnum):
-    """External instrument input source."""
-    DISABLED = 0x00   # No input
-    USB = 0x01        # USB MIDI
-    MIDI = 0x02       # Hardware MIDI
-    USB_MIDI = 0x03   # Both USB and hardware MIDI
+    """External instrument audio input source."""
+    OFF = 0x00        # No input
+    LINE_IN_L = 0x01  # Line In Left
+    LINE_IN_R = 0x02  # Line In Right
+    LINE_IN_LR = 0x03 # Line In Left+Right
 
 
 # MIDI Port Values
