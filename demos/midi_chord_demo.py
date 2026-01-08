@@ -8,8 +8,7 @@ Designed for Roland JU-06A or similar polyphonic synthesizer.
 Structure:
 - 3 chains (00, 01, 02) on song row 0 (one for each voice of the triad)
 - Each chain has 4 phrases (one per chord)
-- 4 External instruments all on MIDI channel 1
-- MIDI clock and transport enabled
+- 3 External instruments (configurable MIDI channel via --midi-channel, default: 1)
 
 Chord progression (Am - F - C - G):
 - Phrase 00/04/08: Am (A3, C4, E4)
@@ -65,26 +64,20 @@ Before running this demo, configure your JU-06A as follows:
    The JU-06A's internal sequencer should be empty, otherwise it will play
    its own notes on top of what the M8 sends.
 
-   - Press [CHORUS 2] + [MANUAL] together to enter Step Sequencer mode
-     (the [MANUAL] button will blink)
-   - Look at buttons [1]-[16] - any that are LIT have notes on those steps
-   - Press each LIT button to turn it OFF (unlit)
-   - When all 16 step buttons are unlit, the pattern is empty
-   - To save the empty pattern: Hold [CHORUS 2] and press [BANK]
-     (button [1] on top row) until it blinks, then release
-   - Press [CHORUS 2] + [MANUAL] together again to exit Step Sequencer mode
-
-   TIP: Keep pattern 1 blank so the sequencer doesn't auto-play when
-   receiving MIDI clock.
+   - Press the [EDIT] button to enter edit mode
+   - Any lit buttons indicate notes on those steps
+   - Turn off all lit buttons
+   - Press [EDIT] again to exit edit mode
 
 Reference: Roland JU-06A Owner's Manual (PDF)
          https://static.roland.com/assets/media/pdf/JU-06A_eng02_W.pdf
 ================================================================================
 """
 
+import argparse
+
 from m8.api.project import M8Project
-from m8.api.instruments.external import M8External, M8ExternalParam, M8ExternalPort
-from m8.api.midi_settings import M8TransportMode
+from m8.api.instruments.external import M8External, M8ExternalParam, M8ExternalPort, M8ExternalInput
 from m8.api.phrase import OFF_NOTE
 
 # MIDI note values
@@ -110,6 +103,7 @@ def create_external_instrument(name, midi_channel=1):
     """Create an External instrument configured for MIDI output."""
     inst = M8External()
     inst.name = name
+    inst.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_L)
     inst.set(M8ExternalParam.PORT, M8ExternalPort.USB)
     inst.set(M8ExternalParam.CHANNEL, midi_channel)
     inst.set(M8ExternalParam.BANK, 0)
@@ -118,16 +112,24 @@ def create_external_instrument(name, midi_channel=1):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="MIDI Chord Demo - Kraftwerk style triads")
+    parser.add_argument(
+        "--midi-channel", "-c",
+        type=int,
+        default=1,
+        choices=range(1, 17),
+        metavar="1-16",
+        help="MIDI channel for external instruments (default: 1)"
+    )
+    args = parser.parse_args()
+
     # Initialize project from template
     project = M8Project.initialise()
-
-    # Configure MIDI settings - use SONG_WITH_CLOCK for clock + transport
-    project.midi_settings.send_transport = M8TransportMode.SONG_WITH_CLOCK
 
     # Create 3 External instruments (one per voice/chain)
     voice_names = ["ROOT", "3RD", "5TH"]
     for i, name in enumerate(voice_names):
-        inst = create_external_instrument(f"CHORD-{name}", midi_channel=1)
+        inst = create_external_instrument(f"CHORD-{name}", midi_channel=args.midi_channel)
         project.instruments[i] = inst
 
     # Create phrases
@@ -186,10 +188,7 @@ def main():
     print()
     print("Project written to:", output_path)
     print()
-    print("Configuration:")
-    print(f"  MIDI Send: {M8TransportMode(project.midi_settings.send_transport).name}")
-    print()
-    print("Instruments (all on MIDI Ch 1):")
+    print(f"Instruments (all on MIDI Ch {args.midi_channel}):")
     for i in range(3):
         inst = project.instruments[i]
         print(f"  {i:02X}: {inst.name}")
