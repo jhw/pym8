@@ -56,11 +56,11 @@ class M8ExternalParam(IntEnum):
 
 # Audio Input Source Values
 class M8ExternalInput(IntEnum):
-    """External instrument audio input source."""
+    """External instrument audio input source for monitoring."""
     OFF = 0x00        # No input
     LINE_IN_L = 0x01  # Line In Left
     LINE_IN_R = 0x02  # Line In Right
-    LINE_IN_LR = 0x03 # Line In Left+Right
+    LINE_IN_LR = 0x03 # Line In Left+Right (stereo)
 
 
 # MIDI Port Values

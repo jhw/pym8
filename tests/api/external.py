@@ -43,8 +43,8 @@ class TestM8External(unittest.TestCase):
         external = M8External()
 
         # Test INPUT
-        external.set(M8ExternalParam.INPUT, M8ExternalInput.USB)
-        self.assertEqual(external.get(M8ExternalParam.INPUT), M8ExternalInput.USB)
+        external.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_L)
+        self.assertEqual(external.get(M8ExternalParam.INPUT), M8ExternalInput.LINE_IN_L)
 
         # Test PORT
         external.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)
@@ -134,7 +134,7 @@ class TestM8External(unittest.TestCase):
         """Test write/read round-trip preserves all parameters AND modulators."""
         # Create external with custom parameters
         external = M8External(name="TEST")
-        external.set(M8ExternalParam.INPUT, M8ExternalInput.USB_MIDI)
+        external.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_LR)
         external.set(M8ExternalParam.PORT, M8ExternalPort.USB)
         external.set(M8ExternalParam.CHANNEL, 0x0F)
         external.set(M8ExternalParam.BANK, 0x40)
@@ -162,7 +162,7 @@ class TestM8External(unittest.TestCase):
 
         # Check all parameters were preserved
         self.assertEqual(read_external.name, "TEST")
-        self.assertEqual(read_external.get(M8ExternalParam.INPUT), M8ExternalInput.USB_MIDI)
+        self.assertEqual(read_external.get(M8ExternalParam.INPUT), M8ExternalInput.LINE_IN_LR)
         self.assertEqual(read_external.get(M8ExternalParam.PORT), M8ExternalPort.USB)
         self.assertEqual(read_external.get(M8ExternalParam.CHANNEL), 0x0F)
         self.assertEqual(read_external.get(M8ExternalParam.BANK), 0x40)
@@ -186,7 +186,7 @@ class TestM8External(unittest.TestCase):
         """Test cloning creates independent copy."""
         # Create external with custom parameters
         original = M8External(name=self.test_name)
-        original.set(M8ExternalParam.INPUT, M8ExternalInput.MIDI)
+        original.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_R)
         original.set(M8ExternalParam.PORT, M8ExternalPort.USB_MIDI)
         original.set(M8ExternalParam.CHANNEL, 0x0A)
         original.set(M8ExternalParam.CCA_NUM, 0x40)
@@ -300,7 +300,7 @@ class TestM8External(unittest.TestCase):
     def test_to_dict_default_enum_mode(self):
         """Test to_dict() with default enum_mode='value' returns integer values."""
         external = M8External(name="EnumTest")
-        external.set(M8ExternalParam.INPUT, M8ExternalInput.USB)
+        external.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_L)
         external.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)
         external.set(M8ExternalParam.FILTER_TYPE, M8FilterType.LOWPASS)
         external.set(M8ExternalParam.LIMIT, M8LimiterType.SIN)
@@ -309,7 +309,7 @@ class TestM8External(unittest.TestCase):
         result = external.to_dict()
 
         # Verify enum values are integers
-        self.assertEqual(result['params']['INPUT'], M8ExternalInput.USB.value)
+        self.assertEqual(result['params']['INPUT'], M8ExternalInput.LINE_IN_L.value)
         self.assertEqual(result['params']['PORT'], M8ExternalPort.MIDI.value)
         self.assertEqual(result['params']['FILTER_TYPE'], M8FilterType.LOWPASS.value)
         self.assertEqual(result['params']['LIMIT'], M8LimiterType.SIN.value)
@@ -319,7 +319,7 @@ class TestM8External(unittest.TestCase):
     def test_to_dict_enum_mode_name(self):
         """Test to_dict() with enum_mode='name' returns human-readable enum names."""
         external = M8External(name="EnumTest")
-        external.set(M8ExternalParam.INPUT, M8ExternalInput.USB)
+        external.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_L)
         external.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)
         external.set(M8ExternalParam.FILTER_TYPE, M8FilterType.LOWPASS)
         external.set(M8ExternalParam.LIMIT, M8LimiterType.SIN)
@@ -328,7 +328,7 @@ class TestM8External(unittest.TestCase):
         result = external.to_dict(enum_mode='name')
 
         # Verify enum values are human-readable strings
-        self.assertEqual(result['params']['INPUT'], 'USB')
+        self.assertEqual(result['params']['INPUT'], 'LINE_IN_L')
         self.assertEqual(result['params']['PORT'], 'MIDI')
         self.assertEqual(result['params']['FILTER_TYPE'], 'LOWPASS')
         self.assertEqual(result['params']['LIMIT'], 'SIN')
@@ -338,7 +338,7 @@ class TestM8External(unittest.TestCase):
         params = {
             'name': 'IntTest',
             'params': {
-                'INPUT': M8ExternalInput.USB_MIDI.value,
+                'INPUT': M8ExternalInput.LINE_IN_LR.value,
                 'PORT': M8ExternalPort.USB.value,
                 'FILTER_TYPE': M8FilterType.HIGHPASS.value,
                 'LIMIT': M8LimiterType.CLIP.value,
@@ -353,7 +353,7 @@ class TestM8External(unittest.TestCase):
 
         # Verify values were set correctly
         self.assertEqual(external.name, 'IntTest')
-        self.assertEqual(external.get(M8ExternalParam.INPUT), M8ExternalInput.USB_MIDI.value)
+        self.assertEqual(external.get(M8ExternalParam.INPUT), M8ExternalInput.LINE_IN_LR.value)
         self.assertEqual(external.get(M8ExternalParam.PORT), M8ExternalPort.USB.value)
         self.assertEqual(external.get(M8ExternalParam.FILTER_TYPE), M8FilterType.HIGHPASS.value)
         self.assertEqual(external.get(M8ExternalParam.LIMIT), M8LimiterType.CLIP.value)
@@ -366,7 +366,7 @@ class TestM8External(unittest.TestCase):
         params = {
             'name': 'StringTest',
             'params': {
-                'INPUT': 'USB_MIDI',
+                'INPUT': 'LINE_IN_LR',
                 'PORT': 'USB',
                 'FILTER_TYPE': 'HIGHPASS',
                 'LIMIT': 'CLIP',
@@ -379,7 +379,7 @@ class TestM8External(unittest.TestCase):
 
         # Verify values were set correctly
         self.assertEqual(external.name, 'StringTest')
-        self.assertEqual(external.get(M8ExternalParam.INPUT), M8ExternalInput.USB_MIDI.value)
+        self.assertEqual(external.get(M8ExternalParam.INPUT), M8ExternalInput.LINE_IN_LR.value)
         self.assertEqual(external.get(M8ExternalParam.PORT), M8ExternalPort.USB.value)
         self.assertEqual(external.get(M8ExternalParam.FILTER_TYPE), M8FilterType.HIGHPASS.value)
         self.assertEqual(external.get(M8ExternalParam.LIMIT), M8LimiterType.CLIP.value)
@@ -389,7 +389,7 @@ class TestM8External(unittest.TestCase):
         """Test round-trip: to_dict(enum_mode='name') -> from_dict() -> to_dict()."""
         # Create original external
         original = M8External(name="RoundTrip")
-        original.set(M8ExternalParam.INPUT, M8ExternalInput.MIDI)
+        original.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_R)
         original.set(M8ExternalParam.PORT, M8ExternalPort.USB_MIDI)
         original.set(M8ExternalParam.FILTER_TYPE, M8FilterType.BANDPASS)
         original.set(M8ExternalParam.LIMIT, M8LimiterType.FOLD)
@@ -402,7 +402,7 @@ class TestM8External(unittest.TestCase):
         dict_with_names = original.to_dict(enum_mode='name')
 
         # Verify enum names are strings
-        self.assertEqual(dict_with_names['params']['INPUT'], 'MIDI')
+        self.assertEqual(dict_with_names['params']['INPUT'], 'LINE_IN_R')
         self.assertEqual(dict_with_names['params']['PORT'], 'USB_MIDI')
         self.assertEqual(dict_with_names['params']['FILTER_TYPE'], 'BANDPASS')
         self.assertEqual(dict_with_names['params']['LIMIT'], 'FOLD')
