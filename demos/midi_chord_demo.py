@@ -104,7 +104,7 @@ def create_external_instrument(name, midi_channel=1):
     inst = M8External()
     inst.name = name
     inst.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)  # Hardware MIDI output
-    inst.set(M8ExternalParam.CHANNEL, midi_channel - 1)  # M8 uses 0-indexed channels
+    inst.set(M8ExternalParam.CHANNEL, midi_channel)
     inst.set(M8ExternalParam.BANK, 0)
     inst.set(M8ExternalParam.PROGRAM, 0)
     return inst
