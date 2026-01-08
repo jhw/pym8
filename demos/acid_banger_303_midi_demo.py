@@ -4,13 +4,31 @@
 Acid Banger 303 MIDI Demo - Algorithmic TB-303 acid basslines via External MIDI
 
 Creates a 16-row M8 project with TB-303 style acid basslines using:
-- Vitling's acid-banger 303 pattern generators
+- Vitling's acid-banger 303 pattern generators (exact algorithm from pattern.ts)
 - External MIDI instrument (for Roland TB-03 or similar)
 - Probability-based note triggering with accent and glide
 - 64-step patterns (4 phrases of 16 steps each)
+- Configurable OFF note insertion for MIDI note-off messages
 
 Original algorithm from:
 https://github.com/vitling/acid-banger
+
+Note Distribution (from acid-banger):
+- Steps divisible by 4: 60% trigger probability
+- Steps divisible by 3: 50% trigger probability
+- Even steps: 30% trigger probability
+- Odd steps: 10% trigger probability
+
+Velocity & Accent:
+- MIDI Note On messages include velocity (0-127)
+- M8 External instruments send phrase velocity as MIDI velocity
+- Base velocity: 0.7-1.0 (89-127 in MIDI terms)
+- Accented notes (30% chance): velocity boosted by 1.2x (capped at 127)
+
+OFF Notes:
+- Required for MIDI to send explicit note-off messages
+- Probability controlled via --off-prob CLI argument
+- Placed at random position between notes (never consecutive OFF notes)
 
 Project structure:
 - Row 0: chain 0x00 -> phrases 0x01-0x04 -> instrument 0x00 (EXTERNAL)
@@ -93,7 +111,7 @@ from m8.api.instruments.external import (
     M8External, M8ExternalParam, M8ExternalInput, M8ExternalPort
 )
 from m8.api.instrument import M8LimiterType
-from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
+from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note, OFF_NOTE
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
 
@@ -124,18 +142,84 @@ def velocity_to_m8(velocity_float: float) -> int:
     return int(velocity_float * MAX_VELOCITY)
 
 
+def add_off_notes_to_pattern(pattern: AcidPattern, rng: random.Random,
+                             off_probability: float) -> list[int]:
+    """Determine where to place OFF notes in the pattern.
+
+    For MIDI instruments, we need explicit note-off messages. This function
+    decides where to place them based on the off_probability.
+
+    Rules:
+    - Only place an OFF note if the probability check passes
+    - OFF note goes at a random step between the current note and the next note
+    - Never place two consecutive OFF notes
+    - If two notes are on consecutive steps, no OFF note can be placed between them
+
+    Args:
+        pattern: AcidPattern with notes
+        rng: Random number generator
+        off_probability: Probability (0.0-1.0) of inserting an OFF note after each note
+
+    Returns:
+        List of step indices where OFF notes should be placed
+    """
+    off_note_steps = []
+    length = len(pattern.notes)
+
+    # Find all note positions
+    note_positions = [i for i, n in enumerate(pattern.notes) if n is not None]
+
+    for idx, note_pos in enumerate(note_positions):
+        # Skip if probability check fails
+        if rng.random() >= off_probability:
+            continue
+
+        # Find the next note position (or end of pattern)
+        if idx + 1 < len(note_positions):
+            next_note_pos = note_positions[idx + 1]
+        else:
+            # Wrap around to consider the pattern as looping
+            next_note_pos = length
+
+        # Calculate the gap between this note and the next
+        gap_start = note_pos + 1
+        gap_end = next_note_pos
+
+        # Need at least 1 step gap to place an OFF note
+        if gap_end - gap_start < 1:
+            continue
+
+        # Choose a random position in the gap
+        off_pos = rng.randint(gap_start, gap_end - 1)
+
+        # Don't place OFF if we already have one at the previous step
+        if off_note_steps and off_note_steps[-1] == off_pos - 1:
+            continue
+
+        off_note_steps.append(off_pos)
+
+    return off_note_steps
+
+
 def create_phrases_from_303_pattern(pattern: AcidPattern, instrument_idx: int,
-                                    base_phrase_idx: int) -> list[M8Phrase]:
+                                    base_phrase_idx: int, rng: random.Random,
+                                    off_probability: float) -> list[M8Phrase]:
     """Create 4 M8 phrases (16 steps each) from a 64-step 303 pattern.
 
     Args:
         pattern: AcidPattern with 64 steps
         instrument_idx: M8 instrument index (0x00)
         base_phrase_idx: Starting phrase index (e.g., 0x01 for phrases 0x01-0x04)
+        rng: Random number generator for off-note placement
+        off_probability: Probability of inserting OFF notes (0.0-1.0)
 
     Returns:
         List of 4 M8Phrase objects
     """
+    # Determine OFF note positions
+    off_note_steps = add_off_notes_to_pattern(pattern, rng, off_probability)
+    off_note_set = set(off_note_steps)
+
     phrases = []
 
     for phrase_num in range(PHRASES_PER_CHAIN):
@@ -143,10 +227,18 @@ def create_phrases_from_303_pattern(pattern: AcidPattern, instrument_idx: int,
 
         # Calculate step range for this phrase
         start_step = phrase_num * STEPS_PER_PHRASE
-        end_step = start_step + STEPS_PER_PHRASE
 
         for local_step in range(STEPS_PER_PHRASE):
             global_step = start_step + local_step
+
+            # Check for OFF note at this position
+            if global_step in off_note_set:
+                step = M8PhraseStep(
+                    note=OFF_NOTE,
+                    instrument=instrument_idx
+                )
+                phrase[local_step] = step
+                continue
 
             # Get note from pattern
             note_value = pattern.notes[global_step]
@@ -201,15 +293,17 @@ def create_external_instrument(name: str, midi_channel: int) -> M8External:
     return inst
 
 
-def create_acid_banger_303_midi_project(midi_channel: int):
+def create_acid_banger_303_midi_project(midi_channel: int, off_probability: float):
     """Create the full acid banger 303 MIDI M8 project.
 
     Args:
         midi_channel: MIDI channel for external instrument (1-16)
+        off_probability: Probability (0.0-1.0) of inserting OFF notes after each note
     """
     print(f"Creating Acid Banger 303 MIDI demo: {PROJECT_NAME}")
     print(f"BPM: {BPM}, Seed: {SEED}, Rows: {NUM_ROWS}")
     print(f"MIDI Channel: {midi_channel}")
+    print(f"OFF note probability: {off_probability:.0%}")
     print(f"Pattern length: {TOTAL_STEPS} steps ({PHRASES_PER_CHAIN} phrases x {STEPS_PER_PHRASE} steps)")
 
     # Initialize RNG with seed
@@ -258,8 +352,10 @@ def create_acid_banger_303_midi_project(midi_channel: int):
               f"accents={accent_count}, glides={glide_count}")
         print(f"  Instrument: [{instrument_idx:02X}] TB-03")
 
-        # Create 4 phrases from the 64-step pattern
-        phrases = create_phrases_from_303_pattern(pattern, instrument_idx, base_phrase_idx)
+        # Create 4 phrases from the 64-step pattern (with off-note insertion)
+        phrases = create_phrases_from_303_pattern(
+            pattern, instrument_idx, base_phrase_idx, rng, off_probability
+        )
 
         # Add phrases to project
         for i, phrase in enumerate(phrases):
@@ -313,9 +409,20 @@ def main():
         metavar="1-16",
         help="MIDI channel for TB-03 (default: 1)"
     )
+    parser.add_argument(
+        "--off-prob", "-o",
+        type=float,
+        default=0.5,
+        metavar="0.0-1.0",
+        help="Probability of inserting OFF notes after each note (default: 0.5)"
+    )
     args = parser.parse_args()
 
-    project = create_acid_banger_303_midi_project(args.channel)
+    # Validate off-prob range
+    if not 0.0 <= args.off_prob <= 1.0:
+        parser.error("--off-prob must be between 0.0 and 1.0")
+
+    project = create_acid_banger_303_midi_project(args.channel, args.off_prob)
     save_project(project)
 
 

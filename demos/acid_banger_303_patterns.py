@@ -16,15 +16,16 @@ from typing import List, Tuple, Optional
 
 
 # 303 offset patterns from acid-banger (semitones from root note)
+# These are the exact patterns from vitling's acid-banger pattern.ts
 OFFSET_PATTERNS = [
-    [0, 0, 12, 24, 27],              # Sparse intervals with octave + perfect fifth
-    [0, 0, 0, 12, 10, 19, 26, 27],   # Dense chromatic spread
-    [0, 1, 7, 10, 12, 13],           # Tightly clustered chromatic
-    [0],                              # Single note (root only)
-    [0, 7, 12],                       # Perfect fifth and octave
-    [0, 3, 7, 10],                    # Minor triad with flat seventh
-    [0, 4, 7, 11],                    # Major triad with major seventh
-    [0, 2, 7, 9, 12],                 # Sus2 with octave
+    [0, 0, 12, 24, 27],                       # Octave jumps with high fifth
+    [0, 0, 0, 12, 10, 19, 26, 27],            # Dense chromatic spread
+    [0, 1, 7, 10, 12, 13],                    # Chromatic cluster
+    [0],                                       # Single note (root only)
+    [0, 0, 0, 12],                            # Root emphasis with octave
+    [0, 0, 12, 14, 15, 19],                   # Octave with chromatic upper
+    [0, 0, 0, 0, 12, 13, 16, 19, 22, 24, 25], # Wide chromatic range
+    [0, 0, 0, 7, 12, 15, 17, 20, 24],         # Fifth-based with extensions
 ]
 
 
