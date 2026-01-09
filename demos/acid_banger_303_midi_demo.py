@@ -99,6 +99,7 @@ Before running this demo, configure your TB-03 as follows:
 
 Reference: Roland TB-03 Owner's Manual (PDF)
            https://static.roland.com/assets/media/pdf/TB-03_eng03_W.pdf
+           https://static.roland.com/assets/media/pdf/TB-03_MIDI_Imple_e01_W.pdf
 ================================================================================
 """
 
