@@ -43,7 +43,7 @@ from demos.patterns.acid_909 import (
 
 # Configuration
 PROJECT_NAME = "ACID-BANGER-909"
-OUTPUT_DIR = Path("tmp/demos/acid_banger_909")
+OUTPUT_DIR = Path("tmp/demos/acid_909/sampler")
 SAMPLES_BASE = Path("tmp/erica-pico-samples")
 BPM = 130
 SEED = 42

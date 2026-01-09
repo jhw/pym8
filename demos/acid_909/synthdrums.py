@@ -47,7 +47,7 @@ from demos.patterns.acid_909 import (
 
 # Configuration
 PROJECT_NAME = "ACID-SYNTHDRUMS-909"
-OUTPUT_DIR = Path("tmp/demos/acid_synthdrums_909")
+OUTPUT_DIR = Path("tmp/demos/acid_909/synthdrums")
 SYNTHDRUMS_YAML_DEFAULT = Path("tmp/dw01-synthdrums/yaml")
 BPM = 130
 SEED = 42

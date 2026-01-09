@@ -38,7 +38,7 @@ from demos.patterns.euclidean import get_random_euclidean_pattern
 
 # Configuration
 PROJECT_NAME = "EUCLID-MIDI"
-OUTPUT_DIR = Path("tmp/demos/euclid_midi")
+OUTPUT_DIR = Path("tmp/demos/euclid/midi")
 BPM = 128
 SEED = 42
 NUM_ROWS = 16

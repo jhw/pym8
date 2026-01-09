@@ -40,7 +40,7 @@ from m8.api.modulator import M8Modulator, M8ModulatorType, M8AHDParam
 
 # Configuration
 PROJECT_NAME = "SYNTH-CHORDS"
-OUTPUT_DIR = Path("tmp/demos/synth_chords")
+OUTPUT_DIR = Path("tmp/demos/chords/synth")
 BPM = 128
 SEED = 42
 

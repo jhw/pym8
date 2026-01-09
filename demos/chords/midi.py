@@ -75,10 +75,15 @@ Reference: Roland JU-06A Owner's Manual (PDF)
 """
 
 import argparse
+from pathlib import Path
 
 from m8.api.project import M8Project
 from m8.api.instruments.external import M8External, M8ExternalParam, M8ExternalPort
 from m8.api.phrase import OFF_NOTE
+
+# Configuration
+PROJECT_NAME = "MIDI-CHORD"
+OUTPUT_DIR = Path("tmp/demos/chords/midi")
 
 # MIDI note values
 A3 = 57
@@ -179,8 +184,9 @@ def main():
     project.song[0][2] = 2  # Track 3: fifths
 
     # Write the project
-    output_path = "tmp/demos/midi_chord/MIDI_CHORD_DEMO.m8s"
-    project.write_to_file(output_path)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = OUTPUT_DIR / f"{PROJECT_NAME}.m8s"
+    project.write_to_file(str(output_path))
 
     print("MIDI Chord Demo - Kraftwerk 'Computer World' Style")
     print("=" * 50)

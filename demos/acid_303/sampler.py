@@ -41,7 +41,7 @@ from demos.patterns.acid_303 import get_random_303_pattern, AcidPattern
 
 # Configuration
 PROJECT_NAME = "ACID-BANGER-303"
-OUTPUT_DIR = Path("tmp/demos/acid_banger_303")
+OUTPUT_DIR = Path("tmp/demos/acid_303/sampler")
 SAMPLES_BASE = Path("demos/acid_303/samples")
 BPM = 130
 SEED = 42

@@ -35,7 +35,7 @@ from demos.patterns.acid_303 import get_random_303_pattern, AcidPattern
 
 # Configuration
 PROJECT_NAME = "WAVSYNTH-303"
-OUTPUT_DIR = Path("tmp/demos/wavsynth_303")
+OUTPUT_DIR = Path("tmp/demos/acid_303/wavsynth")
 BPM = 135
 SEED = 42
 NUM_ROWS = 16

@@ -121,7 +121,7 @@ from demos.patterns.acid_303 import get_random_303_pattern, AcidPattern
 
 # Configuration
 PROJECT_NAME = "ACID-303-MIDI"
-OUTPUT_DIR = Path("tmp/demos/acid_banger_303_midi")
+OUTPUT_DIR = Path("tmp/demos/acid_303/midi")
 BPM = 130
 SEED = 42
 NUM_ROWS = 16

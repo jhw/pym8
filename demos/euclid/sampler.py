@@ -43,7 +43,7 @@ from demos.patterns.euclidean import get_random_euclidean_pattern
 
 # Configuration
 PROJECT_NAME = "EUCLID-909"
-OUTPUT_DIR = Path("tmp/demos/euclid_909")
+OUTPUT_DIR = Path("tmp/demos/euclid/sampler")
 SAMPLES_BASE = Path("tmp/erica-pico-samples")
 BPM = 128
 SEED = 42

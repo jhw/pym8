@@ -35,7 +35,7 @@ from demos.patterns.acid_303 import get_random_303_pattern, AcidPattern
 
 # Configuration
 PROJECT_NAME = "MACROSYNTH-303"
-OUTPUT_DIR = Path("tmp/demos/macrosynth_303")
+OUTPUT_DIR = Path("tmp/demos/acid_303/macrosynth")
 BPM = 135
 SEED = 42
 NUM_ROWS = 16
