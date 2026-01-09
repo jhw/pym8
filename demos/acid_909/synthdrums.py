@@ -10,7 +10,7 @@ Creates a 16-row M8 project with kick, snare, and hat patterns using:
 
 Prerequisites:
 - Extract DW01 synthdrums to YAML first:
-  python demos/utilities/extract_m8i_to_yaml.py --type 4
+  python demos/utils/extract_m8i_to_yaml.py --type 4
 - Instruments will be loaded from tmp/dw01-synthdrums/yaml/
 
 Project structure:
@@ -37,8 +37,8 @@ from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
 
-from demos.helpers.preset_yaml import load_presets_yaml
-from acid_banger_909_patterns import (
+from demos.lib.preset_yaml import load_presets_yaml
+from demos.patterns.acid_909 import (
     get_random_kick_pattern,
     get_random_snare_pattern,
     get_random_hat_pattern
@@ -141,7 +141,7 @@ def create_acid_synthdrums_project(synthdrums_yaml_dir: Path):
     if not synthdrums_yaml_dir.exists():
         print(f"\n✗ Error: Synthdrums YAML directory not found: {synthdrums_yaml_dir.absolute()}")
         print(f"\nPlease extract DW01 synthdrums to YAML first:")
-        print(f"  python demos/utilities/extract_m8i_to_yaml.py --type 4")
+        print(f"  python demos/utils/extract_m8i_to_yaml.py --type 4")
         print(f"\nThis will create YAML files in: {synthdrums_yaml_dir.absolute()}")
         sys.exit(1)
 
@@ -155,7 +155,7 @@ def create_acid_synthdrums_project(synthdrums_yaml_dir: Path):
     if not presets:
         print(f"\n✗ Error: No YAML presets found in {synthdrums_yaml_dir.absolute()}")
         print(f"\nPlease extract DW01 synthdrums to YAML first:")
-        print(f"  python demos/utilities/extract_m8i_to_yaml.py --type 4")
+        print(f"  python demos/utils/extract_m8i_to_yaml.py --type 4")
         sys.exit(1)
 
     # Categorize instruments by type
@@ -172,7 +172,7 @@ def create_acid_synthdrums_project(synthdrums_yaml_dir: Path):
         print(f"  Hats: {len(instruments_by_type['hat'])}")
         print(f"  Snares: {len(instruments_by_type['snare'])}")
         print(f"\nPlease ensure DW01 synthdrums are extracted with all types:")
-        print(f"  python demos/utilities/extract_m8i_to_yaml.py --type 4")
+        print(f"  python demos/utils/extract_m8i_to_yaml.py --type 4")
         sys.exit(1)
 
     # Initialize project

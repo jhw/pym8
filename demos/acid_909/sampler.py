@@ -9,7 +9,7 @@ Creates a 16-row M8 project with kick, snare, and hat patterns using:
 - Random FX on hats (cut, reverse, retrigger)
 
 Prerequisites:
-- Download Erica Pico samples first: python demos/download_erica_pico_samples.py
+- Download Erica Pico samples first: python demos/utils/download_erica_pico_samples.py
 - Samples will be saved to tmp/erica-pico-samples/
 
 Project structure:
@@ -34,7 +34,7 @@ from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
-from acid_banger_909_patterns import (
+from demos.patterns.acid_909 import (
     get_random_kick_pattern,
     get_random_snare_pattern,
     get_random_hat_pattern
@@ -138,7 +138,7 @@ def create_acid_banger_project():
     if not SAMPLES_BASE.exists():
         print(f"\n✗ Error: Sample directory not found: {SAMPLES_BASE.absolute()}")
         print(f"\nPlease download Erica Pico samples first:")
-        print(f"  python demos/download_erica_pico_samples.py")
+        print(f"  python demos/utils/download_erica_pico_samples.py")
         print(f"\nThis will download sample packs to: {SAMPLES_BASE.absolute()}")
         sys.exit(1)
 
@@ -160,7 +160,7 @@ def create_acid_banger_project():
         print(f"  Snares: {len(samples_by_type['snare'])}")
         print(f"  Hats: {len(samples_by_type['hat'])}")
         print(f"\nPlease ensure Erica Pico samples are downloaded:")
-        print(f"  python demos/download_erica_pico_samples.py")
+        print(f"  python demos/utils/download_erica_pico_samples.py")
         sys.exit(1)
 
     # Initialize project

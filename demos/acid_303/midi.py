@@ -116,7 +116,7 @@ from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note, OFF_NOTE
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
 
-from acid_banger_303_patterns import get_random_303_pattern, AcidPattern
+from demos.patterns.acid_303 import get_random_303_pattern, AcidPattern
 
 
 # Configuration

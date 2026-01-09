@@ -36,13 +36,13 @@ from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
 
-from acid_banger_303_patterns import get_random_303_pattern, AcidPattern
+from demos.patterns.acid_303 import get_random_303_pattern, AcidPattern
 
 
 # Configuration
 PROJECT_NAME = "ACID-BANGER-303"
 OUTPUT_DIR = Path("tmp/demos/acid_banger_303")
-SAMPLES_BASE = Path("demos/samples")
+SAMPLES_BASE = Path("demos/acid_303/samples")
 BPM = 130
 SEED = 42
 NUM_ROWS = 16
@@ -53,7 +53,7 @@ TOTAL_STEPS = STEPS_PER_PHRASE * PHRASES_PER_CHAIN  # 64 steps
 # M8 constants
 MAX_VELOCITY = 0x7F
 
-# 303 samples (must exist in demos/samples/)
+# 303 samples (must exist in demos/acid_303/samples/)
 SAMPLE_303_SAW = "303 VCO SAW.wav"
 SAMPLE_303_SQR = "303 VCO SQR.wav"
 

@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 
 """
-Macrosynth 303 Demo - Acid bassline-style demo using M8 Macrosynth
+Macrosynth 303 Demo - Algorithmic TB-303 acid basslines using M8 Macrosynth
 
-This demo demonstrates loading instrument presets from human-readable inline YAML.
-The base 303 preset uses readable enum names like:
-- SHAPE: CSAW (instead of integer 0)
-- FILTER_TYPE: LOWPASS (instead of integer 1)
-- Modulator type: AHD_ENVELOPE (instead of integer 0)
-- LFO SHAPE: TRI, TRIGGER_MODE: FREE (instead of integers)
+Creates a 16-row M8 project with TB-303 style acid basslines using:
+- Vitling's acid-banger 303 pattern generators
+- 16 different Macrosynth shapes (Braids algorithms)
+- Probability-based note triggering with accent and glide
+- 64-step patterns (4 phrases of 16 steps each)
 
-Creates an M8 project with:
-- 16 macrosynth instruments (0x00-0x0F), each with a different Braids shape
-- Base preset loaded from YAML, then cloned and customized
-- 16 phrases (0x00-0x0F), each with different random note patterns
-- 16 chains (0x00-0x0F), each referencing the corresponding phrase
-- Song arrangement: all 16 chains stacked vertically in track 0
+Original algorithm from:
+https://github.com/vitling/acid-banger
+
+Project structure:
+- Row 0: chain 0x00 -> phrases 0x00-0x03 -> instrument 0x00 (CSAW)
+- Row 1: chain 0x01 -> phrases 0x04-0x07 -> instrument 0x01 (MORPH)
+- ... (continues for 16 rows total, each with different Braids shape)
 
 Output: tmp/demos/macrosynth_303/MACROSYNTH-303.m8s
 """
 
 import random
+from typing import List
 import yaml
 from pathlib import Path
 
@@ -30,14 +31,20 @@ from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
 
+from demos.patterns.acid_303 import get_random_303_pattern, AcidPattern
+
 # Configuration
 PROJECT_NAME = "MACROSYNTH-303"
 OUTPUT_DIR = Path("tmp/demos/macrosynth_303")
 BPM = 135
 SEED = 42
+NUM_ROWS = 16
+STEPS_PER_PHRASE = 16
+PHRASES_PER_CHAIN = 4
+TOTAL_STEPS = STEPS_PER_PHRASE * PHRASES_PER_CHAIN  # 64 steps
 
-# Note choices for random bass pattern (C and D# at octaves 3 and 4, plus C5)
-BASS_NOTES = [M8Note.C_3, M8Note.DS_3, M8Note.C_4, M8Note.DS_4, M8Note.C_5]
+# M8 constants
+MAX_VELOCITY = 0x7F
 
 # Macro shapes for each of the 16 instruments (variety of Braids algorithms)
 MACRO_SHAPES = [
@@ -109,6 +116,55 @@ modulators:
 """
 
 
+def velocity_to_m8(velocity_float: float) -> int:
+    """Convert float velocity (0.0-1.0) to M8 velocity (0x00-0x7F)."""
+    if velocity_float == 0.0:
+        return 0x00
+    return int(velocity_float * MAX_VELOCITY)
+
+
+def create_phrases_from_303_pattern(pattern: AcidPattern, instrument_idx: int,
+                                    base_phrase_idx: int) -> List[M8Phrase]:
+    """Create 4 M8 phrases (16 steps each) from a 64-step 303 pattern.
+
+    Args:
+        pattern: AcidPattern with 64 steps
+        instrument_idx: M8 instrument index
+        base_phrase_idx: Starting phrase index
+
+    Returns:
+        List of 4 M8Phrase objects
+    """
+    phrases = []
+
+    for phrase_num in range(PHRASES_PER_CHAIN):
+        phrase = M8Phrase()
+        start_step = phrase_num * STEPS_PER_PHRASE
+
+        for local_step in range(STEPS_PER_PHRASE):
+            global_step = start_step + local_step
+            note_value = pattern.notes[global_step]
+
+            if note_value is not None:
+                velocity_m8 = velocity_to_m8(pattern.velocities[global_step])
+
+                step = M8PhraseStep(
+                    note=note_value,
+                    velocity=velocity_m8,
+                    instrument=instrument_idx
+                )
+
+                # Add glide FX if marked
+                if pattern.glides[global_step]:
+                    step.fx[0] = M8FXTuple(key=M8SequenceFX.TSP, value=0x80)
+
+                phrase[local_step] = step
+
+        phrases.append(phrase)
+
+    return phrases
+
+
 def load_base_303_macrosynth():
     """Load the base 303-style macrosynth instrument from inline YAML preset.
 
@@ -124,10 +180,10 @@ def load_base_303_macrosynth():
 
 
 def create_macrosynth_303_project():
-    """Create the Macrosynth 303 M8 project with 16 variations."""
+    """Create the Macrosynth 303 M8 project with 16 acid banger patterns."""
     print(f"Creating Macrosynth 303 demo: {PROJECT_NAME}")
     print(f"BPM: {BPM}, Seed: {SEED}")
-    print(f"Creating 16 instruments, phrases, and chains (0x00-0x0F)")
+    print(f"Pattern length: {TOTAL_STEPS} steps ({PHRASES_PER_CHAIN} phrases x {STEPS_PER_PHRASE} steps)")
 
     # Initialize RNG with seed for reproducible results
     rng = random.Random(SEED)
@@ -139,68 +195,59 @@ def create_macrosynth_303_project():
     project.metadata.directory = "/Songs/pym8-demos/macrosynth-303/"
 
     # Load base 303-style macrosynth template from inline YAML preset
-    # This demonstrates loading presets with human-readable enum names
     base_macrosynth = load_base_303_macrosynth()
     print(f"\nLoaded base preset from inline YAML")
-    print(f"  Preset demonstrates human-readable YAML with enum names:")
-    print(f"    SHAPE: {M8MacroShape(base_macrosynth.get(M8MacrosynthParam.SHAPE)).name}")
-    print(f"    FILTER_TYPE: LOWPASS, LIMIT: SIN")
-    print(f"    Modulators: 2x AHD_ENVELOPE (volume & cutoff sweep)")
 
-    # Create 16 variations (0x00-0x0F) by cloning and changing oscillator shape
-    for idx in range(16):
-        print(f"\n[{idx:02X}] Creating variation {idx + 1}/16")
+    # Create 16 rows of 303 patterns, each with different Braids shape
+    print(f"\nGenerating {NUM_ROWS} rows of 303 acid basslines...")
 
-        # Get macro shape for this instrument
-        macro_shape = MACRO_SHAPES[idx]
+    for row in range(NUM_ROWS):
+        print(f"\n--- Row {row} (0x{row:X}) ---")
+
+        # Get macro shape for this row's instrument
+        macro_shape = MACRO_SHAPES[row]
         shape_name = macro_shape.name
 
-        # Clone the base instrument
+        # Clone and customize instrument
         macrosynth = base_macrosynth.clone()
-
-        # Customize name and oscillator shape for this variation
         macrosynth.name = f"AC-{shape_name[:8]}"
         macrosynth.set(M8MacrosynthParam.SHAPE, macro_shape)
+        project.instruments[row] = macrosynth
 
-        print(f"  Instrument: {macrosynth.name} (shape={shape_name})")
+        print(f"Instrument: {macrosynth.name} (shape={shape_name})")
 
-        # Add instrument to project
-        project.instruments[idx] = macrosynth
+        # Generate random root note for this pattern (C2 to C4 range)
+        root_note = rng.choice(range(12, 37))  # C2 to C4
+        root_note_name = M8Note(root_note).name
 
-        # Create phrase with random notes (use different seed per phrase)
-        phrase = M8Phrase()
-        phrase_notes = []
-        for step in range(16):
-            # Choose random note from C3, C4, C5
-            note = rng.choice(BASS_NOTES)
-            phrase_notes.append(M8Note(note).name)
+        # Generate 64-step acid banger 303 pattern
+        pattern_name, pattern = get_random_303_pattern(rng, length=TOTAL_STEPS, root_note=root_note)
 
-            # Create step with note and full velocity
-            step_obj = M8PhraseStep(
-                note=note,
-                velocity=0x7F,  # Full velocity
-                instrument=idx   # Use corresponding instrument
-            )
+        # Count active notes
+        active_notes = sum(1 for n in pattern.notes if n is not None)
+        glide_count = sum(1 for g in pattern.glides if g)
 
-            # Add Chance FX (CHA) with value 0x80
-            step_obj.fx[0] = M8FXTuple(key=M8SequenceFX.CHA, value=0x80)
+        print(f"Pattern: {pattern_name} (root={root_note_name})")
+        print(f"  Notes: {active_notes}/{TOTAL_STEPS}, Glides: {glide_count}")
 
-            phrase[step] = step_obj
+        # Create phrases from pattern
+        base_phrase_idx = row * PHRASES_PER_CHAIN
+        phrases = create_phrases_from_303_pattern(pattern, row, base_phrase_idx)
 
-        print(f"  Phrase: {', '.join(phrase_notes[:8])} ...")
-        project.phrases[idx] = phrase
+        for i, phrase in enumerate(phrases):
+            phrase_idx = base_phrase_idx + i
+            project.phrases[phrase_idx] = phrase
 
-        # Create chain referencing the phrase
+        # Create chain referencing the 4 phrases
         chain = M8Chain()
-        chain[0] = M8ChainStep(phrase=idx, transpose=0x00)
-        project.chains[idx] = chain
-        print(f"  Chain: references phrase 0x{idx:02X}")
+        for i in range(PHRASES_PER_CHAIN):
+            chain[i] = M8ChainStep(phrase=base_phrase_idx + i, transpose=0x00)
+        project.chains[row] = chain
 
-    # Add all chains to song matrix (stacked vertically in track 0)
-    print(f"\nArranging song: stacking 16 chains in track 0, rows 0-15")
-    for row in range(16):
-        project.song[row][0] = row  # Chain idx at row idx, track 0
-        print(f"  Row {row:2d}: Chain 0x{row:02X}")
+        print(f"Chain 0x{row:02X} -> phrases 0x{base_phrase_idx:02X}-0x{base_phrase_idx + 3:02X}")
+
+        # Add chain to song
+        project.song[row][0] = row
 
     return project
 
@@ -217,10 +264,8 @@ def save_project(project: M8Project):
 
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
-    print(f"  Base preset: Loaded from inline YAML (human-readable with enum names)")
-    print(f"  Instruments: 16 macrosynth variations (0x00-0x0F) with different Braids shapes")
-    print(f"  Phrases: 16 unique patterns with random notes (C3/D#3/C4/D#4/C5) and Chance FX")
-    print(f"  Chains: 16 chains stacked vertically in track 0")
+    print(f"  Instruments: 16 macrosynth variations with different Braids shapes")
+    print(f"  Patterns: Vitling's acid-banger 303 algorithm (64 steps each)")
     print(f"  Song: 16 rows x 1 track arrangement")
 
 
