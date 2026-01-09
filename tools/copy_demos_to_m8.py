@@ -6,10 +6,14 @@ Copy demo projects to M8 device
 This script copies demo projects from tmp/demos/ to the M8 device.
 Demos are copied to /Volumes/M8/Songs/pym8-demos/
 
+The nested source structure is collapsed and underscores become hyphens:
+  tmp/demos/acid_303/sampler/ -> Songs/pym8-demos/acid-303-sampler/
+  tmp/demos/euclid/midi/      -> Songs/pym8-demos/euclid-midi/
+
 Usage:
     python tools/copy_demos_to_m8.py              # Copy all demos
     python tools/copy_demos_to_m8.py --test       # Test mode (dry run to tmp/virtual-m8)
-    python tools/copy_demos_to_m8.py sampler_demo # Copy specific demo
+    python tools/copy_demos_to_m8.py acid-303     # Copy demos matching pattern
 """
 
 import sys
@@ -18,33 +22,52 @@ import argparse
 from pathlib import Path
 
 
-def find_demos(demo_name=None):
-    """Find demo directories to copy"""
+def find_demos(pattern=None):
+    """Find demo directories containing .m8s files"""
     demos_dir = Path("tmp/demos")
 
     if not demos_dir.exists():
         raise FileNotFoundError(f"Demos directory not found: {demos_dir}")
 
-    # Find all demo directories
-    demo_dirs = [d for d in demos_dir.iterdir() if d.is_dir()]
+    # Recursively find all directories containing .m8s files
+    demo_dirs = []
+    for m8s_file in demos_dir.glob("**/*.m8s"):
+        demo_dir = m8s_file.parent
+        if demo_dir not in demo_dirs:
+            demo_dirs.append(demo_dir)
 
     if not demo_dirs:
-        raise FileNotFoundError(f"No demo directories found in {demos_dir}")
+        raise FileNotFoundError(f"No demo directories (containing .m8s files) found in {demos_dir}")
 
-    # Filter to specific demo if requested
-    if demo_name:
-        demo_dirs = [d for d in demo_dirs if d.name == demo_name]
+    # Filter by pattern if specified
+    if pattern:
+        demo_dirs = [d for d in demo_dirs if pattern in get_m8_name(d, demos_dir)]
         if not demo_dirs:
-            raise FileNotFoundError(f"Demo '{demo_name}' not found in {demos_dir}")
+            raise FileNotFoundError(f"No demos matching '{pattern}' found")
 
-    return demo_dirs
+    return sorted(demo_dirs)
 
 
-def copy_demo_to_m8(demo_dir, m8_path, test_mode=False):
+def get_m8_name(demo_dir, demos_base):
+    """Convert nested path to M8 name with hyphens.
+
+    Examples:
+        tmp/demos/acid_303/sampler -> acid-303-sampler
+        tmp/demos/euclid/midi -> euclid-midi
+    """
+    rel_path = demo_dir.relative_to(demos_base)
+    # Join path parts with hyphen and replace underscores
+    return "-".join(rel_path.parts).replace("_", "-")
+
+
+def copy_demo_to_m8(demo_dir, demos_base, m8_path, test_mode=False):
     """Copy a single demo to M8"""
 
+    # Get collapsed M8-friendly name
+    m8_name = get_m8_name(demo_dir, demos_base)
+
     # Create target directory on M8
-    target_dir = m8_path / "Songs" / "pym8-demos" / demo_dir.name
+    target_dir = m8_path / "Songs" / "pym8-demos" / m8_name
 
     # Create target directories
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -80,7 +103,7 @@ def copy_demo_to_m8(demo_dir, m8_path, test_mode=False):
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(description="Copy demo projects to M8 device")
-    parser.add_argument("demo", nargs="?", help="Specific demo to copy (optional)")
+    parser.add_argument("pattern", nargs="?", help="Filter demos by pattern (optional)")
     parser.add_argument("--test", action="store_true",
                        help="Test mode: copy to tmp/virtual-m8 instead of real M8")
     parser.add_argument("--dry-run", action="store_true",
@@ -99,9 +122,11 @@ def main():
             print("Please ensure the M8 is connected and mounted.")
             sys.exit(1)
 
+    demos_base = Path("tmp/demos")
+
     # Find demos to copy
     try:
-        demo_dirs = find_demos(args.demo)
+        demo_dirs = find_demos(args.pattern)
     except FileNotFoundError as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -112,20 +137,19 @@ def main():
     # Copy each demo
     copied_count = 0
     for demo_dir in demo_dirs:
-        print(f"Copying demo: {demo_dir.name}")
+        m8_name = get_m8_name(demo_dir, demos_base)
+        print(f"Copying: {demo_dir.relative_to(demos_base)} -> {m8_name}")
 
         if args.dry_run:
-            print(f"  [DRY RUN] Would copy {demo_dir.name}")
-            # Still count as copied for summary
             copied_count += 1
             continue
 
         try:
-            if copy_demo_to_m8(demo_dir, m8_path, args.test):
+            if copy_demo_to_m8(demo_dir, demos_base, m8_path, args.test):
                 copied_count += 1
-                print(f"  ✓ Copied {demo_dir.name}")
+                print(f"  ✓ Done")
         except Exception as e:
-            print(f"  ✗ Error copying {demo_dir.name}: {e}")
+            print(f"  ✗ Error: {e}")
 
     # Print summary
     print(f"\n{'[DRY RUN] ' if args.dry_run else ''}Successfully copied {copied_count}/{len(demo_dirs)} demo(s)")
