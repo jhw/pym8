@@ -384,7 +384,6 @@ pym8/
 │   │   ├── fx.py               # M8FXTuple + M8SequenceFX, M8SamplerFX enums
 │   │   ├── metadata.py         # Project metadata (name, tempo, key)
 │   │   ├── modulator.py        # M8Modulators (AHD, ADSR, LFO, etc.)
-│   │   ├── midi_settings.py    # MIDI configuration
 │   │   ├── version.py          # Firmware version handling
 │   │   └── instruments/        # Instrument type implementations
 │   │       ├── sampler.py      # M8Sampler - sample playback

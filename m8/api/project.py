@@ -2,7 +2,6 @@ from m8.api import M8Block
 from m8.api.chain import M8Chains, CHAINS_OFFSET
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
-from m8.api.midi_settings import M8MidiSettings, MIDI_SETTINGS_OFFSET
 from m8.api.phrase import M8Phrases, PHRASES_OFFSET
 from m8.api.song import M8SongMatrix, SONG_OFFSET
 from m8.api.version import M8Version
@@ -22,7 +21,6 @@ EQ_OFFSET = 109918
 OFFSETS = {
     "version": VERSION_OFFSET,
     "metadata": METADATA_OFFSET,
-    "midi_settings": MIDI_SETTINGS_OFFSET,
     "groove": GROOVE_OFFSET,
     "song": SONG_OFFSET,
     "phrases": PHRASES_OFFSET,
@@ -41,7 +39,6 @@ class M8Project:
     def __init__(self):
         self.data = bytearray()
         self.metadata = None
-        self.midi_settings = None
         self.song = None
         self.chains = None
         self.phrases = None
@@ -57,7 +54,6 @@ class M8Project:
         instance.version = M8Version.read(data[OFFSETS["version"]:])
 
         instance.metadata = M8Metadata.read(data[OFFSETS["metadata"]:])
-        instance.midi_settings = M8MidiSettings.read(data[OFFSETS["midi_settings"]:])
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
@@ -72,7 +68,6 @@ class M8Project:
 
         # Clone all components
         instance.metadata = self.metadata.clone() if self.metadata else None
-        instance.midi_settings = self.midi_settings.clone() if self.midi_settings else None
         instance.instruments = self.instruments.clone() if self.instruments else None
         instance.phrases = self.phrases.clone() if self.phrases else None
         instance.chains = self.chains.clone() if self.chains else None
