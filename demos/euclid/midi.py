@@ -14,9 +14,20 @@ Project structure:
 - ... (continues for 16 rows total)
 - 3 External instruments: kick (ch1), snare (ch2), hat (ch3)
 
-All notes are C-4 (standard drum trigger note).
+All notes are C-6 (works with Erica Synths LXR-02 default settings).
 
 Output: tmp/demos/euclid_midi/EUCLID-MIDI.m8s
+
+Target Machine: Erica Synths LXR-02
+Manual: https://www.ericasynths.lv/media/LXR_manual.pdf
+
+LXR-02 MIDI Setup:
+- MIDI Clock: Hold SHIFT+CONFIG, rotate BPM encoder down past 0 to MIDI setting, press encoder
+- Voice MIDI Channel: Hold voice button + channel button under slider, select MIX (right side),
+  rotate encoder right (2 pages of settings), set MIDI channel as desired, set MIDI note to ANY
+  (this enables C6 as default trigger note from M8)
+- Alternative: Use single MIDI channel for all tracks with unique notes per voice,
+  but this may limit pitch control
 """
 
 import argparse
@@ -45,7 +56,7 @@ NUM_ROWS = 16
 
 # M8 constants
 MAX_VELOCITY = 0x7F
-DRUM_NOTE = M8Note.C_4  # Standard drum trigger note
+DRUM_NOTE = M8Note.C_6  # Works with LXR-02 MIDI note set to ANY
 
 
 def velocity_to_m8(velocity_float: float) -> int:
@@ -80,6 +91,7 @@ def create_external_instrument(name: str, midi_channel: int) -> M8External:
     # Mixer settings
     inst.set(M8ExternalParam.AMP, 0x20)
     inst.set(M8ExternalParam.LIMIT, M8LimiterType.SIN)
+    inst.set(M8ExternalParam.CHORUS_SEND, 0xC0)
 
     return inst
 
