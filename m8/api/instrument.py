@@ -502,3 +502,12 @@ class M8Instruments(list):
             result.extend(instr_data)
 
         return bytes(result)
+
+    def validate(self):
+        """Validate the instruments collection.
+
+        Raises:
+            ValueError: If there are more instruments than allowed
+        """
+        if len(self) > BLOCK_COUNT:
+            raise ValueError(f"Too many instruments: {len(self)}, maximum is {BLOCK_COUNT}")

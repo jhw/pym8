@@ -49,6 +49,22 @@ class M8SongRow:
     def write(self):
         return bytes(self._data)
 
+    def validate(self, row_index=None):
+        """Validate the song row.
+
+        Args:
+            row_index: Optional row index for error messages
+
+        Raises:
+            ValueError: If chain reference is invalid
+        """
+        # Chain references must be 0-127 (valid chains) or 255 (empty)
+        # Values 128-254 are invalid
+        for col, chain_ref in enumerate(self._data):
+            if chain_ref != EMPTY_CHAIN and chain_ref > 127:
+                ctx = f" row {row_index}" if row_index is not None else ""
+                raise ValueError(f"Invalid chain reference {chain_ref} at{ctx} col {col}: must be 0-127 or 255 (empty)")
+
 class M8SongMatrix(list):
     """Represents the M8 song grid as a 2D matrix with 255 rows and 8 columns of chain references."""
     
@@ -85,3 +101,15 @@ class M8SongMatrix(list):
             row_data = row.write()
             result.extend(row_data)
         return bytes(result)
+
+    def validate(self):
+        """Validate the song matrix.
+
+        Raises:
+            ValueError: If there are more rows than allowed or invalid chain references
+        """
+        if len(self) > ROW_COUNT:
+            raise ValueError(f"Too many song rows: {len(self)}, maximum is {ROW_COUNT}")
+
+        for i, row in enumerate(self):
+            row.validate(row_index=i)

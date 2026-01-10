@@ -186,6 +186,7 @@ def main():
     # Write the project
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     output_path = OUTPUT_DIR / f"{PROJECT_NAME}.m8s"
+    project.validate()
     project.write_to_file(str(output_path))
 
     print("MIDI Chord Demo - Kraftwerk 'Computer World' Style")

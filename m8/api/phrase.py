@@ -111,6 +111,26 @@ class M8PhraseStep:
         for i in range(len(self.fx)):
             self.fx[i] = M8FXTuple()
 
+    def validate(self, step_index=None, phrase_index=None):
+        """Validate the phrase step.
+
+        Args:
+            step_index: Optional step index for error messages
+            phrase_index: Optional phrase index for error messages
+
+        Raises:
+            ValueError: If instrument reference is invalid
+        """
+        # Instrument must be 0-127 (valid) or 255 (empty)
+        # Values 128-254 are invalid
+        if self.instrument != EMPTY_INSTRUMENT and self.instrument > 127:
+            ctx = ""
+            if phrase_index is not None:
+                ctx = f" phrase {phrase_index}"
+            if step_index is not None:
+                ctx += f" step {step_index}"
+            raise ValueError(f"Invalid instrument reference {self.instrument}{ctx}: must be 0-127 or 255 (empty)")
+
 class M8Phrase(list):
     """Collection of up to 16 steps that defines a musical pattern in the M8 tracker."""
     
@@ -156,6 +176,22 @@ class M8Phrase(list):
             result.extend(step_data)
         return bytes(result)
 
+    def validate(self, phrase_index=None):
+        """Validate the phrase.
+
+        Args:
+            phrase_index: Optional phrase index for error messages
+
+        Raises:
+            ValueError: If phrase has incorrect number of steps
+        """
+        if len(self) != STEP_COUNT:
+            ctx = f" (phrase {phrase_index})" if phrase_index is not None else ""
+            raise ValueError(f"Phrase{ctx} has {len(self)} steps, expected {STEP_COUNT}")
+
+        for i, step in enumerate(self):
+            step.validate(step_index=i, phrase_index=phrase_index)
+
 class M8Phrases(list):
     """Collection of up to 255 phrases that make up a complete M8 project."""
     
@@ -197,3 +233,15 @@ class M8Phrases(list):
                 phrase_data = phrase_data[:PHRASE_BLOCK_SIZE]
             result.extend(phrase_data)
         return bytes(result)
+
+    def validate(self):
+        """Validate the phrases collection.
+
+        Raises:
+            ValueError: If there are more phrases than allowed
+        """
+        if len(self) > PHRASE_COUNT:
+            raise ValueError(f"Too many phrases: {len(self)}, maximum is {PHRASE_COUNT}")
+
+        for i, phrase in enumerate(self):
+            phrase.validate(phrase_index=i)

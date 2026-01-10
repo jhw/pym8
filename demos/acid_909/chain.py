@@ -352,6 +352,7 @@ def save_project(project: M8Project, chain_wav_bytes: bytes):
     # Write M8 project file
     output_path = OUTPUT_DIR / f"{PROJECT_NAME}.m8s"
     print(f"\nSaving project to {output_path}...")
+    project.validate()
     project.write_to_file(str(output_path))
 
     # Write chain WAV file

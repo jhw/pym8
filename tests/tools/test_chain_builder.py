@@ -119,13 +119,13 @@ class TestChainBuilder(unittest.TestCase):
 
     def test_build_chain_too_many_samples(self):
         """Test error handling for too many samples (M8 limit)."""
-        # Create 256 samples (exceeds M8 limit of 255)
-        segments = [Sine(440).to_audio_segment(duration=100) for _ in range(256)]
+        # Create 129 samples (exceeds M8 limit of 128 for evenly-spaced slices)
+        segments = [Sine(440).to_audio_segment(duration=100) for _ in range(129)]
 
         with self.assertRaises(ValueError) as context:
             self.builder.build_chain(segments)
 
-        self.assertIn("exceeds M8 limit of 255", str(context.exception))
+        self.assertIn("exceeds M8 limit of 128", str(context.exception))
 
     def test_build_chain_resampling(self):
         """Test that samples are resampled to target frame rate."""
@@ -163,20 +163,20 @@ class TestChainBuilder(unittest.TestCase):
         self.assertAlmostEqual(len(chain), self.slice_duration_ms, delta=5)
 
     def test_build_chain_max_samples(self):
-        """Test building chain with maximum allowed samples (255)."""
-        # Create 255 samples (M8 maximum)
-        segments = [Sine(440).to_audio_segment(duration=100) for _ in range(255)]
+        """Test building chain with maximum allowed samples (128)."""
+        # Create 128 samples (M8 maximum for evenly-spaced slices)
+        segments = [Sine(440).to_audio_segment(duration=100) for _ in range(128)]
 
         result_wav, slice_mapping = self.builder.build_chain(segments)
 
         # Should succeed without errors
-        self.assertEqual(len(slice_mapping), 255)
+        self.assertEqual(len(slice_mapping), 128)
 
         # Verify all slices are present in WAV metadata
         wav_data = result_wav.getvalue()
         cue_pos = wav_data.find(b'cue ')
         num_cues = struct.unpack('<I', wav_data[cue_pos+8:cue_pos+12])[0]
-        self.assertEqual(num_cues, 255)
+        self.assertEqual(num_cues, 128)
 
     def test_build_chain_fade_application(self):
         """Test that fade in/out is applied to samples."""

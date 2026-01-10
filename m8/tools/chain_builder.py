@@ -45,8 +45,9 @@ class ChainBuilder:
         if not samples:
             raise ValueError("No samples provided")
 
-        if len(samples) > 255:
-            raise ValueError(f"Chain has {len(samples)} samples, exceeds M8 limit of 255")
+        # M8 supports up to 128 slices for evenly-spaced slice mode
+        if len(samples) > 128:
+            raise ValueError(f"Chain has {len(samples)} samples, exceeds M8 limit of 128 slices")
 
         # Load and process all samples
         processed_segments = []

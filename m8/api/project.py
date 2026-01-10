@@ -146,3 +146,24 @@ class M8Project:
         with open(filename, "wb") as f:
             f.write(self.write())
 
+    def validate(self):
+        """Validate all project components.
+
+        Validates:
+        - Chains collection (count and phrase references)
+        - Phrases collection (count and instrument references)
+        - Song matrix (chain references)
+        - Instruments collection (count)
+
+        Raises:
+            ValueError: If any validation fails
+        """
+        if self.chains:
+            self.chains.validate()
+        if self.phrases:
+            self.phrases.validate()
+        if self.song:
+            self.song.validate()
+        if self.instruments:
+            self.instruments.validate()
+

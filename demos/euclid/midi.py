@@ -203,6 +203,7 @@ def save_project(project: M8Project):
 
     output_path = OUTPUT_DIR / f"{PROJECT_NAME}.m8s"
     print(f"\nSaving project to {output_path}...")
+    project.validate()
     project.write_to_file(str(output_path))
 
     print(f"\n✓ Demo complete!")
