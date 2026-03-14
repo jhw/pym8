@@ -81,13 +81,13 @@ class M8SamplerModDest(IntEnum):
 SAMPLE_PATH_OFFSET = 87
 SAMPLE_PATH_SIZE = 128
 
-# Default parameter values (offset, value) pairs for non-zero defaults
+# Default parameter values (param, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
-    (17, 0x80),  # FINETUNE, default: 128
-    (22, 0xFF),  # LENGTH, default: 255
-    (25, 0xFF),  # CUTOFF, default: 255
-    (29, 0x80),  # PAN, default: 128
-    (30, 0xC0),  # DRY, default: 192
+    (M8SamplerParam.FINE_TUNE, 0x80),  # center
+    (M8SamplerParam.LENGTH, 0xFF),     # full
+    (M8SamplerParam.CUTOFF, 0xFF),     # fully open
+    (M8SamplerParam.PAN, 0x80),        # center
+    (M8SamplerParam.DRY, 0xC0),
 ]
 
 

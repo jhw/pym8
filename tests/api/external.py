@@ -28,6 +28,18 @@ class TestM8External(unittest.TestCase):
         self.assertEqual(external.get(M8ExternalParam.PAN), 0x80)        # PAN
         self.assertEqual(external.get(M8ExternalParam.DRY), 0xC0)        # DRY
 
+        # Check MIDI parameters default to 0x7F (disabled/blank)
+        self.assertEqual(external.get(M8ExternalParam.BANK), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.PROGRAM), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCA_NUM), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCA_VAL), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCB_NUM), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCB_VAL), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCC_NUM), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCC_VAL), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCD_NUM), 0x7F)
+        self.assertEqual(external.get(M8ExternalParam.CCD_VAL), 0x7F)
+
     def test_constructor_with_name(self):
         """Test constructor with name parameter."""
         external = M8External(name=self.test_name)

@@ -110,14 +110,14 @@ class M8MacroShape(IntEnum):
     QPSK = 44         # QPSK - Digital modulation
 
 
-# Default parameter values (offset, value) pairs for non-zero defaults
+# Default parameter values (param, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
-    (17, 0x80),  # FINE_TUNE, default: 128 (center)
-    (19, 0x80),  # TIMBRE, default: 128 (center)
-    (20, 0x80),  # COLOUR, default: 128 (center)
-    (24, 0xFF),  # CUTOFF, default: 255 (fully open)
-    (28, 0x80),  # PAN, default: 128 (center)
-    (29, 0xC0),  # DRY, default: 192
+    (M8MacrosynthParam.FINE_TUNE, 0x80),  # center
+    (M8MacrosynthParam.TIMBRE, 0x80),     # center
+    (M8MacrosynthParam.COLOUR, 0x80),     # center
+    (M8MacrosynthParam.CUTOFF, 0xFF),     # fully open
+    (M8MacrosynthParam.PAN, 0x80),        # center
+    (M8MacrosynthParam.DRY, 0xC0),
 ]
 
 

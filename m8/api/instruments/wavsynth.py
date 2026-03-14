@@ -138,13 +138,13 @@ class M8WavShape(IntEnum):
     WT_VOXSYNTH = 69
 
 
-# Default parameter values (offset, value) pairs for non-zero defaults
+# Default parameter values (param, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
-    (17, 0x80),  # FINE_TUNE, default: 128 (center)
-    (19, 0x20),  # SIZE, default: 32
-    (24, 0xFF),  # CUTOFF, default: 255 (fully open)
-    (28, 0x80),  # PAN, default: 128 (center)
-    (29, 0xC0),  # DRY, default: 192
+    (M8WavsynthParam.FINE_TUNE, 0x80),  # center
+    (M8WavsynthParam.SIZE, 0x20),
+    (M8WavsynthParam.CUTOFF, 0xFF),     # fully open
+    (M8WavsynthParam.PAN, 0x80),        # center
+    (M8WavsynthParam.DRY, 0xC0),
 ]
 
 

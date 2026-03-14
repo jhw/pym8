@@ -94,12 +94,27 @@ class M8ExternalModDest(IntEnum):
     MOD_BINV = 0x0D  # Modulator bipolar inversion
 
 
-# Default parameter values (offset, value) pairs for non-zero defaults
+# Default parameter values (param, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
-    (17, 0x80),  # FINE_TUNE, default: 128 (center)
-    (32, 0xFF),  # CUTOFF, default: 255 (fully open)
-    (36, 0x80),  # PAN, default: 128 (center)
-    (37, 0xC0),  # DRY, default: 192
+    (M8ExternalParam.FINE_TUNE, 0x80),  # center
+    (M8ExternalParam.CUTOFF, 0xFF),     # fully open
+    (M8ExternalParam.PAN, 0x80),        # center
+    (M8ExternalParam.DRY, 0xC0),
+]
+
+# MIDI parameter defaults: 0x7F = disabled/blank (not sent over MIDI)
+# Only applied in constructor, not when reading from binary (where 0 is valid)
+MIDI_DEFAULTS = [
+    (M8ExternalParam.BANK, 0x7F),
+    (M8ExternalParam.PROGRAM, 0x7F),
+    (M8ExternalParam.CCA_NUM, 0x7F),
+    (M8ExternalParam.CCA_VAL, 0x7F),
+    (M8ExternalParam.CCB_NUM, 0x7F),
+    (M8ExternalParam.CCB_VAL, 0x7F),
+    (M8ExternalParam.CCC_NUM, 0x7F),
+    (M8ExternalParam.CCC_VAL, 0x7F),
+    (M8ExternalParam.CCD_NUM, 0x7F),
+    (M8ExternalParam.CCD_VAL, 0x7F),
 ]
 
 
@@ -122,6 +137,7 @@ class M8External(M8Instrument):
 
         # Apply external-specific defaults
         self._apply_defaults(DEFAULT_PARAMETERS)
+        self._apply_defaults(MIDI_DEFAULTS)
 
         # Set name if provided
         if name:

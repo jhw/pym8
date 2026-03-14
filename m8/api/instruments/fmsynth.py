@@ -248,12 +248,12 @@ class M8FMOperatorModDest(IntEnum):
     MOD4_FBK = 0x10  # Modulator 4 → Operator Feedback
 
 
-# Default parameter values (offset, value) pairs for non-zero defaults
+# Default parameter values (param, value) pairs for non-zero defaults
 DEFAULT_PARAMETERS = [
-    (17, 0x80),  # FINE_TUNE, default: 128 (center)
-    (52, 0xFF),  # CUTOFF, default: 255 (fully open)
-    (56, 0x80),  # PAN, default: 128 (center)
-    (57, 0xC0),  # DRY, default: 192
+    (M8FMSynthParam.FINE_TUNE, 0x80),  # center
+    (M8FMSynthParam.CUTOFF, 0xFF),     # fully open
+    (M8FMSynthParam.PAN, 0x80),        # center
+    (M8FMSynthParam.DRY, 0xC0),
 ]
 
 
