@@ -14,7 +14,7 @@ from m8.api.project import M8Project
 from m8.api.remapper import (
     EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, NO_EQ,
     EQ_REF_FX_KEYS, INSTRUMENT_REF_FX_KEYS, TABLE_REF_FX_KEYS,
-    Mappings, walk_dependencies, walk_song,
+    Mappings, NoFreeSlotError, Remapping, allocate, walk_dependencies, walk_song,
 )
 
 
@@ -323,6 +323,158 @@ class TestOutOfRangeRefsIgnored(unittest.TestCase):
 
         m = walk_dependencies(self.project, chains={0})
         self.assertNotIn(200, m.eqs)
+
+
+# ----------------------------------------------------------------------
+# Allocator
+# ----------------------------------------------------------------------
+
+class TestAllocatorPreferSameIndex(unittest.TestCase):
+    """When a destination slot at the source index is free, keep that index."""
+
+    def test_empty_destination_keeps_indices(self):
+        src = M8Project.initialise()
+        src.instruments[5] = M8Wavsynth(name="W5")
+        src.instruments[5].associated_eq = 10
+        src.phrases[7][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+        src.chains[3][0] = M8ChainStep(phrase=7, transpose=0)
+
+        dst = M8Project.initialise()  # all empty
+        m = walk_dependencies(src, chains={3})
+        remap = allocate(src, dst, m)
+
+        self.assertEqual(remap.chains, {3: 3})
+        self.assertEqual(remap.phrases, {7: 7})
+        self.assertEqual(remap.instruments, {5: 5})
+        # Implicit table 5 piggybacks on instrument 5
+        self.assertEqual(remap.tables, {5: 5})
+        self.assertEqual(remap.eqs, {10: 10})
+
+
+class TestAllocatorFindsAlternateOnCollision(unittest.TestCase):
+    """Each colliding slot moves to the next free slot."""
+
+    def test_chain_collision_finds_alternate(self):
+        src = M8Project.initialise()
+        src.chains[3][0] = M8ChainStep(phrase=EMPTY_PHRASE, transpose=0)
+        src.chains[3][1] = M8ChainStep(phrase=EMPTY_PHRASE, transpose=0)
+        # Actually we need an occupied step. Set step 0 phrase to something:
+        src.chains[3][0].phrase = 0
+        src.phrases[0][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=EMPTY_INSTRUMENT_REF)
+
+        dst = M8Project.initialise()
+        dst.chains[3][0] = M8ChainStep(phrase=99, transpose=0)  # occupies slot 3
+
+        m = walk_dependencies(src, chains={3})
+        remap = allocate(src, dst, m)
+        self.assertNotEqual(remap.chains[3], 3)
+        self.assertEqual(remap.chains[3], 0)  # first free slot (0)
+
+    def test_instrument_collision_finds_alternate(self):
+        src = M8Project.initialise()
+        src.instruments[2] = M8Wavsynth(name="SRC")
+
+        dst = M8Project.initialise()
+        dst.instruments[2] = M8Wavsynth(name="DST")  # collision
+
+        m = Mappings(instruments={2})
+        remap = allocate(src, dst, m)
+        self.assertNotEqual(remap.instruments[2], 2)
+        # First free instrument slot is 0
+        self.assertEqual(remap.instruments[2], 0)
+
+    def test_eq_collision_finds_alternate(self):
+        """A non-default EQ in destination's slot 5 makes source EQ 5 relocate."""
+        src = M8Project.initialise()
+        dst = M8Project.initialise()
+        dst.eq[5].low.q = 0xAB  # mark as occupied (not default)
+
+        m = Mappings(eqs={5})
+        remap = allocate(src, dst, m)
+        self.assertNotEqual(remap.eqs[5], 5)
+
+
+class TestAllocatorPiggyback(unittest.TestCase):
+    """instrument N owning table N: when both are in move set, they get
+    the same destination slot."""
+
+    def test_instrument_and_owned_table_share_destination(self):
+        src = M8Project.initialise()
+        src.instruments[7] = M8Wavsynth(name="W7")
+        # Owned table at slot 7 has some content
+        src.tables[7][0].transpose = 0x0C
+
+        dst = M8Project.initialise()
+        dst.instruments[7] = M8Wavsynth(name="DST-7")  # collision
+
+        m = walk_dependencies(src, instruments={7})
+        remap = allocate(src, dst, m)
+        # Both instrument and table 7 should land at the same alternate slot
+        self.assertIn(7, remap.instruments)
+        self.assertIn(7, remap.tables)
+        self.assertEqual(remap.instruments[7], remap.tables[7])
+
+    def test_freestanding_table_allocated_independently(self):
+        """Table >= N_INSTRUMENTS doesn't piggyback on anything."""
+        src = M8Project.initialise()
+        src.tables[200][0].transpose = 5
+
+        dst = M8Project.initialise()
+        dst.tables[200][0].transpose = 9  # collision
+
+        m = walk_dependencies(src, tables={200})
+        remap = allocate(src, dst, m)
+        self.assertIn(200, remap.tables)
+        self.assertNotEqual(remap.tables[200], 200)
+
+
+class TestAllocatorMultiCollision(unittest.TestCase):
+    """A bunch of source slots colliding with a partially-full destination."""
+
+    def test_multiple_instruments_fall_through_to_free_slots(self):
+        src = M8Project.initialise()
+        for i in (0, 1, 2):
+            src.instruments[i] = M8Wavsynth(name=f"S{i}")
+
+        dst = M8Project.initialise()
+        # Destination has slots 0, 1, 2 taken; 3, 4, 5 free
+        for i in (0, 1, 2):
+            dst.instruments[i] = M8Wavsynth(name=f"D{i}")
+
+        m = Mappings(instruments={0, 1, 2})
+        remap = allocate(src, dst, m)
+
+        # No two source instruments map to the same dest slot
+        dst_slots = set(remap.instruments.values())
+        self.assertEqual(len(dst_slots), 3)
+        # All in the free range
+        for v in dst_slots:
+            self.assertNotIn(v, (0, 1, 2))
+
+
+class TestAllocatorExhaustion(unittest.TestCase):
+    """If the destination has no free slot of some kind, raise."""
+
+    def test_no_free_eq_raises(self):
+        src = M8Project.initialise()
+        dst = M8Project.initialise()
+        # Fill every dst EQ slot with non-default state
+        for eq in dst.eq:
+            eq.low.q = 0xAB
+
+        m = Mappings(eqs={0})
+        with self.assertRaises(NoFreeSlotError):
+            allocate(src, dst, m)
+
+
+class TestRemappingDataclass(unittest.TestCase):
+    def test_empty_remapping(self):
+        r = Remapping()
+        self.assertEqual(r.chains, {})
+        self.assertEqual(r.phrases, {})
+        self.assertEqual(r.instruments, {})
+        self.assertEqual(r.tables, {})
+        self.assertEqual(r.eqs, {})
 
 
 if __name__ == "__main__":
