@@ -67,10 +67,116 @@ class M8SamplerFX(IntEnum):
     LIM = 0x8C  # Limiter
     PAN = 0x8D  # Pan
     DRY = 0x8E  # Dry/wet mix
-    SCH = 0x8F  # Send chorus
+    SCH = 0x8F  # Send chorus (also SMX on V6.2)
     SDL = 0x90  # Send delay
     SRV = 0x91  # Send reverb
     SLI = 0xA6  # Slice
+    ERR = 0xA7  # Sample error / debug
+
+
+# Modulator FX Commands (apply to all instrument types that have modulators)
+# Five commands per modulator slot, four slots. Layout per slot:
+#   AHD env:  EA, AT, HO, DE, ET
+#   ADSR env: EA, AT, DE, SU, ET
+#   LFO:      LA, LO, LS, LF, LT
+# Byte codes are constant; mnemonics on the M8 display change with the
+# modulator type at that slot. Enum names use the AHD layout as canonical.
+class M8ModulatorFX(IntEnum):
+    """FX commands that modify modulator (envelope/LFO) parameters.
+
+    Naming follows the AHD-envelope convention; the same byte code displays
+    as different mnemonics on the M8 depending on what modulator type
+    occupies that slot:
+
+    - AHD envelope:  EA{n} AT{n} HO{n} DE{n} ET{n}
+    - ADSR envelope: EA{n} AT{n} DE{n} SU{n} ET{n}
+    - LFO:           LA{n} LO{n} LS{n} LF{n} LT{n}
+    """
+    # Modulator slot 1 (mod_id 0)
+    EA1 = 0x92  # Envelope/LFO amount
+    AT1 = 0x93  # Attack (env) / oscillator (LFO)
+    HO1 = 0x94  # Hold (AHD) / Decay (ADSR) / Shape (LFO)
+    DE1 = 0x95  # Decay (AHD) / Sustain (ADSR) / Frequency (LFO)
+    ET1 = 0x96  # Envelope target / LFO trigger
+
+    # Modulator slot 2 (mod_id 1)
+    EA2 = 0x97
+    AT2 = 0x98
+    HO2 = 0x99
+    DE2 = 0x9A
+    ET2 = 0x9B
+
+    # Modulator slot 3 (mod_id 2)
+    EA3 = 0x9C
+    AT3 = 0x9D
+    HO3 = 0x9E
+    DE3 = 0x9F
+    ET3 = 0xA0
+
+    # Modulator slot 4 (mod_id 3)
+    EA4 = 0xA1
+    AT4 = 0xA2
+    HO4 = 0xA3
+    DE4 = 0xA4
+    ET4 = 0xA5
+
+
+# Mixer FX Commands (firmware 6.2, global - mixer/voice controls)
+# Sequence FX occupy 0x00..0x1A; mixer FX start at 0x1B.
+class M8MixerFX(IntEnum):
+    """Mixer FX commands (M8 firmware 6.2)."""
+    VMV = 0x1B  # Volume master volume
+    XMM = 0x1C  # Chorus mod mix
+    XMF = 0x1D  # Chorus mod feedback
+    XMW = 0x1E  # Chorus mod width
+    XMR = 0x1F  # Chorus mod rate
+    XDT = 0x20  # Delay time
+    XDF = 0x21  # Delay feedback
+    XDW = 0x22  # Delay width
+    XDR = 0x23  # Delay rate
+    XRS = 0x24  # Reverb size
+    XRD = 0x25  # Reverb damping
+    XRM = 0x26  # Reverb mix
+    XRF = 0x27  # Reverb filter
+    XRW = 0x28  # Reverb width
+    XRZ = 0x29  # Reverb resonance
+    VMX = 0x2A  # Master mix
+    VDE = 0x2B  # Voice delay send
+    VRE = 0x2C  # Voice reverb send
+    VT1 = 0x2D  # Track 1 volume
+    VT2 = 0x2E  # Track 2 volume
+    VT3 = 0x2F  # Track 3 volume
+    VT4 = 0x30  # Track 4 volume
+    VT5 = 0x31  # Track 5 volume
+    VT6 = 0x32  # Track 6 volume
+    VT7 = 0x33  # Track 7 volume
+    VT8 = 0x34  # Track 8 volume
+    DJC = 0x35  # DJ filter cutoff
+    VIN = 0x36  # Input volume
+    IMX = 0x37  # Input mix
+    IDE = 0x38  # Input delay send
+    IRE = 0x39  # Input reverb send
+    VI2 = 0x3A  # Input 2 volume
+    IM2 = 0x3B  # Input 2 mix
+    ID2 = 0x3C  # Input 2 delay send
+    IR2 = 0x3D  # Input 2 reverb send
+    USB = 0x3E  # USB level
+    DJR = 0x3F  # DJ filter resonance
+    DJT = 0x40  # DJ filter type
+    EQM = 0x41  # EQ mid
+    EQI = 0x42  # EQ initialise
+    INS = 0x43  # Instrument send
+    RTO = 0x44  # Retrigger off
+    ARC = 0x45  # Arc
+    GGR = 0x46  # Global groove
+    NXT = 0x47  # Next
+    XRH = 0x48  # Reverb HP
+    XMT = 0x49  # Chorus type
+    OTT = 0x4A  # OTT amount
+    OTC = 0x4B  # OTT compression
+    OTI = 0x4C  # OTT input
+    MTT = 0x4D  # Master tempo
+
 
 class M8FXTuple:
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
