@@ -78,10 +78,16 @@ descriptor-over-bytearray records with no version-conditional reads
 (all "v6.0+" fields are present unconditionally in our target firmware,
 just unused / zeroed in pre-v6 files). Defer.
 
-### 5. Tables (256 entries, offset `0xBA3E`)
-The M8's per-step modulation feature. Each table entry contains FX
-commands that reference instruments — table entries are themselves
-reference-bearing. Needed before remapper has much to remap.
+### 5. ~~Tables (256 entries, offset `0xBA3E`)~~ **— done**
+`m8/api/table.py`: `M8TableStep` (8 bytes — transpose + velocity + 3 FX
+tuples), `M8Table` (16 steps = 128 bytes), `M8Tables` (256 tables =
+32 768 bytes = 0x8000). Each step's three FX tuples reuse the existing
+`M8FXTuples` class (same 2-byte key+value layout as phrase FX).
+
+Reference-bearing: each step's FX commands can target instruments,
+tables, or EQs (via the relevant FX command codes). The remapper will
+need a generic traversal that walks `project.tables[*][*].fx[*]` along
+with phrases/chains/etc. — see Phase 3.
 
 ### 6. MIDI mappings (128, offset `0x1A5FE`)
 External controller → M8 parameter routing.

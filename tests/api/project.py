@@ -87,7 +87,7 @@ class TestM8Project(unittest.TestCase):
             {
                 "version", "metadata", "midi",
                 "mixer", "effects", "eq",
-                "song", "phrases", "chains", "instruments",
+                "song", "phrases", "chains", "tables", "instruments",
             },
         )
 

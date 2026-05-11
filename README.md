@@ -10,12 +10,13 @@ What it covers:
 - All seven instrument types (Wavsynth, Macrosynth, Sampler, MIDIOut, FMSynth, HyperSynth, External)
 - All six modulator types (AHD, ADSR, Drum, LFO, Trig, Tracking) as distinct classes
 - Phrases (notes + FX), chains, song matrix, instrument slots
+- Tables (256 × 16-step modulation grids — transpose, velocity, 3 FX per step)
 - 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — global, effect-section, and per-instrument
 - Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT), MIDI settings (sync, transport, per-track input routing), and effects settings (chorus / delay / reverb knobs, OTT config)
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
 - Audio helpers: sample-chain WAV builder, slice-point WAV writer
 
-What it doesn't cover yet: groove definitions, scales, MIDI mappings, themes, tables, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
+What it doesn't cover yet: groove definitions, scales, MIDI mappings, themes, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
 
 ## Install
 
@@ -337,6 +338,7 @@ m8/
 │   ├── eq.py             # M8EqBand / M8Eq / M8Eqs (3-band parametric)
 │   ├── settings.py       # M8MixerSettings / M8EffectsSettings
 │   ├── midi_settings.py  # M8MidiSettings (sync, transport, track input)
+│   ├── table.py          # M8TableStep / M8Table / M8Tables (256 × 16-step)
 │   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
 │   ├── chain.py          # M8Chain / M8ChainStep
 │   ├── song.py           # M8SongMatrix (255 rows × 8 tracks)
