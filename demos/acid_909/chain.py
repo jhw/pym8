@@ -366,7 +366,7 @@ def save_project(project: M8Project, chain_wav_bytes: bytes):
     print(f"  Chain sample: {chain_path}")
     print(f"  Total instruments: 1 (chain sampler with 48 slices)")
     print(f"\nYou can now copy this to your M8 device using:")
-    print(f"  python tools/copy_demos_to_m8.py")
+    print(f"  python tools/sync.py push")
 
 
 def main():

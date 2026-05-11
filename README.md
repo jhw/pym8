@@ -205,12 +205,17 @@ sliced = slicer.add_slice_points(wav_data, slice_points=[0, 22050, 44100, 66150]
 
 ## Demos
 
-Runnable scripts under `demos/` produce `.m8s` files in `tmp/demos/`. Categories:
+Runnable scripts under `demos/` produce `.m8s` files in `tmp/demos/`. Each demo demonstrates one library feature:
 
-- `demos/acid_303/` — TB-303-style basslines (sampler, wavsynth, macrosynth, midi)
-- `demos/acid_909/` — Vitling's acid-banger 909 patterns (sampler, synthdrums, chain, midi)
-- `demos/euclid/` — Bjorklund Euclidean rhythms (sampler, midi)
-- `demos/chords/` — chord progressions (synth, midi)
+| Demo | Demonstrates |
+|---|---|
+| `demos/acid_303/wavsynth.py` | Wavsynth + iterating over instrument slots (16 shape variations) |
+| `demos/acid_303/midi.py` | MIDIOut to monophonic external synth with OFF-note insertion |
+| `demos/acid_909/sampler.py` | Sampler basics — multi-instrument drum kit |
+| `demos/acid_909/chain.py` | Sample chain slicing |
+| `demos/acid_909/midi.py` | MIDIOut drum kit (multi-channel) |
+| `demos/euclid/sampler.py` | Bjorklund Euclidean rhythms |
+| `demos/chords/synth.py` | Macrosynth + modulators + 3-voice polyphony |
 
 Run a demo:
 
@@ -218,8 +223,8 @@ Run a demo:
 # Sample-based demos need samples first
 PYTHONPATH=. python demos/utils/download_erica_pico_samples.py
 
-PYTHONPATH=. python demos/acid_303/sampler.py
-PYTHONPATH=. python demos/euclid/midi.py
+PYTHONPATH=. python demos/acid_909/sampler.py
+PYTHONPATH=. python demos/chords/synth.py
 ```
 
 ### Shipping demos to the M8

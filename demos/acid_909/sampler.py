@@ -308,7 +308,7 @@ def save_project(project: M8Project, used_samples: Dict[int, Path]):
     print(f"  Samples: {samples_dir}")
     print(f"  Total instruments: {len(used_samples)}")
     print(f"\nYou can now copy this to your M8 device using:")
-    print(f"  python tools/copy_demos_to_m8.py")
+    print(f"  python tools/sync.py push")
 
 
 def main():
