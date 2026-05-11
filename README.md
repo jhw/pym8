@@ -238,9 +238,10 @@ project.midi.send_transport = 2
 project.midi.track_input_channels[0] = 5        # track 0 records from MIDI ch 5
 project.midi.track_input_instruments[0] = 8     # ...fires instrument slot 8
 
-# Musical key (used by SCG / scale-global FX). Note: exposed on metadata
-# but the byte lives at file offset 187, not next to the rest of metadata.
-project.metadata.key = 7  # G major
+# Musical key (used by SCG / scale-global FX) — top-level on M8Project
+# because its byte sits at file offset 187, separate from the contiguous
+# metadata block.
+project.key = 7  # G major
 ```
 
 ## Cross-project remapping

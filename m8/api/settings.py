@@ -10,7 +10,7 @@ Layout in the project file:
   byte 206       MixerSettings (32 bytes in v6.2+)
   byte 107969    EffectsSettings (26 bytes in v6.2+)
 
-MidiSettings (27 bytes between metadata.name and metadata.key, file byte
+MidiSettings (27 bytes between the project name and the key byte, file byte
 160) is **not yet modelled**. It interleaves with what pym8's M8Metadata
 currently treats as a single block; integrating it requires restructuring
 the metadata reader. Tracked in docs/planning/roadmap.md.

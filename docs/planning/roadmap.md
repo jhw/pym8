@@ -68,7 +68,7 @@ Three structs at three different file offsets:
 `M8Metadata` was truncated from 147 → 146 bytes (the bogus `key` byte
 at metadata-relative offset 146 was actually pointing at
 `MidiSettings.receive_sync` — pre-existing bug). The real musical-key
-byte at file 187 is still exposed as `metadata.key` for ergonomics but
+byte at file 187 is exposed as `project.key` (top-level on M8Project) but
 written specially by `M8Project` (it isn't part of the contiguous
 metadata block).
 

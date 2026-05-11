@@ -77,6 +77,7 @@ class M8Project:
         self.midi_mappings = None
         self.scales = None
         self.eqs = None
+        self.key = 0
         self.version = M8Version()
 
     @classmethod
@@ -93,10 +94,9 @@ class M8Project:
             data[OFFSETS["midi"]:OFFSETS["midi"] + M8MidiSettings.BYTES],
             version=instance.version,
         )
-        # The musical key byte sits between MidiSettings and the 18 reserved
-        # bytes that precede MixerSettings. Exposed on metadata for ergonomics
-        # even though the byte itself isn't in the contiguous metadata block.
-        instance.metadata.key = data[KEY_OFFSET]
+        # Musical key byte sits between MidiSettings (file 160-186) and
+        # the 18 reserved bytes that precede MixerSettings (file 206).
+        instance.key = data[KEY_OFFSET]
 
         instance.grooves = M8Grooves.read(
             data[OFFSETS["grooves"]:OFFSETS["grooves"] + M8Grooves.TOTAL_BYTES],
@@ -154,6 +154,7 @@ class M8Project:
         instance.midi_mappings = self.midi_mappings.clone() if self.midi_mappings else None
         instance.scales = self.scales.clone() if self.scales else None
         instance.eqs = self.eqs.clone() if self.eqs else None
+        instance.key = self.key
         return instance
         
     def write(self) -> bytes:
@@ -172,11 +173,11 @@ class M8Project:
                 data = block.write()
                 output[offset:offset + len(data)] = data
 
-        # Musical key byte at file offset 187 — exposed via
-        # metadata.key but not part of any contiguous block, so written
-        # explicitly here.
-        if self.metadata is not None:
-            output[KEY_OFFSET] = self.metadata.key & 0xFF
+        # Musical key byte at file offset 187 — between MidiSettings and
+        # the 18 reserved bytes preceding MixerSettings. Not part of any
+        # contiguous block, so written explicitly here rather than via the
+        # OFFSETS loop.
+        output[KEY_OFFSET] = self.key & 0xFF
 
         return bytes(output)
 

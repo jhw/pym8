@@ -1,11 +1,9 @@
 """Tests for M8Metadata.
 
-The musical `key` byte is exposed as `metadata.key` but written to the
-file separately by M8Project (offset 187, not adjacent to the rest of
-metadata). M8Metadata.read/write covers only the contiguous 146-byte
-block: directory + transpose + tempo + quantize + name. Key is preserved
-as a Python attribute (e.g. through clone()) but isn't in the binary
-output of M8Metadata.write.
+Metadata covers the contiguous 146-byte block at file offset 14:
+directory + transpose + tempo + quantize + name. The musical `key`
+byte lives at file offset 187 (after MidiSettings) and is exposed on
+`M8Project` directly (`project.key`), not here.
 """
 import struct
 import unittest
@@ -30,7 +28,7 @@ class TestM8MetadataBinary(unittest.TestCase):
         return buf
 
     def test_block_size_is_146(self):
-        """Confirmed: directory(128) + transpose(1) + tempo(4) + quantize(1) + name(12)."""
+        """directory(128) + transpose(1) + tempo(4) + quantize(1) + name(12)."""
         self.assertEqual(METADATA_BLOCK_SIZE, 146)
         self.assertEqual(M8Metadata.BLOCK_SIZE, 146)
         self.assertEqual(len(M8Metadata().write()), 146)
@@ -69,16 +67,6 @@ class TestM8MetadataBinary(unittest.TestCase):
                 self.assertEqual(reloaded.quantize, original.quantize)
                 self.assertEqual(reloaded.name, original.name)
 
-    def test_key_not_in_binary_block(self):
-        """key is a Python attribute; M8Metadata.write() doesn't include it.
-
-        M8Project handles the key byte at file offset 187 separately.
-        """
-        m1 = M8Metadata(key=0)
-        m2 = M8Metadata(key=42)
-        # Different key, same binary output
-        self.assertEqual(m1.write(), m2.write())
-
 
 class TestM8MetadataConstructor(unittest.TestCase):
     def test_defaults(self):
@@ -88,19 +76,17 @@ class TestM8MetadataConstructor(unittest.TestCase):
         self.assertEqual(m.tempo, 120.0)
         self.assertEqual(m.quantize, 0)
         self.assertEqual(m.name, "HELLO")
-        self.assertEqual(m.key, 0)
 
     def test_with_arguments(self):
         m = M8Metadata(
             directory="/Custom/", transpose=3, tempo=140.0,
-            quantize=2, name="CUSTOM", key=5,
+            quantize=2, name="CUSTOM",
         )
         self.assertEqual(m.directory, "/Custom/")
         self.assertEqual(m.transpose, 3)
         self.assertEqual(m.tempo, 140.0)
         self.assertEqual(m.quantize, 2)
         self.assertEqual(m.name, "CUSTOM")
-        self.assertEqual(m.key, 5)
 
     def test_partial(self):
         m = M8Metadata(directory="/Partial/", name="PARTIAL")
@@ -108,27 +94,34 @@ class TestM8MetadataConstructor(unittest.TestCase):
         self.assertEqual(m.name, "PARTIAL")
         self.assertEqual(m.transpose, 0)
         self.assertEqual(m.tempo, 120.0)
-        self.assertEqual(m.key, 0)
 
 
 class TestM8MetadataClone(unittest.TestCase):
-    def test_clone_copies_all_fields_including_key(self):
+    def test_clone_copies_all_fields(self):
         original = M8Metadata(
             directory="/Clone/", transpose=4, tempo=125.5,
-            quantize=3, name="ORIGINAL", key=2,
+            quantize=3, name="ORIGINAL",
         )
         cloned = original.clone()
         self.assertIsNot(cloned, original)
         self.assertEqual(cloned.directory, "/Clone/")
-        self.assertEqual(cloned.key, 2)
+        self.assertEqual(cloned.transpose, 4)
+        self.assertEqual(cloned.tempo, 125.5)
+        self.assertEqual(cloned.name, "ORIGINAL")
 
     def test_clone_is_independent(self):
-        original = M8Metadata(name="ORIGINAL", key=2)
+        original = M8Metadata(name="ORIGINAL")
         cloned = original.clone()
         cloned.name = "MODIFIED"
-        cloned.key = 9
         self.assertEqual(original.name, "ORIGINAL")
-        self.assertEqual(original.key, 2)
+
+
+class TestKeyNotOnMetadata(unittest.TestCase):
+    """The musical-key byte is on M8Project, not on M8Metadata."""
+
+    def test_no_key_attribute(self):
+        m = M8Metadata()
+        self.assertFalse(hasattr(m, "key"))
 
 
 if __name__ == "__main__":

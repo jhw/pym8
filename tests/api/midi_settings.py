@@ -1,11 +1,6 @@
 """Tests for M8MidiSettings (27 bytes at file offset 160) and the
-project-level musical key byte at file offset 187.
-
-Both used to be invisible to pym8 — the bytes lived in what M8Metadata
-incorrectly modelled as part of its block (with `metadata.key` actually
-pointing at MidiSettings.receive_sync). This commit untangles that and
-puts each byte at its correct file position.
-"""
+project-level musical key byte (file offset 187, exposed as
+`project.key`)."""
 import unittest
 
 from m8.api.midi_settings import M8MidiSettings, MIDI_SETTINGS_BYTES, N_TRACKS
@@ -115,7 +110,7 @@ class TestM8MidiSettingsRoundTrip(unittest.TestCase):
 
 
 class TestProjectMidiAndKey(unittest.TestCase):
-    """Integration: project.midi at file offset 160, metadata.key at 187."""
+    """Integration: project.midi at file offset 160, project.key at 187."""
 
     def test_template_midi_settings_present(self):
         p = M8Project.initialise()
@@ -134,7 +129,7 @@ class TestProjectMidiAndKey(unittest.TestCase):
         MidiSettings.receive_sync).
         """
         p = M8Project.initialise()
-        p.metadata.key = 7
+        p.key = 7
         p.midi.receive_sync = 1
         data = p.write()
         self.assertEqual(data[KEY_OFFSET], 7)
@@ -144,9 +139,9 @@ class TestProjectMidiAndKey(unittest.TestCase):
 
     def test_key_round_trip_through_project(self):
         p = M8Project.initialise()
-        p.metadata.key = 9
+        p.key = 9
         loaded = M8Project.read(p.write())
-        self.assertEqual(loaded.metadata.key, 9)
+        self.assertEqual(loaded.key, 9)
 
     def test_midi_round_trip_through_project(self):
         p = M8Project.initialise()
@@ -160,7 +155,7 @@ class TestProjectMidiAndKey(unittest.TestCase):
 
     def test_stable_round_trip_with_mutations(self):
         p = M8Project.initialise()
-        p.metadata.key = 11
+        p.key = 11
         p.midi.receive_sync = 1
         bytes1 = p.write()
         bytes2 = M8Project.read(bytes1).write()
@@ -168,15 +163,15 @@ class TestProjectMidiAndKey(unittest.TestCase):
 
     def test_clone_preserves_midi_and_key(self):
         p = M8Project.initialise()
-        p.metadata.key = 5
+        p.key = 5
         p.midi.receive_sync = 1
         cloned = p.clone()
-        self.assertEqual(cloned.metadata.key, 5)
+        self.assertEqual(cloned.key, 5)
         self.assertEqual(cloned.midi.receive_sync, 1)
         # Independence
-        cloned.metadata.key = 99
+        cloned.key = 99
         cloned.midi.receive_sync = 0
-        self.assertEqual(p.metadata.key, 5)
+        self.assertEqual(p.key, 5)
         self.assertEqual(p.midi.receive_sync, 1)
 
 
