@@ -16,6 +16,7 @@ from m8.api.instrument import (
 )
 from m8.api.instruments.external import M8External, M8ExternalPort
 from m8.api.instruments.fmsynth import M8FMSynth, M8FMAlgo
+from m8.api.instruments.hypersynth import M8HyperSynth
 from m8.api.instruments.macrosynth import M8Macrosynth, M8MacroShape
 from m8.api.instruments.midiout import M8MIDIOut, M8MIDIPort
 from m8.api.instruments.sampler import M8Sampler, M8PlayMode
@@ -66,6 +67,15 @@ INSTRUMENT_CASES = [
         ("bank", 0x08),
         ("cca_num", 0x40),
     ], [("bank", 0x7F), ("program", 0x7F), ("cca_num", 0x7F), ("cca_val", 0x7F), ("ccj_num", 0x7F)]),
+
+    (M8HyperSynth, [
+        ("scale", 0x05),
+        ("shift", 0x10),
+        ("swarm", 0x80),
+        ("width", 0x40),
+        ("subosc", 0x20),
+        ("cutoff", 0x60),
+    ], [("fine_tune", 0x80), ("cutoff", 0xFF), ("pan", 0x80), ("dry", 0xC0)]),
 ]
 
 
@@ -169,21 +179,13 @@ class TestM8Instruments(unittest.TestCase):
         self.assertEqual(reloaded[10].name, "C")
 
     def test_unknown_type_warns(self):
+        """A type byte not registered to a subclass should warn and survive as M8Block."""
         instruments = M8Instruments()
         raw = bytearray(instruments.write())
         raw[0] = 0x7E
         with self.assertWarns(UserWarning):
             reloaded = M8Instruments.read(bytes(raw))
         self.assertIsInstance(reloaded[0], M8Block)
-
-    def test_known_but_unsupported_type_warns(self):
-        """Type IDs in the enum but lacking a subclass should still warn."""
-        instruments = M8Instruments()
-        raw = bytearray(instruments.write())
-        raw[0] = int(M8InstrumentType.HYPERSYNTH)
-        with self.assertWarns(UserWarning) as cm:
-            M8Instruments.read(bytes(raw))
-        self.assertIn("HYPERSYNTH", str(cm.warning))
 
 
 class TestM8iRoundTrip(unittest.TestCase):

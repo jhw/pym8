@@ -7,7 +7,7 @@ A Python library for reading and writing Dirtywave M8 tracker files.
 pym8 lets you create, read, and edit M8 projects (`.m8s`) and single-instrument exports (`.m8i`) programmatically. The M8 is a portable music tracker/synthesizer by [Dirtywave](https://dirtywave.com/products/m8-tracker). pym8 is a Python port of [m8-file-parser](https://github.com/Twinside/m8-file-parser); target firmware is **6.2+**.
 
 What it covers:
-- All seven instrument types (Wavsynth, Macrosynth, Sampler, MIDIOut, FMSynth, External; HyperSynth round-trips but isn't editable)
+- All seven instrument types (Wavsynth, Macrosynth, Sampler, MIDIOut, FMSynth, HyperSynth, External)
 - All six modulator types (AHD, ADSR, Drum, LFO, Trig, Tracking) as distinct classes
 - Phrases (notes + FX), chains, song matrix, instrument slots
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
@@ -75,6 +75,7 @@ Parameters are exposed as typed descriptor attributes. Setting an out-of-range v
 | `M8Sampler` | 2 | Sample playback with slicing/looping/pitch modes |
 | `M8MIDIOut` | 3 | Pure MIDI output to external gear (10 CC slots) |
 | `M8FMSynth` | 4 | 4-operator FM synthesizer |
+| `M8HyperSynth` | 5 | 6-oscillator detuned-stack synth with 16-slot chord matrix |
 | `M8External` | 6 | Audio-input routing with 4 CC slots |
 
 > **MIDIOut vs External.** `M8MIDIOut` (type 3) is what you want for sequencing external hardware/software synths over MIDI — 10 CC slots, port enum including `INTERNAL`. `M8External` (type 6) routes external *audio* into the M8's effect chain and has a small MIDI CC capability alongside. The MIDI demos in this repo all use `M8MIDIOut`.
@@ -119,6 +120,15 @@ mout.port = M8MIDIPort.MIDI
 mout.channel = 0
 mout.cca_num = 71      # CC for resonance
 mout.cca_val = 0x40
+
+# HyperSynth (6-oscillator stack + chord matrix)
+from m8.api.instruments.hypersynth import M8HyperSynth, M8Chord
+hs = M8HyperSynth(name="STACK")
+hs.swarm = 0x80              # spread amount
+hs.width = 0x40              # stereo width
+hs.default_chord = [0, 4, 7, 0, 0, 0, 0]  # plays a major triad by default
+# Slot 0 = root + 5th + octave on oscillators 0, 1, 2
+hs.chords[0] = M8Chord(mask=0b00000111, offsets=[0, 7, 12, 0, 0, 0])
 
 # External (audio in)
 from m8.api.instruments.external import M8External, M8ExternalPort, M8ExternalInput
@@ -249,7 +259,7 @@ m8/
 ├── api/
 │   ├── project.py        # M8Project — top-level container
 │   ├── instrument.py     # M8Instrument base + M8Instruments collection
-│   ├── fields.py         # ByteField / StringField descriptors
+│   ├── fields.py         # ByteField / BytesField / StringField descriptors
 │   ├── modulator.py      # 6 modulator subclasses + M8Modulators
 │   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
 │   ├── chain.py          # M8Chain / M8ChainStep
@@ -263,6 +273,7 @@ m8/
 │       ├── sampler.py     # M8Sampler           (type 2)
 │       ├── midiout.py     # M8MIDIOut           (type 3) — 10 MIDI CC slots
 │       ├── fmsynth.py     # M8FMSynth           (type 4)
+│       ├── hypersynth.py  # M8HyperSynth        (type 5) — chord matrix
 │       └── external.py    # M8External          (type 6) — audio in + 4 CC slots
 ├── tools/
 │   ├── chain_builder.py  # Sliced sample chain WAV builder

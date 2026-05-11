@@ -2,7 +2,7 @@
 import unittest
 from enum import IntEnum
 
-from m8.api.fields import ByteField, StringField, iter_fields
+from m8.api.fields import ByteField, BytesField, StringField, iter_fields
 
 
 class Mode(IntEnum):
@@ -11,12 +11,13 @@ class Mode(IntEnum):
 
 
 class Sample:
-    """Test harness — small object that uses ByteField/StringField."""
+    """Test harness — small object that uses ByteField/StringField/BytesField."""
 
     cutoff = ByteField(0, default=0xFF)
     mode = ByteField(1, enum=Mode, default=Mode.A)
     bounded = ByteField(2, min=10, max=20, default=15)
     name = StringField(3, length=8, default="default")
+    raw = BytesField(11, length=4, default=[1, 2, 3, 4])
 
     def __init__(self):
         self._data = bytearray(64)
@@ -92,10 +93,50 @@ class TestStringField(unittest.TestCase):
         self.assertTrue(s.name.startswith("this_is"))
 
 
+class TestBytesField(unittest.TestCase):
+    def test_default_applied(self):
+        s = Sample()
+        self.assertEqual(s.raw, [1, 2, 3, 4])
+
+    def test_set_and_get(self):
+        s = Sample()
+        s.raw = [10, 20, 30, 40]
+        self.assertEqual(s.raw, [10, 20, 30, 40])
+        # Confirms writes go through to _data
+        self.assertEqual(list(s._data[11:15]), [10, 20, 30, 40])
+
+    def test_wrong_length_rejected(self):
+        s = Sample()
+        with self.assertRaises(ValueError):
+            s.raw = [1, 2, 3]
+        with self.assertRaises(ValueError):
+            s.raw = [1, 2, 3, 4, 5]
+
+    def test_bytes_are_masked_to_unsigned_byte(self):
+        s = Sample()
+        s.raw = [0x100 | 0xAB, -1 & 0xFF, 0, 0]
+        # int(0x1AB) & 0xFF == 0xAB; int(-1) & 0xFF == 0xFF
+        self.assertEqual(s._data[11], 0xAB)
+        self.assertEqual(s._data[12], 0xFF)
+
+    def test_dict_round_trip(self):
+        s = Sample()
+        s.raw = [7, 8, 9, 10]
+        fld = type(s).__dict__["raw"]
+        self.assertEqual(fld.to_dict(s), [7, 8, 9, 10])
+        s2 = Sample()
+        fld.from_dict(s2, [11, 12, 13, 14])
+        self.assertEqual(s2.raw, [11, 12, 13, 14])
+
+    def test_invalid_default_length_at_class_definition(self):
+        with self.assertRaises(ValueError):
+            BytesField(0, length=4, default=[1, 2])
+
+
 class TestIterFields(unittest.TestCase):
     def test_yields_all_descriptors_in_declaration_order(self):
         names = [name for name, _ in iter_fields(Sample)]
-        self.assertEqual(names, ["cutoff", "mode", "bounded", "name"])
+        self.assertEqual(names, ["cutoff", "mode", "bounded", "name", "raw"])
 
     def test_subclass_overrides_base(self):
         class SubSample(Sample):

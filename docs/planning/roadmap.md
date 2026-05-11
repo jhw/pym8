@@ -9,25 +9,23 @@ below is "declare a class with descriptors, plug it into M8Project, add
 fixture rows to the tests". See [plumbing.md](plumbing.md) for groundwork
 that may need to land first.
 
-## Phase 1 — Instrument completion
+## Phase 1 — Instrument completion ✅
 
-### 1. HyperSynth (instrument type 5) — first
+### 1. ~~HyperSynth (instrument type 5)~~ **— done**
 Reference: `m8-file-parser/src/instruments/hypersynth.rs` (236 lines).
-Lowest-friction add: same shape as the existing five instrument classes,
-finite scope, no cross-section concerns. Validates the descriptor pattern
-on one more case before the bigger sections.
+Implemented in `m8/api/instruments/hypersynth.py`:
+- `M8HyperSynth` instrument class
+- `M8Chord` record (mask + 6 oscillator offsets)
+- `M8HyperSynthChords` collection (16 chord rows, stored as a separate
+  attribute and merged into the byte buffer at write time — same pattern as
+  `modulators`)
+- New `BytesField` descriptor for the 7-byte `default_chord` array
 
-- One class (`M8HyperSynth`) in `m8/api/instruments/hypersynth.py`
-- Add to the import in `m8/api/instrument.py` (registry registration is
-  automatic via `__init_subclass__`)
-- The existing "known but unsupported type" warning test for `HYPERSYNTH`
-  flips to an instantiation test — add a row to `INSTRUMENT_CASES` in
-  `tests/api/instruments.py`
-- Update README instrument table
+The "known but unsupported type" warning test was dropped (no such type
+remains); the truly-unknown warning test still covers future format
+additions.
 
-**Why first:** no firmware-version conditionals, no cross-section
-references, no offset divergence. Pure descriptor work, validates the
-foundation hasn't rotted, gets HYPERSYNTH out of the warnings list.
+All seven instrument types in `M8InstrumentType` now have concrete subclasses.
 
 ## Phase 2 — Top-level sections
 

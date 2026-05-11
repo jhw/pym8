@@ -40,7 +40,16 @@ Modulators follow the same pattern with one subclass per type (`M8AHDModulator`,
 - **`M8MIDIOut` (type 3)** — pure MIDI output to external gear. 10 CC slots (CCA–CCJ). Port enum is `MIDI_USB | MIDI | USB | INTERNAL`. **This is what MIDI demos use.**
 - **`M8External` (type 6)** — audio-input routing with 4 CC slots. Has filter/amp/sends. Use this when you want external audio through M8 effects.
 
-`MIDIOUT` and `HYPERSYNTH` are in `M8InstrumentType` but `HYPERSYNTH` is not yet implemented — reading a file containing one emits a `UserWarning` and round-trips it as raw bytes.
+All seven instrument types in `M8InstrumentType` have a concrete subclass. The
+"unsupported instrument type" warning path in `M8Instruments.read()` still
+exists for future format additions — keep it.
+
+`M8HyperSynth` is the one instrument with a sub-record beyond the standard 215
+bytes worth modelling: the 16-row chord matrix at offset 87. It's stored as a
+separate Python attribute (`chords`, a `M8HyperSynthChords` list) and merged
+into the byte buffer at write time — same pattern as `modulators` at offset 63.
+If a future instrument adds another structured sub-record, follow this pattern
+rather than trying to express it via descriptors.
 
 ## Testing
 

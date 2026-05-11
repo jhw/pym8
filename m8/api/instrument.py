@@ -139,7 +139,7 @@ class M8Instrument:
         """
         from m8.api.metadata import METADATA_OFFSET
         # Eagerly import every subclass so the registry is populated.
-        from m8.api.instruments import sampler, wavsynth, macrosynth, fmsynth, external, midiout  # noqa: F401
+        from m8.api.instruments import sampler, wavsynth, macrosynth, fmsynth, external, midiout, hypersynth  # noqa: F401
 
         with open(file_path, "rb") as f:
             data = f.read()
@@ -192,7 +192,7 @@ class M8Instrument:
         """
         if cls is M8Instrument and "type" in params:
             # Eagerly import subclasses so the registry is populated.
-            from m8.api.instruments import sampler, wavsynth, macrosynth, fmsynth, external, midiout  # noqa: F401
+            from m8.api.instruments import sampler, wavsynth, macrosynth, fmsynth, external, midiout, hypersynth  # noqa: F401
 
             type_value = params["type"]
             if isinstance(type_value, str):
@@ -240,7 +240,7 @@ class M8Instruments(list):
     @classmethod
     def read(cls, data):
         # Eagerly import every concrete subclass so the registry is populated.
-        from m8.api.instruments import sampler, wavsynth, macrosynth, fmsynth, external, midiout  # noqa: F401
+        from m8.api.instruments import sampler, wavsynth, macrosynth, fmsynth, external, midiout, hypersynth  # noqa: F401
 
         instance = cls.__new__(cls)
         list.__init__(instance)
