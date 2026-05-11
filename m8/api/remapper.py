@@ -459,8 +459,63 @@ def move_chains(source, destination, chain_indices) -> Remapping:
 
     Returns the Remapping so callers can wire up destination.song with
     `remap.out_chain(src_chain)` after the move.
+
+    Equivalent to::
+
+        r = Remapper(source, destination, chains=chain_indices)
+        r.apply()
+        return r.remap
     """
-    mappings = walk_dependencies(source, chains=set(chain_indices))
-    remap = allocate(source, destination, mappings)
-    apply(source, destination, mappings, remap)
-    return remap
+    r = Remapper(source, destination, chains=chain_indices)
+    r.apply()
+    return r.remap
+
+
+class Remapper:
+    """Inspectable cross-project remapper.
+
+    Construct with the source project, the destination project, and the
+    seed slots you want to move (chains, instruments, tables, eqs — pass
+    any subset). The constructor runs the walk + allocation phases
+    eagerly so you can inspect `.mappings` and `.remap` before deciding
+    to commit. Call `.apply()` to mutate the destination.
+
+    ::
+
+        r = Remapper(src, dst, chains={3})
+        # Inspect what will move and where it lands:
+        print(r.mappings.total(), "slots will move")
+        print(r.remap.chains)   # {3: 0}
+        r.apply()
+        dst.song[0][0] = r.remap.out_chain(3)
+        dst.write_to_file("merged.m8s")
+
+    For the simple "just move these chains, give me the remap" path, use
+    `move_chains(src, dst, ...)` instead.
+    """
+
+    def __init__(
+        self,
+        source,
+        destination,
+        *,
+        chains=None,
+        instruments=None,
+        tables=None,
+        eqs=None,
+    ):
+        self.source = source
+        self.destination = destination
+        self.mappings = walk_dependencies(
+            source,
+            chains=chains,
+            instruments=instruments,
+            tables=tables,
+            eqs=eqs,
+        )
+        self.remap = allocate(source, destination, self.mappings)
+
+    def apply(self) -> None:
+        """Mutate `self.destination` in place, copying mapped slots from
+        `self.source` with all references rewritten via `self.remap`."""
+        apply(self.source, self.destination, self.mappings, self.remap)

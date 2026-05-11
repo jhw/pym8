@@ -14,7 +14,7 @@ from m8.api.project import M8Project
 from m8.api.remapper import (
     EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, NO_EQ,
     EQ_REF_FX_KEYS, INSTRUMENT_REF_FX_KEYS, TABLE_REF_FX_KEYS,
-    Mappings, NoFreeSlotError, Remapping,
+    Mappings, NoFreeSlotError, Remapper, Remapping,
     allocate, apply, move_chains, walk_dependencies, walk_song,
 )
 
@@ -633,6 +633,55 @@ class TestApplyStableRoundTrip(unittest.TestCase):
         b1 = dst.write()
         b2 = M8Project.read(b1).write()
         self.assertEqual(b1, b2)
+
+
+class TestRemapperClass(unittest.TestCase):
+    """The inspectable wrapper around walk + allocate + apply."""
+
+    def _build_src(self):
+        p = M8Project.initialise()
+        p.instruments[5] = M8Wavsynth(name="W")
+        p.phrases[10][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+        p.chains[2][0] = M8ChainStep(phrase=10, transpose=0)
+        return p
+
+    def test_constructor_runs_walk_and_allocate_eagerly(self):
+        src = self._build_src()
+        dst = M8Project.initialise()
+        r = Remapper(src, dst, chains={2})
+        # Mappings + remap computed without applying yet
+        self.assertIn(2, r.mappings.chains)
+        self.assertIn(2, r.remap.chains)
+
+    def test_constructor_does_not_apply(self):
+        """Inspecting Remapper before .apply() shouldn't mutate destination."""
+        src = self._build_src()
+        dst = M8Project.initialise()
+        Remapper(src, dst, chains={2})
+        # dst.chains[2] is still the template default (empty)
+        self.assertEqual(dst.chains[2][0].phrase, 0xFF)
+        # dst.instruments[5] is still empty
+        from m8.api import M8Block
+        self.assertIsInstance(dst.instruments[5], M8Block)
+
+    def test_apply_commits(self):
+        src = self._build_src()
+        dst = M8Project.initialise()
+        r = Remapper(src, dst, chains={2})
+        r.apply()
+        dst_chain = dst.chains[r.remap.out_chain(2)]
+        self.assertEqual(dst_chain[0].phrase, r.remap.out_phrase(10))
+
+    def test_seed_kwargs_supported(self):
+        """Remapper accepts the same seed kwargs as walk_dependencies."""
+        src = self._build_src()
+        dst = M8Project.initialise()
+        # Move just the instrument, not the chain
+        r = Remapper(src, dst, instruments={5})
+        self.assertIn(5, r.remap.instruments)
+        # Chains/phrases are not in the mapping because we didn't seed them
+        self.assertEqual(r.remap.chains, {})
+        self.assertEqual(r.remap.phrases, {})
 
 
 class TestApplyCallerWiresSongMatrix(unittest.TestCase):

@@ -103,21 +103,47 @@ RGB UI colors. Lowest priority — UI-only, doesn't affect sound.
 
 ## Phase 3 — Cross-cutting subsystem
 
-### 10. Remapper (`remapper.rs`, 1,018 lines)
+### 10. ~~Remapper~~ **— done** (`m8/api/remapper.py`, 4 commits)
 Cross-project chain/instrument/phrase/table/EQ renumbering with reference
-re-indexing. Solves the "import instrument from song A into song B without
-ID collisions" workflow.
+re-indexing. Solves the "import instrument from song A into song B
+without ID collisions" workflow.
 
-Doesn't directly benefit from the descriptor refactor — it's about
-traversal logic and ID-collision resolution. But every section it operates
-on has to exist first, hence Phase 2 ordering.
+Implemented in four commits on `feat/remapper`:
 
-**Suggested approach when starting:** annotate reference-bearing
-`ByteField`s with a `references=...` kwarg (e.g.
-`instrument = ByteField(2, references="instrument")`), then implement
-remapper as a generic walker over those annotations rather than the
-section-specific logic the Rust crate uses. Smaller surface area,
-easier to test.
+1. **Walker** — `walk_dependencies(project, *, chains=, instruments=,
+   tables=, eqs=) → Mappings`. Closure of all transitively referenced
+   slots starting from seed sets. Models the firmware-6 implicit
+   "instrument N owns table N" convention; handles cycles in table-to-
+   table references.
+
+2. **Allocator** — `allocate(source, destination, mappings) → Remapping`.
+   Per-slot-kind from→to dicts. Prefer-same-index optimization with
+   fall-through to next-free; raises `NoFreeSlotError` when destination
+   is full of some kind. Tables 0..127 piggyback on their owning
+   instrument's destination slot.
+
+3. **Apply** — `apply(source, destination, mappings, remap)`. Copies
+   mapped source slots to destination with all references rewritten:
+   chain step `.phrase`, phrase step `.instrument`, FX values for
+   INS/NXT/TBL/TBX/EQM/EQI, instrument `.associated_eq`. Source is
+   never mutated.
+
+4. **Public API + demo** — `Remapper(source, destination, *, chains=,
+   ...)` inspectable class and `move_chains(src, dst, chain_ids)`
+   one-shot. `demos/remap_merge.py` builds two source projects (drum
+   kit + bass line, both using slot 0 for chain/phrase/instrument) and
+   merges them into a single project with the remapper resolving every
+   collision.
+
+Implementation differs from the Rust crate in two ways:
+- Smaller surface (~470 lines vs 1,018) — pym8 doesn't model
+  RemapperDescriptorBuilder / move-kind enum / pretty-printing. Add if
+  someone needs them.
+- No identical-instrument-deduplication optimization (Rust scans the
+  destination for an instrument matching the source's exact bytes and
+  reuses that slot if found). pym8 always allocates a fresh slot. Easy
+  to add later if collisions stop fitting; for now, find-next-free is
+  simpler and matches user expectations.
 
 ## Out of scope / not pursued
 

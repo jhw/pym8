@@ -243,6 +243,52 @@ project.midi.set_track_input_instrument(0, 8)   # ...fires instrument slot 8
 project.metadata.key = 7  # G major
 ```
 
+## Cross-project remapping
+
+Copy chains, instruments, tables, or EQs from one project into another
+without ID collisions. The remapper walks the reference graph (chain →
+phrase → instrument → table → EQ), allocates collision-free destination
+slots, and copies the bytes with every reference rewritten.
+
+```python
+from m8.api.project import M8Project
+from m8.api.remapper import Remapper
+
+src = M8Project.read_from_file("source.m8s")
+dst = M8Project.read_from_file("destination.m8s")
+
+# Move chain 3 (and all its transitive dependencies) into dst
+r = Remapper(src, dst, chains={3})
+print(r.mappings.total(), "slots will move")
+print(r.remap.chains)         # e.g. {3: 5} — chain 3 lands at chain 5 in dst
+r.apply()
+
+# Place the moved chain in dst's song matrix
+dst.song[0][0] = r.remap.out_chain(3)
+dst.write_to_file("merged.m8s")
+```
+
+What gets rewritten automatically:
+- `chain.step.phrase` → new phrase slot
+- `phrase.step.instrument` → new instrument slot
+- `phrase/table.step.fx[j].value` when key is INS/NXT/TBL/TBX/EQM/EQI
+- `instrument.associated_eq` → new EQ slot
+
+References to slots **not** in the move set are preserved literally —
+the caller is responsible for ensuring those slots exist (and mean what
+they should) in the destination.
+
+For the simple "import this chain" case there's a one-line helper:
+
+```python
+from m8.api.remapper import move_chains
+remap = move_chains(src, dst, {3})
+dst.song[0][0] = remap.out_chain(3)
+```
+
+See `demos/remap_merge.py` for a runnable example merging a drum kit and
+a bass line into a single project.
+
 ## FX commands
 
 Phrases carry per-step FX tuples. Enum classes provide readable names:
@@ -300,6 +346,7 @@ Runnable scripts under `demos/` produce `.m8s` files in `tmp/demos/`. Each demo 
 | `demos/acid_909_midi.py` | MIDIOut drum kit (multi-channel) |
 | `demos/euclid_sampler.py` | Bjorklund Euclidean rhythms |
 | `demos/chords_synth.py` | Macrosynth + modulators + 3-voice polyphony |
+| `demos/remap_merge.py` | Cross-project remapper — merge two source projects into one |
 
 Run a demo:
 
@@ -339,6 +386,7 @@ m8/
 │   ├── settings.py       # M8MixerSettings / M8EffectsSettings
 │   ├── midi_settings.py  # M8MidiSettings (sync, transport, track input)
 │   ├── table.py          # M8TableStep / M8Table / M8Tables (256 × 16-step)
+│   ├── remapper.py       # Cross-project reference walker, allocator, applier
 │   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
 │   ├── chain.py          # M8Chain / M8ChainStep
 │   ├── song.py           # M8SongMatrix (255 rows × 8 tracks)
