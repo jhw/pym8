@@ -118,11 +118,17 @@ class M8Instrument:
         return instance
 
     @classmethod
-    def read(cls, data):
-        """Parse a single instrument block from binary."""
+    def read(cls, data, version=None):
+        """Parse a single instrument block from binary.
+
+        `version` is the project's firmware version; subclasses with
+        version-conditional layout (EQ packing in v6.0+, SynthParams in
+        v3.0+, etc.) should consult it. Defaults to the bundled template
+        firmware when not provided.
+        """
         instance = cls.__new__(cls)
         instance._data = bytearray(data[:BLOCK_SIZE])
-        instance.version = M8Version()
+        instance.version = version if version is not None else M8Version()
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
         return instance
 
@@ -152,8 +158,7 @@ class M8Instrument:
         if subclass is None:
             raise ValueError(f"Unsupported instrument type 0x{instr_type:02X} in {file_path}")
 
-        instance = subclass.read(instrument_data)
-        instance.version = version
+        instance = subclass.read(instrument_data, version=version)
         # M8i modulators are at offset 61 and use a different parameter order
         # for LFO modulators — convert to the M8s in-memory layout.
         instance.modulators = M8Modulators.read_m8i(instrument_data[61:])
@@ -238,7 +243,7 @@ class M8Instruments(list):
             self.append(empty)
 
     @classmethod
-    def read(cls, data):
+    def read(cls, data, version=None):
         # Eagerly import every concrete subclass so the registry is populated.
         from m8.api.instruments import sampler, wavsynth, macrosynth, fmsynth, external, midiout, hypersynth  # noqa: F401
 
@@ -252,7 +257,7 @@ class M8Instruments(list):
 
             subclass = _INSTRUMENT_REGISTRY.get(instr_type)
             if subclass is not None:
-                instance.append(subclass.read(block_data))
+                instance.append(subclass.read(block_data, version=version))
             elif instr_type == 0xFF:
                 instance.append(M8Block.read(block_data))
             else:

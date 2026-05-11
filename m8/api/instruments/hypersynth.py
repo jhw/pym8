@@ -229,8 +229,8 @@ class M8HyperSynth(M8Instrument):
         return bytes(buffer)
 
     @classmethod
-    def read(cls, data):
-        instance = super().read(data)
+    def read(cls, data, version=None):
+        instance = super().read(data, version=version)
         chord_region = data[CHORDS_OFFSET:CHORDS_OFFSET + M8HyperSynthChords.TOTAL_BYTES]
         instance.chords = M8HyperSynthChords.read(chord_region)
         return instance

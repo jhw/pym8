@@ -38,18 +38,21 @@ class M8Project:
     def read(cls, data):
         instance = cls()
         instance.data = bytearray(data)
-
-        # Read version
         instance.version = M8Version.read(data[OFFSETS["version"]:])
 
+        # Sections that don't yet have firmware-conditional logic — read
+        # without threading version. Add the parameter on a per-section basis
+        # when implementing settings/EQ/etc. (see docs/planning/roadmap.md).
         instance.metadata = M8Metadata.read(data[OFFSETS["metadata"]:])
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
-        instance.instruments = M8Instruments.read(data[OFFSETS["instruments"]:])
 
-        # Context management was removed with enum system simplification
-
+        # Instruments will be the first consumer (per-instrument associated_eq
+        # in v6.0+, settings byte packing differences); thread version through.
+        instance.instruments = M8Instruments.read(
+            data[OFFSETS["instruments"]:], version=instance.version,
+        )
         return instance
 
     def clone(self):
