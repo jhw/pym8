@@ -11,10 +11,11 @@ What it covers:
 - All six modulator types (AHD, ADSR, Drum, LFO, Trig, Tracking) as distinct classes
 - Phrases (notes + FX), chains, song matrix, instrument slots
 - 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — global, effect-section, and per-instrument
+- Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT) and effects settings (chorus / delay / reverb knobs, OTT config)
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
 - Audio helpers: sample-chain WAV builder, slice-point WAV writer
 
-What it doesn't cover yet: groove definitions, scales, mixer/MIDI settings, MIDI mappings, themes, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
+What it doesn't cover yet: groove definitions, scales, MIDI settings, MIDI mappings, themes, tables, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
 
 ## Install
 
@@ -202,6 +203,35 @@ Slot convention (matching m8-file-parser):
 - `eq[4..131]` — per-instrument EQs (referenced by `instrument.associated_eq`)
 - `associated_eq = 0xFF` (default) means "no EQ bound to this instrument"
 
+## Mixer and effects settings
+
+```python
+project = M8Project.initialise()
+
+# Mixer — master, tracks, sends, DJ filter, limiter, OTT
+project.mixer.master_volume = 0xC0
+project.mixer.set_track_volume(0, 0xE0)   # 8 tracks; helper preferred over track_volume_0..7
+project.mixer.chorus_volume = 0x40
+project.mixer.dj_filter = 0xA0
+project.mixer.dj_filter_type = 1
+project.mixer.limiter_attack = 0x20    # firmware 6.0+
+project.mixer.ott_level = 0x80          # firmware 6.2+
+
+# Analog input is stereo by default (analog_mode = 0xFF). Set anything else
+# to switch to dual-mono and address each side independently:
+if project.mixer.is_analog_stereo:
+    project.mixer.analog_l_volume = 0xC0
+else:
+    project.mixer.analog_l_volume = 0xC0
+    project.mixer.analog_r_volume = 0xC0  # really analog_mode used as right-volume byte
+
+# Effects — chorus / delay / reverb knobs + v6.2 shimmer & OTT shaping
+project.effects.chorus_mod_depth = 0x40
+project.effects.delay_feedback   = 0xA0
+project.effects.reverb_size      = 0xC0
+project.effects.reverb_shimmer   = 0x30  # firmware 6.2+
+```
+
 ## FX commands
 
 Phrases carry per-step FX tuples. Enum classes provide readable names:
@@ -295,6 +325,7 @@ m8/
 │   ├── fields.py         # ByteField / BytesField / StringField descriptors
 │   ├── modulator.py      # 6 modulator subclasses + M8Modulators
 │   ├── eq.py             # M8EqBand / M8Eq / M8Eqs (3-band parametric)
+│   ├── settings.py       # M8MixerSettings / M8EffectsSettings
 │   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
 │   ├── chain.py          # M8Chain / M8ChainStep
 │   ├── song.py           # M8SongMatrix (255 rows × 8 tracks)

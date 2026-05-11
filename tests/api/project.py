@@ -84,7 +84,11 @@ class TestM8Project(unittest.TestCase):
         """
         self.assertEqual(
             set(OFFSETS),
-            {"version", "metadata", "song", "phrases", "chains", "instruments", "eq"},
+            {
+                "version", "metadata",
+                "mixer", "effects", "eq",
+                "song", "phrases", "chains", "instruments",
+            },
         )
 
 

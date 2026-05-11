@@ -4,6 +4,7 @@ from m8.api.eq import M8Eqs
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.phrase import M8Phrases, PHRASES_OFFSET
+from m8.api.settings import M8EffectsSettings, M8MixerSettings
 from m8.api.song import M8SongMatrix, SONG_OFFSET
 from m8.api.version import M8Version
 
@@ -11,21 +12,28 @@ from m8.api.version import M8Version
 
 VERSION_OFFSET = 10
 
-# v4.1+ layout (target firmware 6.0+). 0x1AD5A + 4 in m8-file-parser's
-# V4_1_OFFSETS. Both V4_0 and V4_1 use the same EQ_OFFSET; only the count
-# differs (32 vs 128 instrument EQs), and pym8 currently models v6.0+ only.
-EQ_OFFSET = 109918
+# MixerSettings sits just after metadata + (currently unparsed) MidiSettings
+# + key + 18 reserved bytes. See m8/api/settings.py.
+MIXER_SETTINGS_OFFSET = 206
+
+# Effects/mixer-tail/MIDI-mapping/scale/EQ offsets (v4.1+ — both V4_0 and
+# V4_1 in m8-file-parser use these same offsets; only inner counts differ,
+# and pym8 targets v6.0+).
+EFFECTS_SETTINGS_OFFSET = 107969  # 0x1A5C1
+EQ_OFFSET = 109918                # 0x1AD5A + 4
 
 # Offsets for sections pym8 parses today. Sections present in the binary
-# format but not yet parsed (groove, table, effect_settings, midi_mapping,
+# format but not yet parsed (groove, table, midi_settings, midi_mapping,
 # scale) are preserved verbatim through the raw `data` buffer.
 OFFSETS = {
     "version": VERSION_OFFSET,
     "metadata": METADATA_OFFSET,
+    "mixer": MIXER_SETTINGS_OFFSET,
     "song": SONG_OFFSET,
     "phrases": PHRASES_OFFSET,
     "chains": CHAINS_OFFSET,
     "instruments": INSTRUMENTS_OFFSET,
+    "effects": EFFECTS_SETTINGS_OFFSET,
     "eq": EQ_OFFSET,
 }
 
@@ -39,6 +47,8 @@ class M8Project:
         self.chains = None
         self.phrases = None
         self.instruments = None
+        self.mixer = None
+        self.effects = None
         self.eq = None
         self.version = M8Version()
 
@@ -56,10 +66,18 @@ class M8Project:
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
 
-        # Instruments and EQ both consume firmware version (per-instrument
-        # associated_eq byte differs by version; EQ count too).
+        # Sections that consume firmware version (per-instrument
+        # associated_eq byte, mixer limiter v6.0+ / OTT v6.2+, EQ count).
+        instance.mixer = M8MixerSettings.read(
+            data[OFFSETS["mixer"]:OFFSETS["mixer"] + M8MixerSettings.BYTES],
+            version=instance.version,
+        )
         instance.instruments = M8Instruments.read(
             data[OFFSETS["instruments"]:], version=instance.version,
+        )
+        instance.effects = M8EffectsSettings.read(
+            data[OFFSETS["effects"]:OFFSETS["effects"] + M8EffectsSettings.BYTES],
+            version=instance.version,
         )
         instance.eq = M8Eqs.read(
             data[OFFSETS["eq"]:OFFSETS["eq"] + M8Eqs.TOTAL_BYTES],
@@ -76,6 +94,8 @@ class M8Project:
         instance.phrases = self.phrases.clone() if self.phrases else None
         instance.chains = self.chains.clone() if self.chains else None
         instance.song = self.song.clone() if self.song else None
+        instance.mixer = self.mixer.clone() if self.mixer else None
+        instance.effects = self.effects.clone() if self.effects else None
         instance.eq = self.eq.clone() if self.eq else None
         return instance
         
