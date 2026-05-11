@@ -14,7 +14,8 @@ from m8.api.project import M8Project
 from m8.api.remapper import (
     EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, NO_EQ,
     EQ_REF_FX_KEYS, INSTRUMENT_REF_FX_KEYS, TABLE_REF_FX_KEYS,
-    Mappings, NoFreeSlotError, Remapping, allocate, walk_dependencies, walk_song,
+    Mappings, NoFreeSlotError, Remapping,
+    allocate, apply, move_chains, walk_dependencies, walk_song,
 )
 
 
@@ -475,6 +476,185 @@ class TestRemappingDataclass(unittest.TestCase):
         self.assertEqual(r.instruments, {})
         self.assertEqual(r.tables, {})
         self.assertEqual(r.eqs, {})
+
+    def test_out_returns_mapped_value(self):
+        r = Remapping(chains={3: 7}, phrases={1: 5})
+        self.assertEqual(r.out_chain(3), 7)
+        self.assertEqual(r.out_phrase(1), 5)
+
+    def test_out_passes_unmapped_through(self):
+        """References to slots not in the move set are preserved literally."""
+        r = Remapping(chains={3: 7})
+        self.assertEqual(r.out_chain(99), 99)
+        self.assertEqual(r.out_instrument(5), 5)
+
+
+# ----------------------------------------------------------------------
+# Apply
+# ----------------------------------------------------------------------
+
+class TestApplyEndToEnd(unittest.TestCase):
+    """Walker + allocator + apply: move chain N from src to dst."""
+
+    def _build_src_with_chain_3(self):
+        """Chain 3 → phrase 7 → instrument 5 (with EQ 10) and a TBL FX to
+        table 99, plus an INS FX referencing instrument 5 itself."""
+        src = M8Project.initialise()
+        src.instruments[5] = M8Wavsynth(name="BASS")
+        src.instruments[5].cutoff = 0xA0
+        src.instruments[5].associated_eq = 10
+        src.eq[10].low.q = 0xAB  # marker we'll verify in destination
+
+        src.phrases[7][0] = M8PhraseStep(
+            note=M8Note.C_4, velocity=0x80, instrument=5,
+        )
+        src.phrases[7][4] = M8PhraseStep(
+            note=M8Note.E_4, velocity=0x80, instrument=5,
+        )
+        src.phrases[7][4].fx[0] = M8FXTuple(key=M8SequenceFX.TBL, value=99)
+        src.phrases[7][4].fx[1] = M8FXTuple(key=M8MixerFX.INS, value=5)
+        src.tables[99][0].transpose = 0x0C
+
+        src.chains[3][0] = M8ChainStep(phrase=7, transpose=0)
+        return src
+
+    def test_chain_with_phrase_lands_at_remap_slot(self):
+        src = self._build_src_with_chain_3()
+        dst = M8Project.initialise()
+        remap = move_chains(src, dst, {3})
+
+        dst_chain = dst.chains[remap.out_chain(3)]
+        # Chain step's phrase reference rewritten
+        self.assertEqual(dst_chain[0].phrase, remap.out_phrase(7))
+
+    def test_instrument_copied_with_eq_ref_rewritten(self):
+        src = self._build_src_with_chain_3()
+        dst = M8Project.initialise()
+        remap = move_chains(src, dst, {3})
+
+        dst_inst = dst.instruments[remap.out_instrument(5)]
+        # Instrument bytes copied
+        self.assertEqual(dst_inst.name, "BASS")
+        self.assertEqual(dst_inst.cutoff, 0xA0)
+        # associated_eq rewritten to point at the new EQ slot
+        self.assertEqual(dst_inst.associated_eq, remap.out_eq(10))
+
+    def test_eq_content_traveled(self):
+        src = self._build_src_with_chain_3()
+        dst = M8Project.initialise()
+        remap = move_chains(src, dst, {3})
+
+        dst_eq = dst.eq[remap.out_eq(10)]
+        self.assertEqual(dst_eq.low.q, 0xAB)
+
+    def test_phrase_step_instrument_rewritten(self):
+        src = self._build_src_with_chain_3()
+        dst = M8Project.initialise()
+        remap = move_chains(src, dst, {3})
+
+        dst_phrase = dst.phrases[remap.out_phrase(7)]
+        self.assertEqual(dst_phrase[0].instrument, remap.out_instrument(5))
+        self.assertEqual(dst_phrase[4].instrument, remap.out_instrument(5))
+
+    def test_phrase_fx_references_rewritten(self):
+        """TBL FX value → new table slot; INS FX value → new instrument slot."""
+        src = self._build_src_with_chain_3()
+        dst = M8Project.initialise()
+        remap = move_chains(src, dst, {3})
+
+        dst_phrase = dst.phrases[remap.out_phrase(7)]
+        # TBL FX value should now point at table 99's destination slot
+        self.assertEqual(dst_phrase[4].fx[0].key, int(M8SequenceFX.TBL))
+        self.assertEqual(dst_phrase[4].fx[0].value, remap.out_table(99))
+        # INS FX value should now point at instrument 5's destination slot
+        self.assertEqual(dst_phrase[4].fx[1].key, int(M8MixerFX.INS))
+        self.assertEqual(dst_phrase[4].fx[1].value, remap.out_instrument(5))
+
+    def test_table_content_traveled(self):
+        src = self._build_src_with_chain_3()
+        dst = M8Project.initialise()
+        remap = move_chains(src, dst, {3})
+
+        dst_table = dst.tables[remap.out_table(99)]
+        self.assertEqual(dst_table[0].transpose, 0x0C)
+
+
+class TestApplyDoesNotMutateSource(unittest.TestCase):
+    def test_source_chains_unchanged(self):
+        src = M8Project.initialise()
+        src.instruments[5] = M8Wavsynth(name="X")
+        src.phrases[7][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+        src.chains[3][0] = M8ChainStep(phrase=7, transpose=0)
+
+        dst = M8Project.initialise()
+        # Force a collision so source-vs-dest indices differ
+        dst.chains[3][0] = M8ChainStep(phrase=99, transpose=0)
+        dst.instruments[5] = M8Wavsynth(name="OTHER")
+
+        move_chains(src, dst, {3})
+
+        # Source slots still pristine
+        self.assertEqual(src.chains[3][0].phrase, 7)
+        self.assertEqual(src.phrases[7][0].instrument, 5)
+        self.assertEqual(src.instruments[5].name, "X")
+
+
+class TestApplyPreservesUnmappedReferences(unittest.TestCase):
+    """If a reference value points to a slot not in the move set, leave it
+    literal — the user chose not to bring that slot along."""
+
+    def test_phrase_instrument_outside_move_set_kept_literal(self):
+        src = M8Project.initialise()
+        # Chain → phrase, but the phrase references instrument 99 which we
+        # never set up; the user is consciously importing without it.
+        src.phrases[5][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=99)
+        src.chains[3][0] = M8ChainStep(phrase=5, transpose=0)
+
+        dst = M8Project.initialise()
+        remap = move_chains(src, dst, {3})
+
+        dst_phrase = dst.phrases[remap.out_phrase(5)]
+        # Instrument 99 isn't in remap.instruments; reference stays at 99
+        self.assertEqual(dst_phrase[0].instrument, 99)
+        self.assertNotIn(99, remap.instruments)
+
+
+class TestApplyStableRoundTrip(unittest.TestCase):
+    def test_destination_writes_consistently_after_apply(self):
+        src = M8Project.initialise()
+        src.instruments[5] = M8Wavsynth(name="W")
+        src.instruments[5].associated_eq = 7
+        src.phrases[10][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+        src.chains[2][0] = M8ChainStep(phrase=10, transpose=0)
+
+        dst = M8Project.initialise()
+        move_chains(src, dst, {2})
+
+        b1 = dst.write()
+        b2 = M8Project.read(b1).write()
+        self.assertEqual(b1, b2)
+
+
+class TestApplyCallerWiresSongMatrix(unittest.TestCase):
+    """apply doesn't touch destination.song — caller does it via remap.out_chain."""
+
+    def test_song_matrix_untouched_by_apply(self):
+        src = M8Project.initialise()
+        src.instruments[5] = M8Wavsynth(name="X")
+        src.phrases[10][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+        src.chains[2][0] = M8ChainStep(phrase=10, transpose=0)
+        # Source has chain 2 placed at song[5][3]
+        src.song[5][3] = 2
+
+        dst = M8Project.initialise()
+        dst.song[0][0] = 99  # whatever existing content
+        remap = move_chains(src, dst, {2})
+
+        # Destination's song matrix is unchanged (still 0xFF / its previous values)
+        self.assertEqual(dst.song[0][0], 99)
+        # Caller wires up via remap.out_chain
+        dst.song[5][3] = remap.out_chain(2)
+        self.assertEqual(dst.song[5][3], remap.out_chain(2))
 
 
 if __name__ == "__main__":

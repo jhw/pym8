@@ -220,6 +220,11 @@ class Remapping:
     is mapped 5→8, then table 5 is mapped 5→8 too. Free-standing tables
     (index >= N_INSTRUMENTS, or tables in the move set whose matching
     instrument isn't being moved) get independent slot allocations.
+
+    The `out_*` methods translate a source-side reference value: if the
+    source slot is in the mapping, return the destination slot; otherwise
+    return the source value unchanged (the reference is to something not
+    being moved — caller is responsible for whether that's intentional).
     """
 
     chains: dict = field(default_factory=dict)
@@ -227,6 +232,21 @@ class Remapping:
     instruments: dict = field(default_factory=dict)
     tables: dict = field(default_factory=dict)
     eqs: dict = field(default_factory=dict)
+
+    def out_chain(self, src):
+        return self.chains.get(src, src)
+
+    def out_phrase(self, src):
+        return self.phrases.get(src, src)
+
+    def out_instrument(self, src):
+        return self.instruments.get(src, src)
+
+    def out_table(self, src):
+        return self.tables.get(src, src)
+
+    def out_eq(self, src):
+        return self.eqs.get(src, src)
 
 
 class NoFreeSlotError(ValueError):
@@ -346,4 +366,101 @@ def allocate(source, destination, mappings: Mappings) -> Remapping:
     for src in sorted(mappings.chains):
         remap.chains[src] = allocate_one("chain", src, chains_taken, n_chains)
 
+    return remap
+
+
+# ----------------------------------------------------------------------
+# Apply
+# ----------------------------------------------------------------------
+
+def _rewrite_fx_tuples(fx_tuples, remap: Remapping):
+    """Rewrite reference-bearing FX values via the remapping.
+
+    Mutates each tuple in place. Non-reference FX commands are left
+    alone. Reference values that aren't in the remap (i.e., the target
+    slot isn't being moved) are also left alone — the caller chose not
+    to move it, so the reference stays pointing at whatever the
+    destination has at that slot.
+    """
+    for tup in fx_tuples:
+        key = tup.key
+        if key in INSTRUMENT_REF_FX_KEYS:
+            tup.value = remap.out_instrument(tup.value)
+        elif key in TABLE_REF_FX_KEYS:
+            tup.value = remap.out_table(tup.value)
+        elif key in EQ_REF_FX_KEYS:
+            tup.value = remap.out_eq(tup.value)
+
+
+def apply(source, destination, mappings: Mappings, remap: Remapping) -> None:
+    """Copy mapped source slots into destination, rewriting references.
+
+    Mutates `destination` in place. `source` is read but never modified
+    (every moved object is cloned before writing into destination).
+
+    For each kind in `mappings`, copies the source slot's content to its
+    destination index per `remap`, rewriting inline references:
+
+    - chain step .phrase → remap.out_phrase(value)
+    - phrase step .instrument → remap.out_instrument(value)
+    - phrase / table step FX value (when key is a reference FX) →
+      remap.out_X(value) where X depends on the FX key
+    - instrument .associated_eq → remap.out_eq(value)
+
+    The song matrix is NOT touched. Callers wanting to play the moved
+    chain in destination should place it after apply:
+
+        remap = allocate(src, dst, walk_dependencies(src, chains={3}))
+        apply(src, dst, mappings, remap)
+        dst.song[0][0] = remap.out_chain(3)
+    """
+    # EQs first — they have no internal references, and instruments will
+    # need them already in place to verify associated_eq remapping is
+    # consistent (though for now we don't actually verify).
+    for src_eq, dst_eq in remap.eqs.items():
+        destination.eq[dst_eq] = source.eq[src_eq].clone()
+
+    # Tables — rewrite FX refs in each step
+    for src_table, dst_table in remap.tables.items():
+        cloned = source.tables[src_table].clone()
+        for step in cloned:
+            _rewrite_fx_tuples(step.fx, remap)
+        destination.tables[dst_table] = cloned
+
+    # Instruments — rewrite associated_eq
+    for src_inst, dst_inst in remap.instruments.items():
+        cloned = source.instruments[src_inst].clone()
+        # M8Block instances (empty slots) have no associated_eq and were
+        # filtered out at walk time, but be defensive.
+        if hasattr(cloned, "associated_eq") and cloned.associated_eq != NO_EQ:
+            cloned.associated_eq = remap.out_eq(cloned.associated_eq)
+        destination.instruments[dst_inst] = cloned
+
+    # Phrases — rewrite step.instrument and FX refs
+    for src_phrase, dst_phrase in remap.phrases.items():
+        cloned = source.phrases[src_phrase].clone()
+        for step in cloned:
+            if step.instrument != EMPTY_INSTRUMENT_REF:
+                step.instrument = remap.out_instrument(step.instrument)
+            _rewrite_fx_tuples(step.fx, remap)
+        destination.phrases[dst_phrase] = cloned
+
+    # Chains — rewrite step.phrase
+    for src_chain, dst_chain in remap.chains.items():
+        cloned = source.chains[src_chain].clone()
+        for step in cloned:
+            if step.phrase != EMPTY_PHRASE:
+                step.phrase = remap.out_phrase(step.phrase)
+        destination.chains[dst_chain] = cloned
+
+
+def move_chains(source, destination, chain_indices) -> Remapping:
+    """Convenience: walk + allocate + apply for a set of source chains.
+
+    Returns the Remapping so callers can wire up destination.song with
+    `remap.out_chain(src_chain)` after the move.
+    """
+    mappings = walk_dependencies(source, chains=set(chain_indices))
+    remap = allocate(source, destination, mappings)
+    apply(source, destination, mappings, remap)
     return remap
