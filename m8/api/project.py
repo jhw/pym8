@@ -1,6 +1,7 @@
 from m8.api import M8Block
 from m8.api.chain import M8Chains, CHAINS_OFFSET
 from m8.api.eq import M8Eqs
+from m8.api.groove import M8Grooves
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.midi_mapping import M8MidiMappings
@@ -23,6 +24,10 @@ KEY_OFFSET = 187                 # 1 byte (project musical key)
 
 MIXER_SETTINGS_OFFSET = 206
 
+# Grooves region — 32 × 16 bytes at offset 0xEE (238), right after
+# MixerSettings, before the song matrix.
+GROOVE_OFFSET = 238
+
 # Effects/MIDI-mapping/scale/EQ offsets (v4.1+ — both V4_0 and V4_1 in
 # m8-file-parser use these same offsets; only inner counts differ, and
 # pym8 targets v6.0+).
@@ -40,6 +45,7 @@ OFFSETS = {
     "metadata": METADATA_OFFSET,
     "midi": MIDI_SETTINGS_OFFSET,
     "mixer": MIXER_SETTINGS_OFFSET,
+    "grooves": GROOVE_OFFSET,
     "song": SONG_OFFSET,
     "phrases": PHRASES_OFFSET,
     "chains": CHAINS_OFFSET,
@@ -62,6 +68,7 @@ class M8Project:
         self.phrases = None
         self.tables = None
         self.instruments = None
+        self.grooves = None
         self.mixer = None
         self.effects = None
         self.midi_mappings = None
@@ -87,6 +94,10 @@ class M8Project:
         # even though the byte itself isn't in the contiguous metadata block.
         instance.metadata.key = data[KEY_OFFSET]
 
+        instance.grooves = M8Grooves.read(
+            data[OFFSETS["grooves"]:OFFSETS["grooves"] + M8Grooves.TOTAL_BYTES],
+            version=instance.version,
+        )
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
@@ -128,6 +139,7 @@ class M8Project:
         instance.phrases = self.phrases.clone() if self.phrases else None
         instance.chains = self.chains.clone() if self.chains else None
         instance.tables = self.tables.clone() if self.tables else None
+        instance.grooves = self.grooves.clone() if self.grooves else None
         instance.song = self.song.clone() if self.song else None
         instance.mixer = self.mixer.clone() if self.mixer else None
         instance.effects = self.effects.clone() if self.effects else None
