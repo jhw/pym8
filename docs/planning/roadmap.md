@@ -59,36 +59,21 @@ since we only target one firmware family. Add the `def
 offsets(version)` selector if/when older-firmware support becomes a
 real ask.
 
-### 4. Mixer / MIDI / Effects settings (`settings.rs`, 328 lines)
-**Partially done.** `M8MixerSettings` (32 bytes at file 206) and
-`M8EffectsSettings` (26 bytes at file 107969) implemented in
-`m8/api/settings.py`. Master volume, 8 track volumes, send levels, DJ
-filter, limiter (v6.0+ attack/release/soft-clip), OTT level (v6.2+),
-chorus/delay/reverb knobs, reverb shimmer (v6.2+), OTT shaping config —
-all editable from Python and round-trip stable.
+### 4. ~~Mixer / MIDI / Effects settings~~ (`settings.rs`, 328 lines) **— done**
+Three structs at three different file offsets:
+- `M8MixerSettings` (32 bytes at file 206) — `m8/api/settings.py`
+- `M8MidiSettings` (27 bytes at file 160) — `m8/api/midi_settings.py`
+- `M8EffectsSettings` (26 bytes at file 107969) — `m8/api/settings.py`
 
-**Still missing — `M8MidiSettings`** (27 bytes interleaved with metadata
-at file 160). The Rust spec puts MidiSettings between `metadata.name`
-(file 148) and `metadata.key` (file 187), then 18 reserved bytes, then
-MixerSettings (file 206). pym8's current `M8Metadata` treats bytes
-14-160 as one block with `key` at file 160 — which is **wrong**: that
-byte is `receive_sync`, the first field of MidiSettings.
-
-The pre-existing M8Metadata layout bug is latent (the byte round-trips
-fine; nothing in pym8 actually relied on `key` being semantically a
-key value). Fixing it cleanly means:
-- Truncate `M8Metadata` BLOCK_SIZE to 146 (drop the bogus `key` byte)
-- Introduce `M8MidiSettings` (27 bytes) as a top-level section at file
-  byte 160
-- Add proper `key` byte at file 187, either as its own section or
-  attached to MidiSettings
-- 18 reserved bytes at file 188-205 remain raw
-
-Listed as a follow-up rather than rolled into this commit because it
-touches the metadata reader (a long-established API surface).
+`M8Metadata` was truncated from 147 → 146 bytes (the bogus `key` byte
+at metadata-relative offset 146 was actually pointing at
+`MidiSettings.receive_sync` — pre-existing bug). The real musical-key
+byte at file 187 is still exposed as `metadata.key` for ergonomics but
+written specially by `M8Project` (it isn't part of the contiguous
+metadata block).
 
 The cursor-style Reader/Writer abstraction from plumbing.md item 3
-**still hasn't earned its keep** — both new settings classes are flat
+**still hasn't earned its keep** — the settings classes are flat
 descriptor-over-bytearray records with no version-conditional reads
 (all "v6.0+" fields are present unconditionally in our target firmware,
 just unused / zeroed in pre-v6 files). Defer.

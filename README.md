@@ -11,11 +11,11 @@ What it covers:
 - All six modulator types (AHD, ADSR, Drum, LFO, Trig, Tracking) as distinct classes
 - Phrases (notes + FX), chains, song matrix, instrument slots
 - 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — global, effect-section, and per-instrument
-- Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT) and effects settings (chorus / delay / reverb knobs, OTT config)
+- Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT), MIDI settings (sync, transport, per-track input routing), and effects settings (chorus / delay / reverb knobs, OTT config)
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
 - Audio helpers: sample-chain WAV builder, slice-point WAV writer
 
-What it doesn't cover yet: groove definitions, scales, MIDI settings, MIDI mappings, themes, tables, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
+What it doesn't cover yet: groove definitions, scales, MIDI mappings, themes, tables, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
 
 ## Install
 
@@ -230,6 +230,16 @@ project.effects.chorus_mod_depth = 0x40
 project.effects.delay_feedback   = 0xA0
 project.effects.reverb_size      = 0xC0
 project.effects.reverb_shimmer   = 0x30  # firmware 6.2+
+
+# MIDI — sync, transport, per-track input routing
+project.midi.receive_sync = 1
+project.midi.send_transport = 2
+project.midi.set_track_input_channel(0, 5)      # track 0 records from MIDI ch 5
+project.midi.set_track_input_instrument(0, 8)   # ...fires instrument slot 8
+
+# Musical key (used by SCG / scale-global FX). Note: exposed on metadata
+# but the byte lives at file offset 187, not next to the rest of metadata.
+project.metadata.key = 7  # G major
 ```
 
 ## FX commands
@@ -326,6 +336,7 @@ m8/
 │   ├── modulator.py      # 6 modulator subclasses + M8Modulators
 │   ├── eq.py             # M8EqBand / M8Eq / M8Eqs (3-band parametric)
 │   ├── settings.py       # M8MixerSettings / M8EffectsSettings
+│   ├── midi_settings.py  # M8MidiSettings (sync, transport, track input)
 │   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
 │   ├── chain.py          # M8Chain / M8ChainStep
 │   ├── song.py           # M8SongMatrix (255 rows × 8 tracks)

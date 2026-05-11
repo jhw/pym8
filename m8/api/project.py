@@ -3,6 +3,7 @@ from m8.api.chain import M8Chains, CHAINS_OFFSET
 from m8.api.eq import M8Eqs
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
+from m8.api.midi_settings import M8MidiSettings
 from m8.api.phrase import M8Phrases, PHRASES_OFFSET
 from m8.api.settings import M8EffectsSettings, M8MixerSettings
 from m8.api.song import M8SongMatrix, SONG_OFFSET
@@ -12,22 +13,29 @@ from m8.api.version import M8Version
 
 VERSION_OFFSET = 10
 
-# MixerSettings sits just after metadata + (currently unparsed) MidiSettings
-# + key + 18 reserved bytes. See m8/api/settings.py.
+# MidiSettings starts immediately after metadata (file 14-159; contiguous
+# metadata block is 146 bytes ending at the project name).
+MIDI_SETTINGS_OFFSET = 160       # 27 bytes
+KEY_OFFSET = 187                 # 1 byte (project musical key)
+# bytes 188-205 reserved        # preserved as raw data
+
 MIXER_SETTINGS_OFFSET = 206
 
-# Effects/mixer-tail/MIDI-mapping/scale/EQ offsets (v4.1+ — both V4_0 and
-# V4_1 in m8-file-parser use these same offsets; only inner counts differ,
-# and pym8 targets v6.0+).
+# Effects/MIDI-mapping/scale/EQ offsets (v4.1+ — both V4_0 and V4_1 in
+# m8-file-parser use these same offsets; only inner counts differ, and
+# pym8 targets v6.0+).
 EFFECTS_SETTINGS_OFFSET = 107969  # 0x1A5C1
 EQ_OFFSET = 109918                # 0x1AD5A + 4
 
 # Offsets for sections pym8 parses today. Sections present in the binary
-# format but not yet parsed (groove, table, midi_settings, midi_mapping,
-# scale) are preserved verbatim through the raw `data` buffer.
+# format but not yet parsed (groove, table, midi_mapping, scale) are
+# preserved verbatim through the raw `data` buffer. The musical-key byte
+# at offset 187 isn't a section per se — M8Project handles it specially
+# (see read/write below).
 OFFSETS = {
     "version": VERSION_OFFSET,
     "metadata": METADATA_OFFSET,
+    "midi": MIDI_SETTINGS_OFFSET,
     "mixer": MIXER_SETTINGS_OFFSET,
     "song": SONG_OFFSET,
     "phrases": PHRASES_OFFSET,
@@ -43,6 +51,7 @@ class M8Project:
     def __init__(self):
         self.data = bytearray()
         self.metadata = None
+        self.midi = None
         self.song = None
         self.chains = None
         self.phrases = None
@@ -62,6 +71,15 @@ class M8Project:
         # without threading version. Add the parameter on a per-section basis
         # when implementing settings/EQ/etc. (see docs/planning/roadmap.md).
         instance.metadata = M8Metadata.read(data[OFFSETS["metadata"]:])
+        instance.midi = M8MidiSettings.read(
+            data[OFFSETS["midi"]:OFFSETS["midi"] + M8MidiSettings.BYTES],
+            version=instance.version,
+        )
+        # The musical key byte sits between MidiSettings and the 18 reserved
+        # bytes that precede MixerSettings. Exposed on metadata for ergonomics
+        # even though the byte itself isn't in the contiguous metadata block.
+        instance.metadata.key = data[KEY_OFFSET]
+
         instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
@@ -90,6 +108,7 @@ class M8Project:
         instance.data = bytearray(self.data)
         instance.version = M8Version(self.version.major, self.version.minor, self.version.patch)
         instance.metadata = self.metadata.clone() if self.metadata else None
+        instance.midi = self.midi.clone() if self.midi else None
         instance.instruments = self.instruments.clone() if self.instruments else None
         instance.phrases = self.phrases.clone() if self.phrases else None
         instance.chains = self.chains.clone() if self.chains else None
@@ -101,18 +120,26 @@ class M8Project:
         
     def write(self) -> bytes:
         output = bytearray(self.data)
-        
-        # Write version data
+
+        # Version is a 4-byte header at offset 10 — handled specially
+        # because it's a value, not a section block.
         version_data = self.version.write()
         output[OFFSETS["version"]:OFFSETS["version"] + len(version_data)] = version_data
-        
+
         for name, offset in OFFSETS.items():
             if hasattr(self, name) and name != "version":
                 block = getattr(self, name)
+                if block is None:
+                    continue
                 data = block.write()
-                
-                # Write the data to the output buffer
                 output[offset:offset + len(data)] = data
+
+        # Musical key byte at file offset 187 — exposed via
+        # metadata.key but not part of any contiguous block, so written
+        # explicitly here.
+        if self.metadata is not None:
+            output[KEY_OFFSET] = self.metadata.key & 0xFF
+
         return bytes(output)
 
     @staticmethod
