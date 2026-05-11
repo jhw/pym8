@@ -52,18 +52,22 @@ class M8SongRow:
     def validate(self, row_index=None):
         """Validate the song row.
 
-        Args:
-            row_index: Optional row index for error messages
-
-        Raises:
-            ValueError: If chain reference is invalid
+        A chain reference is one byte: 0..(CHAIN_COUNT-1) addresses a real
+        chain slot, 255 is the empty marker. With CHAIN_COUNT == 255 every
+        byte value is now meaningful (0..254 = valid, 255 = empty), so the
+        check is essentially "did someone put something other than a u8
+        here?" — which can't happen via bytearray semantics, but the loop
+        stays in place for explicit-intent (and to catch future capacity
+        regressions).
         """
-        # Chain references must be 0-127 (valid chains) or 255 (empty)
-        # Values 128-254 are invalid
+        from m8.api.chain import CHAIN_COUNT
         for col, chain_ref in enumerate(self._data):
-            if chain_ref != EMPTY_CHAIN and chain_ref > 127:
+            if chain_ref != EMPTY_CHAIN and chain_ref >= CHAIN_COUNT:
                 ctx = f" row {row_index}" if row_index is not None else ""
-                raise ValueError(f"Invalid chain reference {chain_ref} at{ctx} col {col}: must be 0-127 or 255 (empty)")
+                raise ValueError(
+                    f"Invalid chain reference {chain_ref} at{ctx} col {col}: "
+                    f"must be 0-{CHAIN_COUNT - 1} or 255 (empty)"
+                )
 
 class M8SongMatrix(list):
     """Represents the M8 song grid as a 2D matrix with 255 rows and 8 columns of chain references."""

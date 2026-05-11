@@ -351,5 +351,58 @@ class TestM8Chains(unittest.TestCase):
         self.assertEqual(original[0][0].phrase, 0x10)
 
 
+class TestChainStepBoundaries(unittest.TestCase):
+    """Edge values for chain step fields."""
+
+    def test_empty_phrase_reference(self):
+        step = M8ChainStep()
+        self.assertEqual(step.phrase, 255)  # EMPTY_PHRASE
+
+    def test_max_phrase_reference(self):
+        step = M8ChainStep(phrase=254, transpose=0)
+        self.assertEqual(step.phrase, 254)
+
+    def test_transpose_boundary_values(self):
+        """Transpose is 8-bit: 0..127 positive, 128..255 two's-complement-style."""
+        chain = M8Chain()
+        chain[0] = M8ChainStep(phrase=0, transpose=127)
+        self.assertEqual(chain[0].transpose, 127)
+        chain[1] = M8ChainStep(phrase=0, transpose=128)
+        self.assertEqual(chain[1].transpose, 128)
+
+
+class TestChainValidation(unittest.TestCase):
+    """Validation rules on chain step / chain / chains."""
+
+    def test_chain_step_valid(self):
+        M8ChainStep(phrase=0, transpose=0).validate()  # no raise
+
+    def test_chain_step_empty_phrase(self):
+        M8ChainStep(phrase=255, transpose=0).validate()  # no raise
+
+    def test_chain_step_max_phrase(self):
+        M8ChainStep(phrase=254, transpose=0).validate()  # no raise
+
+    def test_chain_valid(self):
+        M8Chain().validate()  # no raise
+
+    def test_chain_wrong_step_count(self):
+        chain = M8Chain()
+        chain.append(M8ChainStep())  # one extra
+        with self.assertRaises(ValueError) as ctx:
+            chain.validate()
+        self.assertIn("steps", str(ctx.exception))
+
+    def test_chains_valid(self):
+        M8Chains().validate()  # no raise
+
+    def test_chains_too_many(self):
+        chains = M8Chains()
+        chains.append(M8Chain())  # one over the limit
+        with self.assertRaises(ValueError) as ctx:
+            chains.validate()
+        self.assertIn("Too many chains", str(ctx.exception))
+
+
 if __name__ == '__main__':
     unittest.main()

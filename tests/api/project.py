@@ -92,5 +92,107 @@ class TestM8Project(unittest.TestCase):
         )
 
 
+class TestProjectErrorHandling(unittest.TestCase):
+    def test_read_nonexistent_file(self):
+        with self.assertRaises(FileNotFoundError):
+            M8Project.read_from_file("/nonexistent/path/file.m8s")
+
+    def test_write_to_invalid_path(self):
+        project = M8Project.initialise()
+        with self.assertRaises((OSError, FileNotFoundError)):
+            project.write_to_file("/nonexistent/directory/file.m8s")
+
+
+class TestMetadataEdgeCasesViaProject(unittest.TestCase):
+    """Edge values on metadata fields reached via M8Project.initialise()."""
+
+    def test_empty_name(self):
+        project = M8Project.initialise()
+        project.metadata.name = ""
+        self.assertEqual(project.metadata.name, "")
+
+    def test_special_characters_in_name(self):
+        project = M8Project.initialise()
+        project.metadata.name = "TEST-123"
+        self.assertEqual(project.metadata.name, "TEST-123")
+
+    def test_tempo_boundary_values(self):
+        project = M8Project.initialise()
+        project.metadata.tempo = 60.0
+        self.assertEqual(project.metadata.tempo, 60.0)
+        project.metadata.tempo = 300.0
+        self.assertEqual(project.metadata.tempo, 300.0)
+
+
+class TestProjectBinaryRoundtrip(unittest.TestCase):
+    """End-to-end .m8s file write + read."""
+
+    def test_empty_project_roundtrip(self):
+        from m8.api.phrase import M8PhraseStep, M8Note
+        from m8.api.chain import M8ChainStep
+        original = M8Project.initialise()
+        with tempfile.NamedTemporaryFile(suffix=".m8s", delete=False) as f:
+            tmp_path = f.name
+        try:
+            original.write_to_file(tmp_path)
+            loaded = M8Project.read_from_file(tmp_path)
+            self.assertIsNotNone(loaded.metadata)
+            self.assertIsNotNone(loaded.instruments)
+            self.assertIsNotNone(loaded.phrases)
+            self.assertIsNotNone(loaded.chains)
+            self.assertIsNotNone(loaded.song)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_populated_project_roundtrip(self):
+        from m8.api.phrase import M8PhraseStep, M8Note
+        from m8.api.chain import M8ChainStep
+        original = M8Project.initialise()
+        original.metadata.name = "FULLTEST"
+        original.metadata.tempo = 145.5
+        original.instruments[0] = M8Sampler(name="KICK")
+        original.phrases[0][0] = M8PhraseStep(note=M8Note.C_4, velocity=0xFF, instrument=0)
+        original.chains[0][0] = M8ChainStep(phrase=0, transpose=0)
+        original.song[0][0] = 0
+
+        with tempfile.NamedTemporaryFile(suffix=".m8s", delete=False) as f:
+            tmp_path = f.name
+        try:
+            original.write_to_file(tmp_path)
+            loaded = M8Project.read_from_file(tmp_path)
+            self.assertEqual(loaded.metadata.name, "FULLTEST")
+            self.assertEqual(loaded.metadata.tempo, 145.5)
+            self.assertEqual(loaded.instruments[0].name, "KICK")
+            self.assertEqual(loaded.phrases[0][0].note, M8Note.C_4)
+            self.assertEqual(loaded.chains[0][0].phrase, 0)
+            self.assertEqual(loaded.song[0][0], 0)
+        finally:
+            os.unlink(tmp_path)
+
+
+class TestProjectValidation(unittest.TestCase):
+    def test_project_valid(self):
+        M8Project.initialise().validate()
+
+    def test_project_valid_with_content(self):
+        from m8.api.phrase import M8PhraseStep, M8Note
+        from m8.api.chain import M8ChainStep
+        project = M8Project.initialise()
+        project.metadata.name = "TEST"
+        project.instruments[0] = M8Sampler(name="KICK")
+        project.phrases[0][0] = M8PhraseStep(note=M8Note.C_4, velocity=0xFF, instrument=0)
+        project.chains[0][0] = M8ChainStep(phrase=0, transpose=0)
+        project.song[0][0] = 0
+        project.validate()
+
+    def test_project_invalid_instrument_ref(self):
+        from m8.api.phrase import M8PhraseStep
+        project = M8Project.initialise()
+        project.phrases[0][0] = M8PhraseStep(note=36, velocity=0xFF, instrument=200)
+        with self.assertRaises(ValueError) as ctx:
+            project.validate()
+        self.assertIn("instrument", str(ctx.exception).lower())
+
+
 if __name__ == "__main__":
     unittest.main()

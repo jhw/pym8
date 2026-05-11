@@ -202,5 +202,26 @@ class TestChainBuilder(unittest.TestCase):
         self.assertAlmostEqual(len(chain), 100, delta=5)
 
 
+class TestChainBuilderSliceLimit(unittest.TestCase):
+    """ChainBuilder enforces the M8's 128-slice maximum."""
+
+    def test_max_slices_allowed(self):
+        from m8.tools.chain_builder import ChainBuilder
+        from pydub import AudioSegment
+        builder = ChainBuilder(slice_duration_ms=100)
+        samples = [AudioSegment.silent(duration=50, frame_rate=44100) for _ in range(128)]
+        _, mapping = builder.build_chain(samples)
+        self.assertEqual(len(mapping), 128)
+
+    def test_too_many_slices_rejected(self):
+        from m8.tools.chain_builder import ChainBuilder
+        from pydub import AudioSegment
+        builder = ChainBuilder(slice_duration_ms=100)
+        samples = [AudioSegment.silent(duration=50, frame_rate=44100) for _ in range(129)]
+        with self.assertRaises(ValueError) as ctx:
+            builder.build_chain(samples)
+        self.assertIn("128", str(ctx.exception))
+
+
 if __name__ == '__main__':
     unittest.main()

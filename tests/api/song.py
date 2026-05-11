@@ -1,4 +1,7 @@
 import unittest
+
+from m8.api.chain import CHAIN_COUNT
+from m8.api.project import M8Project
 from m8.api.song import M8SongRow, M8SongMatrix, COL_COUNT, ROW_COUNT
 
 class TestM8SongRow(unittest.TestCase):
@@ -267,6 +270,63 @@ class TestM8SongMatrix(unittest.TestCase):
         # Modify clone and verify original remains unchanged
         clone[0][0] = 10
         self.assertEqual(original[0][0], 1)
+
+if __name__ == '__main__':
+    unittest.main()
+
+class TestSongRowBoundaries(unittest.TestCase):
+    """Edge cases for the song matrix row + cell access."""
+
+    def test_empty_chain_reference_default(self):
+        project = M8Project.initialise()
+        self.assertEqual(project.song[0][0], 255)
+
+    def test_max_row_access(self):
+        project = M8Project.initialise()
+        project.song[ROW_COUNT - 1][0] = 0
+        self.assertEqual(project.song[ROW_COUNT - 1][0], 0)
+
+    def test_max_column_access(self):
+        project = M8Project.initialise()
+        project.song[0][COL_COUNT - 1] = 0
+        self.assertEqual(project.song[0][COL_COUNT - 1], 0)
+
+
+class TestSongValidation(unittest.TestCase):
+    """Validation of chain references in the song matrix.
+
+    With CHAIN_COUNT == 255, valid chain refs are 0..254 plus 255 for
+    empty. There's effectively no invalid byte value — but the validate
+    method is still in place to catch future capacity regressions.
+    """
+
+    def test_song_row_valid(self):
+        M8SongRow().validate()  # no raise
+
+    def test_song_row_valid_chain_refs(self):
+        row = M8SongRow()
+        row[0] = 0                    # first chain
+        row[1] = CHAIN_COUNT - 1      # last real chain
+        row[2] = 255                  # empty
+        row.validate()  # no raise
+
+    def test_high_chain_reference_valid(self):
+        """Regression: after fixing CHAIN_COUNT 128 → 255, chain 200 must
+        validate successfully (was rejected by stale hardcoded 0-127 check)."""
+        row = M8SongRow()
+        row[0] = 200
+        row.validate()  # no raise
+
+    def test_song_matrix_valid(self):
+        M8SongMatrix().validate()
+
+    def test_song_matrix_too_many_rows(self):
+        matrix = M8SongMatrix()
+        matrix.append(M8SongRow())  # one over the limit
+        with self.assertRaises(ValueError) as ctx:
+            matrix.validate()
+        self.assertIn("Too many song rows", str(ctx.exception))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -201,5 +201,61 @@ class TestM8iRoundTrip(unittest.TestCase):
         self.assertEqual(len(inst.modulators), 4)
 
 
+class TestInstrumentErrorHandling(unittest.TestCase):
+    def test_unknown_instrument_type_in_factory(self):
+        """Factory raises for unknown type string."""
+        params = {"type": "INVALID_TYPE", "name": "Test", "params": {}, "modulators": []}
+        with self.assertRaises(ValueError):
+            M8Instrument.from_dict(params)
+
+    def test_unknown_instrument_type_id(self):
+        """Factory raises for unknown integer type."""
+        params = {"type": 99, "name": "Test", "params": {}, "modulators": []}
+        with self.assertRaises(ValueError):
+            M8Instrument.from_dict(params)
+
+    def test_descriptor_out_of_range_raises(self):
+        """ByteField validates inputs at assignment time."""
+        sampler = M8Sampler(name="Test")
+        with self.assertRaises(ValueError):
+            sampler.volume = 0x1FF
+        with self.assertRaises(ValueError):
+            sampler.volume = -1
+
+    def test_name_truncation(self):
+        """Long names are truncated to the 12-byte field width."""
+        sampler = M8Sampler(name="THIS_IS_A_VERY_LONG_NAME")
+        self.assertEqual(len(sampler.name), 12)
+        self.assertEqual(sampler.name, "THIS_IS_A_VE")
+
+
+class TestInstrumentsCollection(unittest.TestCase):
+    """Slot-level operations on the 128-instrument collection."""
+
+    def test_max_instrument_slot(self):
+        from m8.api.project import M8Project
+        project = M8Project.initialise()
+        project.instruments[127] = M8Sampler(name="LAST")
+        self.assertEqual(project.instruments[127].name, "LAST")
+
+    def test_replace_instrument(self):
+        from m8.api.project import M8Project
+        project = M8Project.initialise()
+        project.instruments[0] = M8Sampler(name="FIRST")
+        project.instruments[0] = M8Wavsynth(name="SECOND")
+        self.assertIsInstance(project.instruments[0], M8Wavsynth)
+        self.assertEqual(project.instruments[0].name, "SECOND")
+
+    def test_instruments_too_many_validates(self):
+        instruments = M8Instruments()
+        instruments.append(M8Block())  # one over the limit
+        with self.assertRaises(ValueError) as ctx:
+            instruments.validate()
+        self.assertIn("Too many instruments", str(ctx.exception))
+
+    def test_instruments_default_validates(self):
+        M8Instruments().validate()  # should not raise
+
+
 if __name__ == "__main__":
     unittest.main()

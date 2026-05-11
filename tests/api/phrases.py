@@ -373,3 +373,87 @@ class TestM8PhrasesClone(unittest.TestCase):
 
         self.assertEqual(original[0][0].note, M8Note.C_4)
 
+
+
+class TestPhraseStepBoundaries(unittest.TestCase):
+    """Edge values for phrase step fields."""
+
+    def test_empty_note(self):
+        self.assertEqual(M8PhraseStep().note, 255)  # EMPTY_NOTE
+
+    def test_off_note(self):
+        step = M8PhraseStep(note=M8Note.C_4, velocity=0xFF, instrument=0)
+        step.off()
+        self.assertEqual(step.note, 0x80)  # OFF_NOTE = 128
+
+    def test_max_velocity(self):
+        step = M8PhraseStep(note=M8Note.C_4, velocity=0xFF, instrument=0)
+        self.assertEqual(step.velocity, 0xFF)
+
+    def test_zero_velocity(self):
+        step = M8PhraseStep(note=M8Note.C_4, velocity=0x00, instrument=0)
+        self.assertEqual(step.velocity, 0x00)
+
+    def test_max_instrument_reference(self):
+        step = M8PhraseStep(note=M8Note.C_4, velocity=0xFF, instrument=127)
+        self.assertEqual(step.instrument, 127)
+
+
+class TestPhraseValidation(unittest.TestCase):
+    """Validation rules on phrase step / phrase / phrases.
+
+    Instrument references must be 0-127 (the 128 real slots) or 255 (empty);
+    128-254 are invalid.
+    """
+
+    def test_phrase_step_valid(self):
+        M8PhraseStep(note=36, velocity=0xFF, instrument=0).validate()
+
+    def test_phrase_step_empty(self):
+        M8PhraseStep().validate()  # all defaults = 255
+
+    def test_phrase_step_max_instrument(self):
+        M8PhraseStep(note=36, velocity=0xFF, instrument=127).validate()
+
+    def test_phrase_step_invalid_instrument(self):
+        step = M8PhraseStep(note=36, velocity=0xFF, instrument=128)
+        with self.assertRaises(ValueError) as ctx:
+            step.validate()
+        self.assertIn("instrument", str(ctx.exception).lower())
+
+    def test_phrase_step_invalid_instrument_200(self):
+        step = M8PhraseStep(note=36, velocity=0xFF, instrument=200)
+        with self.assertRaises(ValueError) as ctx:
+            step.validate()
+        self.assertIn("instrument", str(ctx.exception).lower())
+
+    def test_phrase_valid(self):
+        M8Phrase().validate()
+
+    def test_phrase_wrong_step_count(self):
+        phrase = M8Phrase()
+        phrase.append(M8PhraseStep())
+        with self.assertRaises(ValueError) as ctx:
+            phrase.validate()
+        self.assertIn("steps", str(ctx.exception))
+
+    def test_phrase_invalid_instrument_in_step(self):
+        phrase = M8Phrase()
+        phrase[0] = M8PhraseStep(note=36, velocity=0xFF, instrument=200)
+        with self.assertRaises(ValueError) as ctx:
+            phrase.validate()
+        self.assertIn("instrument", str(ctx.exception).lower())
+
+    def test_phrases_valid(self):
+        M8Phrases().validate()
+
+    def test_phrases_too_many(self):
+        phrases = M8Phrases()
+        phrases.append(M8Phrase())
+        with self.assertRaises(ValueError) as ctx:
+            phrases.validate()
+        self.assertIn("Too many phrases", str(ctx.exception))
+
+
+if __name__ == '__main__':
+    unittest.main()
