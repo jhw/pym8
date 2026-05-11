@@ -41,11 +41,11 @@ class SyncTestBase(unittest.TestCase):
             p.stop()
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def make_local_demo(self, category, flavor, *, m8s_name=None, wavs=()):
-        """Create tmp/demos/<category>/<flavor>/<demo>.m8s and optional samples."""
-        d = self.local_root / category / flavor
+    def make_local_demo(self, name, *, wavs=()):
+        """Create tmp/demos/<name>/<name>.m8s and optional samples."""
+        d = self.local_root / name
         d.mkdir(parents=True, exist_ok=True)
-        (d / (m8s_name or f"{flavor}.m8s")).write_bytes(b"\x00" * 16)
+        (d / f"{name}.m8s").write_bytes(b"\x00" * 16)
         if wavs:
             samples = d / "samples"
             samples.mkdir()
@@ -61,20 +61,20 @@ class SyncTestBase(unittest.TestCase):
 
 
 class TestM8Name(unittest.TestCase):
-    """Pure function — path → M8-friendly name."""
+    """Pure function — path → M8-friendly name (underscores to hyphens)."""
 
-    def test_two_levels(self):
+    def test_flat_demo_name(self):
         with mock.patch.object(sync, "LOCAL_ROOT", pathlib.Path("tmp/demos")):
             self.assertEqual(
-                sync.m8_name(pathlib.Path("tmp/demos/acid_303/sampler")),
-                "acid-303-sampler",
+                sync.m8_name(pathlib.Path("tmp/demos/acid_303_wavsynth")),
+                "acid-303-wavsynth",
             )
 
     def test_underscores_to_hyphens(self):
         with mock.patch.object(sync, "LOCAL_ROOT", pathlib.Path("tmp/demos")):
             self.assertEqual(
-                sync.m8_name(pathlib.Path("tmp/demos/euclid/midi")),
-                "euclid-midi",
+                sync.m8_name(pathlib.Path("tmp/demos/euclid_sampler")),
+                "euclid-sampler",
             )
 
 
@@ -83,25 +83,25 @@ class TestFindLocal(SyncTestBase):
         self.assertEqual(sync.find_local(), [])
 
     def test_finds_demos_with_m8s(self):
-        self.make_local_demo("acid_303", "sampler")
-        self.make_local_demo("euclid", "midi")
+        self.make_local_demo("acid_303_wavsynth")
+        self.make_local_demo("euclid_sampler")
         # An empty dir without .m8s should be skipped
-        (self.local_root / "ignored" / "empty").mkdir(parents=True)
+        (self.local_root / "ignored").mkdir(parents=True)
 
         result = sync.find_local()
         names = [sync.m8_name(d) for d in result]
-        self.assertEqual(sorted(names), ["acid-303-sampler", "euclid-midi"])
+        self.assertEqual(sorted(names), ["acid-303-wavsynth", "euclid-sampler"])
 
     def test_pattern_filter(self):
-        self.make_local_demo("acid_303", "sampler")
-        self.make_local_demo("acid_303", "midi")
-        self.make_local_demo("euclid", "midi")
+        self.make_local_demo("acid_303_wavsynth")
+        self.make_local_demo("acid_303_midi")
+        self.make_local_demo("euclid_sampler")
 
         names = [sync.m8_name(d) for d in sync.find_local("acid-303")]
-        self.assertEqual(sorted(names), ["acid-303-midi", "acid-303-sampler"])
+        self.assertEqual(sorted(names), ["acid-303-midi", "acid-303-wavsynth"])
 
         names = [sync.m8_name(d) for d in sync.find_local("midi")]
-        self.assertEqual(sorted(names), ["acid-303-midi", "euclid-midi"])
+        self.assertEqual(sorted(names), ["acid-303-midi"])
 
 
 class TestFindRemote(SyncTestBase):
@@ -125,21 +125,21 @@ class TestFindRemote(SyncTestBase):
 
 class TestPush(SyncTestBase):
     def test_copies_m8s_and_samples(self):
-        self.make_local_demo("acid_303", "sampler", wavs=["kick.wav", "snare.wav"])
+        self.make_local_demo("acid_909_sampler", wavs=["kick.wav", "snare.wav"])
 
         with contextlib.redirect_stdout(io.StringIO()):
             sync.push(pattern=None, force=True, test_mode=True)
 
-        target = self.test_volume / sync.REMOTE_SUBPATH / "acid-303-sampler"
+        target = self.test_volume / sync.REMOTE_SUBPATH / "acid-909-sampler"
         self.assertTrue(target.exists())
-        self.assertTrue((target / "sampler.m8s").exists())
+        self.assertTrue((target / "acid_909_sampler.m8s").exists())
         self.assertTrue((target / "samples" / "kick.wav").exists())
         self.assertTrue((target / "samples" / "snare.wav").exists())
 
     def test_skips_existing(self):
-        self.make_local_demo("acid_303", "sampler")
+        self.make_local_demo("acid_909_sampler")
         # Pre-existing remote entry should not be overwritten
-        existing = self.make_remote_demo("acid-303-sampler")
+        existing = self.make_remote_demo("acid-909-sampler")
         sentinel = existing / "sentinel.txt"
         sentinel.write_text("preserved")
 
@@ -149,66 +149,59 @@ class TestPush(SyncTestBase):
         self.assertTrue(sentinel.exists(), "push must not clobber existing target")
 
     def test_pattern_filter(self):
-        self.make_local_demo("acid_303", "sampler")
-        self.make_local_demo("euclid", "midi")
+        self.make_local_demo("acid_303_wavsynth")
+        self.make_local_demo("euclid_sampler")
 
         with contextlib.redirect_stdout(io.StringIO()):
             sync.push(pattern="euclid", force=True, test_mode=True)
 
-        self.assertFalse((self.test_volume / sync.REMOTE_SUBPATH / "acid-303-sampler").exists())
-        self.assertTrue((self.test_volume / sync.REMOTE_SUBPATH / "euclid-midi").exists())
+        self.assertFalse((self.test_volume / sync.REMOTE_SUBPATH / "acid-303-wavsynth").exists())
+        self.assertTrue((self.test_volume / sync.REMOTE_SUBPATH / "euclid-sampler").exists())
 
 
 class TestCleanLocal(SyncTestBase):
-    def test_removes_matched_demo_and_empty_parent(self):
-        self.make_local_demo("acid_303", "sampler")
-        self.make_local_demo("euclid", "midi")
+    def test_removes_matched_demo(self):
+        self.make_local_demo("acid_303_wavsynth")
+        self.make_local_demo("euclid_sampler")
 
         with contextlib.redirect_stdout(io.StringIO()):
             sync.clean_local(pattern="acid", force=True)
 
-        # acid_303/sampler removed; parent dir acid_303 cleaned up too
-        self.assertFalse((self.local_root / "acid_303" / "sampler").exists())
-        self.assertFalse((self.local_root / "acid_303").exists())
-        # euclid/midi untouched
-        self.assertTrue((self.local_root / "euclid" / "midi").exists())
+        self.assertFalse((self.local_root / "acid_303_wavsynth").exists())
+        self.assertTrue((self.local_root / "euclid_sampler").exists())
 
 
 class TestCleanRemote(SyncTestBase):
     def test_removes_matched_remote_demo(self):
-        self.make_remote_demo("acid-303-sampler")
-        self.make_remote_demo("euclid-midi")
+        self.make_remote_demo("acid-303-wavsynth")
+        self.make_remote_demo("euclid-sampler")
 
         with contextlib.redirect_stdout(io.StringIO()):
             sync.clean_remote(pattern="acid", force=True, test_mode=True)
 
-        self.assertFalse((self.test_volume / sync.REMOTE_SUBPATH / "acid-303-sampler").exists())
-        self.assertTrue((self.test_volume / sync.REMOTE_SUBPATH / "euclid-midi").exists())
+        self.assertFalse((self.test_volume / sync.REMOTE_SUBPATH / "acid-303-wavsynth").exists())
+        self.assertTrue((self.test_volume / sync.REMOTE_SUBPATH / "euclid-sampler").exists())
 
 
 class TestStatus(SyncTestBase):
     def test_diff_math(self):
         """status() prints the three sets: in_sync, local-only, remote-only."""
-        self.make_local_demo("acid_303", "sampler")    # local only
-        self.make_local_demo("euclid", "midi")          # in sync
-        self.make_remote_demo("euclid-midi")            # in sync
-        self.make_remote_demo("chords-midi")            # remote only
+        self.make_local_demo("acid_303_wavsynth")    # local only
+        self.make_local_demo("euclid_sampler")        # in sync
+        self.make_remote_demo("euclid-sampler")       # in sync
+        self.make_remote_demo("chords-synth")         # remote only
 
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             sync.status(test_mode=True)
         text = out.getvalue()
 
-        self.assertIn("acid-303-sampler", text)
-        self.assertIn("euclid-midi", text)
-        self.assertIn("chords-midi", text)
-        # Verify the diff categories
         in_sync_line = next(l for l in text.splitlines() if "in sync" in l)
         local_only_line = next(l for l in text.splitlines() if "local-only" in l)
         remote_only_line = next(l for l in text.splitlines() if "remote-only" in l)
-        self.assertIn("euclid-midi", in_sync_line)
-        self.assertIn("acid-303-sampler", local_only_line)
-        self.assertIn("chords-midi", remote_only_line)
+        self.assertIn("euclid-sampler", in_sync_line)
+        self.assertIn("acid-303-wavsynth", local_only_line)
+        self.assertIn("chords-synth", remote_only_line)
 
 
 class TestConfirm(unittest.TestCase):

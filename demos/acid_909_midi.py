@@ -49,7 +49,7 @@ from demos.patterns.acid_909 import (
 
 # Configuration
 PROJECT_NAME = "ACID-909-MIDI"
-OUTPUT_DIR = Path("tmp/demos/acid_909/midi")
+OUTPUT_DIR = Path("tmp/demos/acid_909_midi")
 BPM = 130
 SEED = 42
 NUM_ROWS = 16

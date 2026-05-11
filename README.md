@@ -209,13 +209,13 @@ Runnable scripts under `demos/` produce `.m8s` files in `tmp/demos/`. Each demo 
 
 | Demo | Demonstrates |
 |---|---|
-| `demos/acid_303/wavsynth.py` | Wavsynth + iterating over instrument slots (16 shape variations) |
-| `demos/acid_303/midi.py` | MIDIOut to monophonic external synth with OFF-note insertion |
-| `demos/acid_909/sampler.py` | Sampler basics — multi-instrument drum kit |
-| `demos/acid_909/chain.py` | Sample chain slicing |
-| `demos/acid_909/midi.py` | MIDIOut drum kit (multi-channel) |
-| `demos/euclid/sampler.py` | Bjorklund Euclidean rhythms |
-| `demos/chords/synth.py` | Macrosynth + modulators + 3-voice polyphony |
+| `demos/acid_303_wavsynth.py` | Wavsynth + iterating over instrument slots (16 shape variations) |
+| `demos/acid_303_midi.py` | MIDIOut to monophonic external synth with OFF-note insertion |
+| `demos/acid_909_sampler.py` | Sampler basics — multi-instrument drum kit |
+| `demos/acid_909_chain.py` | Sample chain slicing |
+| `demos/acid_909_midi.py` | MIDIOut drum kit (multi-channel) |
+| `demos/euclid_sampler.py` | Bjorklund Euclidean rhythms |
+| `demos/chords_synth.py` | Macrosynth + modulators + 3-voice polyphony |
 
 Run a demo:
 
@@ -223,8 +223,8 @@ Run a demo:
 # Sample-based demos need samples first
 PYTHONPATH=. python demos/utils/download_erica_pico_samples.py
 
-PYTHONPATH=. python demos/acid_909/sampler.py
-PYTHONPATH=. python demos/chords/synth.py
+PYTHONPATH=. python demos/acid_909_sampler.py
+PYTHONPATH=. python demos/chords_synth.py
 ```
 
 ### Shipping demos to the M8

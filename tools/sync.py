@@ -12,9 +12,9 @@ Subcommands:
     sync.py clean remote [pattern] [-f] [--test]
     sync.py status [--test]
 
-Local source:  tmp/demos/<category>/<flavor>/
-Remote target: /Volumes/M8/Songs/pym8-demos/<category>-<flavor>/
-                (or tmp/virtual-m8/ when --test is passed)
+Local source:  tmp/demos/<demo_name>/
+Remote target: /Volumes/M8/Songs/pym8-demos/<demo-name>/
+                (underscores become hyphens; or tmp/virtual-m8/ when --test)
 
 Per-item prompts (`y/N`) gate every destructive op when run on a TTY. On a
 non-interactive stdin (piped, CI, agent-driven) the prompts auto-confirm —
@@ -41,7 +41,7 @@ def remote_root(test_mode: bool) -> pathlib.Path:
 
 
 def m8_name(demo_dir: pathlib.Path) -> str:
-    """tmp/demos/acid_303/sampler -> acid-303-sampler"""
+    """tmp/demos/acid_303_wavsynth -> acid-303-wavsynth"""
     return "-".join(demo_dir.relative_to(LOCAL_ROOT).parts).replace("_", "-")
 
 
@@ -156,10 +156,6 @@ def clean_local(pattern: Optional[str], force: bool) -> None:
             continue
         shutil.rmtree(d)
         removed += 1
-    # Clean up empty category dirs left behind
-    for category in sorted(LOCAL_ROOT.iterdir() if LOCAL_ROOT.exists() else []):
-        if category.is_dir() and not any(category.iterdir()):
-            category.rmdir()
     print(f"\nremoved {removed} of {len(demos)} demo(s).")
 
 

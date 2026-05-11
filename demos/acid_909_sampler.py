@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 
 """
-Euclid 909 Demo - Euclidean rhythm patterns using the Bjorklund algorithm
+Acid Banger 909 Demo - Algorithmic 909 drum patterns inspired by vitling's acid-banger
 
 Creates a 16-row M8 project with kick, snare, and hat patterns using:
-- Bjorklund algorithm for Euclidean rhythm generation
-  Source: https://github.com/brianhouse/bjorklund
-- Traditional rhythm patterns from world music (Cuban, African, Brazilian, etc.)
-  Source: "The Euclidean Algorithm Generates Traditional Musical Rhythms"
-  by Godfried Toussaint (https://cgm.cs.mcgill.ca/~godfried/publications/banff.pdf)
-- Groove algorithms inspired by Erica Synths Perkons HD-01 for volume variation
+- Vitling's acid-banger 909 pattern generators
 - Random sample selection from Erica Pico sample packs
+- Random FX on hats (cut, reverse, retrigger)
 
 Prerequisites:
 - Download Erica Pico samples first: python demos/utils/download_erica_pico_samples.py
@@ -21,8 +17,8 @@ Project structure:
 - Row 1: songs 0x11,0x21,0x31 -> chains 0x11,0x21,0x31 -> phrases 0x11,0x21,0x31 -> instruments 0x03,0x04,0x05
 - ... (continues for 16 rows total)
 
-The Bjorklund algorithm distributes k pulses as evenly as possible over n steps,
-generating Euclidean rhythms E(k,n) found in traditional music worldwide.
+Note: This demo uses 909-style drum patterns. For 303-style acid basslines,
+see the separate acid_banger_303 demo.
 """
 
 import random
@@ -38,14 +34,18 @@ from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
-from demos.patterns.euclidean import get_random_euclidean_pattern
+from demos.patterns.acid_909 import (
+    get_random_kick_pattern,
+    get_random_snare_pattern,
+    get_random_hat_pattern
+)
 
 
 # Configuration
-PROJECT_NAME = "EUCLID-909"
-OUTPUT_DIR = Path("tmp/demos/euclid/sampler")
+PROJECT_NAME = "ACID-BANGER-909"
+OUTPUT_DIR = Path("tmp/demos/acid_909_sampler")
 SAMPLES_BASE = Path("tmp/erica-pico-samples")
-BPM = 128
+BPM = 130
 SEED = 42
 NUM_ROWS = 16
 
@@ -129,14 +129,10 @@ def create_phrase_from_pattern(pattern: List[float], instrument_idx: int,
     return phrase
 
 
-def create_euclid_909_project():
-    """Create the full Euclid 909 M8 project."""
-    print(f"Creating Euclid 909 demo: {PROJECT_NAME}")
+def create_acid_banger_project():
+    """Create the full acid banger 909 M8 project."""
+    print(f"Creating Acid Banger 909 demo: {PROJECT_NAME}")
     print(f"BPM: {BPM}, Seed: {SEED}, Rows: {NUM_ROWS}")
-    print(f"\nUsing Bjorklund algorithm for Euclidean rhythms")
-    print(f"Sources:")
-    print(f"  - https://github.com/brianhouse/bjorklund")
-    print(f"  - https://cgm.cs.mcgill.ca/~godfried/publications/banff.pdf")
 
     # Check if samples exist
     if not SAMPLES_BASE.exists():
@@ -171,18 +167,19 @@ def create_euclid_909_project():
     project = M8Project.initialise()
     project.metadata.name = PROJECT_NAME
     project.metadata.tempo = BPM
-    project.metadata.directory = "/Songs/pym8-demos/euclid-909/"
+    project.metadata.directory = "/Songs/pym8-demos/acid-banger-909/"
 
     # Track which samples we're using (for copying later)
     used_samples: Dict[int, Path] = {}  # instrument_idx -> sample_path
 
     # Create 16 rows
-    print(f"\nGenerating {NUM_ROWS} rows of Euclidean patterns...")
+    print(f"\nGenerating {NUM_ROWS} rows of patterns...")
 
     for row in range(NUM_ROWS):
         print(f"\n--- Row {row} ---")
 
         # Calculate indices for this row
+        # Row 0: songs 0x10,0x20,0x30; Row 1: songs 0x11,0x21,0x31; etc.
         song_kick = 0x10 + row
         song_snare = 0x20 + row
         song_hat = 0x30 + row
@@ -207,8 +204,8 @@ def create_euclid_909_project():
         kick_sample_rel = f"samples/{kick_sample.name}"
         used_samples[inst_kick] = kick_sample
 
-        # Generate Euclidean kick pattern
-        kick_rhythm_name, kick_pattern = get_random_euclidean_pattern('kick', rng)
+        # Generate kick pattern
+        kick_pattern_name, kick_pattern = get_random_kick_pattern(rng)
 
         # Create kick instrument
         kick_sampler = M8Sampler(name=f"K{row:X}", sample_path=kick_sample_rel)
@@ -226,7 +223,7 @@ def create_euclid_909_project():
         # Add to song matrix
         project.song[row][0] = song_kick
 
-        print(f"  Kick   [{inst_kick:02X}]: {kick_sample.name[:30]:30s} rhythm=E({kick_rhythm_name})")
+        print(f"  Kick   [{inst_kick:02X}]: {kick_sample.name[:30]:30s} pattern={kick_pattern_name}")
 
         # --- SNARE CHANNEL ---
         # Pick random snare sample
@@ -234,8 +231,8 @@ def create_euclid_909_project():
         snare_sample_rel = f"samples/{snare_sample.name}"
         used_samples[inst_snare] = snare_sample
 
-        # Generate Euclidean snare pattern
-        snare_rhythm_name, snare_pattern = get_random_euclidean_pattern('snare', rng)
+        # Generate snare pattern
+        snare_pattern_name, snare_pattern = get_random_snare_pattern(rng)
 
         # Create snare instrument
         snare_sampler = M8Sampler(name=f"S{row:X}", sample_path=snare_sample_rel)
@@ -253,7 +250,7 @@ def create_euclid_909_project():
         # Add to song matrix
         project.song[row][1] = song_snare
 
-        print(f"  Snare  [{inst_snare:02X}]: {snare_sample.name[:30]:30s} rhythm=E({snare_rhythm_name})")
+        print(f"  Snare  [{inst_snare:02X}]: {snare_sample.name[:30]:30s} pattern={snare_pattern_name}")
 
         # --- HAT CHANNEL ---
         # Pick random hat sample
@@ -261,8 +258,8 @@ def create_euclid_909_project():
         hat_sample_rel = f"samples/{hat_sample.name}"
         used_samples[inst_hat] = hat_sample
 
-        # Generate Euclidean hat pattern
-        hat_rhythm_name, hat_pattern = get_random_euclidean_pattern('hat', rng)
+        # Generate hat pattern
+        hat_pattern_name, hat_pattern = get_random_hat_pattern(rng)
 
         # Create hat instrument
         hat_sampler = M8Sampler(name=f"H{row:X}", sample_path=hat_sample_rel)
@@ -280,7 +277,7 @@ def create_euclid_909_project():
         # Add to song matrix
         project.song[row][2] = song_hat
 
-        print(f"  Hat    [{inst_hat:02X}]: {hat_sample.name[:30]:30s} rhythm=E({hat_rhythm_name})")
+        print(f"  Hat    [{inst_hat:02X}]: {hat_sample.name[:30]:30s} pattern={hat_pattern_name}")
 
     return project, used_samples
 
@@ -316,7 +313,7 @@ def save_project(project: M8Project, used_samples: Dict[int, Path]):
 
 def main():
     """Main entry point."""
-    project, used_samples = create_euclid_909_project()
+    project, used_samples = create_acid_banger_project()
     save_project(project, used_samples)
 
 
