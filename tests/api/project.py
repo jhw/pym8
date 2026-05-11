@@ -78,12 +78,13 @@ class TestM8Project(unittest.TestCase):
         self.assertEqual(clone.metadata.name, "Modified")
 
     def test_offsets_dict_only_lists_implemented_sections(self):
-        """OFFSETS used to list unimplemented sections (groove, eq, scale...)
-        that were never actually read or written, which was misleading.
+        """OFFSETS used to list unimplemented sections (groove, scale...)
+        that were never actually read or written. Each name in OFFSETS now
+        must correspond to a section that M8Project.read() actually parses.
         """
         self.assertEqual(
             set(OFFSETS),
-            {"version", "metadata", "song", "phrases", "chains", "instruments"},
+            {"version", "metadata", "song", "phrases", "chains", "instruments", "eq"},
         )
 
 

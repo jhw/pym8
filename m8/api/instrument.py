@@ -80,6 +80,12 @@ class M8Instrument:
     MOD_DEST_ENUM_CLASS = None
 
     name = StringField(NAME_OFFSET, NAME_LENGTH)
+    # associated_eq lives at the byte just before modulators (firmware 5.0+).
+    # 0xFF means "no EQ assigned"; otherwise indexes into project.eq.
+    # The byte was unused/padded in older firmware, so it's safe to expose
+    # on every instrument — pre-v5.0 files will just round-trip the byte
+    # as whatever was there (typically 0xFF anyway).
+    associated_eq = ByteField(MODULATORS_OFFSET - 1, default=0xFF)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

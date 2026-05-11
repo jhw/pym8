@@ -1,5 +1,6 @@
 from m8.api import M8Block
 from m8.api.chain import M8Chains, CHAINS_OFFSET
+from m8.api.eq import M8Eqs
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.phrase import M8Phrases, PHRASES_OFFSET
@@ -10,9 +11,14 @@ from m8.api.version import M8Version
 
 VERSION_OFFSET = 10
 
-# Offsets for sections pym8 actively parses. Sections present in the binary
-# format but not parsed (groove, table, effect_settings, midi_mapping, scale,
-# eq) are preserved verbatim through the raw `data` buffer.
+# v4.1+ layout (target firmware 6.0+). 0x1AD5A + 4 in m8-file-parser's
+# V4_1_OFFSETS. Both V4_0 and V4_1 use the same EQ_OFFSET; only the count
+# differs (32 vs 128 instrument EQs), and pym8 currently models v6.0+ only.
+EQ_OFFSET = 109918
+
+# Offsets for sections pym8 parses today. Sections present in the binary
+# format but not yet parsed (groove, table, effect_settings, midi_mapping,
+# scale) are preserved verbatim through the raw `data` buffer.
 OFFSETS = {
     "version": VERSION_OFFSET,
     "metadata": METADATA_OFFSET,
@@ -20,6 +26,7 @@ OFFSETS = {
     "phrases": PHRASES_OFFSET,
     "chains": CHAINS_OFFSET,
     "instruments": INSTRUMENTS_OFFSET,
+    "eq": EQ_OFFSET,
 }
 
 class M8Project:
@@ -32,6 +39,7 @@ class M8Project:
         self.chains = None
         self.phrases = None
         self.instruments = None
+        self.eq = None
         self.version = M8Version()
 
     @classmethod
@@ -48,10 +56,14 @@ class M8Project:
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
 
-        # Instruments will be the first consumer (per-instrument associated_eq
-        # in v6.0+, settings byte packing differences); thread version through.
+        # Instruments and EQ both consume firmware version (per-instrument
+        # associated_eq byte differs by version; EQ count too).
         instance.instruments = M8Instruments.read(
             data[OFFSETS["instruments"]:], version=instance.version,
+        )
+        instance.eq = M8Eqs.read(
+            data[OFFSETS["eq"]:OFFSETS["eq"] + M8Eqs.TOTAL_BYTES],
+            version=instance.version,
         )
         return instance
 
@@ -64,6 +76,7 @@ class M8Project:
         instance.phrases = self.phrases.clone() if self.phrases else None
         instance.chains = self.chains.clone() if self.chains else None
         instance.song = self.song.clone() if self.song else None
+        instance.eq = self.eq.clone() if self.eq else None
         return instance
         
     def write(self) -> bytes:

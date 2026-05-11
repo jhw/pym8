@@ -10,10 +10,11 @@ What it covers:
 - All seven instrument types (Wavsynth, Macrosynth, Sampler, MIDIOut, FMSynth, HyperSynth, External)
 - All six modulator types (AHD, ADSR, Drum, LFO, Trig, Tracking) as distinct classes
 - Phrases (notes + FX), chains, song matrix, instrument slots
+- 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — global, effect-section, and per-instrument
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
 - Audio helpers: sample-chain WAV builder, slice-point WAV writer
 
-What it doesn't cover yet: groove definitions, scales, EQ, mixer/MIDI settings, MIDI mappings, themes, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
+What it doesn't cover yet: groove definitions, scales, mixer/MIDI settings, MIDI mappings, themes, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
 
 ## Install
 
@@ -169,6 +170,38 @@ The six modulator classes:
 - `M8TrigModulator` — Attack / Hold / Decay / Source
 - `M8TrackingModulator` — Source / Low / High values
 
+## EQ
+
+Every project ships 132 EQ slots (1 global + 3 effect-section + 128 per-instrument). Each EQ has three bands (low / mid / high), each band has a filter type, stereo processing mode, frequency, gain, and Q:
+
+```python
+from m8.api.project import M8Project
+from m8.api.eq import M8EqType, M8EqMode
+from m8.api.instruments.wavsynth import M8Wavsynth
+
+project = M8Project.initialise()
+
+# Tweak the global EQ
+project.eq[0].low.eq_type = M8EqType.LOWCUT
+project.eq[0].mid.q = 0x80
+project.eq[0].high.eq_mode = M8EqMode.SIDE
+
+# Bind an instrument to EQ slot 4 (first per-instrument slot)
+w = M8Wavsynth(name="EQUALIZED")
+w.associated_eq = 4
+project.instruments[0] = w
+
+# Frequency and gain are 16-bit packed across two bytes; helpers decode:
+print(project.eq[0].mid.frequency())   # Hz
+print(project.eq[0].mid.gain_db())     # signed dB
+```
+
+Slot convention (matching m8-file-parser):
+- `eq[0]` — global / master EQ
+- `eq[1..3]` — effect-section EQs (chorus, delay, reverb)
+- `eq[4..131]` — per-instrument EQs (referenced by `instrument.associated_eq`)
+- `associated_eq = 0xFF` (default) means "no EQ bound to this instrument"
+
 ## FX commands
 
 Phrases carry per-step FX tuples. Enum classes provide readable names:
@@ -261,6 +294,7 @@ m8/
 │   ├── instrument.py     # M8Instrument base + M8Instruments collection
 │   ├── fields.py         # ByteField / BytesField / StringField descriptors
 │   ├── modulator.py      # 6 modulator subclasses + M8Modulators
+│   ├── eq.py             # M8EqBand / M8Eq / M8Eqs (3-band parametric)
 │   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
 │   ├── chain.py          # M8Chain / M8ChainStep
 │   ├── song.py           # M8SongMatrix (255 rows × 8 tracks)

@@ -33,22 +33,31 @@ These are the sections `m8/api/project.py` defines offsets for but doesn't
 parse. Currently round-trip via the raw `data` bytearray; not editable
 from Python.
 
-### 2. Version threading (plumbing)
-Before any version-conditional section, thread `version` through
-`M8Project.read()` into the section readers. See `plumbing.md` item 1.
-~30-minute prep commit.
+### 2. ~~Version threading (plumbing)~~ **— done**
+`version` now flows from `M8Project.read()` into `M8Instruments.read()`
+into each subclass's `read()`. `M8HyperSynth.read()` threads it through
+to super. `read_from_file()` (.m8i) threads the file-byte-10 version
+directly into subclass.read instead of overwriting after.
 
-### 3. EQ (`eq.rs`, 217 lines) — highest user-visible value
+### 3. ~~EQ (`eq.rs`, 217 lines)~~ **— done (v6.0+ layout)**
 - 7 EQ types: LowCut, LowShelf, Bell, BandPass, HiShelf, HiCut, AllPass
-- 5 modes: Stereo / Mid / Side / L / R
-- 6-byte `EqBand` structs with frequency/level fine-tune
-- **Per-instrument `associated_eq` byte** — every instrument has an EQ
-  reference. Affects all instrument classes.
-- Firmware: v4.0 has 32 EQs total; v4.1+ has 128 + per-instrument-EQ
-  storage at instrument-offset `+0x165`. **First section needing
-  version-aware OFFSETS** (see plumbing.md item 2).
+  (`M8EqType`)
+- 5 stereo modes: Stereo / Mid / Side / L / R (`M8EqMode`)
+- 6-byte `M8EqBand` with packed type/mode byte + 16-bit freq + signed
+  16-bit gain + Q
+- 18-byte `M8Eq` = 3 bands (low / mid / high)
+- 132-entry `M8Eqs` at offset 0x1AD5E (v6.0+ layout). Exactly fills
+  the bundled template to EOF.
+- **Per-instrument `associated_eq` byte** added to `M8Instrument` base
+  at offset 62 (just before modulators). 0xFF = no EQ bound.
 
-This is where the version-conditional OFFSETS pattern earns its keep.
+Pre-v6 layouts (v4.0 with 32 EQs, v4.1 transpose-byte-packed EQ index)
+are explicitly out of scope — pym8 targets v6.0+.
+
+The version-conditional OFFSETS pattern hasn't yet earned its keep
+since we only target one firmware family. Add the `def
+offsets(version)` selector if/when older-firmware support becomes a
+real ask.
 
 ### 4. Mixer / MIDI / Effects settings (`settings.rs`, 328 lines)
 Three structs at offset `0x1A5C1`:

@@ -4,22 +4,16 @@ Three items called out as not yet plumbed in the descriptor-refactor base.
 None block current functionality; each becomes load-bearing as parity work
 with [m8-file-parser](https://github.com/Twinside/m8-file-parser) starts.
 
-## 1. Version threading through `M8Project.read()` — do early
+## 1. ~~Version threading through `M8Project.read()`~~ — **done**
 
-Right now version is read at byte 10 and stored on the project, but
-`M8Metadata.read()`, `M8Instruments.read()`, etc. don't receive it. The
-moment we add EQ or Settings — where firmware version changes offsets and
-field presence — version needs to flow into the section reader signatures
-(or be reachable via a project reference).
+Threaded only along the path Phase-2 work actually needs:
+`M8Project.read() → M8Instruments.read() → subclass.read()`.
+`M8HyperSynth.read()` threads through to super; `read_from_file()` (.m8i)
+threads file-byte-10 version into subclass.read directly.
 
-**Recommended approach:** add a `version` parameter to each section's
-`read()` (default to the current shipped version), and route it from
-`M8Project.read()`. Even with no consumer today, this stabilises the
-signatures so the first version-conditional reader doesn't trigger a
-signature churn pass.
-
-**Status:** ~30-minute refactor. Belongs on the descriptor foundation
-branch, not bolted on with the first feature.
+Metadata / song / chains / phrases readers were deliberately *not*
+modified — no firmware-conditional logic exists there yet, so adding a
+parameter would have been speculative. Add per-section when needed.
 
 ## 2. Version-aware OFFSETS — defer until first conflict
 
