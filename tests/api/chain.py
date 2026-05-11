@@ -219,7 +219,7 @@ class TestM8Chains(unittest.TestCase):
     """Tests for M8Chains collection class."""
 
     def test_constructor_creates_empty_collection(self):
-        """Test default constructor creates collection with 128 empty chains."""
+        """Default constructor creates 255 empty chains (matches file format)."""
         chains = M8Chains()
 
         self.assertEqual(len(chains), CHAIN_COUNT)
@@ -227,6 +227,27 @@ class TestM8Chains(unittest.TestCase):
             self.assertIsInstance(chain, M8Chain)
             # Each chain should have 16 empty steps
             self.assertEqual(len(chain), STEP_COUNT)
+
+    def test_chain_count_matches_file_format(self):
+        """CHAIN_COUNT must be 255 to fully cover the file's chain region
+        (CHAINS_OFFSET .. TABLE_OFFSET = 8160 bytes / 32 bytes per chain).
+
+        pym8 used to have this at 128 — half the file capacity. Chains
+        128..254 were silently inaccessible from Python; song matrix
+        cells referencing them would be valid bytes but unreachable.
+        """
+        from m8.api.chain import CHAINS_OFFSET, CHAIN_BLOCK_SIZE
+        from m8.api.table import TABLE_OFFSET
+        self.assertEqual(CHAIN_COUNT, 255)
+        self.assertEqual(CHAIN_COUNT * CHAIN_BLOCK_SIZE, TABLE_OFFSET - CHAINS_OFFSET)
+
+    def test_high_chain_index_accessible(self):
+        """A chain beyond the old 128 limit must be addressable and round-trip."""
+        from m8.api.project import M8Project
+        p = M8Project.initialise()
+        p.chains[200][0].phrase = 99
+        reloaded = M8Project.read(p.write())
+        self.assertEqual(reloaded.chains[200][0].phrase, 99)
 
     def test_index_access(self):
         """Test list-style index access for chains."""
