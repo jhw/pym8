@@ -89,17 +89,26 @@ tables, or EQs (via the relevant FX command codes). The remapper will
 need a generic traversal that walks `project.tables[*][*].fx[*]` along
 with phrases/chains/etc. — see Phase 3.
 
-### 6. MIDI mappings (128, offset `0x1A5FE`)
-External controller → M8 parameter routing.
+### 6. ~~MIDI mappings (128, offset `0x1A5FE`)~~ **— done**
+External controller → M8 parameter routing. 128 × 7 bytes via
+`m8/api/midi_mapping.py` (`M8MidiMapping` / `M8MidiMappings`).
 
-### 7. Scales (16, offset `0x1AA7E`)
-Microtonal scale definitions (`scale.rs`, 109 lines).
+### 7. ~~Scales (16, offset `0x1AA7E`)~~ **— done**
+Microtonal scale definitions. 16 × 46 bytes (Rust's spec covers the
+first 42; trailing 4 bytes are reserved, preserved verbatim) via
+`m8/api/scale.py` (`M8Scale` / `M8Scales`). Per-note enabled bitmap +
+(semitone, cents) offsets + 16-byte scale name.
 
-### 8. Grooves (32, offset `0xEE`)
-Timing-curve definitions.
+### 8. ~~Grooves (32, offset `0xEE`)~~ **— done**
+Timing-curve definitions. 32 × 16 bytes via `m8/api/groove.py`
+(`M8Groove` / `M8Grooves`). Step values are timing offsets; 0xFF
+terminates the active portion of the pattern.
 
-### 9. Theme (`theme.rs`, 72 lines)
-RGB UI colors. Lowest priority — UI-only, doesn't affect sound.
+### 9. ~~Theme (`theme.rs`, 72 lines)~~ **— out of scope**
+Theme is not part of the `.m8s` Song struct in m8-file-parser — it
+lives in a separate `.m8c` file format. Not modelling for pym8; if
+someone wants `.m8c` support later it'd be a new module not tied to
+project parsing.
 
 ## Phase 3 — Cross-cutting subsystem
 

@@ -7,6 +7,7 @@ from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.midi_mapping import M8MidiMappings
 from m8.api.midi_settings import M8MidiSettings
 from m8.api.phrase import M8Phrases, PHRASES_OFFSET
+from m8.api.scale import M8Scales
 from m8.api.settings import M8EffectsSettings, M8MixerSettings
 from m8.api.song import M8SongMatrix, SONG_OFFSET
 from m8.api.table import M8Tables, TABLE_OFFSET
@@ -33,6 +34,7 @@ GROOVE_OFFSET = 238
 # pym8 targets v6.0+).
 EFFECTS_SETTINGS_OFFSET = 107969  # 0x1A5C1
 MIDI_MAPPING_OFFSET = 108030      # 0x1A5FE — 128 × 7-byte mappings
+SCALE_OFFSET = 109182             # 0x1AA7E — 16 × 46-byte scales
 EQ_OFFSET = 109918                # 0x1AD5A + 4
 
 # Offsets for sections pym8 parses today. Sections present in the binary
@@ -53,6 +55,7 @@ OFFSETS = {
     "instruments": INSTRUMENTS_OFFSET,
     "effects": EFFECTS_SETTINGS_OFFSET,
     "midi_mappings": MIDI_MAPPING_OFFSET,
+    "scales": SCALE_OFFSET,
     "eq": EQ_OFFSET,
 }
 
@@ -72,6 +75,7 @@ class M8Project:
         self.mixer = None
         self.effects = None
         self.midi_mappings = None
+        self.scales = None
         self.eq = None
         self.version = M8Version()
 
@@ -123,6 +127,10 @@ class M8Project:
             data[OFFSETS["midi_mappings"]:OFFSETS["midi_mappings"] + M8MidiMappings.TOTAL_BYTES],
             version=instance.version,
         )
+        instance.scales = M8Scales.read(
+            data[OFFSETS["scales"]:OFFSETS["scales"] + M8Scales.TOTAL_BYTES],
+            version=instance.version,
+        )
         instance.eq = M8Eqs.read(
             data[OFFSETS["eq"]:OFFSETS["eq"] + M8Eqs.TOTAL_BYTES],
             version=instance.version,
@@ -144,6 +152,7 @@ class M8Project:
         instance.mixer = self.mixer.clone() if self.mixer else None
         instance.effects = self.effects.clone() if self.effects else None
         instance.midi_mappings = self.midi_mappings.clone() if self.midi_mappings else None
+        instance.scales = self.scales.clone() if self.scales else None
         instance.eq = self.eq.clone() if self.eq else None
         return instance
         

@@ -12,11 +12,11 @@ What it covers:
 - Phrases (notes + FX), chains, song matrix, instrument slots
 - Tables (256 × 16-step modulation grids — transpose, velocity, 3 FX per step)
 - 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — global, effect-section, and per-instrument
-- Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT), MIDI settings (sync, transport, per-track input routing), and effects settings (chorus / delay / reverb knobs, OTT config)
+- Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT), MIDI settings (sync, transport, per-track input routing), effects settings (chorus / delay / reverb knobs, OTT config), MIDI mappings (128 controller routings), grooves (32 timing curves), and scales (16 microtonal tuning maps)
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
 - Audio helpers: sample-chain WAV builder, slice-point WAV writer
 
-What it doesn't cover yet: groove definitions, scales, MIDI mappings, themes, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
+What it doesn't cover: theme/UI colors (separate `.m8c` file format, not part of `.m8s` projects). Everything else from the M8 project file is editable from Python.
 
 ## Install
 
@@ -386,6 +386,9 @@ m8/
 │   ├── settings.py       # M8MixerSettings / M8EffectsSettings
 │   ├── midi_settings.py  # M8MidiSettings (sync, transport, track input)
 │   ├── table.py          # M8TableStep / M8Table / M8Tables (256 × 16-step)
+│   ├── midi_mapping.py   # M8MidiMapping / M8MidiMappings (128 CC routings)
+│   ├── groove.py         # M8Groove / M8Grooves (32 timing curves)
+│   ├── scale.py          # M8Scale / M8Scales (16 microtonal tuning maps)
 │   ├── remapper.py       # Cross-project reference walker, allocator, applier
 │   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
 │   ├── chain.py          # M8Chain / M8ChainStep
