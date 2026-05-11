@@ -32,11 +32,11 @@ import random
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.macrosynth import M8Macrosynth, M8MacrosynthParam, M8MacroShape, M8MacrosynthModDest
+from m8.api.instruments.macrosynth import M8Macrosynth, M8MacroShape, M8MacrosynthModDest
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
-from m8.api.modulator import M8Modulator, M8ModulatorType, M8AHDParam
+from m8.api.modulator import M8AHDModulator
 
 # Configuration
 PROJECT_NAME = "SYNTH-CHORDS"
@@ -190,43 +190,39 @@ def create_macrosynth_instrument():
     # Create macrosynth with basic settings
     macrosynth = M8Macrosynth(name="CHORDS")
 
-    # Set shape to 0x26 (WTX4 - Wavetable 4X)
-    macrosynth.set(M8MacrosynthParam.SHAPE, 0x26)
-    macrosynth.set(M8MacrosynthParam.VOLUME, 0x00)
-    macrosynth.set(M8MacrosynthParam.PITCH, 0x00)
-    macrosynth.set(M8MacrosynthParam.FINE_TUNE, 0x80)  # Center
-    macrosynth.set(M8MacrosynthParam.PAN, 0x80)  # Center pan
-
-    # Timbre and colour (synthesis parameters)
-    macrosynth.set(M8MacrosynthParam.TIMBRE, 0x80)  # Center
-    macrosynth.set(M8MacrosynthParam.COLOUR, 0x80)  # Center
+    # Shape 0x26 = WTX4 (Wavetable 4X)
+    macrosynth.shape = 0x26
+    macrosynth.volume = 0x00
+    macrosynth.pitch = 0x00
+    macrosynth.fine_tune = 0x80
+    macrosynth.pan = 0x80
+    macrosynth.timbre = 0x80
+    macrosynth.colour = 0x80
 
     # Effects sends - only chorus enabled
-    macrosynth.set(M8MacrosynthParam.CHORUS_SEND, 0xC0)  # Chorus to 0xC0
-    macrosynth.set(M8MacrosynthParam.DELAY_SEND, 0x00)   # Delay off
-    macrosynth.set(M8MacrosynthParam.REVERB_SEND, 0x00)  # Reverb off
+    macrosynth.chorus_send = 0xC0
+    macrosynth.delay_send = 0x00
+    macrosynth.reverb_send = 0x00
 
     # Filter off
-    macrosynth.set(M8MacrosynthParam.FILTER_TYPE, 0x00)  # Filter off
-    macrosynth.set(M8MacrosynthParam.CUTOFF, 0xFF)       # Cutoff fully open
-    macrosynth.set(M8MacrosynthParam.RESONANCE, 0x00)    # No resonance
+    macrosynth.filter_type = 0x00
+    macrosynth.cutoff = 0xFF
+    macrosynth.resonance = 0x00
 
     # Limiter off
-    macrosynth.set(M8MacrosynthParam.LIMIT, 0x00)        # Limiter off
-    macrosynth.set(M8MacrosynthParam.AMP, 0x00)          # Amp at default
+    macrosynth.limit = 0x00
+    macrosynth.amp = 0x00
 
-    # Create AHD envelope for volume (first modulator only)
-    mod_volume = macrosynth.modulators[0]
-    mod_volume.mod_type = M8ModulatorType.AHD_ENVELOPE
-    mod_volume.destination = M8MacrosynthModDest.VOLUME  # Use enum instead of integer
-    mod_volume.amount = 0xFF  # Full amount
+    # AHD envelope on volume (first modulator slot)
+    macrosynth.modulators[0] = M8AHDModulator(
+        destination=M8MacrosynthModDest.VOLUME,
+        amount=0xFF,
+        attack=0x00,
+        hold=0x00,
+        decay=0x80,
+    )
 
-    # Set AHD envelope parameters using the enum offsets
-    mod_volume.set(M8AHDParam.ATTACK, 0x00)  # Attack: 0
-    mod_volume.set(M8AHDParam.HOLD, 0x00)    # Hold: 0
-    mod_volume.set(M8AHDParam.DECAY, 0x80)   # Decay: medium
-
-    # Turn off other modulators (set destination to OFF)
+    # Disable remaining modulators
     for i in range(1, 4):
         macrosynth.modulators[i].destination = M8MacrosynthModDest.OFF
 

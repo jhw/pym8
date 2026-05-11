@@ -35,10 +35,7 @@ from pathlib import Path
 from typing import List
 
 from m8.api.project import M8Project
-from m8.api.instruments.external import (
-    M8External, M8ExternalParam, M8ExternalInput, M8ExternalPort
-)
-from m8.api.instrument import M8LimiterType
+from m8.api.instruments.midiout import M8MIDIOut, M8MIDIPort
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -69,33 +66,13 @@ def velocity_to_m8(velocity_float: float) -> int:
     return int(velocity_float * MAX_VELOCITY)
 
 
-def create_external_instrument(name: str, midi_channel: int) -> M8External:
-    """Create an External instrument configured for MIDI output.
-
-    Args:
-        name: Instrument name
-        midi_channel: MIDI channel (1-16)
-
-    Returns:
-        M8External configured for MIDI drum output
-    """
-    inst = M8External()
-    inst.name = name
-
-    # MIDI output settings
-    inst.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)
-    inst.set(M8ExternalParam.CHANNEL, midi_channel)
-    inst.set(M8ExternalParam.BANK, 0)
-    inst.set(M8ExternalParam.PROGRAM, 0)
-
-    # Audio input settings
-    inst.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_L)
-
-    # Mixer settings
-    inst.set(M8ExternalParam.AMP, 0x20)
-    inst.set(M8ExternalParam.LIMIT, M8LimiterType.SIN)
-    inst.set(M8ExternalParam.CHORUS_SEND, 0xC0)
-
+def create_midi_instrument(name: str, midi_channel: int) -> M8MIDIOut:
+    """Create a MIDIOut instrument routed to the given MIDI channel."""
+    inst = M8MIDIOut(name=name)
+    inst.port = M8MIDIPort.MIDI
+    inst.channel = midi_channel
+    inst.bank = 0
+    inst.program = 0
     return inst
 
 
@@ -140,16 +117,16 @@ def create_acid_909_midi_project(kick_channel: int, snare_channel: int, hat_chan
     project.metadata.tempo = BPM
     project.metadata.directory = "/Songs/pym8-demos/acid-909-midi/"
 
-    # Create the three external instruments (shared across all rows)
-    kick_inst = create_external_instrument("KICK", kick_channel)
-    snare_inst = create_external_instrument("SNARE", snare_channel)
-    hat_inst = create_external_instrument("HAT", hat_channel)
+    # Create the three MIDIOut instruments (shared across all rows)
+    kick_inst = create_midi_instrument("KICK", kick_channel)
+    snare_inst = create_midi_instrument("SNARE", snare_channel)
+    hat_inst = create_midi_instrument("HAT", hat_channel)
 
     project.instruments[0x00] = kick_inst
     project.instruments[0x01] = snare_inst
     project.instruments[0x02] = hat_inst
 
-    print(f"\nCreated 3 External MIDI instruments:")
+    print(f"\nCreated 3 MIDIOut instruments:")
     print(f"  [00] KICK  -> MIDI channel {kick_channel}")
     print(f"  [01] SNARE -> MIDI channel {snare_channel}")
     print(f"  [02] HAT   -> MIDI channel {hat_channel}")
@@ -223,7 +200,7 @@ def save_project(project: M8Project):
 
     print(f"\n✓ Demo complete!")
     print(f"  Project: {output_path}")
-    print(f"  Instruments: 3 External MIDI (kick, snare, hat)")
+    print(f"  Instruments: 3 MIDIOut (kick, snare, hat)")
     print(f"  Patterns: Vitling's acid-banger 909 algorithm")
 
 

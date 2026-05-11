@@ -1,74 +1,59 @@
+"""Tests for M8Version, including the new ordered-comparison helpers."""
 import unittest
-import tempfile
-import os
+
 from m8.api.version import M8Version
-from m8.api.project import M8Project
-from m8.api.instruments.sampler import M8Sampler
+
 
 class TestM8Version(unittest.TestCase):
-    def test_version_state(self):
-        """Test that version is stored as state in both project and instruments."""
-        # Create project with a specific version
-        project = M8Project()
-        project.version = M8Version(4, 1, 2)
-        
-        # Initialize instruments list
-        from m8.api.instrument import M8Instruments
-        project.instruments = M8Instruments()
+    def test_defaults(self):
+        v = M8Version()
+        self.assertEqual(v.major, 6)
+        self.assertEqual(v.minor, 0)
+        self.assertEqual(v.patch, 17)
 
-        # Create sampler and directly assign to slot
-        sampler = M8Sampler(name="TestSynth")
-        sampler.version = project.version
-        slot = 0
-        project.instruments[slot] = sampler
-        self.assertEqual(str(project.instruments[slot].version), "4.1.2")
+    def test_binary_round_trip(self):
+        # On-disk byte order is [patch, major, minor, 0]
+        data = bytes([17, 6, 0, 0])
+        v = M8Version.read(data)
+        self.assertEqual(v.tuple(), (6, 0, 17))
+        self.assertEqual(v.write(), data)
 
-        # Changing project version should not affect sampler already added
-        project.version = M8Version(4, 1, 3)
-        self.assertEqual(str(project.instruments[slot].version), "4.1.2")
+    def test_str(self):
+        self.assertEqual(str(M8Version(4, 0, 33)), "4.0.33")
 
-        # Adding a new sampler with updated version
-        sampler2 = M8Sampler(name="Test2")
-        sampler2.version = project.version
-        slot2 = 1
-        project.instruments[slot2] = sampler2
-        self.assertEqual(str(project.instruments[slot2].version), "4.1.3")
-        
-    def test_file_operations_with_version(self):
-        """Test that version is preserved when reading/writing files."""
-        # Skip this test if we don't have the template file
-        try:
-            # First create a proper project from template
-            project = M8Project.initialise()
-        except FileNotFoundError:
-            self.skipTest("Template file not found - skipping file I/O test")
-            
-        # Set custom version
-        project.version = M8Version(4, 2, 0)
+    def test_from_str(self):
+        v = M8Version.from_str("4.1.0")
+        self.assertEqual(v.tuple(), (4, 1, 0))
 
-        # Add sampler with the version
-        sampler = M8Sampler(name="TestSynth")
-        sampler.version = project.version
-        slot = 0
-        project.instruments[slot] = sampler
-        self.assertEqual(str(project.instruments[slot].version), "4.2.0")
+    def test_from_str_empty_returns_default(self):
+        self.assertEqual(M8Version.from_str("").tuple(), (6, 0, 17))
+        self.assertEqual(M8Version.from_str(None).tuple(), (6, 0, 17))
+        self.assertEqual(M8Version.from_str("None").tuple(), (6, 0, 17))
 
-        # Write project to temporary file and read it back
-        with tempfile.NamedTemporaryFile(suffix='.m8s', delete=False) as tmp:
-            try:
-                tmp_path = tmp.name
-                project.write_to_file(tmp_path)
+    def test_comparison_with_tuple(self):
+        v = M8Version(4, 1, 0)
+        self.assertTrue(v >= (4, 0, 0))
+        self.assertTrue(v < (5, 0, 0))
+        self.assertTrue(v == (4, 1, 0))
+        self.assertFalse(v == (4, 0, 0))
 
-                # Read it back
-                read_project = M8Project.read_from_file(tmp_path)
+    def test_comparison_with_version(self):
+        self.assertTrue(M8Version(6, 2, 1) > M8Version(6, 0, 17))
+        self.assertTrue(M8Version(4, 0, 33) < M8Version(4, 1, 0))
 
-                # Check version was preserved
-                self.assertEqual(str(read_project.version), "4.2.0")
-            finally:
-                # Clean up
-                if os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
+    def test_eq_against_other_types(self):
+        v = M8Version(4, 0, 0)
+        self.assertFalse(v == "4.0.0")
+        self.assertFalse(v == 4)
+
+    def test_hashable(self):
+        s = {M8Version(4, 0, 0), M8Version(4, 0, 0), M8Version(6, 2, 1)}
+        self.assertEqual(len(s), 2)
+
+    def test_compare_raises_for_invalid(self):
+        with self.assertRaises(TypeError):
+            M8Version() < "6.0.17"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

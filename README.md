@@ -1,503 +1,295 @@
 # pym8
 
-A Python library for reading and writing DirtyWave M8 tracker files.
+A Python library for reading and writing Dirtywave M8 tracker files.
 
 ## Overview
 
-pym8 is a Python package for programmatically creating, reading, and manipulating M8 project files (.m8s). The M8 is a portable music tracker and synthesizer by [Dirtywave](https://dirtywave.com/products/m8-tracker).
+pym8 lets you create, read, and edit M8 projects (`.m8s`) and single-instrument exports (`.m8i`) programmatically. The M8 is a portable music tracker/synthesizer by [Dirtywave](https://dirtywave.com/products/m8-tracker). pym8 is a Python port of [m8-file-parser](https://github.com/Twinside/m8-file-parser); target firmware is **6.2+**.
 
-This library provides a high-level API for working with M8 projects, including:
-- Creating and modifying instruments (sampler, wavsynth, macrosynth, FM, external MIDI)
-- Building phrases with notes and FX commands
-- Arranging chains and song sequences
-- Reading and writing .m8s project files
-- Audio utilities for sample chains and WAV slicing
+What it covers:
+- All seven instrument types (Wavsynth, Macrosynth, Sampler, MIDIOut, FMSynth, External; HyperSynth round-trips but isn't editable)
+- All six modulator types (AHD, ADSR, Drum, LFO, Trig, Tracking) as distinct classes
+- Phrases (notes + FX), chains, song matrix, instrument slots
+- FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
+- Audio helpers: sample-chain WAV builder, slice-point WAV writer
 
-## Installation
+What it doesn't cover yet: groove definitions, scales, EQ, mixer/MIDI settings, MIDI mappings, themes, project remapping. Those sections survive round-trip as raw bytes but aren't editable from Python.
+
+## Install
 
 ```bash
 pip install -e .
 ```
 
-Or for development:
+Dependencies (`pydub` for sample tooling, `pyyaml` for the demo preset loader) are declared in `pyproject.toml`.
 
-```bash
-pip install -r requirements-dev.txt
-```
-
-## Quick Start
-
-### Creating a Simple Project
+## Quick start
 
 ```python
 from m8.api.project import M8Project
-from m8.api.instruments.sampler import M8Sampler, M8SamplerParam
+from m8.api.instruments.sampler import M8Sampler
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
-from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
-# Initialize a new project from template
 project = M8Project.initialise()
 project.metadata.name = "MY-SONG"
 project.metadata.tempo = 140
 
-# Create a sampler instrument
+# Instrument — parameters are typed descriptor attributes
 kick = M8Sampler(name="KICK", sample_path="samples/kick.wav")
-kick.set(M8SamplerParam.DELAY_SEND, 0x80)  # Add delay send
+kick.delay_send = 0x80
 project.instruments[0] = kick
 
-# Create a phrase with beats
+# Phrase — four-on-the-floor
 phrase = M8Phrase()
-for step in [0, 4, 8, 12]:  # Four-on-the-floor
-    phrase[step] = M8PhraseStep(
-        note=M8Note.C_4,  # C4
-        velocity=0x6F,    # Full velocity
-        instrument=0x00   # Use instrument slot 0
-    )
-
+for step in (0, 4, 8, 12):
+    phrase[step] = M8PhraseStep(note=M8Note.C_4, velocity=0x6F, instrument=0x00)
 project.phrases[0] = phrase
 
-# Create a chain referencing the phrase
-chain = M8Chain()
-chain[0] = M8ChainStep(phrase=0x00, transpose=0x00)
-project.chains[0] = chain
+# Chain references the phrase; song row 0 track 0 plays the chain
+project.chains[0] = M8Chain()
+project.chains[0][0] = M8ChainStep(phrase=0x00, transpose=0x00)
+project.song[0][0] = 0x00
 
-# Add chain to song
-project.song[0][0] = 0x00  # Chain 0 at row 0, track 0
-
-# Save project
 project.write_to_file("MY-SONG.m8s")
 ```
 
-### Reading an Existing Project
+Reading an existing file:
 
 ```python
-from m8.api.project import M8Project
-
-# Read project from file
 project = M8Project.read_from_file("existing-song.m8s")
-
-# Access project data
-print(f"Project: {project.metadata.name}")
-print(f"Tempo: {project.metadata.tempo}")
-
-# Inspect instruments
-for i, instrument in enumerate(project.instruments):
-    if instrument and hasattr(instrument, 'name'):
-        print(f"Instrument {i}: {instrument.name}")
+print(project.metadata.name, project.metadata.tempo)
+for i, inst in enumerate(project.instruments):
+    if hasattr(inst, "name"):
+        print(f"  {i:02X}: {type(inst).__name__} {inst.name!r}")
 ```
 
-## Features
+## Instruments
 
-### Instruments
+Parameters are exposed as typed descriptor attributes. Setting an out-of-range value raises `ValueError`; enum-typed fields accept either an enum member or a raw int.
 
-pym8 supports all M8 instrument types with full parameter control:
+| Class | Type ID | Purpose |
+|---|---|---|
+| `M8Wavsynth` | 0 | Wavetable synthesizer (70 shapes) |
+| `M8Macrosynth` | 1 | Mutable Instruments Braids algorithms (45 shapes) |
+| `M8Sampler` | 2 | Sample playback with slicing/looping/pitch modes |
+| `M8MIDIOut` | 3 | Pure MIDI output to external gear (10 CC slots) |
+| `M8FMSynth` | 4 | 4-operator FM synthesizer |
+| `M8External` | 6 | Audio-input routing with 4 CC slots |
 
-- **M8Sampler** - Sample playback with slicing, looping, and pitch modes
-- **M8Wavsynth** - Wavetable synthesizer with 16 waveforms
-- **M8Macrosynth** - Mutable Instruments Braids-based synthesis (45 algorithms)
-- **M8FMSynth** - 4-operator FM synthesizer
-- **M8External** - MIDI output to external hardware/software
+> **MIDIOut vs External.** `M8MIDIOut` (type 3) is what you want for sequencing external hardware/software synths over MIDI — 10 CC slots, port enum including `INTERNAL`. `M8External` (type 6) routes external *audio* into the M8's effect chain and has a small MIDI CC capability alongside. The MIDI demos in this repo all use `M8MIDIOut`.
 
-#### Sampler Example
-
-```python
-from m8.api.instruments.sampler import M8Sampler, M8SamplerParam, M8PlayMode
-
-sampler = M8Sampler(name="SNARE", sample_path="samples/snare.wav")
-
-# Set playback parameters
-sampler.set(M8SamplerParam.VOLUME, 0xFF)
-sampler.set(M8SamplerParam.PLAY_MODE, M8PlayMode.FWDLOOP)
-sampler.set(M8SamplerParam.START, 0x00)
-sampler.set(M8SamplerParam.LENGTH, 0xFF)
-
-# Set filter parameters
-sampler.set(M8SamplerParam.FILTER_TYPE, 0x01)  # LP filter
-sampler.set(M8SamplerParam.CUTOFF, 0xC0)
-sampler.set(M8SamplerParam.RESONANCE, 0x40)
-
-# Set mixer/sends
-sampler.set(M8SamplerParam.PAN, 0x80)  # Center
-sampler.set(M8SamplerParam.CHORUS_SEND, 0x40)
-sampler.set(M8SamplerParam.DELAY_SEND, 0x80)
-sampler.set(M8SamplerParam.REVERB_SEND, 0x60)
-```
-
-#### Wavsynth Example
+### Examples
 
 ```python
-from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavsynthShape
+# Wavsynth
+from m8.api.instruments.wavsynth import M8Wavsynth, M8WavShape
+w = M8Wavsynth(name="LEAD")
+w.shape = M8WavShape.SAW
+w.size = 0x80
+w.cutoff = 0xA0
 
-wavsynth = M8Wavsynth(name="LEAD")
-wavsynth.set(M8WavsynthParam.SHAPE, M8WavsynthShape.SAW)
-wavsynth.set(M8WavsynthParam.SIZE, 0x80)
-wavsynth.set(M8WavsynthParam.MULT, 0x01)
-wavsynth.set(M8WavsynthParam.CUTOFF, 0xA0)
-```
+# Macrosynth (Braids-based)
+from m8.api.instruments.macrosynth import M8Macrosynth, M8MacroShape
+m = M8Macrosynth(name="BASS")
+m.shape = M8MacroShape.CSAW
+m.timbre = 0x60
+m.colour = 0x40
 
-#### Macrosynth Example
+# Sampler
+from m8.api.instruments.sampler import M8Sampler, M8PlayMode
+from m8.api.instrument import M8FilterType
+s = M8Sampler(name="SNARE", sample_path="samples/snare.wav")
+s.play_mode = M8PlayMode.FWDLOOP
+s.filter_type = M8FilterType.LOWPASS
+s.cutoff = 0xC0
+s.chorus_send = 0x40
 
-```python
-from m8.api.instruments.macrosynth import M8Macrosynth, M8MacrosynthParam, M8MacrosynthShape
-
-macro = M8Macrosynth(name="BASS")
-macro.set(M8MacrosynthParam.SHAPE, M8MacrosynthShape.CSAW)
-macro.set(M8MacrosynthParam.TIMBRE, 0x60)
-macro.set(M8MacrosynthParam.COLOR, 0x40)
-```
-
-#### FMSynth Example
-
-```python
-from m8.api.instruments.fmsynth import M8FMSynth, M8FMSynthParam
-
+# FM synth
+from m8.api.instruments.fmsynth import M8FMSynth, M8FMAlgo, M8FMWave
 fm = M8FMSynth(name="BELL")
-fm.set(M8FMSynthParam.ALGO, 0x00)
-fm.set(M8FMSynthParam.RATIO_A, 0x01)
-fm.set(M8FMSynthParam.RATIO_B, 0x02)
+fm.algo = M8FMAlgo.A_B_C_D
+fm.op_a_shape = M8FMWave.SIN
+fm.op_b_ratio = 0x02
+
+# MIDI out
+from m8.api.instruments.midiout import M8MIDIOut, M8MIDIPort
+mout = M8MIDIOut(name="TB-03")
+mout.port = M8MIDIPort.MIDI
+mout.channel = 0
+mout.cca_num = 71      # CC for resonance
+mout.cca_val = 0x40
+
+# External (audio in)
+from m8.api.instruments.external import M8External, M8ExternalPort, M8ExternalInput
+ext = M8External(name="GUITAR")
+ext.port = M8ExternalPort.MIDI
+ext.input = M8ExternalInput.LINE_IN_LR
+ext.cutoff = 0xC0
 ```
 
-#### External (MIDI Out) Example
+## Modulators
+
+Each instrument has 4 modulator slots. Modulators are typed subclasses — to change a slot's type, replace the slot.
 
 ```python
-from m8.api.instruments.external import M8External, M8ExternalParam, M8ExternalPort
+from m8.api.modulator import M8AHDModulator, M8LFOModulator, M8LFOShape
+from m8.api.instruments.macrosynth import M8MacrosynthModDest
 
-ext = M8External(name="SYNTH")
-ext.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)
-ext.set(M8ExternalParam.CHANNEL, 0x00)  # Channel 1
-ext.set(M8ExternalParam.BANK, 0x00)
-ext.set(M8ExternalParam.PROGRAM, 0x00)
+inst = M8Macrosynth(name="LEAD")
+inst.modulators[0] = M8AHDModulator(
+    destination=M8MacrosynthModDest.VOLUME,
+    amount=0xFF,
+    attack=0x00,
+    decay=0x80,
+)
+inst.modulators[2] = M8LFOModulator(
+    destination=M8MacrosynthModDest.CUTOFF,
+    amount=0x60,
+    shape=M8LFOShape.SIN,
+    freq=0x20,
+)
 ```
 
-### Phrases and FX Commands
+The six modulator classes:
+- `M8AHDModulator` — Attack / Hold / Decay envelope
+- `M8ADSRModulator` — Attack / Decay / Sustain / Release envelope
+- `M8DrumModulator` — Peak / Body / Decay
+- `M8LFOModulator` — shape / trigger_mode / freq / retrigger
+- `M8TrigModulator` — Attack / Hold / Decay / Source
+- `M8TrackingModulator` — Source / Low / High values
 
-Create phrases with notes and apply FX commands using typed enums:
+## FX commands
+
+Phrases carry per-step FX tuples. Enum classes provide readable names:
 
 ```python
-from m8.api.phrase import M8Phrase, M8PhraseStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
 
-phrase = M8Phrase()
-
-# Add a note with retrigger FX
-step = M8PhraseStep(note=0x30, velocity=0x6F, instrument=0x00)
+step = M8PhraseStep(note=M8Note.C_4, velocity=0x6F, instrument=0x00)
 step.fx[0] = M8FXTuple(key=M8SequenceFX.RET, value=0x40)  # Retrigger
 step.fx[1] = M8FXTuple(key=M8SamplerFX.LEN, value=0xC0)   # Sample length
-phrase[0] = step
-
-# Common sequence FX
-step.fx[0] = M8FXTuple(key=M8SequenceFX.ARP, value=0x03)  # Arpeggio
-step.fx[0] = M8FXTuple(key=M8SequenceFX.HOP, value=0x08)  # Jump to step 8
-step.fx[0] = M8FXTuple(key=M8SequenceFX.KIL, value=0x00)  # Kill note
-
-# Common sampler FX
-step.fx[0] = M8FXTuple(key=M8SamplerFX.VOL, value=0xFF)   # Volume
-step.fx[0] = M8FXTuple(key=M8SamplerFX.PIT, value=0x0C)   # Pitch up
-step.fx[0] = M8FXTuple(key=M8SamplerFX.PLY, value=0x01)   # Reverse playback
-step.fx[0] = M8FXTuple(key=M8SamplerFX.CUT, value=0xC0)   # Filter cutoff
 ```
 
-### Chains and Song Arrangement
+Available FX groups:
+- `M8SequenceFX` — global timing/control (ARP, RET, HOP, KIL, TPO, …)
+- `M8SamplerFX` — sampler-only (VOL, PIT, PLY, CUT, SLI, …)
+- `M8ModulatorFX` — per-slot mod params (EA1–EA4, AT1–AT4, …)
+- `M8MixerFX` — firmware 6.2 mixer/voice (VMV, XMM, XRH, OTT, …)
+
+## Notes
+
+`M8Note` is generated for C-1 through G-11:
 
 ```python
-from m8.api.chain import M8Chain, M8ChainStep
-
-# Create a chain with multiple phrases
-chain = M8Chain()
-chain[0] = M8ChainStep(phrase=0x00, transpose=0x00)   # Phrase 0, no transpose
-chain[1] = M8ChainStep(phrase=0x01, transpose=0x0C)   # Phrase 1, up 12 semitones
-chain[2] = M8ChainStep(phrase=0x00, transpose=0xF4)   # Phrase 0, down 12 semitones
-
-project.chains[0] = chain
-
-# Add chains to song matrix (rows x 8 tracks)
-project.song[0][0] = 0x00  # Chain 0 on track 0
-project.song[0][1] = 0x01  # Chain 1 on track 1
-project.song[1][0] = 0x00  # Chain 0 repeats on row 1
+M8Note.C_4   # 36 (0x24)
+M8Note.CS_4  # 37 (C♯4)
+M8Note.G_11  # 127
 ```
 
-### Project Metadata
+M8's byte-0 origin is C1, so middle C = 36.
+
+## Audio helpers
 
 ```python
-# Set project metadata
-project.metadata.name = "MY-TRACK"
-project.metadata.tempo = 140.0
-project.metadata.directory = "/Songs/my-tracks/"
-project.metadata.transpose = 0x00
-project.metadata.key = 0x00
-```
-
-### Audio Tools
-
-pym8 includes utilities for working with audio samples:
-
-#### ChainBuilder - Create Sliced Sample Chains
-
-Combine multiple samples into a single sliced WAV file for M8's sample slicing feature:
-
-```python
+# Chain multiple samples into one sliced WAV
 from m8.tools.chain_builder import ChainBuilder
+builder = ChainBuilder(sample_duration_ms=500, fade_ms=5, target_frame_rate=44100)
+wav_data, slice_mapping = builder.build_chain(["kick.wav", "snare.wav", "hat.wav"])
 
-# Build a chain from multiple samples
-builder = ChainBuilder(
-    sample_duration_ms=500,     # Duration per slice
-    fade_ms=5,                  # Fade in/out to prevent clicks
-    target_frame_rate=44100     # Output sample rate
-)
-
-samples = ["kick.wav", "snare.wav", "hat.wav", "clap.wav"]
-wav_data, slice_mapping = builder.build_chain(samples)
-
-# wav_data: BytesIO containing the combined WAV with slice metadata
-# slice_mapping: dict mapping original sample index to slice index
-```
-
-#### WAVSlicer - Add Slice Points to WAV Files
-
-Add M8-compatible slice metadata to existing WAV files:
-
-```python
+# Add slice points to an existing WAV
 from m8.tools.wav_slicer import WAVSlicer
-
-# Add slice points to a WAV file
 slicer = WAVSlicer()
-slice_points = [0, 22050, 44100, 66150]  # Sample positions
-sliced_wav = slicer.add_slice_points(wav_data, slice_points)
+sliced = slicer.add_slice_points(wav_data, slice_points=[0, 22050, 44100, 66150])
 ```
 
-## IntEnum Classes
+## Demos
 
-pym8 provides typed enum classes for FX commands and sampler parameters, making code more readable and reducing errors:
+Runnable scripts under `demos/` produce `.m8s` files in `tmp/demos/`. Categories:
 
-### FX Commands
+- `demos/acid_303/` — TB-303-style basslines (sampler, wavsynth, macrosynth, midi)
+- `demos/acid_909/` — Vitling's acid-banger 909 patterns (sampler, synthdrums, chain, midi)
+- `demos/euclid/` — Bjorklund Euclidean rhythms (sampler, midi)
+- `demos/chords/` — chord progressions (synth, midi)
 
-- **M8SequenceFX**: Global FX commands (ARP, RET, HOP, KIL, etc.)
-- **M8SamplerFX**: Sampler-specific FX commands (VOL, PIT, PLY, CUT, etc.)
-
-### Sampler Parameters
-
-- **M8SamplerParam**: Byte offsets for sampler parameters (VOLUME, PITCH, FILTER_TYPE, CUTOFF, etc.)
-- **M8PlayMode**: Sample playback modes (FWD, REV, FWDLOOP, OSC, etc.)
-
-### Notes
-
-- **M8Note**: Note values from C1 (0) to G11 (127)
-  - Dynamically generated with format: `C_1`, `CS_1`, `D_1`, ..., `C_4` (36/0x24), ..., `G_11`
-  - M8 octave numbering: byte 0 = C1, so C4 = 36 (0x24)
-
-These enums are defined in the source code (m8/api/fx.py, m8/api/instruments/sampler.py, and m8/api/phrase.py) based on the M8 file format specification.
-
-## Examples
-
-The `demos/` directory contains complete working examples organized by category:
-
-### Acid 303 Basslines (`demos/acid_303/`)
-
-Classic 303-style acid bassline generators with multiple synthesis options:
-
-- **sampler.py** - Sampler-based acid with sample playback
-- **wavsynth.py** - Wavetable synthesis acid basslines
-- **macrosynth.py** - Braids-based synthesis for acid sounds
-- **midi.py** - MIDI output to external 303/synth hardware
-
-### Acid 909 Drums (`demos/acid_909/`)
-
-Algorithmic 909 drum patterns inspired by vitling's acid-banger:
-
-- **sampler.py** - Sample-based drum machine
-- **synthdrums.py** - Synthesized drums using Macrosynth
-- **chain.py** - Chain arrangement demonstration
-- **midi.py** - MIDI output to external drum machines
-
-### Euclidean Rhythms (`demos/euclid/`)
-
-Euclidean rhythm patterns using the Bjorklund algorithm:
-
-- **sampler.py** - Sample-based Euclidean rhythms
-- **midi.py** - MIDI output for Euclidean patterns
-
-Based on [Bjorklund algorithm](https://github.com/brianhouse/bjorklund) and [Toussaint's research](https://cgm.cs.mcgill.ca/~godfried/publications/banff.pdf). Generates traditional world music rhythms (Cuban tresillo, African bell patterns, Brazilian rhythms) with groove algorithms inspired by Erica Synths Perkons HD-01.
-
-### Chord Progressions (`demos/chords/`)
-
-Harmonic examples and chord generators:
-
-- **synth.py** - Synthesizer-based chord progressions
-- **midi.py** - MIDI chord output
-
-### Reusable Pattern Libraries (`demos/patterns/`)
-
-Pattern generators that can be imported into your own projects:
-
-- **acid_303.py** - 303 bassline pattern generators
-- **acid_909.py** - 909-style drum patterns (kick, snare, hat, clap variations)
-- **euclidean.py** - Bjorklund algorithm implementation for Euclidean rhythms
-
-### Utilities (`demos/utils/`)
-
-- **download_erica_pico_samples.py** - Downloads Erica Synths Pico Drum sample packs
-
-### Running Demos
+Run a demo:
 
 ```bash
-# Download samples first (required for sample-based demos)
-python demos/utils/download_erica_pico_samples.py
+# Sample-based demos need samples first
+PYTHONPATH=. python demos/utils/download_erica_pico_samples.py
 
-# Run demos (examples)
-python demos/acid_303/sampler.py
-python demos/acid_909/sampler.py
-python demos/euclid/sampler.py
-python demos/chords/synth.py
+PYTHONPATH=. python demos/acid_303/sampler.py
+PYTHONPATH=. python demos/euclid/midi.py
 ```
 
-### Managing Demos on M8
+### Shipping demos to the M8
+
+`tools/sync.py` covers the whole loop. Run with no args for status:
 
 ```bash
-# Copy demos to M8 device
-python tools/copy_demos_to_m8.py
-
-# Copy specific demos (filter by pattern)
-python tools/copy_demos_to_m8.py acid-303
-
-# Test mode (dry run)
-python tools/copy_demos_to_m8.py --test
-
-# Clean demos from M8
-python tools/clean_demos_from_m8.py
-
-# Clean local demo output files
-python tools/clean_local_demos.py
+python tools/sync.py                       # status: local vs remote
+python tools/sync.py push                  # copy all to /Volumes/M8/...
+python tools/sync.py push acid-303         # filter by substring
+python tools/sync.py push --test           # use tmp/virtual-m8/ for dry runs
+python tools/sync.py clean local           # remove tmp/demos/
+python tools/sync.py clean remote          # remove /Volumes/M8/Songs/pym8-demos/
 ```
 
-## Project Structure
+`-f` skips per-item prompts. Non-interactive stdin auto-confirms.
+
+## Project layout
 
 ```
-pym8/
-├── m8/
-│   ├── api/                    # Core API modules
-│   │   ├── project.py          # M8Project - top-level container
-│   │   ├── instrument.py       # Base M8Instrument class + M8Instruments collection
-│   │   ├── phrase.py           # M8Phrase, M8PhraseStep, M8Note
-│   │   ├── chain.py            # M8Chain, M8ChainStep
-│   │   ├── song.py             # M8SongMatrix (255 rows × 8 tracks)
-│   │   ├── fx.py               # M8FXTuple + M8SequenceFX, M8SamplerFX enums
-│   │   ├── metadata.py         # Project metadata (name, tempo, key)
-│   │   ├── modulator.py        # M8Modulators (AHD, ADSR, LFO, etc.)
-│   │   ├── version.py          # Firmware version handling
-│   │   └── instruments/        # Instrument type implementations
-│   │       ├── sampler.py      # M8Sampler - sample playback
-│   │       ├── wavsynth.py     # M8Wavsynth - wavetable synthesis
-│   │       ├── macrosynth.py   # M8Macrosynth - Braids-based synthesis
-│   │       ├── fmsynth.py      # M8FMSynth - 4-operator FM synthesis
-│   │       └── external.py     # M8External - MIDI output to hardware
-│   ├── tools/                  # Audio utilities
-│   │   ├── chain_builder.py    # Build sample chains with slice metadata
-│   │   └── wav_slicer.py       # Add slice points to WAV files
-│   └── templates/              # Template .m8s files for different firmware versions
-├── demos/                      # Example scripts organized by category
-│   ├── acid_303/               # 303-style acid basslines
-│   ├── acid_909/               # 909 drum machine patterns
-│   ├── euclid/                 # Euclidean rhythm patterns
-│   ├── chords/                 # Chord progression examples
-│   ├── patterns/               # Reusable pattern generators
-│   ├── lib/                    # Helper libraries
-│   └── utils/                  # Utility scripts (sample downloads, etc.)
-├── tests/                      # Unit tests
-└── tools/                      # Project management scripts
-    ├── copy_demos_to_m8.py     # Copy demos to M8 device
-    ├── clean_demos_from_m8.py  # Remove demos from M8 device
-    └── clean_local_demos.py    # Clean up local demo files
+m8/
+├── api/
+│   ├── project.py        # M8Project — top-level container
+│   ├── instrument.py     # M8Instrument base + M8Instruments collection
+│   ├── fields.py         # ByteField / StringField descriptors
+│   ├── modulator.py      # 6 modulator subclasses + M8Modulators
+│   ├── phrase.py         # M8Phrase / M8PhraseStep / M8Note
+│   ├── chain.py          # M8Chain / M8ChainStep
+│   ├── song.py           # M8SongMatrix (255 rows × 8 tracks)
+│   ├── fx.py             # FX tuples + Sequence/Sampler/Mixer/Modulator FX enums
+│   ├── metadata.py       # M8Metadata
+│   ├── version.py        # M8Version + ordered comparison
+│   └── instruments/
+│       ├── wavsynth.py    # M8Wavsynth          (type 0)
+│       ├── macrosynth.py  # M8Macrosynth        (type 1)
+│       ├── sampler.py     # M8Sampler           (type 2)
+│       ├── midiout.py     # M8MIDIOut           (type 3) — 10 MIDI CC slots
+│       ├── fmsynth.py     # M8FMSynth           (type 4)
+│       └── external.py    # M8External          (type 6) — audio in + 4 CC slots
+├── tools/
+│   ├── chain_builder.py  # Sliced sample chain WAV builder
+│   └── wav_slicer.py     # WAV slice-point writer
+└── templates/            # TEMPLATE-6-2-1.m8s — bundled firmware-6.2 starting point
+
+demos/                    # Runnable scripts by category
+tests/                    # Mirrors m8/ layout — unittest
+tools/sync.py             # Unified push / clean / status for demos
 ```
-
-## File Format Reference
-
-The M8 file format is a binary format with fixed offsets for different data sections. pym8 is based on research from these excellent open-source projects:
-
-### Primary Reference
-
-- **[m8-file-parser](https://github.com/Twinside/m8-file-parser)** (Rust)
-
-  The most complete and authoritative M8 file format parser. This project documents:
-  - Binary structure layouts
-  - FX command codes and their values
-  - Instrument parameter offsets
-  - Version-specific format changes (firmware 4.0 - 6.2+)
-
-  **All FX enums and sampler parameter offsets in pym8 are based on this project.**
-
-### Additional References
-
-- **[m8-js](https://github.com/whitlockjc/m8-js)** - JavaScript implementation with comprehensive enum documentation
-
-  This project is particularly valuable for enum information (FX commands, parameter values, play modes, etc.). However, it targets M8 firmware version 4.0 and is no longer actively maintained. Since the M8 is now at firmware 6.2+, **do not use m8-js for offset information** as binary structure layouts change between versions. The enum data (command codes, parameter ranges, mode values) remains reliable and stable.
-
-- **[m8-files](https://github.com/AlexCharlton/m8-files)** - Original Rust parser that inspired m8-file-parser
-
-### Official Resources
-
-- **[Dirtywave M8 Tracker](https://dirtywave.com/products/m8-tracker)** - Official M8 hardware
-- **[M8 Headless](https://github.com/Dirtywave/M8Headless)** - Official headless M8 firmware
-
-## Firmware Compatibility
-
-pym8 targets M8 firmware version **6.2+** by default. Template files are included for different firmware versions:
-
-- `TEMPLATE-4-0-2.m8s` - Firmware 4.0.2
-- `TEMPLATE-5-0-1.m8s` - Firmware 5.0.1
-- `TEMPLATE-6-2-1.m8s` - Firmware 6.2.1 (current)
-
-Key differences across versions:
-- **V2**: Initial format (23 sequence commands)
-- **V3**: Added RND, RNL, RMX, PBN, TBX, OFF commands
-- **V4**: Expanded instrument commands
-- **V6.2**: Latest format with additional mixer commands (XRH, XMT, OTT, OTC, OTI)
-
-## Data Types and Conventions
-
-All M8 data uses:
-- **Little-endian byte order** for multi-byte values
-- **Unsigned 8-bit integers** (0x00-0xFF) for most parameters
-- **Null-terminated strings** for text fields
-- **Float32** for tempo (4 bytes, little-endian)
 
 ## Development
 
-### Running Tests
+Run all tests with the stdlib runner:
 
 ```bash
-python run_tests.py
+python -m unittest discover -s tests -p '*.py'
 ```
 
-### Project Configuration
+Tests use `unittest` (not pytest). Each test file mirrors the module it covers; cross-cutting per-type tests live in `tests/api/instruments.py` and `tests/api/modulator.py`.
 
-The project uses `pyproject.toml` for configuration (PEP 518) with setuptools as the build backend.
+## File format references
+
+- **[m8-file-parser](https://github.com/Twinside/m8-file-parser)** (Rust) — authoritative spec. Offsets, FX command codes, instrument layouts, version-conditional reads. pym8 is a port of this.
+- **[m8-js](https://github.com/whitlockjc/m8-js)** — JavaScript implementation. Useful for enum lookups, but it targets firmware 4.0 and is not maintained — don't take binary offsets from it.
+- **[m8-files](https://github.com/AlexCharlton/m8-files)** — older Rust parser; predecessor of m8-file-parser.
+- **[Dirtywave M8](https://dirtywave.com/products/m8-tracker)** — official hardware.
 
 ## License
 
-MIT License
+MIT.
 
 ## Credits
 
-Created by jhw (justin.worrall@gmail.com)
-
-Special thanks to:
-- [Twinside](https://github.com/Twinside) for the comprehensive [m8-file-parser](https://github.com/Twinside/m8-file-parser) Rust library
-- [whitlockjc](https://github.com/whitlockjc) for [m8-js](https://github.com/whitlockjc/m8-js)
-- [AlexCharlton](https://github.com/AlexCharlton) for [m8-files](https://github.com/AlexCharlton/m8-files)
-- [Dirtywave](https://dirtywave.com/) for creating the M8 Tracker
-
-## Contributing
-
-Contributions are welcome! When adding new features:
-
-1. Verify against [m8-file-parser](https://github.com/Twinside/m8-file-parser) for accuracy
-2. Include practical examples in code
-3. Add tests for new functionality
-4. Document any firmware version-specific features
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/jhw/pym8/issues)
-- **Examples**: See `demos/` directory
-- **Tests**: Check `tests/` directory for API usage examples
+Created by jhw (justin.worrall@gmail.com). Heavily indebted to [Twinside](https://github.com/Twinside) for m8-file-parser, [whitlockjc](https://github.com/whitlockjc) for m8-js, [AlexCharlton](https://github.com/AlexCharlton) for m8-files, and [Dirtywave](https://dirtywave.com/) for the M8 itself.

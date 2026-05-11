@@ -5,11 +5,11 @@ import unittest
 import os
 import tempfile
 from m8.api.project import M8Project
-from m8.api.instruments.sampler import M8Sampler, M8SamplerParam, M8PlayMode
-from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam
-from m8.api.instruments.macrosynth import M8Macrosynth, M8MacrosynthParam
-from m8.api.instruments.fmsynth import M8FMSynth, M8FMSynthParam
-from m8.api.instruments.external import M8External, M8ExternalParam
+from m8.api.instruments.sampler import M8Sampler, M8PlayMode
+from m8.api.instruments.wavsynth import M8Wavsynth
+from m8.api.instruments.macrosynth import M8Macrosynth
+from m8.api.instruments.fmsynth import M8FMSynth
+from m8.api.instruments.external import M8External
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
@@ -34,8 +34,8 @@ class TestProjectCreationWorkflow(unittest.TestCase):
 
         # Add sampler
         sampler = M8Sampler(name="KICK", sample_path="/Samples/kick.wav")
-        sampler.set(M8SamplerParam.VOLUME, 0xFF)
-        sampler.set(M8SamplerParam.PLAY_MODE, M8PlayMode.FWD)
+        sampler.volume = 0xFF
+        sampler.play_mode = M8PlayMode.FWD
         project.instruments[0] = sampler
 
         # Verify

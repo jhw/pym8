@@ -26,7 +26,7 @@ import yaml
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.macrosynth import M8Macrosynth, M8MacrosynthParam, M8MacroShape
+from m8.api.instruments.macrosynth import M8Macrosynth, M8MacroShape
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -211,7 +211,7 @@ def create_macrosynth_303_project():
         # Clone and customize instrument
         macrosynth = base_macrosynth.clone()
         macrosynth.name = f"AC-{shape_name[:8]}"
-        macrosynth.set(M8MacrosynthParam.SHAPE, macro_shape)
+        macrosynth.shape = macro_shape
         project.instruments[row] = macrosynth
 
         print(f"Instrument: {macrosynth.name} (shape={shape_name})")

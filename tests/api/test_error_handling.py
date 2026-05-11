@@ -5,7 +5,7 @@ import unittest
 import os
 import tempfile
 from m8.api.project import M8Project
-from m8.api.instruments.sampler import M8Sampler, M8SamplerParam
+from m8.api.instruments.sampler import M8Sampler
 from m8.api.instruments.wavsynth import M8Wavsynth
 from m8.api.instrument import M8Instrument, M8InstrumentType
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
@@ -38,15 +38,13 @@ class TestInstrumentErrorHandling(unittest.TestCase):
         with self.assertRaises(ValueError):
             M8Instrument.from_dict(params)
 
-    def test_parameter_value_masking(self):
-        """Test that parameter values are masked to 8-bit."""
+    def test_out_of_range_raises(self):
+        """ByteField validates inputs at assignment time."""
         sampler = M8Sampler(name="Test")
-
-        # Set value larger than 0xFF
-        sampler.set(M8SamplerParam.VOLUME, 0x1FF)
-
-        # Should be masked to 0xFF
-        self.assertEqual(sampler.get(M8SamplerParam.VOLUME), 0xFF)
+        with self.assertRaises(ValueError):
+            sampler.volume = 0x1FF
+        with self.assertRaises(ValueError):
+            sampler.volume = -1
 
     def test_name_truncation(self):
         """Test that long names are truncated."""

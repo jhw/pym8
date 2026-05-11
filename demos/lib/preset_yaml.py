@@ -1,9 +1,7 @@
-"""
-YAML preset helpers for M8 instruments.
+"""YAML preset helpers for M8 instruments.
 
-Provides functions to save/load instrument presets as human-readable YAML files.
-Uses enum_mode='name' to serialize enum values as readable string names instead
-of opaque integers.
+to_dict() always serializes enums by name (and parameter keys in lowercase
+to match the Python attribute names), producing human-readable YAML.
 """
 
 import yaml
@@ -11,20 +9,11 @@ from pathlib import Path
 
 
 def save_preset_yaml(instrument, filepath):
-    """Save instrument preset to a YAML file with human-readable enum names.
-
-    Args:
-        instrument: M8 instrument (Sampler, Wavsynth, etc.)
-        filepath: Path to output YAML file
-    """
+    """Save instrument preset to a YAML file."""
     filepath = Path(filepath)
     filepath.parent.mkdir(parents=True, exist_ok=True)
-
-    # Export with human-readable enum names
-    preset_dict = instrument.to_dict(enum_mode='name')
-
     with open(filepath, 'w') as f:
-        yaml.dump(preset_dict, f, default_flow_style=False, sort_keys=False)
+        yaml.dump(instrument.to_dict(), f, default_flow_style=False, sort_keys=False)
 
 
 def load_preset_yaml(filepath, instrument_class=None):

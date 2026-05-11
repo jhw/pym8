@@ -10,8 +10,6 @@ include LICENSE
 
 # Exclude development files
 exclude pyproject.toml
-exclude requirements-dev.txt
 recursive-exclude tests *
 recursive-exclude demos *
 recursive-exclude tools *
-recursive-exclude dev *

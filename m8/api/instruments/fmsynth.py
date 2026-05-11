@@ -1,135 +1,51 @@
 # m8/api/instruments/fmsynth.py
-"""M8 FM Synth instrument - 4-operator frequency modulation synthesizer."""
+"""M8 FM Synth instrument - 4-operator FM synthesizer."""
 
 from enum import IntEnum
-from m8.api import _read_fixed_string, _write_fixed_string
-from m8.api.instrument import M8Instrument, M8InstrumentType, BLOCK_SIZE, BLOCK_COUNT
+
+from m8.api.fields import ByteField
+from m8.api.instrument import (
+    M8FilterType,
+    M8Instrument,
+    M8InstrumentType,
+    M8LimiterType,
+)
 
 
-# FM Synth Parameter Offsets
-class M8FMSynthParam(IntEnum):
-    """Byte offsets for FM synth instrument parameters."""
-    # Common parameters
-    TYPE = 0          # Instrument type (always 4 for FM synth)
-    NAME = 1          # Name starts at offset 1 (12 bytes)
-
-    # Common synth parameters
-    TRANSPOSE = 13    # Pitch transpose
-    TABLE_TICK = 14   # Table tick rate
-    VOLUME = 15       # Master volume
-    PITCH = 16        # Pitch offset
-    FINE_TUNE = 17    # Fine pitch adjustment (0x80 = center)
-
-    # FM algorithm
-    ALGO = 18         # FM algorithm (see M8FMAlgo enum)
-
-    # Operator parameters (grouped by type, not by operator)
-    # 4 operators: A, B, C, D
-    OP_A_SHAPE = 19   # Operator A waveform shape (M8FMWave)
-    OP_B_SHAPE = 20   # Operator B waveform shape
-    OP_C_SHAPE = 21   # Operator C waveform shape
-    OP_D_SHAPE = 22   # Operator D waveform shape
-
-    # Interleaved ratio/ratio_fine pairs
-    # Display format: {ratio}.{ratio_fine} (e.g., 01.10, 02.20)
-    OP_A_RATIO = 23       # Operator A ratio (integer part)
-    OP_A_RATIO_FINE = 24  # Operator A ratio fine (fractional part)
-    OP_B_RATIO = 25       # Operator B ratio
-    OP_B_RATIO_FINE = 26  # Operator B ratio fine
-    OP_C_RATIO = 27       # Operator C ratio
-    OP_C_RATIO_FINE = 28  # Operator C ratio fine
-    OP_D_RATIO = 29       # Operator D ratio
-    OP_D_RATIO_FINE = 30  # Operator D ratio fine
-
-    # Level and feedback (interleaved)
-    OP_A_LEVEL = 31   # Operator A output level
-    OP_A_FEEDBACK = 32  # Operator A feedback amount
-    OP_B_LEVEL = 33   # Operator B output level
-    OP_B_FEEDBACK = 34  # Operator B feedback amount
-    OP_C_LEVEL = 35   # Operator C output level
-    OP_C_FEEDBACK = 36  # Operator C feedback amount
-    OP_D_LEVEL = 37   # Operator D output level
-    OP_D_FEEDBACK = 38  # Operator D feedback amount
-
-    # Operator modulation routing (mod_a/mod_b per operator)
-    # Each operator can have 2 modulation routings connecting M8 modulators to operator params
-    OP_A_MOD_A = 39   # Operator A modulation A (M8FMOperatorModDest)
-    OP_B_MOD_A = 40   # Operator B modulation A
-    OP_C_MOD_A = 41   # Operator C modulation A
-    OP_D_MOD_A = 42   # Operator D modulation A
-    OP_A_MOD_B = 43   # Operator A modulation B (M8FMOperatorModDest)
-    OP_B_MOD_B = 44   # Operator B modulation B
-    OP_C_MOD_B = 45   # Operator C modulation B
-    OP_D_MOD_B = 46   # Operator D modulation B
-
-    # Modulator values (0x2F-0x32)
-    MOD1_VALUE = 47   # Modulator 1 amount
-    MOD2_VALUE = 48   # Modulator 2 amount
-    MOD3_VALUE = 49   # Modulator 3 amount
-    MOD4_VALUE = 50   # Modulator 4 amount
-
-    # Filter parameters
-    FILTER_TYPE = 51  # Filter type selection
-    CUTOFF = 52       # Filter cutoff frequency (0xFF = open)
-    RESONANCE = 53    # Filter resonance
-
-    # Mixer parameters
-    AMP = 54          # Amplifier level
-    LIMIT = 55        # Limiter amount
-    PAN = 56          # Stereo pan (0x80 = center)
-    DRY = 57          # Dry/wet mix level
-    CHORUS_SEND = 58  # Send to chorus effect (mixer_mfx in M8)
-    DELAY_SEND = 59   # Send to delay effect
-    REVERB_SEND = 60  # Send to reverb effect
-
-    # Modulators start at offset 61 (0x3D)
-
-
-# FM Algorithm Enum (0x00-0x0B)
 class M8FMAlgo(IntEnum):
-    """FM synthesis algorithms - operator routing configurations.
-
-    Based on m8-file-parser FM_ALGO_STRINGS array.
-    """
-    A_B_C_D = 0          # A>B>C>D - Linear cascade
-    AB_C_D = 1           # [A+B]>C>D - Parallel A+B into cascade
-    AB_C_D_ALT = 2       # [A>B+C]>D - Mixed modulation
-    A_BC_D = 3           # [A>B+A>C]>D - A modulates both B and C
-    ABC_D = 4            # [A+B+C]>D - Three parallel modulators
-    A_B_C_D_PARALLEL = 5 # [A>B>C]+D - Cascade plus parallel D
-    A_B_C_A_B_D = 6      # [A>B>C]+[A>B>D] - Two cascades sharing A>B
-    A_B_C_D_TWO_PAIR = 7 # [A>B]+[C>D] - Two independent pairs
-    A_B_A_C_A_D = 8      # [A>B]+[A>C]+[A>D] - A modulates B, C, and D
-    A_B_A_C_D = 9        # [A>B]+[A>C]+D - A modulates B and C, D separate
-    A_B_C_D_THREE = 10   # [A>B]+C+D - One modulation pair plus two carriers
-    A_PLUS_B_PLUS_C_PLUS_D = 11  # A+B+C+D - Four parallel carriers
+    """FM synthesis algorithms - operator routing configurations."""
+    A_B_C_D = 0
+    AB_C_D = 1
+    AB_C_D_ALT = 2
+    A_BC_D = 3
+    ABC_D = 4
+    A_B_C_D_PARALLEL = 5
+    A_B_C_A_B_D = 6
+    A_B_C_D_TWO_PAIR = 7
+    A_B_A_C_A_D = 8
+    A_B_A_C_D = 9
+    A_B_C_D_THREE = 10
+    A_PLUS_B_PLUS_C_PLUS_D = 11
 
 
-# FM Wave Shapes (Operator Waveforms)
 class M8FMWave(IntEnum):
-    """FM operator waveform shapes.
-
-    Based on m8-file-parser FMWave enum.
-    """
-    # Basic waveforms (0x00-0x0F)
-    SIN = 0      # Sine wave
-    SW2 = 1      # Half sine
-    SW3 = 2      # Third sine
-    SW4 = 3      # Quarter sine
-    SW5 = 4      # Fifth sine
-    SW6 = 5      # Sixth sine
-    TRI = 6      # Triangle
-    SAW = 7      # Sawtooth
-    SQR = 8      # Square
-    PUL = 9      # Pulse
-    IMP = 10     # Impulse
-    NOI = 11     # Noise
-    NLP = 12     # Noise lowpass
-    NHP = 13     # Noise highpass
-    NBP = 14     # Noise bandpass
-    CLK = 15     # Clock
-
-    # Additional waveforms (0x10-0x45)
+    """FM operator waveform shapes."""
+    SIN = 0
+    SW2 = 1
+    SW3 = 2
+    SW4 = 3
+    SW5 = 4
+    SW6 = 5
+    TRI = 6
+    SAW = 7
+    SQR = 8
+    PUL = 9
+    IMP = 10
+    NOI = 11
+    NLP = 12
+    NHP = 13
+    NBP = 14
+    CLK = 15
     W09 = 16
     W0A = 17
     W0B = 18
@@ -193,154 +109,105 @@ class M8FMWave(IntEnum):
     W45 = 76
 
 
-# Modulator Destination Values
 class M8FMSynthModDest(IntEnum):
-    """FM synth modulator destination parameters.
-
-    Based on m8-js and m8-file-parser DESTINATIONS array.
-    """
-    OFF = 0x00       # No modulation
-    VOLUME = 0x01    # Volume modulation
-    PITCH = 0x02     # Pitch modulation
-    MOD1 = 0x03      # Modulator 1 amount
-    MOD2 = 0x04      # Modulator 2 amount
-    MOD3 = 0x05      # Modulator 3 amount
-    MOD4 = 0x06      # Modulator 4 amount
-    CUTOFF = 0x07    # Filter cutoff
-    RES = 0x08       # Filter resonance
-    AMP = 0x09       # Amplifier level
-    PAN = 0x0A       # Stereo pan
-    MOD_AMT = 0x0B   # Modulator amount
-    MOD_RATE = 0x0C  # Modulator rate
-    MOD_BOTH = 0x0D  # Modulator both (amount and rate)
-    MOD_BINV = 0x0E  # Modulator bipolar inversion
+    """FM synth modulator destinations."""
+    OFF = 0x00
+    VOLUME = 0x01
+    PITCH = 0x02
+    MOD1 = 0x03
+    MOD2 = 0x04
+    MOD3 = 0x05
+    MOD4 = 0x06
+    CUTOFF = 0x07
+    RES = 0x08
+    AMP = 0x09
+    PAN = 0x0A
+    MOD_AMT = 0x0B
+    MOD_RATE = 0x0C
+    MOD_BOTH = 0x0D
+    MOD_BINV = 0x0E
 
 
-# Operator Modulation Routing Values (mod_a/mod_b)
 class M8FMOperatorModDest(IntEnum):
-    """FM operator modulation routing destinations.
-
-    Each operator (A, B, C, D) has two modulation routing slots (mod_a, mod_b)
-    that connect one of the 4 M8 modulators to one of the 4 operator parameters.
-
-    Format: {modulator_number}/{parameter}
-    - Modulator: 1-4 (which M8 modulator controls this)
-    - Parameter: LEV (level), RAT (ratio), PIT (pitch), FBK (feedback)
-
-    Values 0-16 (17 total options).
-    """
-    OFF = 0x00       # No modulation (displayed as "--")
-    MOD1_LEV = 0x01  # Modulator 1 → Operator Level
-    MOD1_RAT = 0x02  # Modulator 1 → Operator Ratio
-    MOD1_PIT = 0x03  # Modulator 1 → Operator Pitch
-    MOD1_FBK = 0x04  # Modulator 1 → Operator Feedback
-    MOD2_LEV = 0x05  # Modulator 2 → Operator Level
-    MOD2_RAT = 0x06  # Modulator 2 → Operator Ratio
-    MOD2_PIT = 0x07  # Modulator 2 → Operator Pitch
-    MOD2_FBK = 0x08  # Modulator 2 → Operator Feedback
-    MOD3_LEV = 0x09  # Modulator 3 → Operator Level
-    MOD3_RAT = 0x0A  # Modulator 3 → Operator Ratio
-    MOD3_PIT = 0x0B  # Modulator 3 → Operator Pitch
-    MOD3_FBK = 0x0C  # Modulator 3 → Operator Feedback
-    MOD4_LEV = 0x0D  # Modulator 4 → Operator Level
-    MOD4_RAT = 0x0E  # Modulator 4 → Operator Ratio
-    MOD4_PIT = 0x0F  # Modulator 4 → Operator Pitch
-    MOD4_FBK = 0x10  # Modulator 4 → Operator Feedback
-
-
-# Default parameter values (param, value) pairs for non-zero defaults
-DEFAULT_PARAMETERS = [
-    (M8FMSynthParam.FINE_TUNE, 0x80),  # center
-    (M8FMSynthParam.CUTOFF, 0xFF),     # fully open
-    (M8FMSynthParam.PAN, 0x80),        # center
-    (M8FMSynthParam.DRY, 0xC0),
-]
+    """FM operator modulation routing — {modulator}/{param} pairs."""
+    OFF = 0x00
+    MOD1_LEV = 0x01
+    MOD1_RAT = 0x02
+    MOD1_PIT = 0x03
+    MOD1_FBK = 0x04
+    MOD2_LEV = 0x05
+    MOD2_RAT = 0x06
+    MOD2_PIT = 0x07
+    MOD2_FBK = 0x08
+    MOD3_LEV = 0x09
+    MOD3_RAT = 0x0A
+    MOD3_PIT = 0x0B
+    MOD3_FBK = 0x0C
+    MOD4_LEV = 0x0D
+    MOD4_RAT = 0x0E
+    MOD4_PIT = 0x0F
+    MOD4_FBK = 0x10
 
 
 class M8FMSynth(M8Instrument):
-    """M8 FM Synth instrument - 4-operator frequency modulation synthesizer."""
+    """4-operator FM synthesizer."""
 
-    # Configuration for base class dict serialization
-    PARAM_ENUM_CLASS = M8FMSynthParam
+    TYPE_ID = M8InstrumentType.FMSYNTH
     MOD_DEST_ENUM_CLASS = M8FMSynthModDest
-    PARAM_ENUM_TYPES = {
-        'ALGO': M8FMAlgo,
-        'OP_A_SHAPE': M8FMWave,
-        'OP_B_SHAPE': M8FMWave,
-        'OP_C_SHAPE': M8FMWave,
-        'OP_D_SHAPE': M8FMWave,
-        'OP_A_MOD_A': M8FMOperatorModDest,
-        'OP_B_MOD_A': M8FMOperatorModDest,
-        'OP_C_MOD_A': M8FMOperatorModDest,
-        'OP_D_MOD_A': M8FMOperatorModDest,
-        'OP_A_MOD_B': M8FMOperatorModDest,
-        'OP_B_MOD_B': M8FMOperatorModDest,
-        'OP_C_MOD_B': M8FMOperatorModDest,
-        'OP_D_MOD_B': M8FMOperatorModDest,
-        'FILTER_TYPE': None,  # Will be set below to avoid circular import
-        'LIMIT': None,        # Will be set below to avoid circular import
-    }
 
-    def __init__(self, name=""):
-        """Initialize an FM synth instrument with default parameters."""
-        super().__init__(M8InstrumentType.FMSYNTH)
+    transpose       = ByteField(13)
+    table_tick      = ByteField(14)
+    volume          = ByteField(15)
+    pitch           = ByteField(16)
+    fine_tune       = ByteField(17, default=0x80)
 
-        # Apply FM synth-specific defaults
-        self._apply_defaults(DEFAULT_PARAMETERS)
+    algo            = ByteField(18, enum=M8FMAlgo)
 
-        # Set name if provided
-        if name:
-            self.name = name
+    op_a_shape      = ByteField(19, enum=M8FMWave)
+    op_b_shape      = ByteField(20, enum=M8FMWave)
+    op_c_shape      = ByteField(21, enum=M8FMWave)
+    op_d_shape      = ByteField(22, enum=M8FMWave)
 
-    @classmethod
-    def _setup_enum_types(cls):
-        """Setup enum types (called lazily to avoid circular imports)."""
-        if cls.PARAM_ENUM_TYPES['FILTER_TYPE'] is None:
-            from m8.api.instrument import M8FilterType, M8LimiterType
-            cls.PARAM_ENUM_TYPES['FILTER_TYPE'] = M8FilterType
-            cls.PARAM_ENUM_TYPES['LIMIT'] = M8LimiterType
+    op_a_ratio      = ByteField(23)
+    op_a_ratio_fine = ByteField(24)
+    op_b_ratio      = ByteField(25)
+    op_b_ratio_fine = ByteField(26)
+    op_c_ratio      = ByteField(27)
+    op_c_ratio_fine = ByteField(28)
+    op_d_ratio      = ByteField(29)
+    op_d_ratio_fine = ByteField(30)
 
-    def to_dict(self, enum_mode='value'):
-        """Export FM synth parameters to a dictionary.
+    op_a_level      = ByteField(31)
+    op_a_feedback   = ByteField(32)
+    op_b_level      = ByteField(33)
+    op_b_feedback   = ByteField(34)
+    op_c_level      = ByteField(35)
+    op_c_feedback   = ByteField(36)
+    op_d_level      = ByteField(37)
+    op_d_feedback   = ByteField(38)
 
-        Args:
-            enum_mode: How to serialize enum values:
-                      'value' (default) - use integer values
-                      'name' - use enum names as strings (human-readable)
+    op_a_mod_a      = ByteField(39, enum=M8FMOperatorModDest)
+    op_b_mod_a      = ByteField(40, enum=M8FMOperatorModDest)
+    op_c_mod_a      = ByteField(41, enum=M8FMOperatorModDest)
+    op_d_mod_a      = ByteField(42, enum=M8FMOperatorModDest)
+    op_a_mod_b      = ByteField(43, enum=M8FMOperatorModDest)
+    op_b_mod_b      = ByteField(44, enum=M8FMOperatorModDest)
+    op_c_mod_b      = ByteField(45, enum=M8FMOperatorModDest)
+    op_d_mod_b      = ByteField(46, enum=M8FMOperatorModDest)
 
-        Returns a dict with:
-        - name: instrument name
-        - params: dict of FM synth parameters using M8FMSynthParam names as keys
-        - modulators: list of modulator parameter dicts
-        """
-        self._setup_enum_types()
-        return super().to_dict(enum_mode=enum_mode)
+    mod1_value      = ByteField(47)
+    mod2_value      = ByteField(48)
+    mod3_value      = ByteField(49)
+    mod4_value      = ByteField(50)
 
-    @classmethod
-    def from_dict(cls, params):
-        """Create an FM synth from a parameter dictionary.
+    filter_type     = ByteField(51, enum=M8FilterType)
+    cutoff          = ByteField(52, default=0xFF)
+    resonance       = ByteField(53)
 
-        Args:
-            params: Dict with keys: name, params, modulators
-                   - params is a dict with M8FMSynthParam names as keys
-                   - param values can be integers or enum names (strings)
-                   - modulators is a list of modulator parameter dicts
-
-        Returns:
-            M8FMSynth instance configured with given parameters
-        """
-        cls._setup_enum_types()
-        return super(M8FMSynth, cls).from_dict(params)
-
-    @classmethod
-    def read(cls, data):
-        """Read instrument from binary data."""
-        # Use base class read for common functionality
-        instance = super(M8FMSynth, cls).read(data)
-
-        # Apply non-zero defaults for parameters that are zero
-        for offset, default_value in DEFAULT_PARAMETERS:
-            if instance._data[offset] == 0:
-                instance._data[offset] = default_value
-
-        return instance
+    amp             = ByteField(54)
+    limit           = ByteField(55, enum=M8LimiterType)
+    pan             = ByteField(56, default=0x80)
+    dry             = ByteField(57, default=0xC0)
+    chorus_send     = ByteField(58)
+    delay_send      = ByteField(59)
+    reverb_send     = ByteField(60)

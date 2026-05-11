@@ -20,10 +20,13 @@ Default paths:
     Output: tmp/dw01-synthdrums/yaml/*.yaml (auto-created if needed)
 
 Instrument types:
+    0 = Wavsynth
+    1 = Macrosynth
     2 = Sampler
-    3 = Wavsynth
+    3 = MIDIOut
     4 = FM Synth
-    5 = Macrosynth
+    5 = HyperSynth (not yet supported)
+    6 = External
 """
 
 import os
@@ -59,8 +62,8 @@ def extract_instrument_to_yaml(m8i_path, output_dir, instrument_type_filter=None
             if instrument_type != instrument_type_filter:
                 return False
 
-        # Get instrument parameters as dict with enum names
-        params = instrument.to_dict(enum_mode='name')
+        # Get instrument parameters as dict (always uses enum names)
+        params = instrument.to_dict()
 
         # Create output filename (replace .m8i with .yaml)
         input_filename = os.path.basename(m8i_path)
@@ -144,7 +147,10 @@ def main():
     print(f"Output directory: {output_dir}")
     print(f"Found {len(m8i_files)} .m8i file(s)")
     if args.type is not None:
-        type_names = {2: "Sampler", 3: "Wavsynth", 4: "FM Synth", 5: "Macrosynth"}
+        type_names = {
+            0: "Wavsynth", 1: "Macrosynth", 2: "Sampler",
+            3: "MIDIOut", 4: "FM Synth", 6: "External",
+        }
         type_name = type_names.get(args.type, f"Unknown ({args.type})")
         print(f"Filter: Type {args.type} ({type_name})")
     print("=" * 60)

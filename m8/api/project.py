@@ -6,31 +6,20 @@ from m8.api.phrase import M8Phrases, PHRASES_OFFSET
 from m8.api.song import M8SongMatrix, SONG_OFFSET
 from m8.api.version import M8Version
 
-# Reference: https://github.com/AlexCharlton/m8-files/blob/2e79f2592e3950c20081f93aaad135fb9f867f9f/src/songs.rs
+# Reference: https://github.com/Twinside/m8-file-parser/blob/master/src/songs.rs
 
-# Project file offsets
 VERSION_OFFSET = 10
-GROOVE_OFFSET = 238
-TABLE_OFFSET = 47678
-EFFECT_SETTINGS_OFFSET = 107969
-MIDI_MAPPING_OFFSET = 108030
-SCALE_OFFSET = 109182
-EQ_OFFSET = 109918
 
-# Dictionary to cache offsets loaded from configuration
+# Offsets for sections pym8 actively parses. Sections present in the binary
+# format but not parsed (groove, table, effect_settings, midi_mapping, scale,
+# eq) are preserved verbatim through the raw `data` buffer.
 OFFSETS = {
     "version": VERSION_OFFSET,
     "metadata": METADATA_OFFSET,
-    "groove": GROOVE_OFFSET,
     "song": SONG_OFFSET,
     "phrases": PHRASES_OFFSET,
     "chains": CHAINS_OFFSET,
-    "table": TABLE_OFFSET,
     "instruments": INSTRUMENTS_OFFSET,
-    "effect_settings": EFFECT_SETTINGS_OFFSET,
-    "midi_mapping": MIDI_MAPPING_OFFSET,
-    "scale": SCALE_OFFSET,
-    "eq": EQ_OFFSET
 }
 
 class M8Project:
@@ -65,18 +54,13 @@ class M8Project:
 
     def clone(self):
         instance = self.__class__()
-
-        # Clone all components
+        instance.data = bytearray(self.data)
+        instance.version = M8Version(self.version.major, self.version.minor, self.version.patch)
         instance.metadata = self.metadata.clone() if self.metadata else None
         instance.instruments = self.instruments.clone() if self.instruments else None
         instance.phrases = self.phrases.clone() if self.phrases else None
         instance.chains = self.chains.clone() if self.chains else None
         instance.song = self.song.clone() if self.song else None
-
-        # Copy version information if available
-        if hasattr(self, '_version'):
-            instance._version = self._version
-
         return instance
         
     def write(self) -> bytes:

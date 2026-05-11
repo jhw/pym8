@@ -26,7 +26,7 @@ import yaml
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.wavsynth import M8Wavsynth, M8WavsynthParam, M8WavShape
+from m8.api.instruments.wavsynth import M8Wavsynth, M8WavShape
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -211,7 +211,7 @@ def create_wavsynth_303_project():
         # Clone and customize instrument
         wavsynth = base_wavsynth.clone()
         wavsynth.name = f"AC-{wave_name[:8]}"
-        wavsynth.set(M8WavsynthParam.SHAPE, wave_shape)
+        wavsynth.shape = wave_shape
         project.instruments[row] = wavsynth
 
         print(f"Instrument: {wavsynth.name} (shape={wave_name})")

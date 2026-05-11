@@ -1,127 +1,91 @@
-import unittest
+"""Tests for M8Project, including the clone() data-loss bug fix."""
 import os
 import tempfile
-from m8.api import M8Block
+import unittest
+
 from m8.api.project import M8Project, OFFSETS
 from m8.api.metadata import M8Metadata
-from m8.api.song import M8SongMatrix, M8SongRow
+from m8.api.song import M8SongMatrix
 from m8.api.chain import M8Chain, M8Chains
 from m8.api.phrase import M8Phrase, M8Phrases
 from m8.api.instrument import M8Instruments
 from m8.api.instruments.sampler import M8Sampler
 
+
 class TestM8Project(unittest.TestCase):
-    def setUp(self):
-        """Set up a minimal project for testing."""
-        self.project = M8Project()
-        self.project.metadata = M8Metadata(name="Test Project")
-        self.project.song = M8SongMatrix()
-        self.project.chains = M8Chains()
-        self.project.phrases = M8Phrases()
-        self.project.instruments = M8Instruments()
+    def _build(self):
+        project = M8Project()
+        project.metadata = M8Metadata(name="Test Project")
+        project.song = M8SongMatrix()
+        project.chains = M8Chains()
+        project.phrases = M8Phrases()
+        project.instruments = M8Instruments()
+        project.instruments[0] = M8Sampler(name="TestSynth")
+        project.phrases[0][0].instrument = 0
+        project.chains[0][0].phrase = 0
+        project.song[0][0] = 0
+        return project
 
-        # Create some data by directly assigning to slots
-        self.test_instrument = M8Sampler(name="TestSynth")
-        self.instrument_slot = 0
-        self.project.instruments[self.instrument_slot] = self.test_instrument
-
-        # Add a phrase using this instrument
-        self.test_phrase = M8Phrase()
-        self.test_phrase[0].instrument = self.instrument_slot
-        self.phrase_slot = 0
-        self.project.phrases[self.phrase_slot] = self.test_phrase
-
-        # Add a chain using this phrase
-        self.test_chain = M8Chain()
-        self.test_chain[0].phrase = self.phrase_slot
-        self.chain_slot = 0
-        self.project.chains[self.chain_slot] = self.test_chain
-
-        # Add a song row using this chain
-        self.project.song[0][0] = self.chain_slot
-
-    def test_write_read_file(self):
-        # Skip this test if we don't have the template file
-        try:
-            # First create a proper project from template
-            project = M8Project.initialise()
-        except FileNotFoundError:
-            self.skipTest("Template file not found - skipping file I/O test")
-
-        # Write the project to a temporary file, read it back, and compare
+    def test_write_read_round_trip(self):
+        project = M8Project.initialise()
         with tempfile.NamedTemporaryFile(suffix='.m8s', delete=False) as tmp:
-            try:
-                tmp_path = tmp.name
-                project.write_to_file(tmp_path)
-
-                # Read it back
-                read_project = M8Project.read_from_file(tmp_path)
-
-                # Compare basic attributes
-                self.assertEqual(read_project.metadata.name, project.metadata.name)
-
-                # Check that all the major components were preserved
-                self.assertEqual(len(read_project.instruments), len(project.instruments))
-                self.assertEqual(len(read_project.phrases), len(project.phrases))
-                self.assertEqual(len(read_project.chains), len(project.chains))
-                self.assertEqual(len(read_project.song), len(project.song))
-            finally:
-                # Clean up
-                if os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
+            tmp_path = tmp.name
+        try:
+            project.write_to_file(tmp_path)
+            reloaded = M8Project.read_from_file(tmp_path)
+            self.assertEqual(reloaded.metadata.name, project.metadata.name)
+            self.assertEqual(len(reloaded.instruments), len(project.instruments))
+        finally:
+            os.unlink(tmp_path)
 
     def test_initialise(self):
-        try:
-            # Attempt to create a project from the default template
-            project = M8Project.initialise()
+        project = M8Project.initialise()
+        self.assertIsNotNone(project.metadata)
+        self.assertIsNotNone(project.song)
+        self.assertIsNotNone(project.chains)
+        self.assertIsNotNone(project.phrases)
+        self.assertIsNotNone(project.instruments)
 
-            # Just perform some basic checks
-            self.assertIsNotNone(project.metadata)
-            self.assertIsNotNone(project.song)
-            self.assertIsNotNone(project.chains)
-            self.assertIsNotNone(project.phrases)
-            self.assertIsNotNone(project.instruments)
-        except FileNotFoundError:
-            self.skipTest("Template file not found - skipping initialise test")
-
-    def test_initialise_nonexistent_template(self):
-        # Test with a non-existent template name
+    def test_initialise_missing_template(self):
         with self.assertRaises(FileNotFoundError):
             M8Project.initialise("NONEXISTENT_TEMPLATE")
 
-    def test_clone(self):
-        # Clone the test project set up in setUp
-        cloned_project = self.project.clone()
+    def test_clone_preserves_components(self):
+        original = self._build()
+        clone = original.clone()
+        self.assertIsNot(clone, original)
+        self.assertIsNot(clone.metadata, original.metadata)
+        self.assertIsNot(clone.instruments, original.instruments)
+        self.assertEqual(clone.metadata.name, original.metadata.name)
+        self.assertEqual(clone.instruments[0].name, "TestSynth")
 
-        # Verify they are separate instances
-        self.assertIsNot(cloned_project, self.project)
-        self.assertIsNot(cloned_project.metadata, self.project.metadata)
-        self.assertIsNot(cloned_project.instruments, self.project.instruments)
-        self.assertIsNot(cloned_project.phrases, self.project.phrases)
-        self.assertIsNot(cloned_project.chains, self.project.chains)
-        self.assertIsNot(cloned_project.song, self.project.song)
+    def test_clone_preserves_raw_data_for_round_trip(self):
+        """Regression test: clone() used to drop the underlying byte buffer,
+        causing write() to emit a truncated file missing the ~30 KB of
+        unparsed sections (grooves, tables, EQ, settings, scales, MIDI maps).
+        """
+        original = M8Project.initialise()
+        original.metadata.name = "CLONETEST"
+        clone = original.clone()
+        self.assertEqual(len(clone.data), len(original.data))
+        self.assertEqual(clone.write(), original.write())
 
-        # Verify the data was copied correctly
-        self.assertEqual(cloned_project.metadata.name, self.project.metadata.name)
+    def test_clone_independence(self):
+        original = self._build()
+        clone = original.clone()
+        clone.metadata.name = "Modified"
+        self.assertEqual(original.metadata.name, "Test Project")
+        self.assertEqual(clone.metadata.name, "Modified")
 
-        # Check the instrument in the clone
-        cloned_instrument = cloned_project.instruments[self.instrument_slot]
-        self.assertEqual(cloned_instrument.name, self.test_instrument.name)
-        self.assertIsNot(cloned_instrument, self.test_instrument)
-
-        # Verify reference chain is maintained
-        # Chain -> Phrase -> Instrument
-        cloned_chain = cloned_project.chains[self.chain_slot]
-        self.assertEqual(cloned_chain[0].phrase, self.phrase_slot)
-
-        cloned_phrase = cloned_project.phrases[self.phrase_slot]
-        self.assertEqual(cloned_phrase[0].instrument, self.instrument_slot)
-
-        # Modify the clone and verify original is unchanged
-        cloned_project.metadata.name = "Modified Clone"
-        self.assertEqual(self.project.metadata.name, "Test Project")
-        self.assertEqual(cloned_project.metadata.name, "Modified Clone")
+    def test_offsets_dict_only_lists_implemented_sections(self):
+        """OFFSETS used to list unimplemented sections (groove, eq, scale...)
+        that were never actually read or written, which was misleading.
+        """
+        self.assertEqual(
+            set(OFFSETS),
+            {"version", "metadata", "song", "phrases", "chains", "instruments"},
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

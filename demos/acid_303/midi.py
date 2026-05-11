@@ -108,10 +108,7 @@ import random
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.external import (
-    M8External, M8ExternalParam, M8ExternalInput, M8ExternalPort
-)
-from m8.api.instrument import M8LimiterType
+from m8.api.instruments.midiout import M8MIDIOut, M8MIDIPort
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note, OFF_NOTE
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX
@@ -265,32 +262,13 @@ def create_phrases_from_303_pattern(pattern: AcidPattern, instrument_idx: int,
     return phrases
 
 
-def create_external_instrument(name: str, midi_channel: int) -> M8External:
-    """Create an External instrument configured for TB-03 MIDI output.
-
-    Args:
-        name: Instrument name
-        midi_channel: MIDI channel (1-16)
-
-    Returns:
-        M8External configured for TB-03
-    """
-    inst = M8External()
-    inst.name = name
-
-    # MIDI output settings
-    inst.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)  # Hardware MIDI output
-    inst.set(M8ExternalParam.CHANNEL, midi_channel)
-    inst.set(M8ExternalParam.BANK, 0)
-    inst.set(M8ExternalParam.PROGRAM, 0)
-
-    # Audio input settings (for processing TB-03 audio through M8)
-    inst.set(M8ExternalParam.INPUT, M8ExternalInput.LINE_IN_L)
-
-    # Mixer settings
-    inst.set(M8ExternalParam.AMP, 0x20)  # Amp level 32
-    inst.set(M8ExternalParam.LIMIT, M8LimiterType.SIN)  # Limiter type SIN
-
+def create_midi_instrument(name: str, midi_channel: int) -> M8MIDIOut:
+    """Create a MIDIOut instrument routed to the TB-03 over hardware MIDI."""
+    inst = M8MIDIOut(name=name)
+    inst.port = M8MIDIPort.MIDI
+    inst.channel = midi_channel
+    inst.bank = 0
+    inst.program = 0
     return inst
 
 
@@ -318,7 +296,7 @@ def create_acid_banger_303_midi_project(midi_channel: int, off_probability: floa
 
     # Create the external instrument for TB-03
     print(f"\nCreating external instrument:")
-    external = create_external_instrument("TB-03", midi_channel)
+    external = create_midi_instrument("TB-03", midi_channel)
     project.instruments[0x00] = external
     print(f"  [00] TB-03 on MIDI channel {midi_channel}")
     print(f"       Port: MIDI, Input: LINE_IN_L, AMP: 0x20, LIMIT: SIN")

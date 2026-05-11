@@ -78,7 +78,7 @@ import argparse
 from pathlib import Path
 
 from m8.api.project import M8Project
-from m8.api.instruments.external import M8External, M8ExternalParam, M8ExternalPort
+from m8.api.instruments.midiout import M8MIDIOut, M8MIDIPort
 from m8.api.phrase import OFF_NOTE
 
 # Configuration
@@ -104,14 +104,13 @@ CHORDS = [
 ]
 
 
-def create_external_instrument(name, midi_channel=1):
-    """Create an External instrument configured for MIDI output."""
-    inst = M8External()
-    inst.name = name
-    inst.set(M8ExternalParam.PORT, M8ExternalPort.MIDI)  # Hardware MIDI output
-    inst.set(M8ExternalParam.CHANNEL, midi_channel)
-    inst.set(M8ExternalParam.BANK, 0)
-    inst.set(M8ExternalParam.PROGRAM, 0)
+def create_midi_instrument(name, midi_channel=1):
+    """Create a MIDIOut instrument configured for hardware MIDI output."""
+    inst = M8MIDIOut(name=name)
+    inst.port = M8MIDIPort.MIDI
+    inst.channel = midi_channel
+    inst.bank = 0
+    inst.program = 0
     return inst
 
 
@@ -133,7 +132,7 @@ def main():
     # Create 3 External instruments (one per voice/chain)
     voice_names = ["ROOT", "3RD", "5TH"]
     for i, name in enumerate(voice_names):
-        inst = create_external_instrument(f"CHORD-{name}", midi_channel=args.midi_channel)
+        inst = create_midi_instrument(f"CHORD-{name}", midi_channel=args.midi_channel)
         project.instruments[i] = inst
 
     # Create phrases

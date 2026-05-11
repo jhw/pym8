@@ -1,69 +1,34 @@
 # m8/api/instruments/wavsynth.py
-"""M8 WavSynth instrument - wavetable synthesizer."""
+"""M8 WavSynth instrument."""
 
 from enum import IntEnum
-from m8.api import _read_fixed_string, _write_fixed_string
-from m8.api.instrument import M8Instrument, M8InstrumentType, BLOCK_SIZE, BLOCK_COUNT
+
+from m8.api.fields import ByteField
+from m8.api.instrument import (
+    M8FilterType,
+    M8Instrument,
+    M8InstrumentType,
+    M8LimiterType,
+)
 
 
-# WavSynth Parameter Offsets
-class M8WavsynthParam(IntEnum):
-    """Byte offsets for wavsynth instrument parameters."""
-    # Common parameters
-    TYPE = 0          # Instrument type (always 0 for wavsynth)
-    NAME = 1          # Name starts at offset 1 (12 bytes)
-
-    # Common synth parameters
-    TRANSPOSE = 13    # Pitch transpose
-    TABLE_TICK = 14   # Table tick rate
-    VOLUME = 15       # Master volume
-    PITCH = 16        # Pitch offset
-    FINE_TUNE = 17    # Fine pitch adjustment (0x80 = center)
-
-    # WavSynth-specific parameters (come BEFORE filter/mixer)
-    SHAPE = 18        # Waveform shape (see M8WavShape enum)
-    SIZE = 19         # Wavetable size
-    MULT = 20         # Frequency multiplier
-    WARP = 21         # Waveform warp amount
-    MIRROR = 22       # Waveform mirror amount (scan in M8 UI)
-
-    # Filter parameters
-    FILTER_TYPE = 23  # Filter type selection
-    CUTOFF = 24       # Filter cutoff frequency (0xFF = open)
-    RESONANCE = 25    # Filter resonance
-
-    # Mixer parameters
-    AMP = 26          # Amplifier level
-    LIMIT = 27        # Limiter amount
-    PAN = 28          # Stereo pan (0x80 = center)
-    DRY = 29          # Dry/wet mix level
-    CHORUS_SEND = 30  # Send to chorus effect (mixer_mfx in M8)
-    DELAY_SEND = 31   # Send to delay effect
-    REVERB_SEND = 32  # Send to reverb effect
-
-    # Modulators start at offset 63
-
-
-# Modulator Destination Values
 class M8WavsynthModDest(IntEnum):
     """Wavsynth modulator destination parameters."""
-    OFF = 0x00       # No modulation
-    VOLUME = 0x01    # Volume modulation
-    PITCH = 0x02     # Pitch modulation
-    SIZE = 0x03      # Wavetable size
-    MULT = 0x04      # Frequency multiplier
-    WARP = 0x05      # Waveform warp
-    MIRROR = 0x06    # Waveform mirror (scan)
-    CUTOFF = 0x07    # Filter cutoff
-    RES = 0x08       # Filter resonance
-    AMP = 0x09       # Amplifier level
-    PAN = 0x0A       # Stereo pan
+    OFF = 0x00
+    VOLUME = 0x01
+    PITCH = 0x02
+    SIZE = 0x03
+    MULT = 0x04
+    WARP = 0x05
+    MIRROR = 0x06
+    CUTOFF = 0x07
+    RES = 0x08
+    AMP = 0x09
+    PAN = 0x0A
 
 
-# WavSynth Wave Shapes
 class M8WavShape(IntEnum):
     """WavSynth waveform shapes."""
-    # Basic waveforms
     PULSE12 = 0
     PULSE25 = 1
     PULSE50 = 2
@@ -73,8 +38,6 @@ class M8WavShape(IntEnum):
     SINE = 6
     NOISE_PITCHED = 7
     NOISE = 8
-
-    # Wavetable variants
     WT_CRUSH = 9
     WT_FOLDING = 10
     WT_FREQ = 11
@@ -138,88 +101,32 @@ class M8WavShape(IntEnum):
     WT_VOXSYNTH = 69
 
 
-# Default parameter values (param, value) pairs for non-zero defaults
-DEFAULT_PARAMETERS = [
-    (M8WavsynthParam.FINE_TUNE, 0x80),  # center
-    (M8WavsynthParam.SIZE, 0x20),
-    (M8WavsynthParam.CUTOFF, 0xFF),     # fully open
-    (M8WavsynthParam.PAN, 0x80),        # center
-    (M8WavsynthParam.DRY, 0xC0),
-]
-
-
 class M8Wavsynth(M8Instrument):
-    """M8 WavSynth instrument - wavetable synthesizer."""
+    """Wavetable synthesizer."""
 
-    # Configuration for base class dict serialization
-    PARAM_ENUM_CLASS = M8WavsynthParam
+    TYPE_ID = M8InstrumentType.WAVSYNTH
     MOD_DEST_ENUM_CLASS = M8WavsynthModDest
-    PARAM_ENUM_TYPES = {
-        'SHAPE': M8WavShape,
-        'FILTER_TYPE': None,  # Will be set below to avoid circular import
-        'LIMIT': None,        # Will be set below to avoid circular import
-    }
 
-    def __init__(self, name=""):
-        """Initialize a wavsynth instrument with default parameters."""
-        super().__init__(M8InstrumentType.WAVSYNTH)
+    transpose    = ByteField(13)
+    table_tick   = ByteField(14)
+    volume       = ByteField(15)
+    pitch        = ByteField(16)
+    fine_tune    = ByteField(17, default=0x80)
 
-        # Apply wavsynth-specific defaults
-        self._apply_defaults(DEFAULT_PARAMETERS)
+    shape        = ByteField(18, enum=M8WavShape)
+    size         = ByteField(19, default=0x20)
+    mult         = ByteField(20)
+    warp         = ByteField(21)
+    mirror       = ByteField(22)
 
-        # Set name if provided
-        if name:
-            self.name = name
+    filter_type  = ByteField(23, enum=M8FilterType)
+    cutoff       = ByteField(24, default=0xFF)
+    resonance    = ByteField(25)
 
-    @classmethod
-    def _setup_enum_types(cls):
-        """Setup enum types (called lazily to avoid circular imports)."""
-        if cls.PARAM_ENUM_TYPES['FILTER_TYPE'] is None:
-            from m8.api.instrument import M8FilterType, M8LimiterType
-            cls.PARAM_ENUM_TYPES['FILTER_TYPE'] = M8FilterType
-            cls.PARAM_ENUM_TYPES['LIMIT'] = M8LimiterType
-
-    def to_dict(self, enum_mode='value'):
-        """Export wavsynth parameters to a dictionary.
-
-        Args:
-            enum_mode: How to serialize enum values:
-                      'value' (default) - use integer values
-                      'name' - use enum names as strings (human-readable)
-
-        Returns a dict with:
-        - name: instrument name
-        - params: dict of wavsynth parameters using M8WavsynthParam names as keys
-        - modulators: list of modulator parameter dicts
-        """
-        self._setup_enum_types()
-        return super().to_dict(enum_mode=enum_mode)
-
-    @classmethod
-    def from_dict(cls, params):
-        """Create a wavsynth from a parameter dictionary.
-
-        Args:
-            params: Dict with keys: name, params, modulators
-                   - params is a dict with M8WavsynthParam names as keys
-                   - param values can be integers or enum names (strings)
-                   - modulators is a list of modulator parameter dicts
-
-        Returns:
-            M8Wavsynth instance configured with given parameters
-        """
-        cls._setup_enum_types()
-        return super(M8Wavsynth, cls).from_dict(params)
-
-    @classmethod
-    def read(cls, data):
-        """Read instrument from binary data."""
-        # Use base class read for common functionality
-        instance = super(M8Wavsynth, cls).read(data)
-
-        # Apply non-zero defaults for parameters that are zero
-        for offset, default_value in DEFAULT_PARAMETERS:
-            if instance._data[offset] == 0:
-                instance._data[offset] = default_value
-
-        return instance
+    amp          = ByteField(26)
+    limit        = ByteField(27, enum=M8LimiterType)
+    pan          = ByteField(28, default=0x80)
+    dry          = ByteField(29, default=0xC0)
+    chorus_send  = ByteField(30)
+    delay_send   = ByteField(31)
+    reverb_send  = ByteField(32)

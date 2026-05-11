@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 from m8.api.project import M8Project
-from m8.api.instruments.sampler import M8Sampler, M8SamplerParam
+from m8.api.instruments.sampler import M8Sampler
 from m8.api.phrase import M8Phrase, M8PhraseStep, M8Note
 from m8.api.chain import M8Chain, M8ChainStep
 from m8.api.fx import M8FXTuple, M8SequenceFX, M8SamplerFX
@@ -271,7 +271,7 @@ def create_acid_banger_chain_project():
     # Create the single chain sampler instrument
     print(f"\nCreating chain sampler instrument...")
     chain_sampler = M8Sampler(name="CHAIN", sample_path="samples/chain.wav")
-    chain_sampler.set(M8SamplerParam.SLICE, SLICE_MODE_FILE)
+    chain_sampler.slice = SLICE_MODE_FILE
     project.instruments[0] = chain_sampler
     print(f"  Instrument 0: CHAIN (slice mode: FILE)")
 

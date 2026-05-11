@@ -1,922 +1,251 @@
+"""Tests for M8 modulators (descriptor-based subclasses).
+
+Each modulator type is a distinct class with descriptor-based parameters.
+Changing the type of a modulator slot means replacing it.
+"""
 import unittest
+
 from m8.api.modulator import (
     M8Modulator, M8Modulators,
+    M8AHDModulator, M8ADSRModulator, M8DrumModulator,
+    M8LFOModulator, M8TrigModulator, M8TrackingModulator,
     M8ModulatorType, M8LFOShape, M8LFOTriggerMode,
-    M8AHDParam, M8ADSRParam, M8DrumParam, M8LFOParam, M8TrigParam, M8TrackingParam,
-    BLOCK_SIZE, BLOCK_COUNT,
-    DEFAULT_AMOUNT, DEFAULT_DESTINATION, DEFAULT_AHD_DECAY, DEFAULT_LFO_FREQUENCY,
-    AHD_ATTACK_OFFSET, AHD_HOLD_OFFSET, AHD_DECAY_OFFSET,
-    LFO_OSCILLATOR_OFFSET, LFO_TRIGGER_OFFSET, LFO_FREQUENCY_OFFSET
 )
 
 
-class TestM8Modulator(unittest.TestCase):
-    """Tests for M8Modulator class."""
+# (class, type_enum, sample_field_mutations). One row per modulator type.
+MODULATOR_CASES = [
+    (M8AHDModulator, M8ModulatorType.AHD_ENVELOPE, [
+        ("attack", 0x10), ("hold", 0x20), ("decay", 0x40),
+    ]),
+    (M8ADSRModulator, M8ModulatorType.ADSR_ENVELOPE, [
+        ("attack", 0x10), ("decay", 0x20), ("sustain", 0x80), ("release", 0x30),
+    ]),
+    (M8DrumModulator, M8ModulatorType.DRUM_ENVELOPE, [
+        ("peak", 0x40), ("body", 0x80), ("decay", 0x60),
+    ]),
+    (M8LFOModulator, M8ModulatorType.LFO, [
+        ("shape", M8LFOShape.SIN),
+        ("trigger_mode", M8LFOTriggerMode.RETRIG),
+        ("freq", 0x25),
+    ]),
+    (M8TrigModulator, M8ModulatorType.TRIG_ENVELOPE, [
+        ("attack", 0x10), ("hold", 0x20), ("decay", 0x30), ("src", 0x40),
+    ]),
+    (M8TrackingModulator, M8ModulatorType.TRACKING_ENVELOPE, [
+        ("src", 0x05), ("lval", 0x10), ("hval", 0xF0),
+    ]),
+]
 
-    def test_constructor_ahd_envelope(self):
-        """Test default constructor creates AHD envelope with correct defaults."""
-        mod = M8Modulator(mod_type=0)  # AHD
 
-        # Check type and destination
-        self.assertEqual(mod.mod_type, 0)
-        self.assertEqual(mod.destination, DEFAULT_DESTINATION)
+class TestEveryModulatorType(unittest.TestCase):
+    """One-shot cross-cutting checks for every modulator subclass."""
 
-        # Check amount
-        self.assertEqual(mod.amount, DEFAULT_AMOUNT)
+    def _apply(self, mod, muts):
+        for attr, value in muts:
+            setattr(mod, attr, value)
 
-        # Check AHD-specific defaults
-        self.assertEqual(mod.get(AHD_DECAY_OFFSET), DEFAULT_AHD_DECAY)
+    def _check(self, mod, muts):
+        for attr, value in muts:
+            self.assertEqual(getattr(mod, attr), int(value),
+                             f"{type(mod).__name__}.{attr}")
 
-    def test_constructor_lfo(self):
-        """Test constructor creates LFO with correct defaults."""
-        mod = M8Modulator(mod_type=3)  # LFO
+    def test_mod_type_byte(self):
+        for cls, mod_type, _ in MODULATOR_CASES:
+            with self.subTest(cls=cls.__name__):
+                mod = cls()
+                self.assertEqual(mod.mod_type, int(mod_type))
 
-        # Check type and destination
-        self.assertEqual(mod.mod_type, 3)
-        self.assertEqual(mod.destination, DEFAULT_DESTINATION)
+    def test_amount_default(self):
+        for cls, _, _ in MODULATOR_CASES:
+            with self.subTest(cls=cls.__name__):
+                self.assertEqual(cls().amount, 0xFF)
 
-        # Check amount
-        self.assertEqual(mod.amount, DEFAULT_AMOUNT)
-
-        # Check LFO-specific defaults
-        self.assertEqual(mod.get(LFO_FREQUENCY_OFFSET), DEFAULT_LFO_FREQUENCY)
-
-    def test_type_destination_nibbles(self):
-        """Test that type and destination are stored in nibbles correctly."""
-        mod = M8Modulator(mod_type=3)  # LFO
-
-        # Set destination
-        mod.destination = 5
-
-        # Check byte 0 contains both nibbles
-        self.assertEqual(mod.get(0), 0x35)  # 3 in high nibble, 5 in low nibble
-        self.assertEqual(mod.mod_type, 3)
-        self.assertEqual(mod.destination, 5)
-
-        # Change type
-        mod.mod_type = 0  # AHD
-
-        # Check destination is preserved
-        self.assertEqual(mod.get(0), 0x05)
-        self.assertEqual(mod.mod_type, 0)
-        self.assertEqual(mod.destination, 5)
-
-    def test_amount_property(self):
-        """Test amount property getter and setter."""
-        mod = M8Modulator()
-
-        # Default amount
-        self.assertEqual(mod.amount, DEFAULT_AMOUNT)
-
-        # Set amount
-        mod.amount = 0x80
-        self.assertEqual(mod.amount, 0x80)
-        self.assertEqual(mod.get(1), 0x80)
-
-    def test_get_set_parameters(self):
-        """Test generic get/set for all parameters."""
-        mod = M8Modulator(mod_type=0)  # AHD
-
-        # Set AHD parameters
-        mod.set(AHD_ATTACK_OFFSET, 0x40)
-        mod.set(AHD_HOLD_OFFSET, 0x50)
-        mod.set(AHD_DECAY_OFFSET, 0x60)
-
-        # Verify
-        self.assertEqual(mod.get(AHD_ATTACK_OFFSET), 0x40)
-        self.assertEqual(mod.get(AHD_HOLD_OFFSET), 0x50)
-        self.assertEqual(mod.get(AHD_DECAY_OFFSET), 0x60)
-
-    def test_write(self):
-        """Test binary serialization."""
-        mod = M8Modulator(mod_type=3)  # LFO
-        mod.destination = 5
-        mod.amount = 0x80
-        mod.set(LFO_OSCILLATOR_OFFSET, 0x01)
-        mod.set(LFO_TRIGGER_OFFSET, 0x02)
-        mod.set(LFO_FREQUENCY_OFFSET, 0x30)
-
-        binary = mod.write()
-
-        # Check length
-        self.assertEqual(len(binary), BLOCK_SIZE)
-
-        # Check values
-        self.assertEqual(binary[0], 0x35)  # Type 3, dest 5
-        self.assertEqual(binary[1], 0x80)  # Amount
-        self.assertEqual(binary[2], 0x01)  # Oscillator
-        self.assertEqual(binary[3], 0x02)  # Trigger
-        self.assertEqual(binary[4], 0x30)  # Frequency
-
-    def test_read(self):
-        """Test binary deserialization."""
-        # Create test data
-        test_data = bytearray([
-            0x35,  # Type 3 (LFO), destination 5
-            0x80,  # Amount
-            0x01,  # Oscillator
-            0x02,  # Trigger
-            0x30,  # Frequency
-            0x00   # Padding
-        ])
-
-        mod = M8Modulator.read(test_data)
-
-        # Verify
-        self.assertEqual(mod.mod_type, 3)
-        self.assertEqual(mod.destination, 5)
-        self.assertEqual(mod.amount, 0x80)
-        self.assertEqual(mod.get(LFO_OSCILLATOR_OFFSET), 0x01)
-        self.assertEqual(mod.get(LFO_TRIGGER_OFFSET), 0x02)
-        self.assertEqual(mod.get(LFO_FREQUENCY_OFFSET), 0x30)
+    def test_binary_round_trip(self):
+        for cls, _, muts in MODULATOR_CASES:
+            with self.subTest(cls=cls.__name__):
+                src = cls()
+                src.destination = 5
+                src.amount = 0xA0
+                self._apply(src, muts)
+                round_tripped = cls.read(src.write())
+                self.assertEqual(round_tripped.destination, 5)
+                self.assertEqual(round_tripped.amount, 0xA0)
+                self._check(round_tripped, muts)
 
     def test_clone(self):
-        """Test cloning creates independent copy."""
-        original = M8Modulator(mod_type=3)
-        original.destination = 5
-        original.amount = 0x80
-        original.set(LFO_FREQUENCY_OFFSET, 0x30)
+        for cls, _, muts in MODULATOR_CASES:
+            with self.subTest(cls=cls.__name__):
+                src = cls()
+                self._apply(src, muts)
+                cloned = src.clone()
+                self.assertIsNot(cloned, src)
+                self._check(cloned, muts)
 
-        cloned = original.clone()
+    def test_dict_round_trip(self):
+        for cls, mod_type, muts in MODULATOR_CASES:
+            with self.subTest(cls=cls.__name__):
+                src = cls()
+                src.destination = 3
+                self._apply(src, muts)
+                params = src.to_dict()
+                self.assertEqual(params["type"], mod_type.name)
+                reloaded = cls.from_dict(params)
+                self.assertEqual(reloaded.destination, 3)
+                self._check(reloaded, muts)
 
-        # Check they are different objects
-        self.assertIsNot(cloned, original)
+    def test_factory_dispatch(self):
+        """M8Modulator.from_dict(...) dispatches to the right subclass."""
+        for cls, _, muts in MODULATOR_CASES:
+            with self.subTest(cls=cls.__name__):
+                src = cls()
+                self._apply(src, muts)
+                reloaded = M8Modulator.from_dict(src.to_dict())
+                self.assertIsInstance(reloaded, cls)
 
-        # Check values match
-        self.assertEqual(cloned.mod_type, original.mod_type)
-        self.assertEqual(cloned.destination, original.destination)
-        self.assertEqual(cloned.amount, original.amount)
-        self.assertEqual(cloned.get(LFO_FREQUENCY_OFFSET), original.get(LFO_FREQUENCY_OFFSET))
 
-        # Modify clone
-        cloned.destination = 7
-        cloned.set(LFO_FREQUENCY_OFFSET, 0x40)
+class TestTypeDestinationNibblePacking(unittest.TestCase):
+    def test_byte_zero_layout(self):
+        """High nibble = type, low nibble = destination."""
+        lfo = M8LFOModulator()
+        lfo.destination = 5
+        self.assertEqual(lfo._data[0], 0x35)  # type=3 LFO, dest=5
 
-        # Check original unchanged
-        self.assertEqual(original.destination, 5)
-        self.assertEqual(original.get(LFO_FREQUENCY_OFFSET), 0x30)
+        ahd = M8AHDModulator()
+        ahd.destination = 7
+        self.assertEqual(ahd._data[0], 0x07)  # type=0 AHD, dest=7
 
-    def test_read_write_consistency(self):
-        """Test round-trip read/write consistency."""
-        original = M8Modulator(mod_type=0)  # AHD
-        original.destination = 3
-        original.amount = 0x90
-        original.set(AHD_ATTACK_OFFSET, 0x20)
-        original.set(AHD_HOLD_OFFSET, 0x30)
-        original.set(AHD_DECAY_OFFSET, 0x40)
 
-        # Write and read back
-        binary = original.write()
-        deserialized = M8Modulator.read(binary)
+class TestEnumSerialization(unittest.TestCase):
+    def test_lfo_shape_uses_names(self):
+        mod = M8LFOModulator()
+        mod.shape = M8LFOShape.RANDOM
+        mod.trigger_mode = M8LFOTriggerMode.ONCE
+        result = mod.to_dict()
+        self.assertEqual(result["params"]["shape"], "RANDOM")
+        self.assertEqual(result["params"]["trigger_mode"], "ONCE")
 
-        # Verify all values preserved
-        self.assertEqual(deserialized.mod_type, original.mod_type)
-        self.assertEqual(deserialized.destination, original.destination)
-        self.assertEqual(deserialized.amount, original.amount)
-        self.assertEqual(deserialized.get(AHD_ATTACK_OFFSET), original.get(AHD_ATTACK_OFFSET))
-        self.assertEqual(deserialized.get(AHD_HOLD_OFFSET), original.get(AHD_HOLD_OFFSET))
-        self.assertEqual(deserialized.get(AHD_DECAY_OFFSET), original.get(AHD_DECAY_OFFSET))
+    def test_destination_uses_dest_enum_class(self):
+        from m8.api.instruments.wavsynth import M8WavsynthModDest
+        mod = M8AHDModulator()
+        mod.destination = int(M8WavsynthModDest.CUTOFF)
+        result = mod.to_dict(dest_enum_class=M8WavsynthModDest)
+        self.assertEqual(result["destination"], "CUTOFF")
+
+    def test_from_dict_accepts_enum_name(self):
+        params = {
+            "type": "LFO",
+            "destination": 5,
+            "amount": 0x80,
+            "params": {
+                "shape": "EXP_UP",
+                "trigger_mode": "ONCE",
+                "freq": 0x18,
+                "retrigger": 0,
+            },
+        }
+        mod = M8Modulator.from_dict(params)
+        self.assertIsInstance(mod, M8LFOModulator)
+        self.assertEqual(mod.shape, int(M8LFOShape.EXP_UP))
+        self.assertEqual(mod.trigger_mode, int(M8LFOTriggerMode.ONCE))
+
+    def test_from_dict_accepts_int(self):
+        """Forward-compat: integer values still work."""
+        params = {
+            "type": M8ModulatorType.LFO.value,
+            "destination": 5,
+            "amount": 0x80,
+            "params": {
+                "shape": int(M8LFOShape.RAMP_DOWN),
+                "trigger_mode": int(M8LFOTriggerMode.HOLD),
+                "freq": 0x25,
+                "retrigger": 0,
+            },
+        }
+        mod = M8Modulator.from_dict(params)
+        self.assertIsInstance(mod, M8LFOModulator)
+        self.assertEqual(mod.shape, int(M8LFOShape.RAMP_DOWN))
 
 
 class TestM8Modulators(unittest.TestCase):
-    """Tests for M8Modulators collection class."""
-
-    def test_constructor(self):
-        """Test constructor creates 4 modulators with correct types."""
-        modulators = M8Modulators()
-
-        # Check count
-        self.assertEqual(len(modulators), BLOCK_COUNT)
-        self.assertEqual(len(modulators), 4)
-
-        # Check default types: 0, 0, 3, 3 (2 AHD, 2 LFO)
-        self.assertEqual(modulators[0].mod_type, 0)  # AHD
-        self.assertEqual(modulators[1].mod_type, 0)  # AHD
-        self.assertEqual(modulators[2].mod_type, 3)  # LFO
-        self.assertEqual(modulators[3].mod_type, 3)  # LFO
-
-        # Check all have default amount
-        for mod in modulators:
-            self.assertEqual(mod.amount, DEFAULT_AMOUNT)
-
-        # Check type-specific defaults
-        self.assertEqual(modulators[0].get(AHD_DECAY_OFFSET), DEFAULT_AHD_DECAY)
-        self.assertEqual(modulators[1].get(AHD_DECAY_OFFSET), DEFAULT_AHD_DECAY)
-        self.assertEqual(modulators[2].get(LFO_FREQUENCY_OFFSET), DEFAULT_LFO_FREQUENCY)
-        self.assertEqual(modulators[3].get(LFO_FREQUENCY_OFFSET), DEFAULT_LFO_FREQUENCY)
-
-    def test_write(self):
-        """Test writing modulators collection to binary."""
-        modulators = M8Modulators()
-
-        # Customize first modulator
-        modulators[0].destination = 1
-        modulators[0].amount = 0x80
-        modulators[0].set(AHD_ATTACK_OFFSET, 0x20)
-
-        binary = modulators.write()
-
-        # Check total size
-        self.assertEqual(len(binary), BLOCK_COUNT * BLOCK_SIZE)
-        self.assertEqual(len(binary), 24)  # 4 * 6
-
-        # Check first modulator data
-        self.assertEqual(binary[0], 0x01)  # Type 0, dest 1
-        self.assertEqual(binary[1], 0x80)  # Amount
-        self.assertEqual(binary[2], 0x20)  # Attack
-
-    def test_read(self):
-        """Test reading modulators collection from binary."""
-        # Create test data for 4 modulators
-        test_data = bytearray()
-
-        # Modulator 0: AHD with custom params
-        test_data.extend([0x01, 0xFF, 0x20, 0x30, 0x80, 0x00])
-
-        # Modulator 1: AHD default
-        test_data.extend([0x00, 0xFF, 0x00, 0x00, 0x80, 0x00])
-
-        # Modulator 2: LFO with custom params
-        test_data.extend([0x35, 0xFF, 0x01, 0x02, 0x10, 0x00])
-
-        # Modulator 3: LFO default
-        test_data.extend([0x30, 0xFF, 0x00, 0x00, 0x10, 0x00])
-
-        modulators = M8Modulators.read(test_data)
-
-        # Check count
-        self.assertEqual(len(modulators), 4)
-
-        # Check modulator 0
-        self.assertEqual(modulators[0].mod_type, 0)
-        self.assertEqual(modulators[0].destination, 1)
-        self.assertEqual(modulators[0].amount, 0xFF)
-        self.assertEqual(modulators[0].get(AHD_ATTACK_OFFSET), 0x20)
-
-        # Check modulator 2
-        self.assertEqual(modulators[2].mod_type, 3)
-        self.assertEqual(modulators[2].destination, 5)
-        self.assertEqual(modulators[2].get(LFO_OSCILLATOR_OFFSET), 0x01)
-
-    def test_clone(self):
-        """Test cloning modulators collection."""
-        original = M8Modulators()
-        original[0].destination = 1
-        original[0].set(AHD_ATTACK_OFFSET, 0x20)
-
-        cloned = original.clone()
-
-        # Check different objects
-        self.assertIsNot(cloned, original)
-        self.assertIsNot(cloned[0], original[0])
-
-        # Check values match
-        self.assertEqual(cloned[0].destination, original[0].destination)
-        self.assertEqual(cloned[0].get(AHD_ATTACK_OFFSET), original[0].get(AHD_ATTACK_OFFSET))
-
-        # Modify clone
-        cloned[0].destination = 2
-        cloned[0].set(AHD_ATTACK_OFFSET, 0x30)
-
-        # Check original unchanged
-        self.assertEqual(original[0].destination, 1)
-        self.assertEqual(original[0].get(AHD_ATTACK_OFFSET), 0x20)
-
-    def test_read_write_consistency(self):
-        """Test round-trip read/write consistency."""
-        original = M8Modulators()
-
-        # Customize modulators
-        original[0].destination = 1
-        original[0].set(AHD_ATTACK_OFFSET, 0x20)
-        original[0].set(AHD_HOLD_OFFSET, 0x30)
-
-        original[2].destination = 5
-        original[2].set(LFO_OSCILLATOR_OFFSET, 0x01)
-        original[2].set(LFO_FREQUENCY_OFFSET, 0x25)
-
-        # Write and read back
-        binary = original.write()
-        deserialized = M8Modulators.read(binary)
-
-        # Verify modulator 0
-        self.assertEqual(deserialized[0].mod_type, original[0].mod_type)
-        self.assertEqual(deserialized[0].destination, original[0].destination)
-        self.assertEqual(deserialized[0].get(AHD_ATTACK_OFFSET), original[0].get(AHD_ATTACK_OFFSET))
-        self.assertEqual(deserialized[0].get(AHD_HOLD_OFFSET), original[0].get(AHD_HOLD_OFFSET))
-
-        # Verify modulator 2
-        self.assertEqual(deserialized[2].mod_type, original[2].mod_type)
-        self.assertEqual(deserialized[2].destination, original[2].destination)
-        self.assertEqual(deserialized[2].get(LFO_OSCILLATOR_OFFSET), original[2].get(LFO_OSCILLATOR_OFFSET))
-        self.assertEqual(deserialized[2].get(LFO_FREQUENCY_OFFSET), original[2].get(LFO_FREQUENCY_OFFSET))
-
-
-class TestModulatorEnums(unittest.TestCase):
-    """Tests for modulator enum classes."""
-
-    def test_m8_modulator_type_values(self):
-        """Test M8ModulatorType enum has correct values."""
-        self.assertEqual(M8ModulatorType.AHD_ENVELOPE, 0)
-        self.assertEqual(M8ModulatorType.ADSR_ENVELOPE, 1)
-        self.assertEqual(M8ModulatorType.DRUM_ENVELOPE, 2)
-        self.assertEqual(M8ModulatorType.LFO, 3)
-        self.assertEqual(M8ModulatorType.TRIG_ENVELOPE, 4)
-        self.assertEqual(M8ModulatorType.TRACKING_ENVELOPE, 5)
-
-    def test_m8_modulator_type_with_modulator(self):
-        """Test M8ModulatorType enum works with M8Modulator."""
-        # Test with AHD
-        mod_ahd = M8Modulator(mod_type=M8ModulatorType.AHD_ENVELOPE)
-        self.assertEqual(mod_ahd.mod_type, 0)
-        self.assertEqual(mod_ahd.mod_type, M8ModulatorType.AHD_ENVELOPE)
-
-        # Test with LFO
-        mod_lfo = M8Modulator(mod_type=M8ModulatorType.LFO)
-        self.assertEqual(mod_lfo.mod_type, 3)
-        self.assertEqual(mod_lfo.mod_type, M8ModulatorType.LFO)
-
-        # Test with ADSR
-        mod_adsr = M8Modulator(mod_type=M8ModulatorType.ADSR_ENVELOPE)
-        self.assertEqual(mod_adsr.mod_type, 1)
-        self.assertEqual(mod_adsr.mod_type, M8ModulatorType.ADSR_ENVELOPE)
-
-    def test_m8_lfo_shape_values(self):
-        """Test M8LFOShape enum has correct values."""
-        # Basic shapes (0-9)
-        self.assertEqual(M8LFOShape.TRI, 0)
-        self.assertEqual(M8LFOShape.SIN, 1)
-        self.assertEqual(M8LFOShape.RAMP_DOWN, 2)
-        self.assertEqual(M8LFOShape.RAMP_UP, 3)
-        self.assertEqual(M8LFOShape.EXP_DN, 4)
-        self.assertEqual(M8LFOShape.EXP_UP, 5)
-        self.assertEqual(M8LFOShape.SQR_DN, 6)
-        self.assertEqual(M8LFOShape.SQR_UP, 7)
-        self.assertEqual(M8LFOShape.RANDOM, 8)
-        self.assertEqual(M8LFOShape.DRUNK, 9)
-
-        # Triggered shapes (10-19)
-        self.assertEqual(M8LFOShape.TRI_T, 10)
-        self.assertEqual(M8LFOShape.SIN_T, 11)
-        self.assertEqual(M8LFOShape.RAMPD_T, 12)
-        self.assertEqual(M8LFOShape.RAMPU_T, 13)
-        self.assertEqual(M8LFOShape.EXPD_T, 14)
-        self.assertEqual(M8LFOShape.EXPU_T, 15)
-        self.assertEqual(M8LFOShape.SQ_D_T, 16)
-        self.assertEqual(M8LFOShape.SQ_U_T, 17)
-        self.assertEqual(M8LFOShape.RAND_T, 18)
-        self.assertEqual(M8LFOShape.DRNK_T, 19)
-
-    def test_m8_lfo_shape_range(self):
-        """Test M8LFOShape enum covers full range 0-19."""
-        # Check we have all 20 shapes
-        all_values = [shape.value for shape in M8LFOShape]
-        self.assertEqual(len(all_values), 20)
-        self.assertEqual(min(all_values), 0)
-        self.assertEqual(max(all_values), 19)
-
-    def test_m8_lfo_trigger_mode_values(self):
-        """Test M8LFOTriggerMode enum has correct values."""
-        self.assertEqual(M8LFOTriggerMode.FREE, 0)
-        self.assertEqual(M8LFOTriggerMode.RETRIG, 1)
-        self.assertEqual(M8LFOTriggerMode.HOLD, 2)
-        self.assertEqual(M8LFOTriggerMode.ONCE, 3)
-
-    def test_enums_with_modulator_lfo_params(self):
-        """Test that enums can be used to set LFO parameters."""
-        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
-
-        # Set LFO shape using enum
-        mod.set(LFO_OSCILLATOR_OFFSET, M8LFOShape.SIN)
-        self.assertEqual(mod.get(LFO_OSCILLATOR_OFFSET), 1)
-        self.assertEqual(mod.get(LFO_OSCILLATOR_OFFSET), M8LFOShape.SIN)
-
-        # Set LFO trigger mode using enum
-        mod.set(LFO_TRIGGER_OFFSET, M8LFOTriggerMode.RETRIG)
-        self.assertEqual(mod.get(LFO_TRIGGER_OFFSET), 1)
-        self.assertEqual(mod.get(LFO_TRIGGER_OFFSET), M8LFOTriggerMode.RETRIG)
-
-
-class TestModulatorParameterEnums(unittest.TestCase):
-    """Tests for modulator parameter enum classes."""
-
-    def test_ahd_param_values(self):
-        """Test M8AHDParam enum has correct offset values."""
-        self.assertEqual(M8AHDParam.ATTACK, 2)
-        self.assertEqual(M8AHDParam.HOLD, 3)
-        self.assertEqual(M8AHDParam.DECAY, 4)
-
-        # Verify count
-        self.assertEqual(len(M8AHDParam), 3)
-
-    def test_ahd_param_usage(self):
-        """Test using M8AHDParam enum with AHD modulator."""
-        mod = M8Modulator(mod_type=M8ModulatorType.AHD_ENVELOPE)
-
-        # Set parameters using enum
-        mod.set(M8AHDParam.ATTACK, 0x20)
-        mod.set(M8AHDParam.HOLD, 0x30)
-        mod.set(M8AHDParam.DECAY, 0x40)
-
-        # Verify values
-        self.assertEqual(mod.get(M8AHDParam.ATTACK), 0x20)
-        self.assertEqual(mod.get(M8AHDParam.HOLD), 0x30)
-        self.assertEqual(mod.get(M8AHDParam.DECAY), 0x40)
-
-    def test_adsr_param_values(self):
-        """Test M8ADSRParam enum has correct offset values."""
-        self.assertEqual(M8ADSRParam.ATTACK, 2)
-        self.assertEqual(M8ADSRParam.DECAY, 3)
-        self.assertEqual(M8ADSRParam.SUSTAIN, 4)
-        self.assertEqual(M8ADSRParam.RELEASE, 5)
-
-        # Verify count
-        self.assertEqual(len(M8ADSRParam), 4)
-
-    def test_adsr_param_usage(self):
-        """Test using M8ADSRParam enum with ADSR modulator."""
-        mod = M8Modulator(mod_type=M8ModulatorType.ADSR_ENVELOPE)
-
-        # Set parameters using enum
-        mod.set(M8ADSRParam.ATTACK, 0x10)
-        mod.set(M8ADSRParam.DECAY, 0x20)
-        mod.set(M8ADSRParam.SUSTAIN, 0x80)
-        mod.set(M8ADSRParam.RELEASE, 0x30)
-
-        # Verify values
-        self.assertEqual(mod.get(M8ADSRParam.ATTACK), 0x10)
-        self.assertEqual(mod.get(M8ADSRParam.DECAY), 0x20)
-        self.assertEqual(mod.get(M8ADSRParam.SUSTAIN), 0x80)
-        self.assertEqual(mod.get(M8ADSRParam.RELEASE), 0x30)
-
-    def test_drum_param_values(self):
-        """Test M8DrumParam enum has correct offset values."""
-        self.assertEqual(M8DrumParam.PEAK, 2)
-        self.assertEqual(M8DrumParam.BODY, 3)
-        self.assertEqual(M8DrumParam.DECAY, 4)
-
-        # Verify count
-        self.assertEqual(len(M8DrumParam), 3)
-
-    def test_drum_param_usage(self):
-        """Test using M8DrumParam enum with Drum modulator."""
-        mod = M8Modulator(mod_type=M8ModulatorType.DRUM_ENVELOPE)
-
-        # Set parameters using enum
-        mod.set(M8DrumParam.PEAK, 0x40)
-        mod.set(M8DrumParam.BODY, 0x50)
-        mod.set(M8DrumParam.DECAY, 0x60)
-
-        # Verify values
-        self.assertEqual(mod.get(M8DrumParam.PEAK), 0x40)
-        self.assertEqual(mod.get(M8DrumParam.BODY), 0x50)
-        self.assertEqual(mod.get(M8DrumParam.DECAY), 0x60)
-
-    def test_lfo_param_values(self):
-        """Test M8LFOParam enum has correct offset values."""
-        self.assertEqual(M8LFOParam.SHAPE, 2)
-        self.assertEqual(M8LFOParam.TRIGGER_MODE, 3)
-        self.assertEqual(M8LFOParam.FREQ, 4)
-        self.assertEqual(M8LFOParam.RETRIGGER, 5)
-
-        # Verify count
-        self.assertEqual(len(M8LFOParam), 4)
-
-    def test_lfo_param_usage(self):
-        """Test using M8LFOParam enum with LFO modulator."""
-        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
-
-        # Set parameters using enum
-        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
-        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
-        mod.set(M8LFOParam.FREQ, 0x20)
-        mod.set(M8LFOParam.RETRIGGER, 0x00)
-
-        # Verify values
-        self.assertEqual(mod.get(M8LFOParam.SHAPE), M8LFOShape.SIN)
-        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), M8LFOTriggerMode.RETRIG)
-        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x20)
-        self.assertEqual(mod.get(M8LFOParam.RETRIGGER), 0x00)
-
-    def test_trig_param_values(self):
-        """Test M8TrigParam enum has correct offset values."""
-        self.assertEqual(M8TrigParam.ATTACK, 2)
-        self.assertEqual(M8TrigParam.HOLD, 3)
-        self.assertEqual(M8TrigParam.DECAY, 4)
-        self.assertEqual(M8TrigParam.SRC, 5)
-
-        # Verify count
-        self.assertEqual(len(M8TrigParam), 4)
-
-    def test_trig_param_usage(self):
-        """Test using M8TrigParam enum with Trig modulator."""
-        mod = M8Modulator(mod_type=M8ModulatorType.TRIG_ENVELOPE)
-
-        # Set parameters using enum
-        mod.set(M8TrigParam.ATTACK, 0x15)
-        mod.set(M8TrigParam.HOLD, 0x25)
-        mod.set(M8TrigParam.DECAY, 0x35)
-        mod.set(M8TrigParam.SRC, 0x01)
-
-        # Verify values
-        self.assertEqual(mod.get(M8TrigParam.ATTACK), 0x15)
-        self.assertEqual(mod.get(M8TrigParam.HOLD), 0x25)
-        self.assertEqual(mod.get(M8TrigParam.DECAY), 0x35)
-        self.assertEqual(mod.get(M8TrigParam.SRC), 0x01)
-
-    def test_tracking_param_values(self):
-        """Test M8TrackingParam enum has correct offset values."""
-        self.assertEqual(M8TrackingParam.SRC, 2)
-        self.assertEqual(M8TrackingParam.LVAL, 3)
-        self.assertEqual(M8TrackingParam.HVAL, 4)
-
-        # Verify count
-        self.assertEqual(len(M8TrackingParam), 3)
-
-    def test_tracking_param_usage(self):
-        """Test using M8TrackingParam enum with Tracking modulator."""
-        mod = M8Modulator(mod_type=M8ModulatorType.TRACKING_ENVELOPE)
-
-        # Set parameters using enum
-        mod.set(M8TrackingParam.SRC, 0x02)
-        mod.set(M8TrackingParam.LVAL, 0x40)
-        mod.set(M8TrackingParam.HVAL, 0xC0)
-
-        # Verify values
-        self.assertEqual(mod.get(M8TrackingParam.SRC), 0x02)
-        self.assertEqual(mod.get(M8TrackingParam.LVAL), 0x40)
-        self.assertEqual(mod.get(M8TrackingParam.HVAL), 0xC0)
-
-    def test_param_serialization(self):
-        """Test that parameter values are preserved through write/read cycle."""
-        # Create modulator with each type and verify serialization
-        test_cases = [
-            (M8ModulatorType.AHD_ENVELOPE, M8AHDParam.ATTACK, 0x20),
-            (M8ModulatorType.ADSR_ENVELOPE, M8ADSRParam.SUSTAIN, 0x80),
-            (M8ModulatorType.DRUM_ENVELOPE, M8DrumParam.PEAK, 0x50),
-            (M8ModulatorType.LFO, M8LFOParam.FREQ, 0x30),
-            (M8ModulatorType.TRIG_ENVELOPE, M8TrigParam.SRC, 0x03),
-            (M8ModulatorType.TRACKING_ENVELOPE, M8TrackingParam.HVAL, 0xA0),
-        ]
-
-        for mod_type, param, value in test_cases:
-            with self.subTest(mod_type=mod_type, param=param):
-                # Create and configure modulator
-                original = M8Modulator(mod_type=mod_type)
-                original.destination = 2
-                original.amount = 0x90
-                original.set(param, value)
-
-                # Write and read
-                binary = original.write()
-                deserialized = M8Modulator.read(binary)
-
-                # Verify parameter preserved
-                self.assertEqual(deserialized.mod_type, mod_type)
-                self.assertEqual(deserialized.destination, 2)
-                self.assertEqual(deserialized.amount, 0x90)
-                self.assertEqual(deserialized.get(param), value)
-
-
-class TestModulatorDictSerialization(unittest.TestCase):
-    """Tests for modulator dict serialization (to_dict/from_dict)."""
-
-    def test_modulator_to_dict_ahd(self):
-        """Test exporting AHD modulator to dict."""
-        mod = M8Modulator(mod_type=M8ModulatorType.AHD_ENVELOPE)
-        mod.destination = 3
-        mod.amount = 0x90
-        mod.set(M8AHDParam.ATTACK, 0x20)
-        mod.set(M8AHDParam.HOLD, 0x30)
-        mod.set(M8AHDParam.DECAY, 0x40)
-
-        result = mod.to_dict()
-
-        # Check structure
-        self.assertIn('type', result)
-        self.assertIn('destination', result)
-        self.assertIn('amount', result)
-        self.assertIn('params', result)
-
-        # Check values
-        self.assertEqual(result['type'], 0)
-        self.assertEqual(result['destination'], 3)
-        self.assertEqual(result['amount'], 0x90)
-        self.assertEqual(result['params']['ATTACK'], 0x20)
-        self.assertEqual(result['params']['HOLD'], 0x30)
-        self.assertEqual(result['params']['DECAY'], 0x40)
-
-    def test_modulator_to_dict_lfo(self):
-        """Test exporting LFO modulator to dict."""
-        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
-        mod.destination = 5
-        mod.amount = 0x80
-        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
-        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
-        mod.set(M8LFOParam.FREQ, 0x25)
-        mod.set(M8LFOParam.RETRIGGER, 0x00)
-
-        result = mod.to_dict()
-
-        # Check LFO-specific params
-        self.assertEqual(result['type'], 3)
-        self.assertEqual(result['destination'], 5)
-        self.assertEqual(result['params']['SHAPE'], 1)  # SIN
-        self.assertEqual(result['params']['TRIGGER_MODE'], 1)  # RETRIG
-        self.assertEqual(result['params']['FREQ'], 0x25)
-        self.assertEqual(result['params']['RETRIGGER'], 0x00)
-
-    def test_modulator_from_dict_ahd(self):
-        """Test creating AHD modulator from dict."""
-        params = {
-            'type': 0,
-            'destination': 3,
-            'amount': 0x90,
-            'params': {
-                'ATTACK': 0x20,
-                'HOLD': 0x30,
-                'DECAY': 0x40
-            }
-        }
-
-        mod = M8Modulator.from_dict(params)
-
-        # Verify all values
-        self.assertEqual(mod.mod_type, 0)
-        self.assertEqual(mod.destination, 3)
-        self.assertEqual(mod.amount, 0x90)
-        self.assertEqual(mod.get(M8AHDParam.ATTACK), 0x20)
-        self.assertEqual(mod.get(M8AHDParam.HOLD), 0x30)
-        self.assertEqual(mod.get(M8AHDParam.DECAY), 0x40)
-
-    def test_modulator_from_dict_lfo(self):
-        """Test creating LFO modulator from dict."""
-        params = {
-            'type': 3,
-            'destination': 5,
-            'amount': 0x80,
-            'params': {
-                'SHAPE': 1,
-                'TRIGGER_MODE': 1,
-                'FREQ': 0x25,
-                'RETRIGGER': 0x00
-            }
-        }
-
-        mod = M8Modulator.from_dict(params)
-
-        # Verify all values
-        self.assertEqual(mod.mod_type, 3)
-        self.assertEqual(mod.destination, 5)
-        self.assertEqual(mod.amount, 0x80)
-        self.assertEqual(mod.get(M8LFOParam.SHAPE), 1)
-        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), 1)
-        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x25)
-
-    def test_modulator_roundtrip(self):
-        """Test that to_dict -> from_dict preserves all values."""
-        original = M8Modulator(mod_type=M8ModulatorType.ADSR_ENVELOPE)
-        original.destination = 2
-        original.amount = 0xA0
-        original.set(M8ADSRParam.ATTACK, 0x10)
-        original.set(M8ADSRParam.DECAY, 0x20)
-        original.set(M8ADSRParam.SUSTAIN, 0x80)
-        original.set(M8ADSRParam.RELEASE, 0x30)
-
-        # Export and re-import
-        params = original.to_dict()
-        restored = M8Modulator.from_dict(params)
-
-        # Verify everything matches
-        self.assertEqual(restored.mod_type, original.mod_type)
-        self.assertEqual(restored.destination, original.destination)
-        self.assertEqual(restored.amount, original.amount)
-        self.assertEqual(restored.get(M8ADSRParam.ATTACK), original.get(M8ADSRParam.ATTACK))
-        self.assertEqual(restored.get(M8ADSRParam.DECAY), original.get(M8ADSRParam.DECAY))
-        self.assertEqual(restored.get(M8ADSRParam.SUSTAIN), original.get(M8ADSRParam.SUSTAIN))
-        self.assertEqual(restored.get(M8ADSRParam.RELEASE), original.get(M8ADSRParam.RELEASE))
-
-    def test_modulators_to_dict(self):
-        """Test exporting modulators collection to dict."""
-        modulators = M8Modulators()
-        modulators[0].destination = 1
-        modulators[0].set(M8AHDParam.ATTACK, 0x20)
-        modulators[2].destination = 5
-        modulators[2].set(M8LFOParam.FREQ, 0x30)
-
-        result = modulators.to_dict()
-
-        # Check structure
-        self.assertEqual(len(result), 4)
-        self.assertIsInstance(result, list)
-
-        # Check first modulator
-        self.assertEqual(result[0]['destination'], 1)
-        self.assertEqual(result[0]['params']['ATTACK'], 0x20)
-
-        # Check third modulator (LFO)
-        self.assertEqual(result[2]['destination'], 5)
-        self.assertEqual(result[2]['params']['FREQ'], 0x30)
-
-    def test_modulators_from_dict(self):
-        """Test creating modulators collection from dict."""
-        params = [
-            {'type': 0, 'destination': 1, 'amount': 0xFF, 'params': {'ATTACK': 0x20}},
-            {'type': 0, 'destination': 2, 'amount': 0xFF, 'params': {'DECAY': 0x40}},
-            {'type': 3, 'destination': 5, 'amount': 0xFF, 'params': {'FREQ': 0x30}},
-            {'type': 3, 'destination': 6, 'amount': 0xFF, 'params': {'FREQ': 0x40}}
-        ]
-
-        modulators = M8Modulators.from_dict(params)
-
-        # Check count
-        self.assertEqual(len(modulators), 4)
-
-        # Verify first modulator
-        self.assertEqual(modulators[0].destination, 1)
-        self.assertEqual(modulators[0].get(M8AHDParam.ATTACK), 0x20)
-
-        # Verify third modulator
-        self.assertEqual(modulators[2].destination, 5)
-        self.assertEqual(modulators[2].get(M8LFOParam.FREQ), 0x30)
-
-    def test_modulators_roundtrip(self):
-        """Test that modulators to_dict -> from_dict preserves all values."""
-        original = M8Modulators()
-        original[0].destination = 1
-        original[0].set(M8AHDParam.ATTACK, 0x20)
-        original[0].set(M8AHDParam.DECAY, 0x40)
-        original[2].destination = 5
-        original[2].set(M8LFOParam.SHAPE, M8LFOShape.TRI)
-        original[2].set(M8LFOParam.FREQ, 0x35)
-
-        # Export and re-import
-        params = original.to_dict()
-        restored = M8Modulators.from_dict(params)
-
-        # Verify everything matches
-        self.assertEqual(len(restored), len(original))
-        self.assertEqual(restored[0].destination, original[0].destination)
-        self.assertEqual(restored[0].get(M8AHDParam.ATTACK), original[0].get(M8AHDParam.ATTACK))
-        self.assertEqual(restored[0].get(M8AHDParam.DECAY), original[0].get(M8AHDParam.DECAY))
-        self.assertEqual(restored[2].destination, original[2].destination)
-        self.assertEqual(restored[2].get(M8LFOParam.SHAPE), original[2].get(M8LFOParam.SHAPE))
-        self.assertEqual(restored[2].get(M8LFOParam.FREQ), original[2].get(M8LFOParam.FREQ))
-
-    def test_modulator_to_dict_default_enum_mode(self):
-        """Test modulator to_dict() with default enum_mode='value' returns integer values."""
-        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
-        mod.destination = 5
-        mod.amount = 0x80
-        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
-        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
-        mod.set(M8LFOParam.FREQ, 0x20)
-
-        # Export with default enum_mode
-        result = mod.to_dict()
-
-        # Verify modulator type is integer
-        self.assertEqual(result['type'], M8ModulatorType.LFO.value)
-        self.assertIsInstance(result['type'], int)
-
-        # Verify LFO parameters are integers
-        self.assertEqual(result['params']['SHAPE'], M8LFOShape.SIN.value)
-        self.assertEqual(result['params']['TRIGGER_MODE'], M8LFOTriggerMode.RETRIG.value)
-        self.assertIsInstance(result['params']['SHAPE'], int)
-        self.assertIsInstance(result['params']['TRIGGER_MODE'], int)
-
-    def test_modulator_to_dict_enum_mode_name(self):
-        """Test modulator to_dict() with enum_mode='name' returns human-readable enum names."""
-        mod = M8Modulator(mod_type=M8ModulatorType.LFO)
-        mod.destination = 5
-        mod.amount = 0x80
-        mod.set(M8LFOParam.SHAPE, M8LFOShape.SIN)
-        mod.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.RETRIG)
-        mod.set(M8LFOParam.FREQ, 0x20)
-
-        # Export with enum_mode='name'
-        result = mod.to_dict(enum_mode='name')
-
-        # Verify modulator type is string
-        self.assertEqual(result['type'], 'LFO')
-        self.assertIsInstance(result['type'], str)
-
-        # Verify LFO parameters are strings
-        self.assertEqual(result['params']['SHAPE'], 'SIN')
-        self.assertEqual(result['params']['TRIGGER_MODE'], 'RETRIG')
-        self.assertIsInstance(result['params']['SHAPE'], str)
-        self.assertIsInstance(result['params']['TRIGGER_MODE'], str)
-
-    def test_modulator_from_dict_with_integer_values(self):
-        """Test modulator from_dict() accepts integer enum values (backward compatibility)."""
-        params = {
-            'type': M8ModulatorType.LFO.value,
-            'destination': 5,
-            'amount': 0x80,
-            'params': {
-                'SHAPE': M8LFOShape.RAMP_DOWN.value,
-                'TRIGGER_MODE': M8LFOTriggerMode.HOLD.value,
-                'FREQ': 0x25,
-                'RETRIGGER': 0x00,
-            }
-        }
-
-        mod = M8Modulator.from_dict(params)
-
-        # Verify values were set correctly
-        self.assertEqual(mod.mod_type, M8ModulatorType.LFO.value)
-        self.assertEqual(mod.destination, 5)
-        self.assertEqual(mod.amount, 0x80)
-        self.assertEqual(mod.get(M8LFOParam.SHAPE), M8LFOShape.RAMP_DOWN.value)
-        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), M8LFOTriggerMode.HOLD.value)
-        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x25)
-
-    def test_modulator_from_dict_with_string_enum_names(self):
-        """Test modulator from_dict() accepts string enum names (human-readable YAML)."""
-        params = {
-            'type': 'LFO',
-            'destination': 5,
-            'amount': 0x80,
-            'params': {
-                'SHAPE': 'RAMP_DOWN',
-                'TRIGGER_MODE': 'HOLD',
-                'FREQ': 0x25,
-                'RETRIGGER': 0x00,
-            }
-        }
-
-        mod = M8Modulator.from_dict(params)
-
-        # Verify values were set correctly
-        self.assertEqual(mod.mod_type, M8ModulatorType.LFO.value)
-        self.assertEqual(mod.destination, 5)
-        self.assertEqual(mod.amount, 0x80)
-        self.assertEqual(mod.get(M8LFOParam.SHAPE), M8LFOShape.RAMP_DOWN.value)
-        self.assertEqual(mod.get(M8LFOParam.TRIGGER_MODE), M8LFOTriggerMode.HOLD.value)
-        self.assertEqual(mod.get(M8LFOParam.FREQ), 0x25)
-
-    def test_modulator_round_trip_serialization_with_enum_names(self):
-        """Test modulator round-trip: to_dict(enum_mode='name') -> from_dict() -> to_dict()."""
-        # Create original modulator
-        original = M8Modulator(mod_type=M8ModulatorType.LFO)
-        original.destination = 7
-        original.amount = 0x90
-        original.set(M8LFOParam.SHAPE, M8LFOShape.EXP_UP)
-        original.set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.ONCE)
-        original.set(M8LFOParam.FREQ, 0x18)
-
-        # Export with enum_mode='name'
-        dict_with_names = original.to_dict(enum_mode='name')
-
-        # Verify enum names are strings
-        self.assertEqual(dict_with_names['type'], 'LFO')
-        self.assertEqual(dict_with_names['params']['SHAPE'], 'EXP_UP')
-        self.assertEqual(dict_with_names['params']['TRIGGER_MODE'], 'ONCE')
-
-        # Import from dict
-        restored = M8Modulator.from_dict(dict_with_names)
-
-        # Verify all values match
-        self.assertEqual(restored.mod_type, original.mod_type)
-        self.assertEqual(restored.destination, original.destination)
-        self.assertEqual(restored.amount, original.amount)
-        self.assertEqual(restored.get(M8LFOParam.SHAPE), original.get(M8LFOParam.SHAPE))
-        self.assertEqual(restored.get(M8LFOParam.TRIGGER_MODE), original.get(M8LFOParam.TRIGGER_MODE))
-        self.assertEqual(restored.get(M8LFOParam.FREQ), original.get(M8LFOParam.FREQ))
-
-        # Export again with enum_mode='name'
-        dict_restored = restored.to_dict(enum_mode='name')
-
-        # Verify enum names are preserved
-        self.assertEqual(dict_restored['type'], 'LFO')
-        self.assertEqual(dict_restored['params']['SHAPE'], 'EXP_UP')
-        self.assertEqual(dict_restored['params']['TRIGGER_MODE'], 'ONCE')
-
-    def test_modulators_to_dict_enum_mode_name(self):
-        """Test M8Modulators to_dict() passes enum_mode to individual modulators."""
-        modulators = M8Modulators()
-        modulators[0].mod_type = M8ModulatorType.AHD_ENVELOPE
-        modulators[0].destination = 1
-        modulators[2].mod_type = M8ModulatorType.LFO
-        modulators[2].destination = 5
-        modulators[2].set(M8LFOParam.SHAPE, M8LFOShape.RANDOM)
-        modulators[2].set(M8LFOParam.TRIGGER_MODE, M8LFOTriggerMode.FREE)
-
-        # Export with enum_mode='name'
-        result = modulators.to_dict(enum_mode='name')
-
-        # Verify modulator types are strings
-        self.assertEqual(result[0]['type'], 'AHD_ENVELOPE')
-        self.assertEqual(result[2]['type'], 'LFO')
-        self.assertIsInstance(result[0]['type'], str)
-        self.assertIsInstance(result[2]['type'], str)
-
-        # Verify LFO parameters are strings
-        self.assertEqual(result[2]['params']['SHAPE'], 'RANDOM')
-        self.assertEqual(result[2]['params']['TRIGGER_MODE'], 'FREE')
-        self.assertIsInstance(result[2]['params']['SHAPE'], str)
-        self.assertIsInstance(result[2]['params']['TRIGGER_MODE'], str)
-
-
-if __name__ == '__main__':
+    def test_default_layout(self):
+        """Default is [AHD, AHD, LFO, LFO]."""
+        mods = M8Modulators()
+        self.assertEqual(len(mods), 4)
+        self.assertIsInstance(mods[0], M8AHDModulator)
+        self.assertIsInstance(mods[1], M8AHDModulator)
+        self.assertIsInstance(mods[2], M8LFOModulator)
+        self.assertIsInstance(mods[3], M8LFOModulator)
+
+    def test_binary_round_trip_preserves_types(self):
+        mods = M8Modulators()
+        mods[0].destination = 1
+        mods[0].attack = 0x20
+        mods[2].destination = 5
+        mods[2].freq = 0x30
+        reloaded = M8Modulators.read(mods.write())
+        self.assertIsInstance(reloaded[0], M8AHDModulator)
+        self.assertIsInstance(reloaded[2], M8LFOModulator)
+        self.assertEqual(reloaded[0].attack, 0x20)
+        self.assertEqual(reloaded[2].freq, 0x30)
+
+    def test_dict_round_trip(self):
+        mods = M8Modulators()
+        mods[0].destination = 1
+        mods[0].attack = 0x20
+        mods[2].shape = M8LFOShape.TRI
+        reloaded = M8Modulators.from_dict(mods.to_dict())
+        self.assertIsInstance(reloaded[0], M8AHDModulator)
+        self.assertEqual(reloaded[0].attack, 0x20)
+        self.assertIsInstance(reloaded[2], M8LFOModulator)
+        self.assertEqual(reloaded[2].shape, int(M8LFOShape.TRI))
+
+    def test_slot_replacement_changes_type(self):
+        """Changing modulator type = replace the slot, not mutate."""
+        mods = M8Modulators()
+        # Replace slot 0 (AHD) with a Drum envelope
+        mods[0] = M8DrumModulator(peak=0x80, body=0xA0, decay=0x40)
+        self.assertIsInstance(mods[0], M8DrumModulator)
+        self.assertEqual(mods[0].peak, 0x80)
+        # Round-trip preserves the new type
+        reloaded = M8Modulators.read(mods.write())
+        self.assertIsInstance(reloaded[0], M8DrumModulator)
+        self.assertEqual(reloaded[0].peak, 0x80)
+
+
+class TestM8iConversion(unittest.TestCase):
+    """M8i (single-instrument file) modulators have a different layout."""
+
+    def test_ahd_in_m8i_slot_zero(self):
+        # M8i AHD: dest, amt, atk, hold, dec, ?
+        m8i_bytes = bytes([3, 0x80, 0x10, 0x20, 0x30, 0x00])
+        # Pad to 4 slots worth
+        full = m8i_bytes + bytes(18)
+        mods = M8Modulators.read_m8i(full)
+        self.assertIsInstance(mods[0], M8AHDModulator)
+        self.assertEqual(mods[0].destination, 3)
+        self.assertEqual(mods[0].amount, 0x80)
+        self.assertEqual(mods[0].attack, 0x10)
+
+    def test_lfo_in_m8i_slot_two_reorders_bytes(self):
+        # M8i LFO: osc, dest, trig, freq, amt, retrig
+        m8i_lfo = bytes([
+            int(M8LFOShape.SIN),  # osc
+            5,                     # dest
+            0,                     # trig
+            0x20,                  # freq
+            0x90,                  # amt
+            0,                     # retrig
+        ])
+        # Slot layout: AHD, AHD, LFO, LFO
+        data = bytes(6) + bytes(6) + m8i_lfo + bytes(6)
+        mods = M8Modulators.read_m8i(data)
+        self.assertIsInstance(mods[2], M8LFOModulator)
+        self.assertEqual(mods[2].destination, 5)
+        self.assertEqual(mods[2].amount, 0x90)
+        self.assertEqual(mods[2].shape, int(M8LFOShape.SIN))
+        self.assertEqual(mods[2].freq, 0x20)
+
+
+if __name__ == "__main__":
     unittest.main()

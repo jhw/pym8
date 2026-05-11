@@ -1,548 +1,346 @@
-from enum import IntEnum
-from m8.api import M8Block, split_byte, join_nibbles
+# m8/api/modulator.py
+"""M8 modulators — one subclass per modulator type, using the ByteField
+descriptor framework for typed parameter access.
 
-# Modulator configuration
+Each modulator slot in an instrument is one of 6 types (AHD, ADSR, Drum,
+LFO, Trig, Tracking). Layout per slot is 6 bytes: type/destination nibbles
+in byte 0, amount in byte 1, then type-specific parameters in bytes 2-5.
+
+Changing the type of a modulator slot means replacing the slot, not mutating
+in place — different types reinterpret bytes 2-5 differently.
+"""
+
+from enum import IntEnum
+
+from m8.api.fields import ByteField, iter_fields
+
+
 MODULATOR_BLOCK_SIZE = 6
 MODULATOR_COUNT = 4
 
-# Common field offsets (all modulator types)
-TYPE_DEST_OFFSET = 0  # Combined type (high nibble) and destination (low nibble)
-AMOUNT_OFFSET = 1
-
-# Type-specific parameter offsets (offsets 0-1 are type/dest and amount, shared by all)
-# AHD_ENVELOPE (type 0)
-AHD_ATTACK_OFFSET = 2
-AHD_HOLD_OFFSET = 3
-AHD_DECAY_OFFSET = 4
-
-# LFO (type 3)
-LFO_OSCILLATOR_OFFSET = 2
-LFO_TRIGGER_OFFSET = 3
-LFO_FREQUENCY_OFFSET = 4
-LFO_RETRIGGER_OFFSET = 5
-
-# Default values
-DEFAULT_AMOUNT = 0xFF
-DEFAULT_DESTINATION = 0x00
-DEFAULT_AHD_DECAY = 0x80
-DEFAULT_LFO_FREQUENCY = 0x10
-
-# Default modulator configurations (mods 0,1 = AHD, mods 2,3 = LFO)
-# Note: Using raw integers here for backward compatibility, but M8ModulatorType enum can be used
-DEFAULT_MODULATOR_TYPES = [0, 0, 3, 3]  # [AHD_ENVELOPE, AHD_ENVELOPE, LFO, LFO]
-
-# Block sizes
 BLOCK_SIZE = MODULATOR_BLOCK_SIZE
 BLOCK_COUNT = MODULATOR_COUNT
 
+TYPE_DEST_OFFSET = 0
+AMOUNT_OFFSET = 1
 
-# Modulator Type Enums
+
 class M8ModulatorType(IntEnum):
-    """Modulator type values (instrument-independent)."""
-    AHD_ENVELOPE = 0x00     # Attack, Hold, Decay envelope
-    ADSR_ENVELOPE = 0x01    # Attack, Decay, Sustain, Release envelope
-    DRUM_ENVELOPE = 0x02    # Drum envelope
-    LFO = 0x03              # Low-Frequency Oscillator
-    TRIG_ENVELOPE = 0x04    # Trigger envelope
-    TRACKING_ENVELOPE = 0x05  # Tracking envelope
+    AHD_ENVELOPE = 0
+    ADSR_ENVELOPE = 1
+    DRUM_ENVELOPE = 2
+    LFO = 3
+    TRIG_ENVELOPE = 4
+    TRACKING_ENVELOPE = 5
 
 
 class M8LFOShape(IntEnum):
     """LFO oscillator waveform shapes."""
-    # Basic shapes (free-running)
-    TRI = 0x00          # Triangle
-    SIN = 0x01          # Sine
-    RAMP_DOWN = 0x02    # Ramp down
-    RAMP_UP = 0x03      # Ramp up
-    EXP_DN = 0x04       # Exponential down
-    EXP_UP = 0x05       # Exponential up
-    SQR_DN = 0x06       # Square down
-    SQR_UP = 0x07       # Square up
-    RANDOM = 0x08       # Random
-    DRUNK = 0x09        # Drunk walk
-
-    # Triggered shapes
-    TRI_T = 0x0A        # Triangle (triggered)
-    SIN_T = 0x0B        # Sine (triggered)
-    RAMPD_T = 0x0C      # Ramp down (triggered)
-    RAMPU_T = 0x0D      # Ramp up (triggered)
-    EXPD_T = 0x0E       # Exponential down (triggered)
-    EXPU_T = 0x0F       # Exponential up (triggered)
-    SQ_D_T = 0x10       # Square down (triggered)
-    SQ_U_T = 0x11       # Square up (triggered)
-    RAND_T = 0x12       # Random (triggered)
-    DRNK_T = 0x13       # Drunk (triggered)
+    TRI = 0x00
+    SIN = 0x01
+    RAMP_DOWN = 0x02
+    RAMP_UP = 0x03
+    EXP_DN = 0x04
+    EXP_UP = 0x05
+    SQR_DN = 0x06
+    SQR_UP = 0x07
+    RANDOM = 0x08
+    DRUNK = 0x09
+    TRI_T = 0x0A
+    SIN_T = 0x0B
+    RAMPD_T = 0x0C
+    RAMPU_T = 0x0D
+    EXPD_T = 0x0E
+    EXPU_T = 0x0F
+    SQ_D_T = 0x10
+    SQ_U_T = 0x11
+    RAND_T = 0x12
+    DRNK_T = 0x13
 
 
 class M8LFOTriggerMode(IntEnum):
-    """LFO trigger mode values."""
-    FREE = 0x00      # Free-running
-    RETRIG = 0x01    # Retrigger on note
-    HOLD = 0x02      # Hold
-    ONCE = 0x03      # One-shot
+    FREE = 0x00
+    RETRIG = 0x01
+    HOLD = 0x02
+    ONCE = 0x03
 
 
-# Modulator Parameter Enums (type-specific parameters at offsets 2+)
-# Note: Offsets 0-1 (type/dest and amount) are common to all modulator types
-
-class M8AHDParam(IntEnum):
-    """AHD Envelope parameters (Attack, Hold, Decay)."""
-    ATTACK = 2
-    HOLD = 3
-    DECAY = 4
-
-
-class M8ADSRParam(IntEnum):
-    """ADSR Envelope parameters (Attack, Decay, Sustain, Release)."""
-    ATTACK = 2
-    DECAY = 3
-    SUSTAIN = 4
-    RELEASE = 5
-
-
-class M8DrumParam(IntEnum):
-    """Drum Envelope parameters."""
-    PEAK = 2
-    BODY = 3
-    DECAY = 4
-
-
-class M8LFOParam(IntEnum):
-    """LFO parameters (Low-Frequency Oscillator)."""
-    SHAPE = 2          # Oscillator waveform shape (see M8LFOShape)
-    TRIGGER_MODE = 3   # Trigger mode (see M8LFOTriggerMode)
-    FREQ = 4           # Frequency
-    RETRIGGER = 5      # Retrigger value
-
-
-class M8TrigParam(IntEnum):
-    """Trigger Envelope parameters."""
-    ATTACK = 2
-    HOLD = 3
-    DECAY = 4
-    SRC = 5            # Source
-
-
-class M8TrackingParam(IntEnum):
-    """Tracking Envelope parameters."""
-    SRC = 2            # Source
-    LVAL = 3           # Low value
-    HVAL = 4           # High value
+_MODULATOR_REGISTRY = {}
 
 
 class M8Modulator:
-    """M8 modulator for controlling instrument parameters over time."""
+    """Base modulator. Subclasses declare type-specific descriptor fields.
 
-    def __init__(self, mod_type=0):
-        """Initialize a modulator with the given type.
+    Byte 0 carries the type (high nibble) and destination (low nibble); byte 1
+    is the modulation amount. Bytes 2-5 are type-specific.
+    """
 
-        Args:
-            mod_type: Modulator type (0=AHD_ENVELOPE, 3=LFO, etc.)
-        """
-        self._data = bytearray([0] * BLOCK_SIZE)
+    MOD_TYPE = None  # subclasses override with a M8ModulatorType member
 
-        # Set type in high nibble, destination in low nibble
-        self._data[TYPE_DEST_OFFSET] = join_nibbles(mod_type, DEFAULT_DESTINATION)
+    amount = ByteField(AMOUNT_OFFSET, default=0xFF)
 
-        # Set amount default
-        self._data[AMOUNT_OFFSET] = DEFAULT_AMOUNT
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.MOD_TYPE is not None:
+            _MODULATOR_REGISTRY[int(cls.MOD_TYPE)] = cls
 
-        # Set type-specific defaults
-        if mod_type == 0:  # AHD_ENVELOPE
-            self._data[AHD_DECAY_OFFSET] = DEFAULT_AHD_DECAY
-        elif mod_type == 3:  # LFO
-            self._data[LFO_FREQUENCY_OFFSET] = DEFAULT_LFO_FREQUENCY
-
-    def get(self, offset):
-        """Get value at offset."""
-        return self._data[offset]
-
-    def set(self, offset, value):
-        """Set value at offset."""
-        self._data[offset] = value & 0xFF
+    def __init__(self, destination=0, **kwargs):
+        if self.MOD_TYPE is None:
+            raise TypeError(f"{type(self).__name__} must declare MOD_TYPE")
+        self._data = bytearray(BLOCK_SIZE)
+        self._data[TYPE_DEST_OFFSET] = (int(self.MOD_TYPE) << 4) & 0xF0
+        for _, fld in iter_fields(type(self)):
+            fld.apply_default(self)
+        if destination:
+            self.destination = destination
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def mod_type(self):
-        """Get modulator type from high nibble of byte 0."""
-        type_nibble, _ = split_byte(self._data[TYPE_DEST_OFFSET])
-        return type_nibble
-
-    @mod_type.setter
-    def mod_type(self, value):
-        """Set modulator type in high nibble of byte 0."""
-        _, dest_nibble = split_byte(self._data[TYPE_DEST_OFFSET])
-        self._data[TYPE_DEST_OFFSET] = join_nibbles(value, dest_nibble)
+        return (self._data[TYPE_DEST_OFFSET] >> 4) & 0x0F
 
     @property
     def destination(self):
-        """Get destination from low nibble of byte 0."""
-        _, dest_nibble = split_byte(self._data[TYPE_DEST_OFFSET])
-        return dest_nibble
+        return self._data[TYPE_DEST_OFFSET] & 0x0F
 
     @destination.setter
     def destination(self, value):
-        """Set destination in low nibble of byte 0."""
-        type_nibble, _ = split_byte(self._data[TYPE_DEST_OFFSET])
-        self._data[TYPE_DEST_OFFSET] = join_nibbles(type_nibble, value)
-
-    @property
-    def amount(self):
-        """Get modulation amount."""
-        return self._data[AMOUNT_OFFSET]
-
-    @amount.setter
-    def amount(self, value):
-        """Set modulation amount."""
-        self._data[AMOUNT_OFFSET] = value & 0xFF
+        if hasattr(value, "value"):
+            value = value.value
+        value = int(value) & 0x0F
+        self._data[TYPE_DEST_OFFSET] = (self._data[TYPE_DEST_OFFSET] & 0xF0) | value
 
     def write(self):
-        """Convert modulator to binary data."""
         return bytes(self._data)
 
     def clone(self):
-        """Create a copy of this modulator."""
         instance = self.__class__.__new__(self.__class__)
         instance._data = bytearray(self._data)
         return instance
 
-    def to_dict(self, enum_mode='value', dest_enum_class=None):
-        """Export modulator parameters to a dictionary.
-
-        Args:
-            enum_mode: How to serialize enum values:
-                      'value' (default) - use integer values
-                      'name' - use enum names as strings (human-readable)
-            dest_enum_class: Optional enum class for destination parameter
-                           (e.g., M8SamplerModDest, M8WavsynthModDest)
-
-        Returns a dict with:
-        - type: modulator type (int or enum name)
-        - destination: destination parameter (int or enum name)
-        - amount: modulation amount (int)
-        - params: dict of type-specific parameters using enum names as keys
-        """
-        mod_type_value = self.mod_type
-
-        # Convert destination to enum name if requested and enum class provided
-        destination_value = self.destination
-        if enum_mode == 'name' and dest_enum_class is not None:
-            try:
-                destination_value = dest_enum_class(destination_value).name
-            except (ValueError, KeyError):
-                # If value doesn't map to enum, keep as integer
-                pass
-
-        result = {
-            'type': M8ModulatorType(mod_type_value).name if enum_mode == 'name' else mod_type_value,
-            'destination': destination_value,
-            'amount': self.amount,
-            'params': {}
-        }
-
-        # Mapping of LFO parameters to their enum types (for human-readable mode)
-        lfo_param_enum_types = {
-            'SHAPE': M8LFOShape,
-            'TRIGGER_MODE': M8LFOTriggerMode,
-        }
-
-        # Add type-specific parameters based on modulator type
-        if mod_type_value == M8ModulatorType.AHD_ENVELOPE:
-            for param in M8AHDParam:
-                result['params'][param.name] = self.get(param)
-        elif mod_type_value == M8ModulatorType.ADSR_ENVELOPE:
-            for param in M8ADSRParam:
-                result['params'][param.name] = self.get(param)
-        elif mod_type_value == M8ModulatorType.DRUM_ENVELOPE:
-            for param in M8DrumParam:
-                result['params'][param.name] = self.get(param)
-        elif mod_type_value == M8ModulatorType.LFO:
-            for param in M8LFOParam:
-                value = self.get(param)
-                # Convert enum values to names if requested
-                if enum_mode == 'name' and param.name in lfo_param_enum_types:
-                    try:
-                        enum_type = lfo_param_enum_types[param.name]
-                        value = enum_type(value).name
-                    except (ValueError, KeyError):
-                        # If value doesn't map to enum, keep as integer
-                        pass
-                result['params'][param.name] = value
-        elif mod_type_value == M8ModulatorType.TRIG_ENVELOPE:
-            for param in M8TrigParam:
-                result['params'][param.name] = self.get(param)
-        elif mod_type_value == M8ModulatorType.TRACKING_ENVELOPE:
-            for param in M8TrackingParam:
-                result['params'][param.name] = self.get(param)
-
-        return result
-
-    @classmethod
-    def from_dict(cls, params, dest_enum_class=None):
-        """Create a modulator from a parameter dictionary.
-
-        Args:
-            params: Dict with keys: type, destination, amount, params
-                   - type can be int, M8ModulatorType enum value, or string name
-                   - destination can be int or string name (if dest_enum_class provided)
-                   - params is a dict with parameter names as keys
-            dest_enum_class: Optional enum class for destination parameter
-                           (e.g., M8SamplerModDest, M8WavsynthModDest)
-
-        Returns:
-            M8Modulator instance configured with given parameters
-        """
-        mod_type = params.get('type', 0)
-
-        # Handle string enum names (e.g., 'AHD_ENVELOPE')
-        if isinstance(mod_type, str):
-            try:
-                mod_type = M8ModulatorType[mod_type].value
-            except KeyError:
-                # Unknown type name, default to 0
-                mod_type = 0
-
-        # Create modulator with specified type
-        instance = cls(mod_type=mod_type)
-
-        # Set destination (handle string enum names if dest_enum_class provided)
-        if 'destination' in params:
-            destination = params['destination']
-            if isinstance(destination, str) and dest_enum_class is not None:
-                try:
-                    destination = dest_enum_class[destination].value
-                except KeyError:
-                    # Unknown destination name, keep as-is (will be 0 if conversion fails)
-                    pass
-            instance.destination = destination
-
-        # Set amount
-        if 'amount' in params:
-            instance.amount = params['amount']
-
-        # Set type-specific parameters
-        type_params = params.get('params', {})
-        if not type_params:
-            return instance
-
-        # Mapping of LFO parameters to their enum types (for string value parsing)
-        lfo_param_enum_types = {
-            'SHAPE': M8LFOShape,
-            'TRIGGER_MODE': M8LFOTriggerMode,
-        }
-
-        # Map parameter names to enum values based on type
-        param_enum = None
-        if mod_type == M8ModulatorType.AHD_ENVELOPE:
-            param_enum = M8AHDParam
-        elif mod_type == M8ModulatorType.ADSR_ENVELOPE:
-            param_enum = M8ADSRParam
-        elif mod_type == M8ModulatorType.DRUM_ENVELOPE:
-            param_enum = M8DrumParam
-        elif mod_type == M8ModulatorType.LFO:
-            param_enum = M8LFOParam
-        elif mod_type == M8ModulatorType.TRIG_ENVELOPE:
-            param_enum = M8TrigParam
-        elif mod_type == M8ModulatorType.TRACKING_ENVELOPE:
-            param_enum = M8TrackingParam
-
-        if param_enum:
-            for param_name, value in type_params.items():
-                # Try to get enum member by name
-                try:
-                    param_offset = param_enum[param_name]
-
-                    # Handle string enum names for LFO parameters
-                    if mod_type == M8ModulatorType.LFO and isinstance(value, str) and param_name in lfo_param_enum_types:
-                        try:
-                            enum_type = lfo_param_enum_types[param_name]
-                            value = enum_type[value].value
-                        except KeyError:
-                            # Unknown enum name, skip
-                            continue
-
-                    instance.set(param_offset, value)
-                except KeyError:
-                    # Skip unknown parameter names
-                    pass
-
-        return instance
-
     @classmethod
     def read(cls, data):
-        """Read modulator from binary data (M8s format)."""
+        """Read this specific modulator subclass from 6 bytes."""
         instance = cls.__new__(cls)
         instance._data = bytearray(data[:BLOCK_SIZE])
         return instance
 
+    def to_dict(self, dest_enum_class=None):
+        destination = self.destination
+        if dest_enum_class is not None:
+            try:
+                destination = dest_enum_class(destination).name
+            except (ValueError, KeyError):
+                pass
+
+        result = {
+            "type": self.MOD_TYPE.name,
+            "destination": destination,
+            "amount": self.amount,
+            "params": {},
+        }
+        for name, fld in iter_fields(type(self)):
+            if name == "amount":
+                continue
+            result["params"][name] = fld.to_dict(self)
+        return result
+
     @classmethod
-    def read_m8i(cls, data, mod_type):
-        """Read modulator from M8i binary data and convert to M8s format.
+    def from_dict(cls, params, dest_enum_class=None):
+        """Reconstruct a modulator from a dict.
 
-        M8i format differences:
-        - Type is not stored (comes from DEFAULT_MODULATOR_TYPES)
-        - AHD format: dest, amt, atk, hold, dec, ???
-        - LFO format: osc, dest, trig, freq, amt, retrig
-
-        M8s format:
-        - AHD format: type+dest, amt, atk, hold, dec, ???
-        - LFO format: type+dest, amt, osc, trig, freq, retrig
-
-        Args:
-            data: Raw 6-byte modulator data from M8i file
-            mod_type: Modulator type (from DEFAULT_MODULATOR_TYPES)
-
-        Returns:
-            M8Modulator instance with data converted to M8s format
+        Called on M8Modulator (the base), dispatches to the right subclass
+        based on the `type` field. Called on a subclass, decodes directly.
         """
-        m8i_data = data[:BLOCK_SIZE]
-        m8s_data = bytearray(BLOCK_SIZE)
+        if cls is M8Modulator:
+            type_value = params.get("type", "AHD_ENVELOPE")
+            if isinstance(type_value, str):
+                try:
+                    type_id = M8ModulatorType[type_value].value
+                except KeyError:
+                    type_id = 0
+            else:
+                type_id = int(type_value)
+            subclass = _MODULATOR_REGISTRY.get(type_id, M8AHDModulator)
+            return subclass.from_dict(params, dest_enum_class=dest_enum_class)
 
-        if mod_type == M8ModulatorType.AHD_ENVELOPE:  # 0
-            # M8i AHD: dest, amt, atk, hold, dec, ???
-            # M8s AHD: type+dest, amt, atk, hold, dec, ???
-            dest = m8i_data[0]
-            m8s_data[0] = join_nibbles(mod_type, dest)  # Pack type+dest
-            m8s_data[1:] = m8i_data[1:]  # Copy remaining bytes as-is
+        instance = cls()
+        if "destination" in params:
+            d = params["destination"]
+            if isinstance(d, str) and dest_enum_class is not None:
+                try:
+                    d = dest_enum_class[d].value
+                except KeyError:
+                    d = 0
+            instance.destination = d
+        if "amount" in params:
+            instance.amount = params["amount"]
 
-        elif mod_type == M8ModulatorType.LFO:  # 3
-            # M8i LFO: osc, dest, trig, freq, amt, retrig
-            # M8s LFO: type+dest, amt, osc, trig, freq, retrig
-            osc = m8i_data[0]
-            dest = m8i_data[1]
-            trig = m8i_data[2]
-            freq = m8i_data[3]
-            amt = m8i_data[4]
-            retrig = m8i_data[5]
-
-            m8s_data[0] = join_nibbles(mod_type, dest)  # Pack type+dest
-            m8s_data[1] = amt      # Reorder: amt comes second
-            m8s_data[2] = osc      # Reorder: osc comes third
-            m8s_data[3] = trig     # Reorder: trig comes fourth
-            m8s_data[4] = freq     # Reorder: freq comes fifth
-            m8s_data[5] = retrig   # retrig stays last
-
-        else:
-            # For other types, assume same format (pack type+dest and copy rest)
-            dest = m8i_data[0]
-            m8s_data[0] = join_nibbles(mod_type, dest)
-            m8s_data[1:] = m8i_data[1:]
-
-        instance = cls.__new__(cls)
-        instance._data = m8s_data
+        fields_by_name = {n: f for n, f in iter_fields(cls)}
+        for key, value in params.get("params", {}).items():
+            fld = fields_by_name.get(key)
+            if fld is None:
+                continue
+            fld.from_dict(instance, value)
         return instance
 
 
+class M8AHDModulator(M8Modulator):
+    """Attack/Hold/Decay envelope."""
+    MOD_TYPE = M8ModulatorType.AHD_ENVELOPE
+    attack = ByteField(2)
+    hold = ByteField(3)
+    decay = ByteField(4, default=0x80)
+
+
+class M8ADSRModulator(M8Modulator):
+    """Attack/Decay/Sustain/Release envelope."""
+    MOD_TYPE = M8ModulatorType.ADSR_ENVELOPE
+    attack = ByteField(2)
+    decay = ByteField(3)
+    sustain = ByteField(4)
+    release = ByteField(5)
+
+
+class M8DrumModulator(M8Modulator):
+    """Drum envelope (Peak/Body/Decay)."""
+    MOD_TYPE = M8ModulatorType.DRUM_ENVELOPE
+    peak = ByteField(2)
+    body = ByteField(3)
+    decay = ByteField(4)
+
+
+class M8LFOModulator(M8Modulator):
+    """Low-Frequency Oscillator."""
+    MOD_TYPE = M8ModulatorType.LFO
+    shape = ByteField(2, enum=M8LFOShape)
+    trigger_mode = ByteField(3, enum=M8LFOTriggerMode)
+    freq = ByteField(4, default=0x10)
+    retrigger = ByteField(5)
+
+
+class M8TrigModulator(M8Modulator):
+    """Trigger envelope (Attack/Hold/Decay/Source)."""
+    MOD_TYPE = M8ModulatorType.TRIG_ENVELOPE
+    attack = ByteField(2)
+    hold = ByteField(3)
+    decay = ByteField(4)
+    src = ByteField(5)
+
+
+class M8TrackingModulator(M8Modulator):
+    """Tracking envelope (Source/LowValue/HighValue)."""
+    MOD_TYPE = M8ModulatorType.TRACKING_ENVELOPE
+    src = ByteField(2)
+    lval = ByteField(3)
+    hval = ByteField(4)
+
+
+# Default modulator layout for a fresh instrument: 2 AHD, 2 LFO.
+_DEFAULT_MODULATOR_CLASSES = [
+    M8AHDModulator, M8AHDModulator, M8LFOModulator, M8LFOModulator,
+]
+
+
 class M8Modulators(list):
-    """Collection of 4 modulators for an M8 instrument."""
+    """4 modulator slots within an instrument."""
 
     def __init__(self):
         super().__init__()
-        # Initialize with default modulators (2 AHD, 2 LFO)
-        for mod_type in DEFAULT_MODULATOR_TYPES:
-            self.append(M8Modulator(mod_type))
+        for klass in _DEFAULT_MODULATOR_CLASSES:
+            self.append(klass())
 
     @classmethod
     def read(cls, data):
-        """Read modulators from binary data (M8s format)."""
+        """Parse 4 modulators, dispatching on the type nibble of each slot."""
         instance = cls.__new__(cls)
         list.__init__(instance)
-
         for i in range(BLOCK_COUNT):
             start = i * BLOCK_SIZE
-            block_data = data[start:start + BLOCK_SIZE]
-
-            if len(block_data) < BLOCK_SIZE:
-                # Pad with zeros if insufficient data
-                block_data = block_data + bytes([0] * (BLOCK_SIZE - len(block_data)))
-
-            instance.append(M8Modulator.read(block_data))
-
+            block = data[start:start + BLOCK_SIZE]
+            if len(block) < BLOCK_SIZE:
+                block = block + bytes(BLOCK_SIZE - len(block))
+            type_id = (block[0] >> 4) & 0x0F
+            subclass = _MODULATOR_REGISTRY.get(type_id, M8AHDModulator)
+            instance.append(subclass.read(block))
         return instance
 
     @classmethod
     def read_m8i(cls, data):
-        """Read modulators from M8i binary data and convert to M8s format.
+        """Read modulators from M8i format (different layout) and convert.
 
-        M8i files don't store modulator types - they use DEFAULT_MODULATOR_TYPES.
-        M8i also uses different parameter ordering for LFO modulators.
-
-        Args:
-            data: Raw modulator data from M8i file (24 bytes = 4 * 6)
-
-        Returns:
-            M8Modulators instance with data converted to M8s format
+        M8i lacks explicit type bytes — it uses position in the slot list:
+        slots 0-1 are AHD, slots 2-3 are LFO. M8i LFO byte ordering also
+        differs from M8s and must be reordered.
         """
         instance = cls.__new__(cls)
         list.__init__(instance)
-
         for i in range(BLOCK_COUNT):
             start = i * BLOCK_SIZE
-            block_data = data[start:start + BLOCK_SIZE]
-
-            if len(block_data) < BLOCK_SIZE:
-                # Pad with zeros if insufficient data
-                block_data = block_data + bytes([0] * (BLOCK_SIZE - len(block_data)))
-
-            # Get type from defaults (M8i doesn't store types)
-            mod_type = DEFAULT_MODULATOR_TYPES[i]
-
-            # Convert M8i format to M8s format
-            instance.append(M8Modulator.read_m8i(block_data, mod_type))
-
+            block = data[start:start + BLOCK_SIZE]
+            if len(block) < BLOCK_SIZE:
+                block = block + bytes(BLOCK_SIZE - len(block))
+            klass = _DEFAULT_MODULATOR_CLASSES[i]
+            instance.append(_read_m8i_block(klass, block))
         return instance
 
     def clone(self):
-        instance = self.__class__()
-        instance.clear()
-
+        instance = self.__class__.__new__(self.__class__)
+        list.__init__(instance)
         for mod in self:
             instance.append(mod.clone())
-
         return instance
 
-    def to_dict(self, enum_mode='value', dest_enum_class=None):
-        """Export all modulators to a list of dictionaries.
-
-        Args:
-            enum_mode: How to serialize enum values ('value' or 'name')
-            dest_enum_class: Optional enum class for destination parameter
-        """
-        return [mod.to_dict(enum_mode=enum_mode, dest_enum_class=dest_enum_class) for mod in self]
+    def to_dict(self, dest_enum_class=None):
+        return [mod.to_dict(dest_enum_class=dest_enum_class) for mod in self]
 
     @classmethod
     def from_dict(cls, modulators_list, dest_enum_class=None):
-        """Create modulators collection from a list of parameter dicts.
-
-        Args:
-            modulators_list: List of dicts, each containing modulator params
-            dest_enum_class: Optional enum class for destination parameter
-
-        Returns:
-            M8Modulators instance with configured modulators
-        """
         instance = cls.__new__(cls)
         list.__init__(instance)
-
         for mod_params in modulators_list:
             instance.append(M8Modulator.from_dict(mod_params, dest_enum_class=dest_enum_class))
-
-        # Pad to 4 modulators if needed
         while len(instance) < BLOCK_COUNT:
-            instance.append(M8Modulator())
-
+            instance.append(_DEFAULT_MODULATOR_CLASSES[len(instance)]())
         return instance
 
     def write(self):
         result = bytearray()
         for mod in self:
-            mod_data = mod.write()
-
-            # Ensure each modulator occupies exactly BLOCK_SIZE bytes
-            if len(mod_data) < BLOCK_SIZE:
-                mod_data = mod_data + bytes([0x0] * (BLOCK_SIZE - len(mod_data)))
-            elif len(mod_data) > BLOCK_SIZE:
-                mod_data = mod_data[:BLOCK_SIZE]
-
-            result.extend(mod_data)
-
+            data = mod.write()
+            if len(data) < BLOCK_SIZE:
+                data = data + bytes(BLOCK_SIZE - len(data))
+            elif len(data) > BLOCK_SIZE:
+                data = data[:BLOCK_SIZE]
+            result.extend(data)
         return bytes(result)
+
+
+def _read_m8i_block(klass, block):
+    """Translate one M8i modulator block to M8s layout and instantiate."""
+    m8s = bytearray(BLOCK_SIZE)
+    type_id = int(klass.MOD_TYPE)
+
+    if klass is M8AHDModulator:
+        # M8i AHD: dest, amt, atk, hold, dec, ?
+        # M8s AHD: type+dest, amt, atk, hold, dec, ?
+        dest = block[0]
+        m8s[0] = (type_id << 4) | (dest & 0x0F)
+        m8s[1:] = block[1:]
+    elif klass is M8LFOModulator:
+        # M8i LFO: osc, dest, trig, freq, amt, retrig
+        # M8s LFO: type+dest, amt, osc, trig, freq, retrig
+        osc, dest, trig, freq, amt, retrig = block
+        m8s[0] = (type_id << 4) | (dest & 0x0F)
+        m8s[1] = amt
+        m8s[2] = osc
+        m8s[3] = trig
+        m8s[4] = freq
+        m8s[5] = retrig
+    else:
+        dest = block[0]
+        m8s[0] = (type_id << 4) | (dest & 0x0F)
+        m8s[1:] = block[1:]
+
+    return klass.read(bytes(m8s))
