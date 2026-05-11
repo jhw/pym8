@@ -56,7 +56,7 @@ OFFSETS = {
     "effects": EFFECTS_SETTINGS_OFFSET,
     "midi_mappings": MIDI_MAPPING_OFFSET,
     "scales": SCALE_OFFSET,
-    "eq": EQ_OFFSET,
+    "eqs": EQ_OFFSET,
 }
 
 class M8Project:
@@ -76,7 +76,7 @@ class M8Project:
         self.effects = None
         self.midi_mappings = None
         self.scales = None
-        self.eq = None
+        self.eqs = None
         self.version = M8Version()
 
     @classmethod
@@ -131,8 +131,8 @@ class M8Project:
             data[OFFSETS["scales"]:OFFSETS["scales"] + M8Scales.TOTAL_BYTES],
             version=instance.version,
         )
-        instance.eq = M8Eqs.read(
-            data[OFFSETS["eq"]:OFFSETS["eq"] + M8Eqs.TOTAL_BYTES],
+        instance.eqs = M8Eqs.read(
+            data[OFFSETS["eqs"]:OFFSETS["eqs"] + M8Eqs.TOTAL_BYTES],
             version=instance.version,
         )
         return instance
@@ -153,7 +153,7 @@ class M8Project:
         instance.effects = self.effects.clone() if self.effects else None
         instance.midi_mappings = self.midi_mappings.clone() if self.midi_mappings else None
         instance.scales = self.scales.clone() if self.scales else None
-        instance.eq = self.eq.clone() if self.eq else None
+        instance.eqs = self.eqs.clone() if self.eqs else None
         return instance
         
     def write(self) -> bytes:

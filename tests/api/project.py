@@ -86,7 +86,7 @@ class TestM8Project(unittest.TestCase):
             set(OFFSETS),
             {
                 "version", "metadata", "midi",
-                "mixer", "grooves", "effects", "midi_mappings", "scales", "eq",
+                "mixer", "grooves", "effects", "midi_mappings", "scales", "eqs",
                 "song", "phrases", "chains", "tables", "instruments",
             },
         )

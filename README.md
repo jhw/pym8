@@ -184,9 +184,9 @@ from m8.api.instruments.wavsynth import M8Wavsynth
 project = M8Project.initialise()
 
 # Tweak the global EQ
-project.eq[0].low.eq_type = M8EqType.LOWCUT
-project.eq[0].mid.q = 0x80
-project.eq[0].high.eq_mode = M8EqMode.SIDE
+project.eqs[0].low.eq_type = M8EqType.LOWCUT
+project.eqs[0].mid.q = 0x80
+project.eqs[0].high.eq_mode = M8EqMode.SIDE
 
 # Bind an instrument to EQ slot 4 (first per-instrument slot)
 w = M8Wavsynth(name="EQUALIZED")
@@ -194,14 +194,14 @@ w.associated_eq = 4
 project.instruments[0] = w
 
 # Frequency and gain are 16-bit packed across two bytes; helpers decode:
-print(project.eq[0].mid.frequency())   # Hz
-print(project.eq[0].mid.gain_db())     # signed dB
+print(project.eqs[0].mid.frequency())   # Hz
+print(project.eqs[0].mid.gain_db())     # signed dB
 ```
 
 Slot convention (matching m8-file-parser):
-- `eq[0]` — global / master EQ
-- `eq[1..3]` — effect-section EQs (chorus, delay, reverb)
-- `eq[4..131]` — per-instrument EQs (referenced by `instrument.associated_eq`)
+- `eqs[0]` — global / master EQ
+- `eqs[1..3]` — effect-section EQs (chorus, delay, reverb)
+- `eqs[4..131]` — per-instrument EQs (referenced by `instrument.associated_eq`)
 - `associated_eq = 0xFF` (default) means "no EQ bound to this instrument"
 
 ## Mixer and effects settings

@@ -286,8 +286,7 @@ def _table_occupied(project, index):
 def _eq_occupied(project, index):
     if not (0 <= index < N_EQS):
         return False
-    # On M8Project the collection is `.eq` (singular noun for the section).
-    return not project.eq[index].is_default()
+    return not project.eqs[index].is_default()
 
 
 def _find_free_slot(occupied, capacity, preferred):
@@ -418,7 +417,7 @@ def apply(source, destination, mappings: Mappings, remap: Remapping) -> None:
     # need them already in place to verify associated_eq remapping is
     # consistent (though for now we don't actually verify).
     for src_eq, dst_eq in remap.eqs.items():
-        destination.eq[dst_eq] = source.eq[src_eq].clone()
+        destination.eqs[dst_eq] = source.eqs[src_eq].clone()
 
     # Tables — rewrite FX refs in each step
     for src_table, dst_table in remap.tables.items():

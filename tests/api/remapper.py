@@ -388,7 +388,7 @@ class TestAllocatorFindsAlternateOnCollision(unittest.TestCase):
         """A non-default EQ in destination's slot 5 makes source EQ 5 relocate."""
         src = M8Project.initialise()
         dst = M8Project.initialise()
-        dst.eq[5].low.q = 0xAB  # mark as occupied (not default)
+        dst.eqs[5].low.q = 0xAB  # mark as occupied (not default)
 
         m = Mappings(eqs={5})
         remap = allocate(src, dst, m)
@@ -460,7 +460,7 @@ class TestAllocatorExhaustion(unittest.TestCase):
         src = M8Project.initialise()
         dst = M8Project.initialise()
         # Fill every dst EQ slot with non-default state
-        for eq in dst.eq:
+        for eq in dst.eqs:
             eq.low.q = 0xAB
 
         m = Mappings(eqs={0})
@@ -503,7 +503,7 @@ class TestApplyEndToEnd(unittest.TestCase):
         src.instruments[5] = M8Wavsynth(name="BASS")
         src.instruments[5].cutoff = 0xA0
         src.instruments[5].associated_eq = 10
-        src.eq[10].low.q = 0xAB  # marker we'll verify in destination
+        src.eqs[10].low.q = 0xAB  # marker we'll verify in destination
 
         src.phrases[7][0] = M8PhraseStep(
             note=M8Note.C_4, velocity=0x80, instrument=5,
@@ -544,7 +544,7 @@ class TestApplyEndToEnd(unittest.TestCase):
         dst = M8Project.initialise()
         remap = move_chains(src, dst, {3})
 
-        dst_eq = dst.eq[remap.out_eq(10)]
+        dst_eq = dst.eqs[remap.out_eq(10)]
         self.assertEqual(dst_eq.low.q, 0xAB)
 
     def test_phrase_step_instrument_rewritten(self):

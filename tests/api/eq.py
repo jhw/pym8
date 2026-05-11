@@ -181,41 +181,41 @@ class TestM8Eqs(unittest.TestCase):
 class TestEqWiredIntoProject(unittest.TestCase):
     def test_template_has_eq_collection(self):
         p = M8Project.initialise()
-        self.assertIsInstance(p.eq, M8Eqs)
-        self.assertEqual(len(p.eq), EQ_COUNT)
+        self.assertIsInstance(p.eqs, M8Eqs)
+        self.assertEqual(len(p.eqs), EQ_COUNT)
 
     def test_eq_mutations_round_trip_through_binary(self):
         p = M8Project.initialise()
-        p.eq[0].low.q = 0x42
-        p.eq[10].mid.eq_type = M8EqType.BANDPASS
+        p.eqs[0].low.q = 0x42
+        p.eqs[10].mid.eq_type = M8EqType.BANDPASS
 
         loaded = M8Project.read(p.write())
-        self.assertEqual(loaded.eq[0].low.q, 0x42)
-        self.assertEqual(loaded.eq[10].mid.eq_type, int(M8EqType.BANDPASS))
+        self.assertEqual(loaded.eqs[0].low.q, 0x42)
+        self.assertEqual(loaded.eqs[10].mid.eq_type, int(M8EqType.BANDPASS))
 
     def test_eq_at_expected_byte_offset(self):
         """Sanity: EQ region starts at the documented offset."""
         p = M8Project.initialise()
         # Stamp a recognizable byte at the first EQ position
-        p.eq[0].low.mode_byte = 0xA5
+        p.eqs[0].low.mode_byte = 0xA5
         data = p.write()
         self.assertEqual(data[EQ_OFFSET], 0xA5)
 
     def test_stable_round_trip_with_eq_mutations(self):
         p = M8Project.initialise()
-        p.eq[3].high.q = 0x33
+        p.eqs[3].high.q = 0x33
         bytes1 = p.write()
         bytes2 = M8Project.read(bytes1).write()
         self.assertEqual(bytes1, bytes2)
 
     def test_clone_preserves_eq_independence(self):
         p = M8Project.initialise()
-        p.eq[0].low.q = 0x10
+        p.eqs[0].low.q = 0x10
         cloned = p.clone()
-        self.assertIsNot(cloned.eq, p.eq)
-        self.assertIsNot(cloned.eq[0], p.eq[0])
-        cloned.eq[0].low.q = 0xFF
-        self.assertEqual(p.eq[0].low.q, 0x10)
+        self.assertIsNot(cloned.eqs, p.eqs)
+        self.assertIsNot(cloned.eqs[0], p.eqs[0])
+        cloned.eqs[0].low.q = 0xFF
+        self.assertEqual(p.eqs[0].low.q, 0x10)
 
 
 class TestAssociatedEqOnInstrument(unittest.TestCase):
