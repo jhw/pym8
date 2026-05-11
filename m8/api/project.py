@@ -3,6 +3,7 @@ from m8.api.chain import M8Chains, CHAINS_OFFSET
 from m8.api.eq import M8Eqs
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
+from m8.api.midi_mapping import M8MidiMappings
 from m8.api.midi_settings import M8MidiSettings
 from m8.api.phrase import M8Phrases, PHRASES_OFFSET
 from m8.api.settings import M8EffectsSettings, M8MixerSettings
@@ -26,6 +27,7 @@ MIXER_SETTINGS_OFFSET = 206
 # m8-file-parser use these same offsets; only inner counts differ, and
 # pym8 targets v6.0+).
 EFFECTS_SETTINGS_OFFSET = 107969  # 0x1A5C1
+MIDI_MAPPING_OFFSET = 108030      # 0x1A5FE — 128 × 7-byte mappings
 EQ_OFFSET = 109918                # 0x1AD5A + 4
 
 # Offsets for sections pym8 parses today. Sections present in the binary
@@ -44,6 +46,7 @@ OFFSETS = {
     "tables": TABLE_OFFSET,
     "instruments": INSTRUMENTS_OFFSET,
     "effects": EFFECTS_SETTINGS_OFFSET,
+    "midi_mappings": MIDI_MAPPING_OFFSET,
     "eq": EQ_OFFSET,
 }
 
@@ -61,6 +64,7 @@ class M8Project:
         self.instruments = None
         self.mixer = None
         self.effects = None
+        self.midi_mappings = None
         self.eq = None
         self.version = M8Version()
 
@@ -104,6 +108,10 @@ class M8Project:
             data[OFFSETS["effects"]:OFFSETS["effects"] + M8EffectsSettings.BYTES],
             version=instance.version,
         )
+        instance.midi_mappings = M8MidiMappings.read(
+            data[OFFSETS["midi_mappings"]:OFFSETS["midi_mappings"] + M8MidiMappings.TOTAL_BYTES],
+            version=instance.version,
+        )
         instance.eq = M8Eqs.read(
             data[OFFSETS["eq"]:OFFSETS["eq"] + M8Eqs.TOTAL_BYTES],
             version=instance.version,
@@ -123,6 +131,7 @@ class M8Project:
         instance.song = self.song.clone() if self.song else None
         instance.mixer = self.mixer.clone() if self.mixer else None
         instance.effects = self.effects.clone() if self.effects else None
+        instance.midi_mappings = self.midi_mappings.clone() if self.midi_mappings else None
         instance.eq = self.eq.clone() if self.eq else None
         return instance
         
