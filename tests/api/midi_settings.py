@@ -48,7 +48,7 @@ class TestM8MidiSettingsLayout(unittest.TestCase):
     def test_track_input_channel_array_at_9_through_16(self):
         m = M8MidiSettings()
         for i in range(N_TRACKS):
-            m.set_track_input_channel(i, 0x10 + i)
+            m.track_input_channels[i] = 0x10 + i
         data = m.write()
         for i in range(N_TRACKS):
             self.assertEqual(data[9 + i], 0x10 + i)
@@ -56,7 +56,7 @@ class TestM8MidiSettingsLayout(unittest.TestCase):
     def test_track_input_instrument_array_at_17_through_24(self):
         m = M8MidiSettings()
         for i in range(N_TRACKS):
-            m.set_track_input_instrument(i, 0x20 + i)
+            m.track_input_instruments[i] = 0x20 + i
         data = m.write()
         for i in range(N_TRACKS):
             self.assertEqual(data[17 + i], 0x20 + i)
@@ -65,47 +65,47 @@ class TestM8MidiSettingsLayout(unittest.TestCase):
 class TestM8MidiSettingsAccessors(unittest.TestCase):
     def test_track_input_channel_round_trip(self):
         m = M8MidiSettings()
-        m.set_track_input_channel(3, 5)
-        self.assertEqual(m.track_input_channel(3), 5)
+        m.track_input_channels[3] = 5
+        self.assertEqual(m.track_input_channels[3], 5)
         # Other tracks unaffected
-        self.assertEqual(m.track_input_channel(0), 0)
+        self.assertEqual(m.track_input_channels[0], 0)
 
     def test_track_input_instrument_round_trip(self):
         m = M8MidiSettings()
-        m.set_track_input_instrument(7, 42)
-        self.assertEqual(m.track_input_instrument(7), 42)
+        m.track_input_instruments[7] = 42
+        self.assertEqual(m.track_input_instruments[7], 42)
 
     def test_track_index_out_of_range(self):
         m = M8MidiSettings()
         with self.assertRaises(IndexError):
-            m.track_input_channel(8)
+            m.track_input_channels[8]
         with self.assertRaises(IndexError):
-            m.set_track_input_instrument(-1, 0)
+            m.track_input_instruments[-99] = 0
 
 
 class TestM8MidiSettingsRoundTrip(unittest.TestCase):
     def test_binary(self):
         m = M8MidiSettings(receive_sync=1, song_row_cue_channel=15)
-        m.set_track_input_channel(2, 10)
+        m.track_input_channels[2] = 10
         reloaded = M8MidiSettings.read(m.write())
         self.assertEqual(reloaded.receive_sync, 1)
         self.assertEqual(reloaded.song_row_cue_channel, 15)
-        self.assertEqual(reloaded.track_input_channel(2), 10)
+        self.assertEqual(reloaded.track_input_channels[2], 10)
 
     def test_dict(self):
         m = M8MidiSettings(receive_sync=1, control_map_channel=4)
-        m.set_track_input_channel(0, 1)
-        m.set_track_input_instrument(0, 8)
+        m.track_input_channels[0] = 1
+        m.track_input_instruments[0] = 8
         d = m.to_dict()
         self.assertEqual(d["receive_sync"], 1)
-        self.assertIn("track_input_channel", d)
-        self.assertEqual(d["track_input_channel"][0], 1)
-        self.assertEqual(d["track_input_instrument"][0], 8)
+        self.assertIn("track_input_channels", d)
+        self.assertEqual(d["track_input_channels"][0], 1)
+        self.assertEqual(d["track_input_instruments"][0], 8)
 
         reloaded = M8MidiSettings.from_dict(d)
         self.assertEqual(reloaded.receive_sync, 1)
-        self.assertEqual(reloaded.track_input_channel(0), 1)
-        self.assertEqual(reloaded.track_input_instrument(0), 8)
+        self.assertEqual(reloaded.track_input_channels[0], 1)
+        self.assertEqual(reloaded.track_input_instruments[0], 8)
 
     def test_clone(self):
         m = M8MidiSettings(receive_sync=1)
@@ -152,11 +152,11 @@ class TestProjectMidiAndKey(unittest.TestCase):
         p = M8Project.initialise()
         p.midi.receive_sync = 1
         p.midi.send_transport = 3
-        p.midi.set_track_input_channel(0, 5)
+        p.midi.track_input_channels[0] = 5
         loaded = M8Project.read(p.write())
         self.assertEqual(loaded.midi.receive_sync, 1)
         self.assertEqual(loaded.midi.send_transport, 3)
-        self.assertEqual(loaded.midi.track_input_channel(0), 5)
+        self.assertEqual(loaded.midi.track_input_channels[0], 5)
 
     def test_stable_round_trip_with_mutations(self):
         p = M8Project.initialise()

@@ -27,7 +27,7 @@ class TestM8MixerSettingsByteLayout(unittest.TestCase):
     def test_track_volumes_at_bytes_2_through_9(self):
         m = M8MixerSettings()
         for i in range(8):
-            m.set_track_volume(i, 0x10 + i)
+            m.track_volumes[i] = 0x10 + i
         data = m.write()
         for i in range(8):
             self.assertEqual(data[2 + i], 0x10 + i)
@@ -54,18 +54,35 @@ class TestM8MixerSettingsByteLayout(unittest.TestCase):
 class TestM8MixerSettingsTrackVolumeAccessor(unittest.TestCase):
     def test_get_set(self):
         m = M8MixerSettings()
-        m.set_track_volume(3, 0x80)
-        self.assertEqual(m.track_volume(3), 0x80)
+        m.track_volumes[3] = 0x80
+        self.assertEqual(m.track_volumes[3], 0x80)
         # Doesn't affect other tracks
-        self.assertEqual(m.track_volume(0), 0)
-        self.assertEqual(m.track_volume(7), 0)
+        self.assertEqual(m.track_volumes[0], 0)
+        self.assertEqual(m.track_volumes[7], 0)
 
     def test_out_of_range_raises(self):
         m = M8MixerSettings()
         with self.assertRaises(IndexError):
-            m.track_volume(8)
+            m.track_volumes[8]
         with self.assertRaises(IndexError):
-            m.set_track_volume(-1, 0)
+            m.track_volumes[-99] = 0
+
+    def test_negative_index_wraps_python_style(self):
+        """List-style negative indexing: -1 is the last element."""
+        m = M8MixerSettings()
+        m.track_volumes[7] = 0xAA
+        self.assertEqual(m.track_volumes[-1], 0xAA)
+
+    def test_whole_array_assignment(self):
+        """Assigning a full 8-byte list replaces the array."""
+        m = M8MixerSettings()
+        m.track_volumes = [0xC0] * 8
+        self.assertEqual(list(m.track_volumes), [0xC0] * 8)
+
+    def test_wrong_length_assignment_raises(self):
+        m = M8MixerSettings()
+        with self.assertRaises(ValueError):
+            m.track_volumes = [0xC0] * 7
 
 
 class TestM8MixerSettingsAnalogStereo(unittest.TestCase):
@@ -91,10 +108,10 @@ class TestM8MixerSettingsRoundTrip(unittest.TestCase):
             limiter_release=0x30,
             ott_level=0x10,
         )
-        m.set_track_volume(5, 0x70)
+        m.track_volumes[5] = 0x70
         reloaded = M8MixerSettings.read(m.write())
         self.assertEqual(reloaded.master_volume, 0xA0)
-        self.assertEqual(reloaded.track_volume(5), 0x70)
+        self.assertEqual(reloaded.track_volumes[5], 0x70)
         self.assertEqual(reloaded.chorus_volume, 0x40)
         self.assertEqual(reloaded.dj_filter, 0x88)
         self.assertEqual(reloaded.limiter_release, 0x30)
@@ -102,10 +119,10 @@ class TestM8MixerSettingsRoundTrip(unittest.TestCase):
 
     def test_dict(self):
         m = M8MixerSettings(master_volume=0x88, ott_level=0x44)
-        m.set_track_volume(0, 0x50)
+        m.track_volumes[0] = 0x50
         reloaded = M8MixerSettings.from_dict(m.to_dict())
         self.assertEqual(reloaded.master_volume, 0x88)
-        self.assertEqual(reloaded.track_volume(0), 0x50)
+        self.assertEqual(reloaded.track_volumes[0], 0x50)
         self.assertEqual(reloaded.ott_level, 0x44)
 
     def test_clone(self):
@@ -182,7 +199,7 @@ class TestProjectIntegration(unittest.TestCase):
     def test_template_track_volumes_all_e0(self):
         p = M8Project.initialise()
         for i in range(8):
-            self.assertEqual(p.mixer.track_volume(i), 0xE0)
+            self.assertEqual(p.mixer.track_volumes[i], 0xE0)
 
     def test_template_dj_filter(self):
         p = M8Project.initialise()
@@ -207,11 +224,11 @@ class TestProjectIntegration(unittest.TestCase):
     def test_settings_round_trip(self):
         p = M8Project.initialise()
         p.mixer.master_volume = 0x55
-        p.mixer.set_track_volume(2, 0x66)
+        p.mixer.track_volumes[2] = 0x66
         p.effects.reverb_size = 0x77
         loaded = M8Project.read(p.write())
         self.assertEqual(loaded.mixer.master_volume, 0x55)
-        self.assertEqual(loaded.mixer.track_volume(2), 0x66)
+        self.assertEqual(loaded.mixer.track_volumes[2], 0x66)
         self.assertEqual(loaded.effects.reverb_size, 0x77)
 
     def test_stable_round_trip(self):

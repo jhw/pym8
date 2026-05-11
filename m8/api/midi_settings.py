@@ -11,7 +11,7 @@ provide list-like accessors for ergonomic indexing without exposing 16
 discrete `track_input_channel_N` descriptors.
 """
 
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import ByteField, IndexedBytesField, iter_fields
 
 
 MIDI_SETTINGS_BYTES = 27
@@ -37,13 +37,11 @@ class M8MidiSettings:
     record_note_delay_kill_commands  = ByteField(6)
     control_map_channel              = ByteField(7)
     song_row_cue_channel             = ByteField(8)
-    # bytes 9-16   : track_input_channel[0..7]    (accessor methods below)
-    # bytes 17-24  : track_input_instrument[0..7] (accessor methods below)
+    # Per-track input arrays. `midi.track_input_channels[3] = 5` writes through.
+    track_input_channels             = IndexedBytesField(9, length=N_TRACKS)
+    track_input_instruments          = IndexedBytesField(17, length=N_TRACKS)
     track_input_program_change       = ByteField(25)
     track_input_mode                 = ByteField(26)
-
-    _TRACK_CHANNEL_BASE = 9
-    _TRACK_INSTRUMENT_BASE = 17
 
     def __init__(self, **kwargs):
         self._data = bytearray(self.BYTES)
@@ -51,34 +49,6 @@ class M8MidiSettings:
             fld.apply_default(self)
         for key, value in kwargs.items():
             setattr(self, key, value)
-
-    # --- per-track input accessors ---
-
-    def track_input_channel(self, track):
-        """MIDI channel that records into track 0-7 (0xFF = disabled)."""
-        if not 0 <= track < N_TRACKS:
-            raise IndexError(f"track index {track} out of range [0, {N_TRACKS - 1}]")
-        return self._data[self._TRACK_CHANNEL_BASE + track]
-
-    def set_track_input_channel(self, track, value):
-        if not 0 <= track < N_TRACKS:
-            raise IndexError(f"track index {track} out of range [0, {N_TRACKS - 1}]")
-        if hasattr(value, "value"):
-            value = value.value
-        self._data[self._TRACK_CHANNEL_BASE + track] = int(value) & 0xFF
-
-    def track_input_instrument(self, track):
-        """Instrument slot that incoming MIDI on track 0-7 fires."""
-        if not 0 <= track < N_TRACKS:
-            raise IndexError(f"track index {track} out of range [0, {N_TRACKS - 1}]")
-        return self._data[self._TRACK_INSTRUMENT_BASE + track]
-
-    def set_track_input_instrument(self, track, value):
-        if not 0 <= track < N_TRACKS:
-            raise IndexError(f"track index {track} out of range [0, {N_TRACKS - 1}]")
-        if hasattr(value, "value"):
-            value = value.value
-        self._data[self._TRACK_INSTRUMENT_BASE + track] = int(value) & 0xFF
 
     @classmethod
     def read(cls, data, version=None):
@@ -95,26 +65,14 @@ class M8MidiSettings:
         return instance
 
     def to_dict(self):
-        result = {name: fld.to_dict(self) for name, fld in iter_fields(type(self))}
-        result["track_input_channel"] = [
-            self.track_input_channel(i) for i in range(N_TRACKS)
-        ]
-        result["track_input_instrument"] = [
-            self.track_input_instrument(i) for i in range(N_TRACKS)
-        ]
-        return result
+        return {name: fld.to_dict(self) for name, fld in iter_fields(type(self))}
 
     @classmethod
     def from_dict(cls, d):
         instance = cls()
         fields_by_name = {name: fld for name, fld in iter_fields(cls)}
         for key, value in d.items():
-            if key == "track_input_channel":
-                for i, v in enumerate(value[:N_TRACKS]):
-                    instance.set_track_input_channel(i, v)
-            elif key == "track_input_instrument":
-                for i, v in enumerate(value[:N_TRACKS]):
-                    instance.set_track_input_instrument(i, v)
-            elif key in fields_by_name:
-                fields_by_name[key].from_dict(instance, value)
+            fld = fields_by_name.get(key)
+            if fld is not None:
+                fld.from_dict(instance, value)
         return instance

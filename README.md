@@ -211,7 +211,7 @@ project = M8Project.initialise()
 
 # Mixer — master, tracks, sends, DJ filter, limiter, OTT
 project.mixer.master_volume = 0xC0
-project.mixer.set_track_volume(0, 0xE0)   # 8 tracks; helper preferred over track_volume_0..7
+project.mixer.track_volumes[0] = 0xE0     # 8 tracks, list-style indexing
 project.mixer.chorus_volume = 0x40
 project.mixer.dj_filter = 0xA0
 project.mixer.dj_filter_type = 1
@@ -235,8 +235,8 @@ project.effects.reverb_shimmer   = 0x30  # firmware 6.2+
 # MIDI — sync, transport, per-track input routing
 project.midi.receive_sync = 1
 project.midi.send_transport = 2
-project.midi.set_track_input_channel(0, 5)      # track 0 records from MIDI ch 5
-project.midi.set_track_input_instrument(0, 8)   # ...fires instrument slot 8
+project.midi.track_input_channels[0] = 5        # track 0 records from MIDI ch 5
+project.midi.track_input_instruments[0] = 8     # ...fires instrument slot 8
 
 # Musical key (used by SCG / scale-global FX). Note: exposed on metadata
 # but the byte lives at file offset 187, not next to the rest of metadata.

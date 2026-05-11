@@ -16,7 +16,7 @@ currently treats as a single block; integrating it requires restructuring
 the metadata reader. Tracked in docs/planning/roadmap.md.
 """
 
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import ByteField, IndexedBytesField, iter_fields
 
 
 # ---- mixer ----
@@ -34,14 +34,8 @@ class M8MixerSettings:
     master_volume       = ByteField(0)
     master_limit        = ByteField(1)
 
-    track_volume_0      = ByteField(2)
-    track_volume_1      = ByteField(3)
-    track_volume_2      = ByteField(4)
-    track_volume_3      = ByteField(5)
-    track_volume_4      = ByteField(6)
-    track_volume_5      = ByteField(7)
-    track_volume_6      = ByteField(8)
-    track_volume_7      = ByteField(9)
+    # Per-track volumes. `mixer.track_volumes[3] = 0x80` writes through.
+    track_volumes       = IndexedBytesField(2, length=8)
 
     chorus_volume       = ByteField(10)
     delay_volume        = ByteField(11)
@@ -84,19 +78,6 @@ class M8MixerSettings:
             fld.apply_default(self)
         for key, value in kwargs.items():
             setattr(self, key, value)
-
-    def track_volume(self, track):
-        """Convenience accessor for track 0-7 volume — returns the byte."""
-        if not 0 <= track < 8:
-            raise IndexError(f"track index {track} out of range [0, 7]")
-        return self._data[2 + track]
-
-    def set_track_volume(self, track, value):
-        if not 0 <= track < 8:
-            raise IndexError(f"track index {track} out of range [0, 7]")
-        if hasattr(value, "value"):
-            value = value.value
-        self._data[2 + track] = int(value) & 0xFF
 
     @property
     def is_analog_stereo(self):

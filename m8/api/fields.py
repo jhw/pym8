@@ -141,7 +141,99 @@ class BytesField:
         self.__set__(obj, value)
 
 
-_FIELD_TYPES = (ByteField, StringField, BytesField)
+class _IndexedByteView:
+    """Mutable list-like view into a fixed range of the parent object's _data.
+
+    Returned by IndexedBytesField.__get__. Mutations propagate to the
+    underlying bytearray.
+    """
+
+    __slots__ = ("_obj", "_offset", "_length")
+
+    def __init__(self, obj, offset, length):
+        self._obj = obj
+        self._offset = offset
+        self._length = length
+
+    def _normalise(self, i):
+        if i < 0:
+            i += self._length
+        if not 0 <= i < self._length:
+            raise IndexError(f"index {i} out of range [0, {self._length - 1}]")
+        return i
+
+    def __len__(self):
+        return self._length
+
+    def __getitem__(self, i):
+        return self._obj._data[self._offset + self._normalise(i)]
+
+    def __setitem__(self, i, value):
+        i = self._normalise(i)
+        if hasattr(value, "value"):
+            value = value.value
+        self._obj._data[self._offset + i] = int(value) & 0xFF
+
+    def __iter__(self):
+        for i in range(self._length):
+            yield self._obj._data[self._offset + i]
+
+    def __eq__(self, other):
+        return list(self) == list(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return f"[{', '.join(hex(b) for b in self)}]"
+
+
+class IndexedBytesField:
+    """Fixed-length byte array exposed as a mutable list-like view.
+
+    Unlike `BytesField` (which returns a list copy and requires reassigning
+    the whole slice to mutate), `IndexedBytesField` returns a live view —
+    `obj.array[3] = 0x80` writes directly into `_data`. Use this for arrays
+    where users naturally think "the N-th element" (e.g. per-track volumes,
+    per-track input channels).
+    """
+
+    __slots__ = ("offset", "length", "default", "name")
+
+    def __init__(self, offset, length, default=None):
+        self.offset = offset
+        self.length = length
+        self.default = list(default) if default is not None else [0] * length
+        if len(self.default) != length:
+            raise ValueError(f"IndexedBytesField default must be {length} bytes")
+        self.name = None
+
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return _IndexedByteView(obj, self.offset, self.length)
+
+    def __set__(self, obj, value):
+        """Replace the whole array (assignment of a list of length `length`)."""
+        value = list(value)
+        if len(value) != self.length:
+            raise ValueError(f"{self.name} must be {self.length} bytes, got {len(value)}")
+        obj._data[self.offset:self.offset + self.length] = bytes(int(b) & 0xFF for b in value)
+
+    def apply_default(self, obj):
+        obj._data[self.offset:self.offset + self.length] = bytes(self.default)
+
+    def to_dict(self, obj):
+        return list(self.__get__(obj))
+
+    def from_dict(self, obj, value):
+        self.__set__(obj, value)
+
+
+_FIELD_TYPES = (ByteField, StringField, BytesField, IndexedBytesField)
 
 
 def iter_fields(cls):
