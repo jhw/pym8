@@ -74,6 +74,39 @@ class M8SamplerFX(IntEnum):
     ERR = 0xA7  # Sample error / debug
 
 
+# HyperSynth FX Commands (firmware 6.0+ layout)
+# Like every instrument-specific FX class, these share the 0x80-0xA7
+# byte range with M8SamplerFX — the M8 firmware interprets the byte
+# according to the playing instrument's type. The HyperSynth ordering
+# is sourced from m8-file-parser/src/instruments/hypersynth.rs
+# (HYPERSYNTH_COMMAND_NAMES_6 / _6_2). The crucial one is CRD (0x83),
+# which selects one of the 16 rows in M8HyperSynth.chords mid-phrase —
+# letting a single HyperSynth instrument play a sequence of different
+# chord shapes from successive phrase steps.
+class M8HypersynthFX(IntEnum):
+    """FX commands specific to HyperSynth instruments (firmware 6.0+)."""
+    VOL = 0x80  # Volume
+    PIT = 0x81  # Pitch
+    FIN = 0x82  # Fine tune
+    CRD = 0x83  # Chord select — slot index into M8HyperSynth.chords
+    CVO = 0x84  # Chord voice (per-oscillator on/off mask shortcut)
+    SWM = 0x85  # Swarm
+    WID = 0x86  # Width
+    SUB = 0x87  # Sub-oscillator
+    FLT = 0x88  # Filter type
+    CUT = 0x89  # Cutoff frequency
+    RES = 0x8A  # Resonance
+    AMP = 0x8B  # Amplifier
+    LIM = 0x8C  # Limiter
+    PAN = 0x8D  # Pan
+    DRY = 0x8E  # Dry/wet mix
+    SCH = 0x8F  # Send chorus (= SMX on V6.2)
+    SDL = 0x90  # Send delay
+    SRV = 0x91  # Send reverb
+    SNC = 0xA6  # Sync
+    ERR = 0xA7  # Error / debug
+
+
 # Modulator FX Commands (apply to all instrument types that have modulators)
 # Five commands per modulator slot, four slots. Layout per slot:
 #   AHD env:  EA, AT, HO, DE, ET

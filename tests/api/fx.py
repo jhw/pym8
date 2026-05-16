@@ -1,5 +1,14 @@
 import unittest
-from m8.api.fx import M8FXTuple, M8FXTuples, BLOCK_SIZE, BLOCK_COUNT, EMPTY_KEY, DEFAULT_VALUE
+from m8.api.fx import (
+    M8FXTuple,
+    M8FXTuples,
+    M8HypersynthFX,
+    M8SamplerFX,
+    BLOCK_SIZE,
+    BLOCK_COUNT,
+    EMPTY_KEY,
+    DEFAULT_VALUE,
+)
 
 # Test FX values - use hardcoded integers since we removed enums
 TEST_FX_VOL = 0x01
@@ -210,6 +219,47 @@ class TestM8FXTuples(unittest.TestCase):
         clone[0].value = 60
         self.assertEqual(original[0].key, TEST_FX_VOL)
         self.assertEqual(original[0].value, 20)
+
+class TestM8HypersynthFX(unittest.TestCase):
+    """The HyperSynth-specific FX byte layout — sourced from m8-file-parser's
+    HYPERSYNTH_COMMAND_NAMES_6 / _6_2 arrays. Shares 0x80-0xA7 with
+    M8SamplerFX (byte values are interpreted per the playing instrument's
+    type by M8 firmware)."""
+
+    def test_chord_select_byte(self):
+        # CRD = 0x83 is the chord-slot selector — what lets a single
+        # HyperSynth instrument play a chord progression by switching
+        # M8HyperSynth.chords[N] mid-phrase.
+        self.assertEqual(M8HypersynthFX.CRD, 0x83)
+
+    def test_shares_byte_range_with_sampler(self):
+        # Bytes 0x80-0x82 (VOL/PIT/FIN) are common across instrument
+        # FX classes — the byte means "the third per-instrument param"
+        # regardless of which instrument is playing.
+        self.assertEqual(M8HypersynthFX.VOL, M8SamplerFX.VOL)
+        self.assertEqual(M8HypersynthFX.PIT, M8SamplerFX.PIT)
+        self.assertEqual(M8HypersynthFX.FIN, M8SamplerFX.FIN)
+        # Position 3 diverges — PLY for sampler, CRD for hypersynth.
+        self.assertNotEqual(M8HypersynthFX.CRD.name, M8SamplerFX.PLY.name)
+        self.assertEqual(M8HypersynthFX.CRD.value, M8SamplerFX.PLY.value)
+
+    def test_extras_at_high_byte(self):
+        # Per-instrument "extras" sit at 0xA6/0xA7, after the modulator
+        # FX block (0x92-0xA5). For HyperSynth the extras are SNC/ERR.
+        self.assertEqual(M8HypersynthFX.SNC, 0xA6)
+        self.assertEqual(M8HypersynthFX.ERR, 0xA7)
+
+    def test_round_trip_in_fx_tuple(self):
+        # Plumb CRD through an M8FXTuple — verifies the value is just a
+        # byte, no enum decoration needed at the binary layer.
+        fx = M8FXTuple(key=M8HypersynthFX.CRD, value=2)
+        data = fx.write()
+        self.assertEqual(data[0], 0x83)
+        self.assertEqual(data[1], 0x02)
+        reloaded = M8FXTuple.read(data)
+        self.assertEqual(reloaded.key, 0x83)
+        self.assertEqual(reloaded.value, 2)
+
 
 if __name__ == '__main__':
     unittest.main()
