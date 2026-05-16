@@ -1,9 +1,12 @@
 import unittest
 from m8.api.fx import (
+    M8FMSynthFX,
     M8FXTuple,
     M8FXTuples,
     M8HypersynthFX,
+    M8MacrosynthFX,
     M8SamplerFX,
+    M8WavsynthFX,
     BLOCK_SIZE,
     BLOCK_COUNT,
     EMPTY_KEY,
@@ -259,6 +262,100 @@ class TestM8HypersynthFX(unittest.TestCase):
         reloaded = M8FXTuple.read(data)
         self.assertEqual(reloaded.key, 0x83)
         self.assertEqual(reloaded.value, 2)
+
+
+class TestPerInstrumentFXLayouts(unittest.TestCase):
+    """Every per-instrument FX class shares the same byte slot scheme:
+
+        0x80         VOL  (all)
+        0x81         PIT  (all)
+        0x82         FIN  (all)
+        0x83-0x8E    instrument-specific (12 bytes)
+        0x8F-0x91    sends (SCH/SDL/SRV; SMX/SDL/SRV on V6.2)
+        0xA6-0xA7    extras (instrument-specific)
+
+    These assertions pin the shared slots and the divergence points so
+    accidental edits to the per-class enums get caught.
+    """
+
+    ALL_FX_CLASSES = (
+        M8SamplerFX, M8WavsynthFX, M8MacrosynthFX, M8FMSynthFX, M8HypersynthFX,
+    )
+
+    def test_vol_pit_fin_constant_across_classes(self):
+        for cls in self.ALL_FX_CLASSES:
+            with self.subTest(cls=cls.__name__):
+                self.assertEqual(cls.VOL, 0x80)
+                self.assertEqual(cls.PIT, 0x81)
+                self.assertEqual(cls.FIN, 0x82)
+
+    def test_sends_constant_across_classes(self):
+        for cls in self.ALL_FX_CLASSES:
+            with self.subTest(cls=cls.__name__):
+                self.assertEqual(cls.SCH, 0x8F)
+                self.assertEqual(cls.SDL, 0x90)
+                self.assertEqual(cls.SRV, 0x91)
+
+    def test_position_3_diverges(self):
+        # Position 3 (byte 0x83) is the first instrument-specific slot
+        # and is where the per-class FX layouts disagree.
+        self.assertEqual(M8SamplerFX.PLY, 0x83)
+        self.assertEqual(M8WavsynthFX.OSC, 0x83)
+        self.assertEqual(M8MacrosynthFX.OSC, 0x83)
+        self.assertEqual(M8FMSynthFX.ALG, 0x83)
+        self.assertEqual(M8HypersynthFX.CRD, 0x83)
+
+    def test_cut_lands_on_0x89_for_all_synths(self):
+        # CUT (filter cutoff) coincidentally lives at position 9 (byte
+        # 0x89) for every per-instrument class. Pinning this keeps the
+        # "raw 0x89 works everywhere" shortcut from drifting silently.
+        for cls in (M8SamplerFX, M8WavsynthFX, M8MacrosynthFX, M8FMSynthFX, M8HypersynthFX):
+            with self.subTest(cls=cls.__name__):
+                self.assertEqual(cls.CUT, 0x89)
+
+    def test_filter_and_amp_constant_across_classes(self):
+        # The filter-block tail (FLT/FIL through DRY at 0x88-0x8E) is
+        # otherwise constant across the synth classes; Sampler uses FLT,
+        # the synths use FIL.
+        for cls in self.ALL_FX_CLASSES:
+            with self.subTest(cls=cls.__name__):
+                self.assertEqual(cls.RES, 0x8A)
+                self.assertEqual(cls.AMP, 0x8B)
+                self.assertEqual(cls.LIM, 0x8C)
+                self.assertEqual(cls.PAN, 0x8D)
+                self.assertEqual(cls.DRY, 0x8E)
+
+    def test_extras_diverge_at_0xA6(self):
+        # Extras at 0xA6 are the second per-class divergence.
+        self.assertEqual(M8SamplerFX.SLI, 0xA6)
+        self.assertEqual(M8WavsynthFX.SNC, 0xA6)
+        self.assertEqual(M8MacrosynthFX.TRG, 0xA6)
+        self.assertEqual(M8FMSynthFX.SNC, 0xA6)
+        self.assertEqual(M8HypersynthFX.SNC, 0xA6)
+        # ERR at 0xA7 is the only universal extra slot.
+        for cls in self.ALL_FX_CLASSES:
+            with self.subTest(cls=cls.__name__):
+                self.assertEqual(cls.ERR, 0xA7)
+
+    def test_round_trip_per_class(self):
+        # Pull each class's position-3 mnemonic through M8FXTuple binary
+        # round-trip to confirm the enum value is just a byte.
+        cases = [
+            (M8SamplerFX.PLY, 0x83),
+            (M8WavsynthFX.OSC, 0x83),
+            (M8MacrosynthFX.OSC, 0x83),
+            (M8FMSynthFX.ALG, 0x83),
+            (M8HypersynthFX.CRD, 0x83),
+        ]
+        for key, expected_byte in cases:
+            with self.subTest(key=key.name):
+                fx = M8FXTuple(key=key, value=0x05)
+                data = fx.write()
+                self.assertEqual(data[0], expected_byte)
+                self.assertEqual(data[1], 0x05)
+                reloaded = M8FXTuple.read(data)
+                self.assertEqual(reloaded.key, expected_byte)
+                self.assertEqual(reloaded.value, 0x05)
 
 
 if __name__ == '__main__':

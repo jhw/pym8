@@ -74,6 +74,93 @@ class M8SamplerFX(IntEnum):
     ERR = 0xA7  # Sample error / debug
 
 
+# WavSynth FX Commands (firmware 6.0+ layout)
+# Sourced from m8-file-parser/src/instruments/wavsynth.rs
+# (WAVSYNTH_COMMAND_NAMES + _6_2). Shares the 0x80-0xA7 byte range with
+# every other per-instrument FX class — the M8 firmware interprets each
+# byte according to the playing instrument's type.
+class M8WavsynthFX(IntEnum):
+    """FX commands specific to WavSynth instruments (firmware 6.0+)."""
+    VOL = 0x80  # Volume
+    PIT = 0x81  # Pitch
+    FIN = 0x82  # Fine tune
+    OSC = 0x83  # Oscillator / wavetable select
+    SIZ = 0x84  # Size
+    MUL = 0x85  # Multiplier
+    WRP = 0x86  # Warp
+    MIR = 0x87  # Mirror
+    FIL = 0x88  # Filter type
+    CUT = 0x89  # Cutoff frequency
+    RES = 0x8A  # Resonance
+    AMP = 0x8B  # Amplifier
+    LIM = 0x8C  # Limiter
+    PAN = 0x8D  # Pan
+    DRY = 0x8E  # Dry/wet mix
+    SCH = 0x8F  # Send chorus (= SMX on V6.2)
+    SDL = 0x90  # Send delay
+    SRV = 0x91  # Send reverb
+    SNC = 0xA6  # Sync
+    ERR = 0xA7  # Error / debug
+
+
+# MacroSynth FX Commands (firmware 6.0+ layout)
+# Sourced from m8-file-parser/src/instruments/macrosynth.rs
+# (MACRO_SYNTH_COMMANDS + _6_2). Note the extras diverge: MacroSynth has
+# TRG at 0xA6 (the "trigger sample" command, since MacroSynth shape can
+# be sample-fed), where WavSynth/HyperSynth/FMSynth have SNC.
+class M8MacrosynthFX(IntEnum):
+    """FX commands specific to MacroSynth instruments (firmware 6.0+)."""
+    VOL = 0x80  # Volume
+    PIT = 0x81  # Pitch
+    FIN = 0x82  # Fine tune
+    OSC = 0x83  # Oscillator / shape select
+    TBR = 0x84  # Timbre
+    COL = 0x85  # Colour
+    DEG = 0x86  # Degrade
+    RED = 0x87  # Redux (sample-rate reduction)
+    FIL = 0x88  # Filter type
+    CUT = 0x89  # Cutoff frequency
+    RES = 0x8A  # Resonance
+    AMP = 0x8B  # Amplifier
+    LIM = 0x8C  # Limiter
+    PAN = 0x8D  # Pan
+    DRY = 0x8E  # Dry/wet mix
+    SCH = 0x8F  # Send chorus (= SMX on V6.2)
+    SDL = 0x90  # Send delay
+    SRV = 0x91  # Send reverb
+    TRG = 0xA6  # Trigger (re-fire the macro source)
+    ERR = 0xA7  # Error / debug
+
+
+# FMSynth FX Commands (firmware 6.0+ layout)
+# Sourced from m8-file-parser/src/instruments/fmsynth.rs
+# (FM_FX_COMMANDS_FROM_6 / FROM_6_2). Pre-6.0 firmware used "FMP" at
+# 0xA6 instead of SNC/ERR; pym8 targets firmware 6.2+ so SNC/ERR is the
+# only layout exposed.
+class M8FMSynthFX(IntEnum):
+    """FX commands specific to FMSynth instruments (firmware 6.0+)."""
+    VOL = 0x80  # Volume
+    PIT = 0x81  # Pitch
+    FIN = 0x82  # Fine tune
+    ALG = 0x83  # Algorithm select
+    FM1 = 0x84  # Op A modulator value
+    FM2 = 0x85  # Op B modulator value
+    FM3 = 0x86  # Op C modulator value
+    FM4 = 0x87  # Op D modulator value
+    FLT = 0x88  # Filter type
+    CUT = 0x89  # Cutoff frequency
+    RES = 0x8A  # Resonance
+    AMP = 0x8B  # Amplifier
+    LIM = 0x8C  # Limiter
+    PAN = 0x8D  # Pan
+    DRY = 0x8E  # Dry/wet mix
+    SCH = 0x8F  # Send chorus (= SMX on V6.2)
+    SDL = 0x90  # Send delay
+    SRV = 0x91  # Send reverb
+    SNC = 0xA6  # Sync
+    ERR = 0xA7  # Error / debug
+
+
 # HyperSynth FX Commands (firmware 6.0+ layout)
 # Like every instrument-specific FX class, these share the 0x80-0xA7
 # byte range with M8SamplerFX — the M8 firmware interprets the byte
