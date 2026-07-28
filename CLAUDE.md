@@ -12,12 +12,12 @@ Python port of [m8-file-parser](https://github.com/Twinside/m8-file-parser) (Rus
 
 - **Core library:** `m8/api/` — `project.py` (top-level), `instrument.py` (base), `instruments/` (one file per type), `modulator.py`, `phrase.py`, `chain.py`, `song.py`, `fx.py`, `version.py`, `fields.py`.
 - **Audio tools:** `m8/tools/` — `chain_builder.py` (sample-chain WAV processing), `wav_slicer.py` (slice-point metadata).
-- **Demos:** `demos/<category>/<flavor>.py` — runnable scripts that produce `.m8s` files in `tmp/demos/`.
+- **Demos:** `demos/<flavor>.py` — flat, one file per demo, runnable scripts that produce `.m8s` files in `tmp/demos/<flavor>/`.
 - **Sync to device:** `tools/sync.py` — one CLI with `status` / `push` / `clean local` / `clean remote` subcommands.
 
-### Instrument and modulator descriptors
+### Descriptors are the default for every fixed-layout binary record
 
-Instrument parameters and modulator parameters are declared as **`ByteField`** / **`StringField`** descriptors (see `m8/api/fields.py`). The descriptor *is* the source of truth for offset, default, valid range, and enum binding. The underlying `_data` bytearray stays as the buffer — descriptors are a typed view.
+Instrument parameters, modulator parameters, and the sequence-data records (`M8ChainStep`, `M8PhraseStep`, `M8FXTuple`) are all declared as **`ByteField`** / **`StringField`** descriptors (see `m8/api/fields.py`). The descriptor *is* the source of truth for offset, default, valid range, and enum binding. The underlying `_data` bytearray stays as the buffer — descriptors are a typed view.
 
 ```python
 class M8Wavsynth(M8Instrument):
@@ -33,7 +33,9 @@ inst.cutoff = 0x40                # range-checked
 
 Modulators follow the same pattern with one subclass per type (`M8AHDModulator`, `M8LFOModulator`, etc.). **Changing a modulator's type means replacing the slot** — different types reinterpret bytes 2-5.
 
-`to_dict()` / `from_dict()` walk the descriptor protocol generically; both always serialize enums by name. There is no `enum_mode` flag.
+`to_dict()` / `from_dict()` walk the descriptor protocol generically; both always serialize enums by name. There is no `enum_mode` flag. (`M8ChainStep`/`M8PhraseStep`/`M8FXTuple` don't have `to_dict()`/`from_dict()` — nothing needed it yet — but they follow the same `__init__(self, **kwargs)` + `apply_default` + `read`/`write`/`clone` shape as `M8EqBand`.)
+
+**Don't hand-roll a new fixed-layout record with manual `@property` getters/setters and bytearray slicing.** That was the old style (`phrase.py`/`chain.py`/`fx.py` used it before a refactor unified them onto descriptors); a plain bytearray-backed class with per-field properties is the anti-pattern here, not the norm.
 
 ### Two MIDI-ish instrument types — don't confuse them
 
@@ -65,10 +67,10 @@ Cross-cutting per-type assertions live in `tests/api/instruments.py` (every inst
 
 ## Demos
 
-Demos are runnable scripts under `demos/`. They produce `.m8s` files in `tmp/demos/<category>/<flavor>/`. Pass `PYTHONPATH=.` if running directly:
+Demos are runnable scripts under `demos/`. They produce `.m8s` files in `tmp/demos/<flavor>/`. Pass `PYTHONPATH=.` if running directly:
 
 ```bash
-PYTHONPATH=. python demos/acid_303/sampler.py
+PYTHONPATH=. python demos/acid_303_wavsynth.py
 ```
 
 After generating, ship to a connected M8 with:
@@ -83,6 +85,6 @@ Pass `--test` to operate on `tmp/virtual-m8/` instead of `/Volumes/M8/`.
 ## M8 file format notes
 
 - Binary, little-endian, mostly unsigned 8-bit fields. Tempo is float32. Strings are null-padded (some are 0xFF-tolerant).
-- Top-level sections pym8 parses today: metadata, song matrix, chains, phrases, instruments. Other sections (groove, table, effect_settings, midi_mapping, scale, eq) round-trip as raw bytes but aren't editable yet.
+- All top-level sections pym8 defines offsets for are now parsed and editable: metadata, MIDI settings, mixer settings, grooves, song matrix, chains, phrases, tables, instruments, effects settings, MIDI mappings, scales, EQs. The `.m8c` theme file format (separate from `.m8s`/`.m8i`) is the one thing pym8 doesn't touch at all — see `docs/out-of-scope.md`.
 - Instruments are 215 bytes each; modulators sit at offset 63 within an instrument block (offset 61 in `.m8i` files, which also reorder LFO bytes).
 - Firmware-conditional offsets exist between v4.0 and v4.1 (mostly in unparsed sections — see `m8-file-parser/src/songs.rs`).

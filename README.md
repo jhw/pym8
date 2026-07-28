@@ -290,6 +290,29 @@ dst.song[0][0] = remap.out_chain(3)
 See `demos/remap_merge.py` for a runnable example merging a drum kit and
 a bass line into a single project.
 
+## Validation
+
+`M8Project.validate()` checks structural invariants — section counts and
+per-item byte ranges. Pass `deep=True` to also catch references that
+resolve but point at nothing useful: a song cell pointing at an empty
+chain, a chain step pointing at an empty phrase, a phrase step pointing
+at an unpopulated instrument slot.
+
+```python
+project.validate()                     # counts + byte ranges (raises ValueError)
+project.validate(deep=True)            # + referential integrity (raises ValueError)
+problems = project.check_references()  # same check, non-raising — returns a list of strings
+```
+
+The underlying `is_empty()` / `is_concrete()` predicates are public too,
+for anyone walking references by hand:
+
+```python
+project.chains[3].is_empty()        # True if every step's phrase ref is empty
+project.phrases[3].is_empty()       # True if every step is unprogrammed
+project.instruments.is_concrete(5)  # True if slot 5 holds a real instrument
+```
+
 ## FX commands
 
 Phrases carry per-step FX tuples. Enum classes provide readable names:
