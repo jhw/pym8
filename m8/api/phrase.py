@@ -1,5 +1,6 @@
 from enum import IntEnum
 from m8.api import M8Block
+from m8.api.fields import ByteField, iter_fields
 from m8.api.fx import M8FXTuples, M8FXTuple
 
 # Generate note enum dynamically using functional API
@@ -52,24 +53,37 @@ STEP_COUNT = PHRASE_STEP_COUNT
 PHRASE_COUNT = PHRASES_COUNT
 
 class M8PhraseStep:
-    """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects."""
+    """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects.
 
-    def __init__(self, note=EMPTY_NOTE, velocity=EMPTY_VELOCITY, instrument=EMPTY_INSTRUMENT):
-        # Clients should pass enum.value directly for note values
-        self._data = bytearray([note, velocity, instrument])
+    `fx` is a separate M8FXTuples attribute merged into the byte buffer at
+    write time — the same pattern M8Instrument uses for `modulators`.
+    """
+
+    BASE_BYTES = BASE_DATA_SIZE
+
+    note       = ByteField(NOTE_OFFSET, default=EMPTY_NOTE)
+    velocity   = ByteField(VELOCITY_OFFSET, default=EMPTY_VELOCITY)
+    instrument = ByteField(INSTRUMENT_OFFSET, default=EMPTY_INSTRUMENT)
+
+    def __init__(self, **kwargs):
+        self._data = bytearray(self.BASE_BYTES)
+        for _, fld in iter_fields(type(self)):
+            fld.apply_default(self)
         self.fx = M8FXTuples()
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @classmethod
     def read(cls, data):
-        instance = cls()
-        instance._data = bytearray(data[:BASE_DATA_SIZE])
+        instance = cls.__new__(cls)
+        instance._data = bytearray(data[:cls.BASE_BYTES])
         instance.fx = M8FXTuples.read(data[FX_OFFSET:])
         return instance
 
     def clone(self):
-        instance = self.__class__()
-        instance._data = bytearray(self._data)  # Clone base data
-        instance.fx = self.fx.clone()  # Clone fx tuples
+        instance = self.__class__.__new__(self.__class__)
+        instance._data = bytearray(self._data)
+        instance.fx = self.fx.clone()
         return instance
 
     def write(self):
@@ -77,36 +91,11 @@ class M8PhraseStep:
         buffer.extend(self.fx.write())
         return bytes(buffer)
 
-    @property
-    def note(self):
-        return self._data[NOTE_OFFSET]
-
-    @note.setter
-    def note(self, value):
-        # Clients should pass enum.value directly for enum note values
-        self._data[NOTE_OFFSET] = value
-
-    @property
-    def velocity(self):
-        return self._data[VELOCITY_OFFSET]
-
-    @velocity.setter
-    def velocity(self, value):
-        self._data[VELOCITY_OFFSET] = value
-
-    @property
-    def instrument(self):
-        return self._data[INSTRUMENT_OFFSET]
-
-    @instrument.setter
-    def instrument(self, value):
-        self._data[INSTRUMENT_OFFSET] = value
-
     def off(self):
         """Set this step to OFF note, clearing all other fields."""
-        self._data[NOTE_OFFSET] = OFF_NOTE
-        self._data[VELOCITY_OFFSET] = EMPTY_VELOCITY
-        self._data[INSTRUMENT_OFFSET] = EMPTY_INSTRUMENT
+        self.note = OFF_NOTE
+        self.velocity = EMPTY_VELOCITY
+        self.instrument = EMPTY_INSTRUMENT
 
         for i in range(len(self.fx)):
             self.fx[i] = M8FXTuple()

@@ -1,3 +1,5 @@
+from m8.api.fields import ByteField, iter_fields
+
 # Chains configuration
 CHAINS_OFFSET = 39518
 CHAINS_COUNT = 255
@@ -21,39 +23,31 @@ CHAIN_COUNT = CHAINS_COUNT
 class M8ChainStep:
     """Represents a single step in an M8 chain that references a phrase with transposition."""
 
-    def __init__(self, phrase=EMPTY_PHRASE, transpose=DEFAULT_TRANSPOSE):
-        self._data = bytearray([phrase, transpose])
-    
+    BYTES = STEP_BLOCK_SIZE
+
+    phrase    = ByteField(PHRASE_OFFSET, default=EMPTY_PHRASE)
+    transpose = ByteField(TRANSPOSE_OFFSET, default=DEFAULT_TRANSPOSE)
+
+    def __init__(self, **kwargs):
+        self._data = bytearray(self.BYTES)
+        for _, fld in iter_fields(type(self)):
+            fld.apply_default(self)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     @classmethod
     def read(cls, data):
-        instance = cls.__new__(cls)  # Create instance without calling __init__
-        instance._data = bytearray(data[:STEP_BLOCK_SIZE])
+        instance = cls.__new__(cls)
+        instance._data = bytearray(data[:cls.BYTES])
         return instance
-    
+
     def write(self):
         return bytes(self._data)
-    
-    @property
-    def phrase(self):
-        return self._data[PHRASE_OFFSET]
 
-    @phrase.setter
-    def phrase(self, value):
-        self._data[PHRASE_OFFSET] = value
-
-    @property
-    def transpose(self):
-        return self._data[TRANSPOSE_OFFSET]
-
-    @transpose.setter
-    def transpose(self, value):
-        self._data[TRANSPOSE_OFFSET] = value
-    
     def clone(self):
-        return self.__class__(
-            phrase=self.phrase,
-            transpose=self.transpose
-        )
+        instance = self.__class__.__new__(self.__class__)
+        instance._data = bytearray(self._data)
+        return instance
 
     def validate(self, step_index=None, chain_index=None):
         """Validate the chain step.

@@ -1,5 +1,7 @@
 from enum import IntEnum
 
+from m8.api.fields import ByteField, iter_fields
+
 # FX configuration
 FX_BLOCK_SIZE = 2
 FX_BLOCK_COUNT = 3
@@ -299,46 +301,38 @@ class M8MixerFX(IntEnum):
 
 
 class M8FXTuple:
-    """Key-value pair for M8 effects with key (effect type) and value (effect parameter)."""
+    """Key-value pair for M8 effects with key (effect type) and value (effect parameter).
 
-    def __init__(self, key=EMPTY_KEY, value=DEFAULT_VALUE):
-        self._data = bytearray([0, 0])  # Initialize with zeros
+    `key` has no `enum=` binding — the byte's meaning depends on which
+    per-instrument or global FX enum the caller is working with (M8SequenceFX,
+    M8SamplerFX, M8MixerFX, ...), so it's exposed as a raw int.
+    """
 
-        # Set values directly - clients should pass enum.value for enum keys
-        self._data[FX_KEY_OFFSET] = key
-        self._data[FX_VALUE_OFFSET] = value
-    
+    BYTES = BLOCK_SIZE
+
+    key   = ByteField(FX_KEY_OFFSET, default=EMPTY_KEY)
+    value = ByteField(FX_VALUE_OFFSET, default=DEFAULT_VALUE)
+
+    def __init__(self, **kwargs):
+        self._data = bytearray(self.BYTES)
+        for _, fld in iter_fields(type(self)):
+            fld.apply_default(self)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     @classmethod
     def read(cls, data):
-        instance = cls.__new__(cls)  # Create instance without calling __init__
-        instance._data = bytearray(data[:BLOCK_SIZE])
+        instance = cls.__new__(cls)
+        instance._data = bytearray(data[:cls.BYTES])
         return instance
-    
+
     def write(self):
         return bytes(self._data)
-    
-    @property
-    def key(self):
-        return self._data[FX_KEY_OFFSET]
 
-    @key.setter
-    def key(self, value):
-        self._data[FX_KEY_OFFSET] = value
-
-    @property
-    def value(self):
-        return self._data[FX_VALUE_OFFSET]
-
-    @value.setter
-    def value(self, value):
-        self._data[FX_VALUE_OFFSET] = value
-    
     def clone(self):
-        """Create a copy of this FX tuple."""
-        return self.__class__(
-            key=self.key,
-            value=self.value
-        )
+        instance = self.__class__.__new__(self.__class__)
+        instance._data = bytearray(self._data)
+        return instance
 
 
 class M8FXTuples(list):
