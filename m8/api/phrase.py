@@ -100,6 +100,16 @@ class M8PhraseStep:
         for i in range(len(self.fx)):
             self.fx[i] = M8FXTuple()
 
+    def is_empty(self):
+        """Default note/velocity/instrument and no FX — a step with nothing
+        programmed on it (distinct from an OFF-note step, which is not empty)."""
+        return (
+            self.note == EMPTY_NOTE
+            and self.velocity == EMPTY_VELOCITY
+            and self.instrument == EMPTY_INSTRUMENT
+            and all(tup.key == 0xFF for tup in self.fx)
+        )
+
     def validate(self, step_index=None, phrase_index=None):
         """Validate the phrase step.
 
@@ -164,6 +174,9 @@ class M8Phrase(list):
                 step_data = step_data[:STEP_BLOCK_SIZE]
             result.extend(step_data)
         return bytes(result)
+
+    def is_empty(self):
+        return all(step.is_empty() for step in self)
 
     def validate(self, phrase_index=None):
         """Validate the phrase.

@@ -49,6 +49,9 @@ class M8ChainStep:
         instance._data = bytearray(self._data)
         return instance
 
+    def is_empty(self):
+        return self.phrase == EMPTY_PHRASE
+
     def validate(self, step_index=None, chain_index=None):
         """Validate the chain step.
 
@@ -101,6 +104,9 @@ class M8Chain(list):
             step_data = step.write()
             result.extend(step_data)
         return bytes(result)
+
+    def is_empty(self):
+        return all(step.is_empty() for step in self)
 
     def validate(self, chain_index=None):
         """Validate the chain.

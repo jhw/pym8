@@ -194,5 +194,75 @@ class TestProjectValidation(unittest.TestCase):
         self.assertIn("instrument", str(ctx.exception).lower())
 
 
+class TestProjectDeepValidation(unittest.TestCase):
+    """check_references() / validate(deep=True) — referential integrity
+    beyond byte-range checks: song->chain->phrase->instrument must resolve
+    to real, populated data, not just in-range indices."""
+
+    def _wired_project(self):
+        from m8.api.phrase import M8PhraseStep, M8Note
+        from m8.api.chain import M8ChainStep
+        project = M8Project.initialise()
+        project.instruments[0] = M8Sampler(name="KICK")
+        project.phrases[0][0] = M8PhraseStep(note=M8Note.C_4, velocity=0xFF, instrument=0)
+        project.chains[0][0] = M8ChainStep(phrase=0, transpose=0)
+        project.song[0][0] = 0
+        return project
+
+    def test_fully_wired_project_has_no_problems(self):
+        project = self._wired_project()
+        self.assertEqual(project.check_references(), [])
+        project.validate(deep=True)  # no raise
+
+    def test_song_references_empty_chain(self):
+        project = M8Project.initialise()
+        project.song[0][0] = 5  # chain 5 has no phrase references
+        problems = project.check_references()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("song[0][0]", problems[0])
+        self.assertIn("chain 5", problems[0])
+        with self.assertRaises(ValueError) as ctx:
+            project.validate(deep=True)
+        self.assertIn("song[0][0]", str(ctx.exception))
+
+    def test_chain_references_empty_phrase(self):
+        from m8.api.chain import M8ChainStep
+        project = M8Project.initialise()
+        project.chains[0][0] = M8ChainStep(phrase=7, transpose=0)  # phrase 7 is empty
+        project.song[0][0] = 0
+        problems = project.check_references()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("chain 0 step 0", problems[0])
+        self.assertIn("phrase 7", problems[0])
+
+    def test_phrase_references_non_concrete_instrument(self):
+        from m8.api.phrase import M8PhraseStep, M8Note
+        from m8.api.chain import M8ChainStep
+        project = M8Project.initialise()
+        # instrument slot 3 is left as the default empty M8Block slot
+        project.phrases[0][0] = M8PhraseStep(note=M8Note.C_4, velocity=0xFF, instrument=3)
+        project.chains[0][0] = M8ChainStep(phrase=0, transpose=0)
+        project.song[0][0] = 0
+        problems = project.check_references()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("phrase 0 step 0", problems[0])
+        self.assertIn("instrument 3", problems[0])
+
+    def test_shallow_validate_ignores_dangling_references(self):
+        """deep=False (the default) must not be affected by this new check —
+        it only catches byte-range/count problems, same as before."""
+        project = M8Project.initialise()
+        project.song[0][0] = 5  # dangling reference, but a valid byte value
+        project.validate()  # no raise
+
+    def test_deep_validate_reports_multiple_problems(self):
+        project = M8Project.initialise()
+        project.song[0][0] = 5
+        project.song[1][0] = 6
+        with self.assertRaises(ValueError) as ctx:
+            project.validate(deep=True)
+        self.assertIn("2 dangling", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

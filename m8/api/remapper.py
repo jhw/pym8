@@ -83,12 +83,7 @@ class Mappings:
 
 def _is_concrete_instrument(project, instrument_index):
     """A populated instrument slot, not an M8Block / empty slot."""
-    if not (0 <= instrument_index < N_INSTRUMENTS):
-        return False
-    inst = project.instruments[instrument_index]
-    # M8Block has no associated_eq; real instruments do (the descriptor
-    # is on the base class).
-    return hasattr(inst, "associated_eq")
+    return project.instruments.is_concrete(instrument_index)
 
 
 def _walk_fx(step_fx, mappings, queue_instruments, queue_tables):
@@ -256,19 +251,13 @@ class NoFreeSlotError(ValueError):
 def _chain_occupied(project, index):
     if not (0 <= index < len(project.chains)):
         return False
-    return any(step.phrase != EMPTY_PHRASE for step in project.chains[index])
+    return not project.chains[index].is_empty()
 
 
 def _phrase_occupied(project, index):
     if not (0 <= index < len(project.phrases)):
         return False
-    phrase = project.phrases[index]
-    for step in phrase:
-        if step.note != 0xFF or step.velocity != 0xFF or step.instrument != EMPTY_INSTRUMENT_REF:
-            return True
-        if any(fx.key != 0xFF for fx in step.fx):
-            return True
-    return False
+    return not project.phrases[index].is_empty()
 
 
 def _instrument_occupied(project, index):

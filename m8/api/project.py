@@ -1,15 +1,15 @@
 from m8.api import M8Block
-from m8.api.chain import M8Chains, CHAINS_OFFSET
+from m8.api.chain import M8Chains, CHAINS_OFFSET, EMPTY_PHRASE
 from m8.api.eq import M8Eqs
 from m8.api.groove import M8Grooves
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.midi_mapping import M8MidiMappings
 from m8.api.midi_settings import M8MidiSettings
-from m8.api.phrase import M8Phrases, PHRASES_OFFSET
+from m8.api.phrase import M8Phrases, PHRASES_OFFSET, EMPTY_INSTRUMENT
 from m8.api.scale import M8Scales
 from m8.api.settings import M8EffectsSettings, M8MixerSettings
-from m8.api.song import M8SongMatrix, SONG_OFFSET
+from m8.api.song import M8SongMatrix, SONG_OFFSET, EMPTY_CHAIN, COL_COUNT
 from m8.api.table import M8Tables, TABLE_OFFSET
 from m8.api.version import M8Version
 
@@ -232,7 +232,65 @@ class M8Project:
         with open(filename, "wb") as f:
             f.write(self.write())
 
-    def validate(self):
+    def check_references(self):
+        """Find references that point at empty or out-of-range slots.
+
+        Checks the reference chain a programmatic song edit is most likely
+        to break: song -> chain -> phrase -> instrument. A reference is
+        flagged when its target is out of range, or when it resolves but
+        the target slot itself has nothing programmed on it (so the M8
+        would play silence when it got there). Read-only; does not mutate
+        the project.
+
+        Returns:
+            list[str]: human-readable problem descriptions, empty if every
+            reference resolves to real, populated data.
+        """
+        problems = []
+
+        if self.song and self.chains:
+            for row_index, row in enumerate(self.song):
+                for col_index in range(COL_COUNT):
+                    chain_ref = row[col_index]
+                    if chain_ref == EMPTY_CHAIN:
+                        continue
+                    if not (0 <= chain_ref < len(self.chains)):
+                        problems.append(
+                            f"song[{row_index}][{col_index}] -> chain {chain_ref}: out of range"
+                        )
+                    elif self.chains[chain_ref].is_empty():
+                        problems.append(
+                            f"song[{row_index}][{col_index}] -> chain {chain_ref}: empty (no phrase references)"
+                        )
+
+        if self.chains and self.phrases:
+            for chain_index, chain in enumerate(self.chains):
+                for step_index, step in enumerate(chain):
+                    if step.phrase == EMPTY_PHRASE:
+                        continue
+                    if not (0 <= step.phrase < len(self.phrases)):
+                        problems.append(
+                            f"chain {chain_index} step {step_index} -> phrase {step.phrase}: out of range"
+                        )
+                    elif self.phrases[step.phrase].is_empty():
+                        problems.append(
+                            f"chain {chain_index} step {step_index} -> phrase {step.phrase}: empty"
+                        )
+
+        if self.phrases and self.instruments:
+            for phrase_index, phrase in enumerate(self.phrases):
+                for step_index, step in enumerate(phrase):
+                    if step.instrument == EMPTY_INSTRUMENT:
+                        continue
+                    if not self.instruments.is_concrete(step.instrument):
+                        problems.append(
+                            f"phrase {phrase_index} step {step_index} -> instrument {step.instrument}: "
+                            "not a populated instrument slot"
+                        )
+
+        return problems
+
+    def validate(self, deep=False):
         """Validate all project components.
 
         Validates:
@@ -240,6 +298,10 @@ class M8Project:
         - Phrases collection (count and instrument references)
         - Song matrix (chain references)
         - Instruments collection (count)
+
+        Args:
+            deep: also run check_references() and raise if it finds any
+                dangling or empty references (song->chain->phrase->instrument).
 
         Raises:
             ValueError: If any validation fails
@@ -252,4 +314,12 @@ class M8Project:
             self.song.validate()
         if self.instruments:
             self.instruments.validate()
+
+        if deep:
+            problems = self.check_references()
+            if problems:
+                raise ValueError(
+                    f"{len(problems)} dangling/empty reference(s) found:\n"
+                    + "\n".join(problems)
+                )
 

@@ -248,6 +248,13 @@ class M8Instruments(list):
             empty.data = bytearray([0xFF] + [0] * (BLOCK_SIZE - 1))
             self.append(empty)
 
+    def is_concrete(self, index):
+        """True if the slot holds a real, editable instrument — not an
+        empty/unsupported-type M8Block placeholder (and not out of range)."""
+        if not (0 <= index < len(self)):
+            return False
+        return not isinstance(self[index], M8Block)
+
     @classmethod
     def read(cls, data, version=None):
         # Eagerly import every concrete subclass so the registry is populated.
