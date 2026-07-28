@@ -14,6 +14,19 @@ same index" optimization. See `allocate`.
 The actual byte rewriting (apply the remapping by copying source state
 into destination with refs rewritten) lives in a follow-up commit.
 
+`apply()` assumes `source` and `destination` are independent objects —
+it clones from `source` and writes into `destination` one slot at a time,
+which is only safe because writes can never affect what's still left to
+read. `renumber()` is the same idea for a *single* project renumbering
+its own slots (e.g. compacting or reindexing to a caller-chosen scheme):
+it reads every touched slot up front, before writing any of them back, so
+a cyclic remap (e.g. swapping chain 5 and chain 12) can't clobber data a
+later step still needs. Building a `Remapping` for `renumber()` is the
+caller's job — there's no allocator for "place this at a specific target
+slot", only `walk_dependencies`/`walk_song` (what's referenced) and
+`is_empty()`/`is_concrete()` (what's actually populated) as primitives to
+build a placement scheme on top of.
+
 Reference inventory (matches m8-file-parser/src/remapper.rs):
 
     chain.step.phrase                → phrase index
@@ -42,6 +55,7 @@ from m8.api.fx import M8MixerFX, M8SequenceFX
 from m8.api.instrument import BLOCK_COUNT as N_INSTRUMENTS, M8InstrumentType
 from m8.api.table import TABLE_COUNT as N_TABLES
 from m8.api.eq import EQ_COUNT as N_EQS
+from m8.api.song import COL_COUNT
 
 
 # Sentinel values for "no reference" in each slot kind.
@@ -440,6 +454,112 @@ def apply(source, destination, mappings: Mappings, remap: Remapping) -> None:
             if step.phrase != EMPTY_PHRASE:
                 step.phrase = remap.out_phrase(step.phrase)
         destination.chains[dst_chain] = cloned
+
+
+# ----------------------------------------------------------------------
+# Renumber (self-remap)
+# ----------------------------------------------------------------------
+
+def _check_injective(remap: Remapping) -> None:
+    """Raise if any kind's mapping sends two different sources to the same
+    destination — that would silently overwrite one with the other."""
+    for kind, mapping in (
+        ("chain", remap.chains),
+        ("phrase", remap.phrases),
+        ("instrument", remap.instruments),
+        ("table", remap.tables),
+        ("eq", remap.eqs),
+    ):
+        seen = {}
+        for src, dst in mapping.items():
+            if dst in seen:
+                raise ValueError(
+                    f"renumber: {kind} {seen[dst]} and {kind} {src} both map to "
+                    f"destination {dst} — would silently overwrite one"
+                )
+            seen[dst] = src
+
+
+def renumber(project, remap: Remapping) -> None:
+    """Apply an explicit slot renumbering within a single project.
+
+    Unlike `apply()` (source -> destination, independent objects), this
+    mutates `project` in place using its own current state as the source.
+    There's no allocator involved — the caller supplies exactly where
+    each slot should land (e.g. "column 2's chains start at 0x20"); build
+    `remap` however suits the scheme, then call this to execute it safely.
+
+    Safety: every slot the remap touches is cloned from the *current*
+    project state before anything is written back, per kind. This is what
+    makes a cyclic remap safe — e.g. `remap.chains == {5: 12, 12: 5}` (a
+    straight swap) — where `apply()`'s read-and-write-one-slot-at-a-time
+    loop could clobber slot 12's original content before its own turn to
+    be read, since here source and destination are the same object.
+
+    Also rewrites the song matrix's chain references in place (`apply()`
+    deliberately leaves the song matrix alone, since a cross-project move
+    lands in an independent destination project's song matrix — but a
+    same-project renumbering should keep whatever was already wired up
+    still pointing at the right slots).
+
+    Copy semantics, same as `apply()`: this writes declared destinations
+    only, it does not clear source slots. A source that isn't also a
+    destination in the same kind's mapping keeps its old content — for a
+    clean "move" rather than a duplicate, include that slot as a
+    destination too (e.g. map it to a fresh/default instance elsewhere in
+    your scheme, or overwrite it yourself after calling this).
+
+    Raises:
+        ValueError: if `remap` isn't injective per kind (see
+            `_check_injective`).
+    """
+    _check_injective(remap)
+
+    # Read every touched slot before writing any of them back.
+    eq_clones = {src: project.eqs[src].clone() for src in remap.eqs}
+    table_clones = {src: project.tables[src].clone() for src in remap.tables}
+    instrument_clones = {src: project.instruments[src].clone() for src in remap.instruments}
+    phrase_clones = {src: project.phrases[src].clone() for src in remap.phrases}
+    chain_clones = {src: project.chains[src].clone() for src in remap.chains}
+
+    # Rewrite inline references on the clones — never on the live project.
+    for cloned in table_clones.values():
+        for step in cloned:
+            _rewrite_fx_tuples(step.fx, remap)
+
+    for cloned in instrument_clones.values():
+        if hasattr(cloned, "associated_eq") and cloned.associated_eq != NO_EQ:
+            cloned.associated_eq = remap.out_eq(cloned.associated_eq)
+
+    for cloned in phrase_clones.values():
+        for step in cloned:
+            if step.instrument != EMPTY_INSTRUMENT_REF:
+                step.instrument = remap.out_instrument(step.instrument)
+            _rewrite_fx_tuples(step.fx, remap)
+
+    for cloned in chain_clones.values():
+        for step in cloned:
+            if step.phrase != EMPTY_PHRASE:
+                step.phrase = remap.out_phrase(step.phrase)
+
+    # All reads are done — write order can no longer corrupt anything,
+    # even for a cyclic remap.
+    for src, dst in remap.eqs.items():
+        project.eqs[dst] = eq_clones[src]
+    for src, dst in remap.tables.items():
+        project.tables[dst] = table_clones[src]
+    for src, dst in remap.instruments.items():
+        project.instruments[dst] = instrument_clones[src]
+    for src, dst in remap.phrases.items():
+        project.phrases[dst] = phrase_clones[src]
+    for src, dst in remap.chains.items():
+        project.chains[dst] = chain_clones[src]
+
+    # Song matrix — each cell's old value is read and only that same cell
+    # is written, so no snapshot is needed here.
+    for row in project.song:
+        for col in range(COL_COUNT):
+            row[col] = remap.out_chain(row[col])
 
 
 def move_chains(source, destination, chain_indices) -> Remapping:

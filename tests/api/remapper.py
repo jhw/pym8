@@ -15,7 +15,7 @@ from m8.api.remapper import (
     EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, NO_EQ,
     EQ_REF_FX_KEYS, INSTRUMENT_REF_FX_KEYS, TABLE_REF_FX_KEYS,
     Mappings, NoFreeSlotError, Remapper, Remapping,
-    allocate, apply, move_chains, walk_dependencies, walk_song,
+    allocate, apply, move_chains, renumber, walk_dependencies, walk_song,
 )
 
 
@@ -704,6 +704,126 @@ class TestApplyCallerWiresSongMatrix(unittest.TestCase):
         # Caller wires up via remap.out_chain
         dst.song[5][3] = remap.out_chain(2)
         self.assertEqual(dst.song[5][3], remap.out_chain(2))
+
+
+class TestRenumberBasics(unittest.TestCase):
+    """renumber() moves slots within a single project — no separate
+    destination, no allocator; the caller supplies the target slots."""
+
+    def test_chain_moved_to_new_slot(self):
+        project = M8Project.initialise()
+        project.chains[3][0] = M8ChainStep(phrase=7, transpose=0x0C)
+
+        remap = Remapping(chains={3: 8})
+        renumber(project, remap)
+
+        self.assertEqual(project.chains[8][0].phrase, 7)
+        self.assertEqual(project.chains[8][0].transpose, 0x0C)
+        # Copy semantics, same as apply(): renumber() writes declared
+        # destinations only — it doesn't clear the old slot. A caller
+        # wanting a clean move maps the old slot to something else too.
+        self.assertEqual(project.chains[3][0].phrase, 7)
+
+    def test_phrase_moved_and_instrument_ref_rewritten(self):
+        project = M8Project.initialise()
+        project.instruments[5] = M8Wavsynth(name="BASS")
+        project.phrases[7][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+
+        remap = Remapping(phrases={7: 20}, instruments={5: 40})
+        renumber(project, remap)
+
+        moved = project.phrases[20][0]
+        self.assertEqual(moved.note, M8Note.C_4)
+        self.assertEqual(moved.instrument, 40)
+        self.assertEqual(project.instruments[40].name, "BASS")
+
+    def test_fx_and_eq_refs_rewritten(self):
+        project = M8Project.initialise()
+        project.instruments[5] = M8Wavsynth(name="BASS")
+        project.instruments[5].associated_eq = 10
+        project.eqs[10].low.q = 0xAB
+        project.phrases[7][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+        project.phrases[7][0].fx[0] = M8FXTuple(key=M8MixerFX.INS, value=5)
+        project.tables[9][0].fx[0] = M8FXTuple(key=M8SequenceFX.TBL, value=9)
+
+        remap = Remapping(
+            phrases={7: 20}, instruments={5: 40}, eqs={10: 15}, tables={9: 30},
+        )
+        renumber(project, remap)
+
+        self.assertEqual(project.instruments[40].associated_eq, 15)
+        self.assertEqual(project.eqs[15].low.q, 0xAB)
+        self.assertEqual(project.phrases[20][0].fx[0].value, 40)  # INS -> new instrument slot
+        self.assertEqual(project.tables[30][0].fx[0].value, 30)  # TBL -> new table slot
+
+    def test_song_matrix_chain_refs_rewritten(self):
+        project = M8Project.initialise()
+        project.chains[3][0] = M8ChainStep(phrase=7, transpose=0)
+        project.song[5][2] = 3
+        project.song[9][0] = 3  # same chain referenced twice
+
+        renumber(project, Remapping(chains={3: 8}))
+
+        self.assertEqual(project.song[5][2], 8)
+        self.assertEqual(project.song[9][0], 8)
+
+    def test_unmapped_song_cells_untouched(self):
+        project = M8Project.initialise()
+        project.song[0][0] = 50  # not part of any remap
+        renumber(project, Remapping(chains={3: 8}))
+        self.assertEqual(project.song[0][0], 50)
+
+
+class TestRenumberCycleSafety(unittest.TestCase):
+    """The actual regression renumber() exists to prevent: apply()'s
+    read-one-write-one loop would corrupt data on a cyclic self-remap
+    (source and destination are the same object here)."""
+
+    def test_swap_two_chains_does_not_corrupt_either(self):
+        project = M8Project.initialise()
+        project.chains[5][0] = M8ChainStep(phrase=1, transpose=0x05)
+        project.chains[12][0] = M8ChainStep(phrase=2, transpose=0x0C)
+
+        renumber(project, Remapping(chains={5: 12, 12: 5}))
+
+        self.assertEqual(project.chains[12][0].phrase, 1)
+        self.assertEqual(project.chains[12][0].transpose, 0x05)
+        self.assertEqual(project.chains[5][0].phrase, 2)
+        self.assertEqual(project.chains[5][0].transpose, 0x0C)
+
+    def test_three_way_rotation_does_not_corrupt(self):
+        project = M8Project.initialise()
+        project.chains[1][0] = M8ChainStep(phrase=10, transpose=0)
+        project.chains[2][0] = M8ChainStep(phrase=20, transpose=0)
+        project.chains[3][0] = M8ChainStep(phrase=30, transpose=0)
+
+        renumber(project, Remapping(chains={1: 2, 2: 3, 3: 1}))
+
+        self.assertEqual(project.chains[2][0].phrase, 10)
+        self.assertEqual(project.chains[3][0].phrase, 20)
+        self.assertEqual(project.chains[1][0].phrase, 30)
+
+
+class TestRenumberInjectiveCheck(unittest.TestCase):
+    def test_collision_raises(self):
+        project = M8Project.initialise()
+        remap = Remapping(chains={3: 8, 5: 8})  # both target slot 8
+        with self.assertRaises(ValueError) as ctx:
+            renumber(project, remap)
+        self.assertIn("chain", str(ctx.exception))
+
+    def test_no_partial_writes_after_collision_raised(self):
+        """A rejected remap shouldn't have mutated anything, even the
+        kinds whose sub-mapping was itself injective."""
+        project = M8Project.initialise()
+        project.phrases[7][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=0)
+        remap = Remapping(chains={3: 8, 5: 8}, phrases={7: 20})
+
+        with self.assertRaises(ValueError):
+            renumber(project, remap)
+
+        self.assertTrue(project.phrases[20].is_empty())
+        self.assertEqual(project.phrases[7][0].note, M8Note.C_4)
 
 
 if __name__ == "__main__":
