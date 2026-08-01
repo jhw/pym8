@@ -8,17 +8,9 @@ untouched. This file locks that guarantee in with a committed test rather
 than relying on anecdotal confidence, and is the safety net for any change
 to the binary read/write layer (e.g. migrating a hand-rolled record like
 M8ChainStep onto ByteField descriptors).
-
-Note: a whole-file round-trip against the bundled template / real device
-fixtures (m8/templates/TEMPLATE-6-2-1.m8s, tests/fixtures/EXTERNAL.m8s) is
-deliberately NOT included here — M8Metadata.write() zero-pads the
-`directory` string after its null terminator, while real device files
-leave non-zero stale bytes there from a previously-longer path. That's a
-pre-existing, unrelated quirk (not touched by this migration); testing
-against those fixtures directly would make this test fail for reasons
-that have nothing to do with chain/phrase/FX serialization.
 """
 
+import os
 import unittest
 
 from m8.api.chain import M8ChainStep
@@ -26,9 +18,26 @@ from m8.api.fx import M8FXTuple, M8SamplerFX, M8SequenceFX
 from m8.api.phrase import M8Note, M8PhraseStep
 from m8.api.project import M8Project
 
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "..", "fixtures")
+
 
 class TestProjectRoundTrip(unittest.TestCase):
     """read(bytes).write() must reproduce the original bytes exactly."""
+
+    def test_unmodified_real_project_round_trips_byte_identically(self):
+        """A pure read -> write with no edits must reproduce the source
+        file exactly, including metadata: EXTERNAL.m8s has stale non-zero
+        bytes trailing the `directory` string's null terminator (left over
+        from a previously-longer path), which used to get zeroed on every
+        save regardless of whether metadata was touched."""
+        fixture_path = os.path.join(FIXTURES_DIR, "EXTERNAL.m8s")
+        with open(fixture_path, "rb") as f:
+            original = f.read()
+
+        project = M8Project.read(original)
+        rewritten = project.write()
+
+        self.assertEqual(rewritten, original)
 
     def test_populated_project_round_trips(self):
         """Exercise chain/phrase/FX data specifically (not just near-empty

@@ -116,6 +116,49 @@ class TestM8MetadataClone(unittest.TestCase):
         self.assertEqual(original.name, "ORIGINAL")
 
 
+class TestM8MetadataByteFidelity(unittest.TestCase):
+    """A no-edit read().write() must reproduce the source bytes exactly,
+    including stale bytes trailing a string's null terminator — real
+    device files leave non-zero garbage there from a previously-longer
+    path/name, and it must not be zeroed unless the field is reassigned."""
+
+    DIRECTORY = "/Songs/short/"
+    DIRECTORY_TERMINATOR = len(DIRECTORY)  # index of the directory field's null byte
+    NAME = "SHORT"
+    NAME_TERMINATOR = 134 + len(NAME)  # index (absolute) of the name field's null byte
+
+    def _build_binary_with_stale_tail(self):
+        buf = bytearray(METADATA_BLOCK_SIZE)
+        buf[0:self.DIRECTORY_TERMINATOR] = self.DIRECTORY.encode("utf-8")
+        buf[self.DIRECTORY_TERMINATOR] = 0
+        # Stale non-zero bytes left over from a previously-longer path.
+        gap = 128 - self.DIRECTORY_TERMINATOR - 1
+        buf[self.DIRECTORY_TERMINATOR + 1:128] = bytes((i % 254) + 1 for i in range(gap))
+        buf[128] = 5  # transpose
+        buf[129:133] = struct.pack("<f", 128.0)  # tempo
+        buf[133] = 2  # quantize
+        buf[134:self.NAME_TERMINATOR] = self.NAME.encode("utf-8")
+        buf[self.NAME_TERMINATOR] = 0
+        buf[self.NAME_TERMINATOR + 1:146] = bytes([0xAB]) * (146 - self.NAME_TERMINATOR - 1)
+        return bytes(buf)
+
+    def test_unmodified_metadata_round_trips_byte_identically(self):
+        original = self._build_binary_with_stale_tail()
+        m = M8Metadata.read(original)
+        self.assertEqual(m.write(), original)
+
+    def test_reassigning_field_zero_pads_it(self):
+        original = self._build_binary_with_stale_tail()
+        m = M8Metadata.read(original)
+        m.directory = self.DIRECTORY  # same string, but reassigned
+        rewritten = m.write()
+
+        self.assertNotEqual(rewritten, original)
+        self.assertEqual(rewritten[self.DIRECTORY_TERMINATOR + 1:128], bytes(128 - self.DIRECTORY_TERMINATOR - 1))
+        # Untouched fields (name) still preserve their stale tail.
+        self.assertEqual(rewritten[134:146], original[134:146])
+
+
 class TestKeyNotOnMetadata(unittest.TestCase):
     """The musical-key byte is on M8Project, not on M8Metadata."""
 

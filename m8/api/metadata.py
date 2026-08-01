@@ -8,7 +8,7 @@ project name. The musical `key` byte is NOT here (it lives at file byte
 """
 import struct
 
-from m8.api import _read_fixed_string, _write_fixed_string
+from m8.api.fields import ByteField, StringField
 
 
 METADATA_OFFSET = 14
@@ -35,6 +35,13 @@ DEFAULT_NAME = 'HELLO'
 class M8Metadata:
     """Project metadata: directory, transpose, tempo, quantize, name.
 
+    Backed by a raw 146-byte buffer (`_data`), same pattern as instruments
+    (m8/api/instrument.py) and scales (m8/api/scale.py): fields read/write
+    directly into the buffer in place, so bytes belonging to untouched
+    fields — including stale data trailing a string's null terminator —
+    round-trip byte-for-byte through read()/write() unless the field is
+    actually reassigned.
+
     The musical `key` byte is on M8Project (`project.key`), not here —
     it lives at file byte 187 (after MidiSettings) so it isn't part of
     the contiguous metadata block.
@@ -42,44 +49,41 @@ class M8Metadata:
 
     BLOCK_SIZE = METADATA_BLOCK_SIZE
 
+    directory = StringField(DIRECTORY_OFFSET, DIRECTORY_LENGTH, default=DEFAULT_DIRECTORY)
+    transpose = ByteField(TRANSPOSE_OFFSET, default=DEFAULT_TRANSPOSE)
+    quantize = ByteField(QUANTIZE_OFFSET, default=DEFAULT_QUANTIZE)
+    name = StringField(NAME_OFFSET, NAME_LENGTH, default=DEFAULT_NAME)
+
     def __init__(self, directory=DEFAULT_DIRECTORY,
                  transpose=DEFAULT_TRANSPOSE,
                  tempo=DEFAULT_TEMPO,
                  quantize=DEFAULT_QUANTIZE,
                  name=DEFAULT_NAME):
+        self._data = bytearray(self.BLOCK_SIZE)
         self.directory = directory
         self.transpose = transpose
         self.tempo = tempo
         self.quantize = quantize
         self.name = name
 
+    @property
+    def tempo(self):
+        return struct.unpack('<f', bytes(self._data[TEMPO_OFFSET:TEMPO_OFFSET + TEMPO_SIZE]))[0]
+
+    @tempo.setter
+    def tempo(self, value):
+        self._data[TEMPO_OFFSET:TEMPO_OFFSET + TEMPO_SIZE] = struct.pack('<f', float(value))
+
     @classmethod
     def read(cls, data):
-        instance = cls()
-        instance.directory = _read_fixed_string(data, DIRECTORY_OFFSET, DIRECTORY_LENGTH)
-        instance.transpose = data[TRANSPOSE_OFFSET]
-        instance.tempo = struct.unpack('<f', data[TEMPO_OFFSET:TEMPO_OFFSET + TEMPO_SIZE])[0]
-        instance.quantize = data[QUANTIZE_OFFSET]
-        instance.name = _read_fixed_string(data, NAME_OFFSET, NAME_LENGTH)
+        instance = cls.__new__(cls)
+        instance._data = bytearray(data[:cls.BLOCK_SIZE])
         return instance
 
     def write(self):
-        buffer = bytearray()
-        buffer.extend(_write_fixed_string(self.directory, DIRECTORY_LENGTH))
-        buffer.append(self.transpose & 0xFF)
-        buffer.extend(struct.pack('<f', self.tempo))
-        buffer.append(self.quantize & 0xFF)
-        buffer.extend(_write_fixed_string(self.name, NAME_LENGTH))
-        assert len(buffer) == self.BLOCK_SIZE, (
-            f"Buffer size mismatch: {len(buffer)} != {self.BLOCK_SIZE}"
-        )
-        return bytes(buffer)
+        return bytes(self._data)
 
     def clone(self):
-        return M8Metadata(
-            directory=self.directory,
-            transpose=self.transpose,
-            tempo=self.tempo,
-            quantize=self.quantize,
-            name=self.name,
-        )
+        instance = self.__class__.__new__(self.__class__)
+        instance._data = bytearray(self._data)
+        return instance
