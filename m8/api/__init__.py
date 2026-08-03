@@ -13,19 +13,31 @@ def join_nibbles(high_nibble, low_nibble):
 # String utilities for binary serialization
 
 def _read_fixed_string(data, offset, length):
-    """Read fixed-length string from binary data, handling null bytes and 0xFF padding."""
+    """Read fixed-length string from binary data.
+
+    Matches m8-file-parser's Reader::read_string (reader.rs): truncate at
+    the first 0x00 or 0xFF byte (whichever comes first), then back off
+    byte-by-byte to the longest valid UTF-8 prefix. No whitespace stripping
+    and no filtering of 0xFF bytes elsewhere in the field — either of those
+    would silently change bytes that should round-trip untouched (e.g. a
+    name with trailing spaces, or a sample path containing 0xFF past its
+    terminator).
+    """
     str_bytes = data[offset:offset + length]
 
-    # Truncate at null byte if present
-    null_idx = str_bytes.find(0)
-    if null_idx != -1:
-        str_bytes = str_bytes[:null_idx]
+    end = length
+    for i, b in enumerate(str_bytes):
+        if b == 0 or b == 0xFF:
+            end = i
+            break
 
-    # Filter out 0xFF bytes (common padding in M8 files)
-    str_bytes = bytes([b for b in str_bytes if b != 0xFF])
+    while end > 0:
+        try:
+            return bytes(str_bytes[:end]).decode('utf-8')
+        except UnicodeDecodeError:
+            end -= 1
 
-    # Decode and strip
-    return str_bytes.decode('utf-8', errors='replace').strip()
+    return ""
 
 def _write_fixed_string(string, length):
     """Encode string as fixed-length byte array with null byte padding."""

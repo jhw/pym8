@@ -92,6 +92,33 @@ class TestStringField(unittest.TestCase):
         # 8-byte slot is fully utilized
         self.assertTrue(s.name.startswith("this_is"))
 
+    def test_terminates_at_first_0xff_only(self):
+        """Matches m8-file-parser's Reader::read_string: stop at the FIRST
+        0x00 or 0xFF, don't filter 0xFF bytes elsewhere in the field."""
+        s = Sample()
+        s._data[3:11] = b"AB\xFFCD\x00\x00\x00"
+        self.assertEqual(s.name, "AB")
+
+    def test_trailing_whitespace_preserved(self):
+        """Rust's read_string doesn't strip whitespace; neither should we —
+        stripping would silently change bytes that should round-trip."""
+        s = Sample()
+        s.name = "kick "
+        self.assertEqual(s.name, "kick ")
+
+    def test_invalid_utf8_backs_off_to_longest_valid_prefix(self):
+        """Rust backs off byte-by-byte on invalid UTF-8 rather than
+        replacing bad bytes with U+FFFD (which would re-encode to a
+        different byte length on write and corrupt round-trip)."""
+        s = Sample()
+        s._data[3:11] = bytes([0x41, 0x42, 0x80, 0x41, 0x42, 0x43, 0x44, 0x45])
+        self.assertEqual(s.name, "AB")
+
+    def test_no_terminator_uses_full_length(self):
+        s = Sample()
+        s._data[3:11] = b"ABCDEFGH"
+        self.assertEqual(s.name, "ABCDEFGH")
+
 
 class TestBytesField(unittest.TestCase):
     def test_default_applied(self):
