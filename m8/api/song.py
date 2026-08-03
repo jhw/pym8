@@ -1,7 +1,7 @@
 # Song configuration
 SONG_OFFSET = 750
 SONG_COL_COUNT = 8
-SONG_ROW_COUNT = 255
+SONG_ROW_COUNT = 256
 
 # Constants
 EMPTY_CHAIN = 255
@@ -70,7 +70,7 @@ class M8SongRow:
                 )
 
 class M8SongMatrix(list):
-    """Represents the M8 song grid as a 2D matrix with 255 rows and 8 columns of chain references."""
+    """Represents the M8 song grid as a 2D matrix with 256 rows and 8 columns of chain references."""
     
     def __init__(self):
         super().__init__()

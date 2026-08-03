@@ -292,6 +292,35 @@ class TestSongRowBoundaries(unittest.TestCase):
         self.assertEqual(project.song[0][COL_COUNT - 1], 0)
 
 
+class TestSongRowCount(unittest.TestCase):
+    """Regression: the song arrangement grid is 256 rows (0x100), not 255.
+
+    Rust's SongSteps::ROW_COUNT = 0x100; the on-disk song section is
+    exactly 2048 bytes (0xAEE - 0x2EE), which is 256 rows * 8 columns.
+    255 was a stale copy of CHAIN_COUNT/PHRASES_COUNT (which really are
+    255) applied to an unrelated quantity.
+    """
+
+    def test_row_count_is_256(self):
+        self.assertEqual(ROW_COUNT, 256)
+
+    def test_song_section_spans_exactly_to_phrases_offset(self):
+        from m8.api.phrase import PHRASES_OFFSET
+        from m8.api.song import SONG_OFFSET
+        self.assertEqual(SONG_OFFSET + ROW_COUNT * COL_COUNT, PHRASES_OFFSET)
+
+    def test_last_row_reachable_via_project(self):
+        project = M8Project.initialise()
+        project.song[255][0] = 42
+        self.assertEqual(project.song[255][0], 42)
+
+    def test_last_row_round_trips_through_project(self):
+        project = M8Project.initialise()
+        project.song[255][3] = 7
+        reloaded = M8Project.read(project.write())
+        self.assertEqual(reloaded.song[255][3], 7)
+
+
 class TestSongValidation(unittest.TestCase):
     """Validation of chain references in the song matrix.
 
