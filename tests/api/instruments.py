@@ -187,6 +187,43 @@ class TestM8Instruments(unittest.TestCase):
             reloaded = M8Instruments.read(bytes(raw))
         self.assertIsInstance(reloaded[0], M8Block)
 
+    def test_empty_block_factory_is_type_0xff(self):
+        block = M8Instruments.empty_block()
+        self.assertEqual(block.data[0], 0xFF)
+        self.assertEqual(len(block.data), BLOCK_SIZE)
+
+    def test_clear_slot(self):
+        instruments = M8Instruments()
+        instruments[3] = M8Wavsynth(name="W3")
+        instruments.clear_slot(3)
+        self.assertIsInstance(instruments[3], M8Block)
+        self.assertEqual(instruments[3].data[0], 0xFF)
+
+    def test_bare_m8block_slot_writes_as_empty_not_wavsynth(self):
+        """A freshly constructed M8Block() has a 0-byte buffer. Assigning it
+        into a slot must not zero-pad into a type-0x00 (WAVSYNTH) block on
+        write() — it should serialise as the canonical 0xFF empty slot."""
+        instruments = M8Instruments()
+        instruments[20] = M8Block()
+        written = instruments.write()
+        type_byte = written[20 * BLOCK_SIZE]
+        self.assertEqual(type_byte, 0xFF)
+
+        reloaded = M8Instruments.read(written)
+        self.assertIsInstance(reloaded[20], M8Block)
+
+    def test_short_instrument_data_writes_as_empty(self):
+        """Any block that serialises shorter than BLOCK_SIZE can't be a
+        complete instrument; it must round-trip as empty, not be silently
+        zero-padded into a valid-looking instrument type."""
+        instruments = M8Instruments()
+        short = M8Block()
+        short.data = bytearray(b"\x01\x02\x03")
+        instruments[7] = short
+        written = instruments.write()
+        type_byte = written[7 * BLOCK_SIZE]
+        self.assertEqual(type_byte, 0xFF)
+
 
 class TestM8iRoundTrip(unittest.TestCase):
     FIXTURE = os.path.join(

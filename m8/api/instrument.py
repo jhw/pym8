@@ -246,14 +246,27 @@ class M8Instrument:
 class M8Instruments(list):
     """The 128-slot instrument collection inside a project."""
 
+    @staticmethod
+    def empty_block():
+        """The canonical empty instrument slot: type byte 0xFF, zero-filled
+        otherwise. `M8Block()` on its own is NOT an empty slot — its buffer
+        is 0 bytes, which write() would zero-pad into a type-0x00 (WAVSYNTH)
+        block. Use this (or `clear_slot`) instead of hand-building a block."""
+        block = M8Block()
+        block.data = bytearray([0xFF] + [0] * (BLOCK_SIZE - 1))
+        return block
+
     def __init__(self, items=None):
         super().__init__()
         for item in (items or []):
             self.append(item)
         while len(self) < BLOCK_COUNT:
-            empty = M8Block()
-            empty.data = bytearray([0xFF] + [0] * (BLOCK_SIZE - 1))
-            self.append(empty)
+            self.append(self.empty_block())
+
+    def clear_slot(self, index):
+        """Empty a slot in place. The safe way to null out an instrument —
+        assigning a bare `M8Block()` produces a phantom WAVSYNTH instead."""
+        self[index] = self.empty_block()
 
     def is_concrete(self, index):
         """True if the slot holds a real, editable instrument — not an
@@ -307,9 +320,12 @@ class M8Instruments(list):
     def write(self):
         result = bytearray()
         for instr in self:
-            instr_data = instr.write() if hasattr(instr, "write") else bytes([0] * BLOCK_SIZE)
+            instr_data = instr.write() if hasattr(instr, "write") else b""
             if len(instr_data) < BLOCK_SIZE:
-                instr_data = instr_data + bytes([0] * (BLOCK_SIZE - len(instr_data)))
+                # A short (or empty) block can never be a complete instrument;
+                # treat it as an empty slot rather than zero-padding it into a
+                # type-0x00 (WAVSYNTH) block.
+                instr_data = bytes(self.empty_block().data)
             elif len(instr_data) > BLOCK_SIZE:
                 instr_data = instr_data[:BLOCK_SIZE]
             result.extend(instr_data)
