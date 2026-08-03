@@ -156,6 +156,13 @@ class M8Instrument:
         with open(file_path, "rb") as f:
             data = f.read()
 
+        min_size = METADATA_OFFSET + BLOCK_SIZE
+        if len(data) < min_size:
+            raise ValueError(
+                f"{file_path} is too short to be a M8 instrument file: "
+                f"{len(data)} bytes, need at least {min_size}"
+            )
+
         version = M8Version.read(data[10:])
         instrument_data = data[METADATA_OFFSET:]
         instr_type = instrument_data[TYPE_OFFSET]

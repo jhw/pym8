@@ -102,6 +102,24 @@ class TestProjectErrorHandling(unittest.TestCase):
         with self.assertRaises((OSError, FileNotFoundError)):
             project.write_to_file("/nonexistent/directory/file.m8s")
 
+    def test_read_truncated_data_raises(self):
+        """Regression: a truncated .m8s used to silently produce a mangled
+        project (short sections read as short slices) instead of failing.
+        Matches m8-file-parser's length check in songs.rs, which raises a
+        ParseError rather than reading past-EOF as zeros."""
+        full = M8Project.initialise().write()
+        with self.assertRaises(ValueError):
+            M8Project.read(full[:-1])
+
+    def test_read_empty_data_raises(self):
+        with self.assertRaises(ValueError):
+            M8Project.read(b"")
+
+    def test_read_minimum_size_data_succeeds(self):
+        full = M8Project.initialise().write()
+        self.assertEqual(len(full), M8Project.MIN_SIZE)
+        M8Project.read(full)  # exact minimum size must not raise
+
 
 class TestMetadataEdgeCasesViaProject(unittest.TestCase):
     """Edge values on metadata fields reached via M8Project.initialise()."""

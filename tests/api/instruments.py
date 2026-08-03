@@ -228,6 +228,19 @@ class TestInstrumentErrorHandling(unittest.TestCase):
         self.assertEqual(len(sampler.name), 12)
         self.assertEqual(sampler.name, "THIS_IS_A_VE")
 
+    def test_read_from_file_truncated_raises(self):
+        """A truncated .m8i used to silently produce a short/garbled
+        instrument block instead of failing."""
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".m8i", delete=False) as tmp:
+            tmp.write(b"\x00" * 10)
+            tmp_path = tmp.name
+        try:
+            with self.assertRaises(ValueError):
+                M8Instrument.read_from_file(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
 
 class TestInstrumentsCollection(unittest.TestCase):
     """Slot-level operations on the 128-instrument collection."""

@@ -80,8 +80,20 @@ class M8Project:
         self.key = 0
         self.version = M8Version()
 
+    #: Minimum byte length for a well-formed .m8s project — the EQ section
+    #: (the highest-offset section pym8 parses) plus its size exactly
+    #: reaches EOF on a real file. Anything shorter is a truncated/corrupt
+    #: file; matches m8-file-parser's length check in songs.rs, which
+    #: raises a ParseError rather than silently reading short slices.
+    MIN_SIZE = OFFSETS["eqs"] + M8Eqs.TOTAL_BYTES
+
     @classmethod
     def read(cls, data):
+        if len(data) < cls.MIN_SIZE:
+            raise ValueError(
+                f"Data too short to be a M8 project: {len(data)} bytes, "
+                f"need at least {cls.MIN_SIZE}"
+            )
         instance = cls()
         instance.data = bytearray(data)
         instance.version = M8Version.read(data[OFFSETS["version"]:])
