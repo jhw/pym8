@@ -831,6 +831,68 @@ class TestRenumberBasics(unittest.TestCase):
         self.assertEqual(project.song[0][0], 50)
 
 
+class TestRenumberRewritesWholeProjectReferences(unittest.TestCase):
+    """Regression: renumber() used to only rewrite references held BY the
+    slots being moved, not references held elsewhere in the project
+    pointing AT a moved slot. Renumbering instrument 5 -> 40 must fix
+    every phrase step with .instrument == 5, not just phrases that are
+    themselves part of the move. Matches m8-file-parser's renumber
+    (remapper.rs), which sweeps every instrument/phrase/chain in the
+    project after a move, not only the moved ones."""
+
+    def test_untouched_phrase_instrument_ref_rewritten(self):
+        project = M8Project.initialise()
+        project.instruments[5] = M8Wavsynth(name="BASS")
+        # Phrase 7 is NOT part of the remap — only the instrument moves.
+        project.phrases[7][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+
+        renumber(project, Remapping(instruments={5: 40}))
+
+        self.assertEqual(project.phrases[7][0].instrument, 40)
+
+    def test_untouched_phrase_fx_ref_rewritten(self):
+        project = M8Project.initialise()
+        project.tables[9][0].transpose = 0x01  # non-empty owned table
+        # Phrase 7 is NOT part of the remap — only the table moves.
+        project.phrases[7][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80)
+        project.phrases[7][0].fx[0] = M8FXTuple(key=M8SequenceFX.TBL, value=9)
+
+        renumber(project, Remapping(tables={9: 60}))
+
+        self.assertEqual(project.phrases[7][0].fx[0].value, 60)
+
+    def test_untouched_chain_phrase_ref_rewritten(self):
+        project = M8Project.initialise()
+        # Chain 2 is NOT part of the remap — only the phrase moves.
+        project.chains[2][0] = M8ChainStep(phrase=7, transpose=0)
+
+        renumber(project, Remapping(phrases={7: 20}))
+
+        self.assertEqual(project.chains[2][0].phrase, 20)
+
+    def test_untouched_instrument_eq_ref_rewritten(self):
+        project = M8Project.initialise()
+        # Instrument 5 is NOT part of the remap — only the EQ moves.
+        project.instruments[5] = M8Wavsynth(name="BASS")
+        project.instruments[5].associated_eq = 10
+
+        renumber(project, Remapping(eqs={10: 99}))
+
+        self.assertEqual(project.instruments[5].associated_eq, 99)
+
+    def test_stale_duplicate_left_by_source_only_move_also_rewritten(self):
+        """A source slot that isn't also a destination keeps its old
+        content (copy semantics) — but that leftover copy's own outgoing
+        references should still track the renumbering, same as anywhere
+        else in the project."""
+        project = M8Project.initialise()
+        project.instruments[5] = M8Wavsynth(name="BASS")
+        project.instruments[5].associated_eq = 10
+        # Instrument 5 is not itself moved anywhere.
+        renumber(project, Remapping(eqs={10: 99}))
+        self.assertEqual(project.instruments[5].associated_eq, 99)
+
+
 class TestRenumberCycleSafety(unittest.TestCase):
     """The actual regression renumber() exists to prevent: apply()'s
     read-one-write-one loop would corrupt data on a cyclic self-remap

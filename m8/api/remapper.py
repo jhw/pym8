@@ -413,6 +413,29 @@ def allocate(source, destination, mappings: Mappings) -> Remapping:
 # Apply
 # ----------------------------------------------------------------------
 
+def _rewrite_table_refs(table, remap: Remapping):
+    for step in table:
+        _rewrite_fx_tuples(step.fx, remap)
+
+
+def _rewrite_instrument_refs(instrument, remap: Remapping):
+    if hasattr(instrument, "associated_eq") and instrument.associated_eq != NO_EQ:
+        instrument.associated_eq = remap.out_eq(instrument.associated_eq)
+
+
+def _rewrite_phrase_refs(phrase, remap: Remapping):
+    for step in phrase:
+        if step.instrument != EMPTY_INSTRUMENT_REF:
+            step.instrument = remap.out_instrument(step.instrument)
+        _rewrite_fx_tuples(step.fx, remap)
+
+
+def _rewrite_chain_refs(chain, remap: Remapping):
+    for step in chain:
+        if step.phrase != EMPTY_PHRASE:
+            step.phrase = remap.out_phrase(step.phrase)
+
+
 def _rewrite_fx_tuples(fx_tuples, remap: Remapping):
     """Rewrite reference-bearing FX values via the remapping.
 
@@ -463,34 +486,28 @@ def apply(source, destination, mappings: Mappings, remap: Remapping) -> None:
     # Tables — rewrite FX refs in each step
     for src_table, dst_table in remap.tables.items():
         cloned = source.tables[src_table].clone()
-        for step in cloned:
-            _rewrite_fx_tuples(step.fx, remap)
+        _rewrite_table_refs(cloned, remap)
         destination.tables[dst_table] = cloned
 
     # Instruments — rewrite associated_eq
     for src_inst, dst_inst in remap.instruments.items():
         cloned = source.instruments[src_inst].clone()
         # M8Block instances (empty slots) have no associated_eq and were
-        # filtered out at walk time, but be defensive.
-        if hasattr(cloned, "associated_eq") and cloned.associated_eq != NO_EQ:
-            cloned.associated_eq = remap.out_eq(cloned.associated_eq)
+        # filtered out at walk time, but _rewrite_instrument_refs is
+        # defensive about that (hasattr-guarded).
+        _rewrite_instrument_refs(cloned, remap)
         destination.instruments[dst_inst] = cloned
 
     # Phrases — rewrite step.instrument and FX refs
     for src_phrase, dst_phrase in remap.phrases.items():
         cloned = source.phrases[src_phrase].clone()
-        for step in cloned:
-            if step.instrument != EMPTY_INSTRUMENT_REF:
-                step.instrument = remap.out_instrument(step.instrument)
-            _rewrite_fx_tuples(step.fx, remap)
+        _rewrite_phrase_refs(cloned, remap)
         destination.phrases[dst_phrase] = cloned
 
     # Chains — rewrite step.phrase
     for src_chain, dst_chain in remap.chains.items():
         cloned = source.chains[src_chain].clone()
-        for step in cloned:
-            if step.phrase != EMPTY_PHRASE:
-                step.phrase = remap.out_phrase(step.phrase)
+        _rewrite_chain_refs(cloned, remap)
         destination.chains[dst_chain] = cloned
 
 
@@ -540,6 +557,18 @@ def renumber(project, remap: Remapping) -> None:
     same-project renumbering should keep whatever was already wired up
     still pointing at the right slots).
 
+    Song-wide reference rewrite: it's not just the moved slots' own
+    content that can reference a renumbered index — any OTHER phrase,
+    chain, table, or instrument in the project may hold a reference to
+    a source slot that just relocated (e.g. renumbering instrument 5→8
+    must fix every phrase step with `.instrument == 5`, not just the
+    phrase(s) being moved themselves). Every slot in the project (not
+    only those in `remap`) has its outgoing references rewritten via
+    `remap.out_*`; slots that are themselves being moved get this from
+    their fresh clone, everything else is rewritten in place. Matches
+    m8-file-parser's renumber (remapper.rs), which does the same
+    whole-song sweep after a move.
+
     Copy semantics, same as `apply()`: this writes declared destinations
     only, it does not clear source slots. A source that isn't also a
     destination in the same kind's mapping keeps its old content — for a
@@ -562,26 +591,46 @@ def renumber(project, remap: Remapping) -> None:
 
     # Rewrite inline references on the clones — never on the live project.
     for cloned in table_clones.values():
-        for step in cloned:
-            _rewrite_fx_tuples(step.fx, remap)
+        _rewrite_table_refs(cloned, remap)
 
     for cloned in instrument_clones.values():
-        if hasattr(cloned, "associated_eq") and cloned.associated_eq != NO_EQ:
-            cloned.associated_eq = remap.out_eq(cloned.associated_eq)
+        _rewrite_instrument_refs(cloned, remap)
 
     for cloned in phrase_clones.values():
-        for step in cloned:
-            if step.instrument != EMPTY_INSTRUMENT_REF:
-                step.instrument = remap.out_instrument(step.instrument)
-            _rewrite_fx_tuples(step.fx, remap)
+        _rewrite_phrase_refs(cloned, remap)
 
     for cloned in chain_clones.values():
-        for step in cloned:
-            if step.phrase != EMPTY_PHRASE:
-                step.phrase = remap.out_phrase(step.phrase)
+        _rewrite_chain_refs(cloned, remap)
 
-    # All reads are done — write order can no longer corrupt anything,
-    # even for a cyclic remap.
+    # Every slot NOT being moved may still hold a reference into one that
+    # is — rewrite those in place. Safe to do slot-by-slot with no
+    # read-all-first step: unlike the move itself, rewriting a reference
+    # only ever depends on that slot's own current value plus `remap`
+    # (a static lookup table), never on another slot's live state, so
+    # there's no cross-slot ordering hazard to guard against.
+    dest_tables = set(remap.tables.values())
+    dest_instruments = set(remap.instruments.values())
+    dest_phrases = set(remap.phrases.values())
+    dest_chains = set(remap.chains.values())
+
+    for i, table in enumerate(project.tables):
+        if i not in dest_tables:
+            _rewrite_table_refs(table, remap)
+
+    for i, instrument in enumerate(project.instruments):
+        if i not in dest_instruments:
+            _rewrite_instrument_refs(instrument, remap)
+
+    for i, phrase in enumerate(project.phrases):
+        if i not in dest_phrases:
+            _rewrite_phrase_refs(phrase, remap)
+
+    for i, chain in enumerate(project.chains):
+        if i not in dest_chains:
+            _rewrite_chain_refs(chain, remap)
+
+    # All reads of the *moved* slots are done — write order can no longer
+    # corrupt anything, even for a cyclic remap.
     for src, dst in remap.eqs.items():
         project.eqs[dst] = eq_clones[src]
     for src, dst in remap.tables.items():
