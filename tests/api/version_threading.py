@@ -20,7 +20,7 @@ class TestInstrumentReadAcceptsVersion(unittest.TestCase):
         original = M8Wavsynth(name="W")
         loaded = M8Wavsynth.read(original.write())
         # Default version is the bundled-template firmware
-        self.assertEqual(loaded.version.tuple(), (6, 0, 17))
+        self.assertEqual(loaded.version.tuple(), (6, 1, 1))
 
     def test_explicit_version_stored_on_instance(self):
         ver = M8Version(4, 1, 0)
@@ -55,7 +55,7 @@ class TestInstrumentsCollectionThreadsVersion(unittest.TestCase):
         instruments = M8Instruments()
         instruments[0] = M8Wavsynth(name="W")
         loaded = M8Instruments.read(instruments.write())
-        self.assertEqual(loaded[0].version.tuple(), (6, 0, 17))
+        self.assertEqual(loaded[0].version.tuple(), (6, 1, 1))
 
 
 class TestProjectThreadsVersionToInstruments(unittest.TestCase):

@@ -20,7 +20,7 @@ from m8.api.project import M8Project
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "m8", "templates")
 TEMPLATE_NAME = "TEMPLATE-6-2-1"
-EXPECTED_VERSION = (6, 0, 17)
+EXPECTED_VERSION = (6, 1, 1)
 EXPECTED_METADATA_NAME = "DEFAULT621"
 
 

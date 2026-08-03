@@ -119,7 +119,7 @@ class M8Instrument:
     def clone(self):
         instance = self.__class__.__new__(self.__class__)
         instance._data = bytearray(self._data)
-        instance.version = M8Version(self.version.major, self.version.minor, self.version.patch)
+        instance.version = self.version.clone()
         instance.modulators = self.modulators.clone()
         return instance
 

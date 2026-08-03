@@ -140,7 +140,7 @@ class M8Project:
     def clone(self):
         instance = self.__class__()
         instance.data = bytearray(self.data)
-        instance.version = M8Version(self.version.major, self.version.minor, self.version.patch)
+        instance.version = self.version.clone()
         instance.metadata = self.metadata.clone() if self.metadata else None
         instance.midi = self.midi.clone() if self.midi else None
         instance.instruments = self.instruments.clone() if self.instruments else None

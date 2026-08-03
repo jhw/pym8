@@ -5,26 +5,46 @@
 class M8Version:
     """Represents the M8 firmware version used to create a file."""
 
-    def __init__(self, major=6, minor=0, patch=17):
-        """Initialize version. Defaults match TEMPLATE-6-2-1.m8s (firmware 6.0.17)."""
+    def __init__(self, major=6, minor=1, patch=1):
+        """Initialize version. Defaults match TEMPLATE-6-2-1.m8s (firmware 6.2.1)."""
         self.major = major
         self.minor = minor
         self.patch = patch
+        # Trailing 2 bytes of the on-disk version block. m8-file-parser's
+        # reader skips them on read and always writes 0x00, 0x10 on write
+        # (comment: "why? don't know, but borked result if not written") —
+        # but real device files (e.g. the bundled template) carry 0x00, 0x00
+        # there. Preserved verbatim so an untouched read->write round-trips
+        # byte-identical instead of guessing at a fixed value.
+        self._reserved = bytes([0, 0])
 
     @classmethod
     def read(cls, data):
-        """Read version from a buffer where bytes are laid out [patch, major, minor, 0]."""
+        """Read version from a buffer laid out [(minor<<4)|patch, major, reserved, reserved].
+
+        Byte 0 is nibble-packed: high nibble is minor, low nibble is patch —
+        matching m8-file-parser's Version::from_reader (version.rs). Byte 1's
+        low nibble is major.
+        """
         instance = cls()
         if len(data) >= 1:
-            instance.patch = data[0]
+            instance.minor = (data[0] >> 4) & 0x0F
+            instance.patch = data[0] & 0x0F
         if len(data) >= 2:
-            instance.major = data[1]
-        if len(data) >= 3:
-            instance.minor = data[2]
+            instance.major = data[1] & 0x0F
+        if len(data) >= 4:
+            instance._reserved = bytes(data[2:4])
         return instance
 
     def write(self):
-        return bytes([self.patch, self.major, self.minor, 0])
+        byte0 = ((self.minor & 0x0F) << 4) | (self.patch & 0x0F)
+        byte1 = self.major & 0x0F
+        return bytes([byte0, byte1]) + self._reserved
+
+    def clone(self):
+        instance = self.__class__(self.major, self.minor, self.patch)
+        instance._reserved = self._reserved
+        return instance
 
     def tuple(self):
         """Return (major, minor, patch) for ordered comparison."""
@@ -73,6 +93,6 @@ class M8Version:
             return cls()
         parts = version_str.split('.')
         major = int(parts[0]) if len(parts) > 0 else 6
-        minor = int(parts[1]) if len(parts) > 1 else 0
-        patch = int(parts[2]) if len(parts) > 2 else 17
+        minor = int(parts[1]) if len(parts) > 1 else 1
+        patch = int(parts[2]) if len(parts) > 2 else 1
         return cls(major, minor, patch)
