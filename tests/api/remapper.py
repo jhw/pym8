@@ -12,7 +12,7 @@ from m8.api.instruments.wavsynth import M8Wavsynth
 from m8.api.phrase import M8Note, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.remapper import (
-    EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, NO_EQ,
+    EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, NO_EQ, N_INSTRUMENTS,
     EQ_REF_FX_KEYS, INSTRUMENT_REF_FX_KEYS, TABLE_REF_FX_KEYS,
     Mappings, NoFreeSlotError, Remapper, Remapping,
     allocate, apply, move_chains, renumber, walk_dependencies, walk_song,
@@ -427,6 +427,63 @@ class TestAllocatorPiggyback(unittest.TestCase):
         remap = allocate(src, dst, m)
         self.assertIn(200, remap.tables)
         self.assertNotEqual(remap.tables[200], 200)
+
+    def test_freestanding_table_never_lands_in_instrument_reserved_range(self):
+        """Slots 0..N_INSTRUMENTS-1 are implicitly owned by the
+        same-numbered instrument (firmware-6 convention) even when that
+        instrument slot is currently empty. A free-standing table must
+        never be handed one of those slots, or it would silently become
+        that instrument's table the moment the instrument is populated.
+        Matches m8-file-parser's find_allocated_tables (remapper.rs)."""
+        src = M8Project.initialise()
+        src.tables[200][0].transpose = 5
+
+        dst = M8Project.initialise()  # every slot empty and unreferenced
+
+        m = walk_dependencies(src, tables={200})
+        remap = allocate(src, dst, m)
+        self.assertGreaterEqual(remap.tables[200], N_INSTRUMENTS)
+
+
+class TestAllocatorRespectsExistingReferences(unittest.TestCase):
+    """A destination slot that's empty but already referenced by
+    something else in the destination must not be handed to an incoming
+    slot — doing so would silently change what the existing reference
+    plays. Matches m8-file-parser's find_referenced_phrases /
+    find_referenced_chains (remapper.rs); pym8's occupancy check used to
+    only look at emptiness, not references."""
+
+    def test_referenced_but_empty_chain_slot_is_skipped(self):
+        src = M8Project.initialise()
+
+        dst = M8Project.initialise()
+        dst.song[0][0] = 3  # song matrix already points at chain slot 3
+
+        m = walk_dependencies(src, chains={3})
+        remap = allocate(src, dst, m)
+        self.assertNotEqual(remap.chains[3], 3)
+
+    def test_referenced_but_empty_phrase_slot_is_skipped(self):
+        src = M8Project.initialise()
+        src.chains[0][0] = M8ChainStep(phrase=5, transpose=0)
+
+        dst = M8Project.initialise()
+        dst.chains[9][0] = M8ChainStep(phrase=5, transpose=0)  # existing ref
+
+        m = walk_dependencies(src, chains={0})
+        remap = allocate(src, dst, m)
+        self.assertNotEqual(remap.phrases[5], 5)
+
+    def test_unreferenced_empty_slots_still_get_preferred_index(self):
+        """Sanity check: the reference check doesn't make everything
+        relocate — an empty, unreferenced slot still keeps its index."""
+        src = M8Project.initialise()
+
+        dst = M8Project.initialise()
+
+        m = walk_dependencies(src, chains={3})
+        remap = allocate(src, dst, m)
+        self.assertEqual(remap.chains[3], 3)
 
 
 class TestAllocatorMultiCollision(unittest.TestCase):

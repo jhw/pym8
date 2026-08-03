@@ -262,16 +262,43 @@ class NoFreeSlotError(ValueError):
     """Destination project has no free slot of the required kind."""
 
 
-def _chain_occupied(project, index):
+def _referenced_chain_slots(project):
+    """Chain indices referenced by the song matrix."""
+    refs = set()
+    for row in project.song:
+        for slot in row:
+            if slot != EMPTY_CHAIN:
+                refs.add(slot)
+    return refs
+
+
+def _referenced_phrase_slots(project):
+    """Phrase indices referenced by any chain step."""
+    refs = set()
+    for chain in project.chains:
+        for step in chain:
+            if step.phrase != EMPTY_PHRASE:
+                refs.add(step.phrase)
+    return refs
+
+
+def _chain_occupied(project, index, referenced=frozenset()):
+    """A destination chain slot is off-limits if it's non-empty OR the
+    song matrix already points at it — landing something else there
+    would silently change what an existing song row plays. Matches
+    m8-file-parser's find_referenced_chains (remapper.rs)."""
     if not (0 <= index < len(project.chains)):
         return False
-    return not project.chains[index].is_empty()
+    return index in referenced or not project.chains[index].is_empty()
 
 
-def _phrase_occupied(project, index):
+def _phrase_occupied(project, index, referenced=frozenset()):
+    """A destination phrase slot is off-limits if it's non-empty OR an
+    existing chain step already points at it. Matches m8-file-parser's
+    find_referenced_phrases (remapper.rs)."""
     if not (0 <= index < len(project.phrases)):
         return False
-    return not project.phrases[index].is_empty()
+    return index in referenced or not project.phrases[index].is_empty()
 
 
 def _instrument_occupied(project, index):
@@ -281,8 +308,16 @@ def _instrument_occupied(project, index):
 
 
 def _table_occupied(project, index):
+    """Slots 0..N_INSTRUMENTS-1 are implicitly owned by the same-numbered
+    instrument (firmware-6 convention) and must never be handed to a
+    free-standing table, even if that instrument slot is currently empty
+    or the table itself is default. Matches m8-file-parser's
+    find_allocated_tables (remapper.rs): allocated_table[i] = i <
+    N_INSTRUMENTS || !table.is_empty()."""
     if not (0 <= index < N_TABLES):
         return False
+    if index < N_INSTRUMENTS:
+        return True
     return not project.tables[index].is_empty()
 
 
@@ -324,8 +359,11 @@ def allocate(source, destination, mappings: Mappings) -> Remapping:
     n_chains = len(destination.chains)
     n_phrases = len(destination.phrases)
 
-    chains_taken = [_chain_occupied(destination, i) for i in range(n_chains)]
-    phrases_taken = [_phrase_occupied(destination, i) for i in range(n_phrases)]
+    referenced_chains = _referenced_chain_slots(destination)
+    referenced_phrases = _referenced_phrase_slots(destination)
+
+    chains_taken = [_chain_occupied(destination, i, referenced_chains) for i in range(n_chains)]
+    phrases_taken = [_phrase_occupied(destination, i, referenced_phrases) for i in range(n_phrases)]
     instruments_taken = [_instrument_occupied(destination, i) for i in range(N_INSTRUMENTS)]
     tables_taken = [_table_occupied(destination, i) for i in range(N_TABLES)]
     eqs_taken = [_eq_occupied(destination, i) for i in range(N_EQS)]
