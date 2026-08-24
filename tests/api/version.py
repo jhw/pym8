@@ -8,13 +8,20 @@ class TestM8Version(unittest.TestCase):
     def test_defaults(self):
         v = M8Version()
         self.assertEqual(v.major, 6)
-        self.assertEqual(v.minor, 1)
-        self.assertEqual(v.patch, 1)
+        self.assertEqual(v.minor, 6)
+        self.assertEqual(v.patch, 2)
 
     def test_binary_round_trip(self):
         # On-disk byte 0 is nibble-packed (minor<<4)|patch; byte 1 is major.
-        # These are the real bytes from the bundled TEMPLATE-6-2-1.m8s and
-        # from m8-file-parser's V6_2EMPTY.m8s fixture (firmware 6.2).
+        # These are the real bytes from the bundled TEMPLATE-6-6-2.m8s.
+        data = bytes([0x62, 0x06, 0x00, 0x00])
+        v = M8Version.read(data)
+        self.assertEqual(v.tuple(), (6, 6, 2))
+        self.assertEqual(v.write(), data)
+
+    def test_binary_round_trip_firmware_6_1(self):
+        # m8-file-parser's V6_2EMPTY.m8s fixture (firmware 6.1.1, despite
+        # the fixture's name — see FIRMWARE_6_2_SONG_VERSION in version.rs).
         data = bytes([0x11, 0x06, 0x00, 0x00])
         v = M8Version.read(data)
         self.assertEqual(v.tuple(), (6, 1, 1))
@@ -28,9 +35,9 @@ class TestM8Version(unittest.TestCase):
         self.assertEqual(v.write(), data)
 
     def test_reserved_trailing_bytes_preserved_through_clone(self):
-        v = M8Version.read(bytes([0x11, 0x06, 0xAB, 0xCD]))
-        self.assertEqual(v.write(), bytes([0x11, 0x06, 0xAB, 0xCD]))
-        self.assertEqual(v.clone().write(), bytes([0x11, 0x06, 0xAB, 0xCD]))
+        v = M8Version.read(bytes([0x62, 0x06, 0xAB, 0xCD]))
+        self.assertEqual(v.write(), bytes([0x62, 0x06, 0xAB, 0xCD]))
+        self.assertEqual(v.clone().write(), bytes([0x62, 0x06, 0xAB, 0xCD]))
 
     def test_str(self):
         self.assertEqual(str(M8Version(4, 0, 33)), "4.0.33")
@@ -40,9 +47,9 @@ class TestM8Version(unittest.TestCase):
         self.assertEqual(v.tuple(), (4, 1, 0))
 
     def test_from_str_empty_returns_default(self):
-        self.assertEqual(M8Version.from_str("").tuple(), (6, 1, 1))
-        self.assertEqual(M8Version.from_str(None).tuple(), (6, 1, 1))
-        self.assertEqual(M8Version.from_str("None").tuple(), (6, 1, 1))
+        self.assertEqual(M8Version.from_str("").tuple(), (6, 6, 2))
+        self.assertEqual(M8Version.from_str(None).tuple(), (6, 6, 2))
+        self.assertEqual(M8Version.from_str("None").tuple(), (6, 6, 2))
 
     def test_comparison_with_tuple(self):
         v = M8Version(4, 1, 0)

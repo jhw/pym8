@@ -106,10 +106,15 @@ class TestProjectErrorHandling(unittest.TestCase):
         """Regression: a truncated .m8s used to silently produce a mangled
         project (short sections read as short slices) instead of failing.
         Matches m8-file-parser's length check in songs.rs, which raises a
-        ParseError rather than reading past-EOF as zeros."""
+        ParseError rather than reading past-EOF as zeros.
+
+        Truncate right at MIN_SIZE (the boundary pym8 actually enforces),
+        not just the last byte of the file — the bundled template carries
+        trailing reserved padding past MIN_SIZE, so lopping off its last
+        byte wouldn't touch any section pym8 parses."""
         full = M8Project.initialise().write()
         with self.assertRaises(ValueError):
-            M8Project.read(full[:-1])
+            M8Project.read(full[:M8Project.MIN_SIZE - 1])
 
     def test_read_empty_data_raises(self):
         with self.assertRaises(ValueError):
@@ -117,8 +122,8 @@ class TestProjectErrorHandling(unittest.TestCase):
 
     def test_read_minimum_size_data_succeeds(self):
         full = M8Project.initialise().write()
-        self.assertEqual(len(full), M8Project.MIN_SIZE)
-        M8Project.read(full)  # exact minimum size must not raise
+        self.assertGreaterEqual(len(full), M8Project.MIN_SIZE)
+        M8Project.read(full[:M8Project.MIN_SIZE])  # exact minimum size must not raise
 
 
 class TestMetadataEdgeCasesViaProject(unittest.TestCase):

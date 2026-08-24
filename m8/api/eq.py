@@ -15,8 +15,9 @@ The project ships M EQs where M depends on firmware:
 - v4.0:  36  (32 instrument + 3 effects + 1 global)
 - v4.1+: 132 (128 instrument + 3 effects + 1 global)
 
-pym8 targets v6.0+ so M = 132 — matches the bundled TEMPLATE-6-2-1.m8s
-where EQ data extends to exactly EOF.
+pym8 targets v6.0+ so M = 132 — matches the bundled TEMPLATE-6-6-2.m8s
+where EQ data extends to exactly EOF (plus trailing reserved padding added
+in later firmware, preserved verbatim through the raw `data` buffer).
 
 Per-instrument EQ binding is the `associated_eq` byte on each instrument
 (byte 62 of the instrument block in v5.0+). It indexes into the project's

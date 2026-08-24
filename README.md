@@ -431,7 +431,7 @@ m8/
 ├── tools/
 │   ├── chain_builder.py  # Sliced sample chain WAV builder
 │   └── wav_slicer.py     # WAV slice-point writer
-└── templates/            # TEMPLATE-6-2-1.m8s — bundled firmware-6.2 starting point
+└── templates/            # TEMPLATE-6-6-2.m8s — bundled firmware-6.6.2 starting point
 
 demos/                    # Runnable scripts by category
 tests/                    # Mirrors m8/ layout — unittest

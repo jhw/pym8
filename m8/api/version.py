@@ -5,8 +5,8 @@
 class M8Version:
     """Represents the M8 firmware version used to create a file."""
 
-    def __init__(self, major=6, minor=1, patch=1):
-        """Initialize version. Defaults match TEMPLATE-6-2-1.m8s (firmware 6.2.1)."""
+    def __init__(self, major=6, minor=6, patch=2):
+        """Initialize version. Defaults match TEMPLATE-6-6-2.m8s (firmware 6.6.2)."""
         self.major = major
         self.minor = minor
         self.patch = patch
@@ -93,6 +93,6 @@ class M8Version:
             return cls()
         parts = version_str.split('.')
         major = int(parts[0]) if len(parts) > 0 else 6
-        minor = int(parts[1]) if len(parts) > 1 else 1
-        patch = int(parts[2]) if len(parts) > 2 else 1
+        minor = int(parts[1]) if len(parts) > 1 else 6
+        patch = int(parts[2]) if len(parts) > 2 else 2
         return cls(major, minor, patch)

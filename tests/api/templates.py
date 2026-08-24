@@ -1,11 +1,10 @@
 """Tests that the shipped firmware template loads and round-trips cleanly.
 
-pym8 targets firmware 6.0+; only TEMPLATE-6-2-1 is bundled. We can't test
-byte-exact round-trip because the template carries leftover bytes past the
-null terminator in the directory field — pym8 normalizes that to null
-padding, which is semantically equivalent but differs at the byte level.
+pym8 targets firmware 6.0+; only TEMPLATE-6-6-2 is bundled. Unlike the
+older TEMPLATE-6-2-1.m8s this template carries no stray bytes past the
+null terminator in the directory field, so read→write is byte-exact.
 
-Instead we test *stable* round-trip: read→write→read→write produces
+We also test *stable* round-trip: read→write→read→write produces
 identical bytes the second time around. If the parser misinterprets a
 section, the second write would also be wrong but in a consistent way —
 this catches the more interesting bugs: corruption introduced *between*
@@ -19,9 +18,9 @@ from m8.api.project import M8Project
 
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "m8", "templates")
-TEMPLATE_NAME = "TEMPLATE-6-2-1"
-EXPECTED_VERSION = (6, 1, 1)
-EXPECTED_METADATA_NAME = "DEFAULT621"
+TEMPLATE_NAME = "TEMPLATE-6-6-2"
+EXPECTED_VERSION = (6, 6, 2)
+EXPECTED_METADATA_NAME = "TEMPLATE-662"
 
 
 class TestShippedTemplate(unittest.TestCase):
@@ -50,6 +49,12 @@ class TestShippedTemplate(unittest.TestCase):
         self.assertIsNotNone(p.song)
         self.assertIsNotNone(p.chains)
         self.assertIsNotNone(p.phrases)
+
+    def test_byte_exact_round_trip(self):
+        """read→write should reproduce the file exactly, byte for byte."""
+        raw = open(self._path(), "rb").read()
+        p = M8Project.read(raw)
+        self.assertEqual(raw, bytes(p.write()))
 
     def test_stable_round_trip(self):
         """read→write twice should produce identical bytes the second time."""

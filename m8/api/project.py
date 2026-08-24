@@ -203,7 +203,7 @@ class M8Project:
         return project
 
     @classmethod
-    def initialise(cls, template_name: str = "TEMPLATE-6-2-1"):
+    def initialise(cls, template_name: str = "TEMPLATE-6-6-2"):
         """Creates a new project from a template file."""
         import os
         import sys
