@@ -20,7 +20,7 @@ from m8.api.instruments.midiout import (
     M8MIDIOut, M8MIDIPort, M8MIDIOutModDest,
 )
 from m8.api.instruments.hypersynth import (
-    M8HyperSynth, M8HyperSynthChords, M8HyperSynthModDest, M8Chord,
+    M8HyperSynth, M8HyperSynthChords, M8HyperSynthModDest, M8HyperSynthShape, M8Chord,
 )
 
 __all__ = [
@@ -32,5 +32,5 @@ __all__ = [
     "M8FMSynth", "M8FMAlgo", "M8FMWave", "M8FMSynthModDest", "M8FMOperatorModDest",
     "M8External", "M8ExternalInput", "M8ExternalPort", "M8ExternalModDest",
     "M8MIDIOut", "M8MIDIPort", "M8MIDIOutModDest",
-    "M8HyperSynth", "M8HyperSynthChords", "M8HyperSynthModDest", "M8Chord",
+    "M8HyperSynth", "M8HyperSynthChords", "M8HyperSynthModDest", "M8HyperSynthShape", "M8Chord",
 ]

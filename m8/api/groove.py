@@ -9,12 +9,31 @@ after the first 0xFF in a groove is "off the end" of the pattern.
 
 The M8's GRV FX command selects which groove drives a track's timing.
 A groove with all 0xFF bytes is effectively a no-op (straight timing).
+
+Firmware 6.5+ adds a per-groove PPQN (tick resolution) byte. It isn't
+stored with the steps: the 32 PPQN bytes sit in their own block at file
+offset 0x1B6A6, just after the EQs. M8Project reads/writes that block and
+hands it to M8Grooves; each groove exposes it as `ppqn`.
 """
+
+from enum import IntEnum
 
 GROOVE_STEPS = 16
 GROOVE_COUNT = 32
 GROOVE_BYTES = GROOVE_STEPS
 EMPTY_STEP = 0xFF
+
+
+class M8GroovePPQN(IntEnum):
+    """Groove tick resolution (firmware 6.5+). Mirrors songs.rs Groove::active_ppqn."""
+    PPQN_24 = 0
+    PPQN_48 = 1
+    PPQN_96 = 2
+    PPQN_192 = 3
+
+
+_PPQN_TICKS = {M8GroovePPQN.PPQN_24: 24, M8GroovePPQN.PPQN_48: 48,
+               M8GroovePPQN.PPQN_96: 96, M8GroovePPQN.PPQN_192: 192}
 
 
 class M8Groove:
@@ -24,11 +43,25 @@ class M8Groove:
     BYTES = GROOVE_BYTES
     STEPS = GROOVE_STEPS
 
-    def __init__(self, steps=None):
+    def __init__(self, steps=None, ppqn=M8GroovePPQN.PPQN_24):
         self._data = bytearray([EMPTY_STEP] * self.STEPS)
         if steps is not None:
             for i, v in enumerate(steps[:self.STEPS]):
                 self._data[i] = int(v) & 0xFF
+        self.ppqn = ppqn
+
+    @property
+    def ppqn(self):
+        """Raw PPQN byte (an M8GroovePPQN value on well-formed files)."""
+        return self._ppqn
+
+    @ppqn.setter
+    def ppqn(self, value):
+        self._ppqn = int(M8GroovePPQN(value))
+
+    def active_ppqn(self):
+        """Ticks per quarter note; unknown values fall back to 24, as in Rust."""
+        return _PPQN_TICKS.get(self._ppqn, 24)
 
     def __len__(self):
         return self.STEPS
@@ -60,9 +93,11 @@ class M8Groove:
         return all(b == EMPTY_STEP for b in self._data)
 
     @classmethod
-    def read(cls, data):
+    def read(cls, data, ppqn=0):
         instance = cls.__new__(cls)
         instance._data = bytearray(data[:cls.BYTES])
+        # Raw on read — a file byte outside the enum still round-trips.
+        instance._ppqn = ppqn
         return instance
 
     def write(self):
@@ -71,14 +106,22 @@ class M8Groove:
     def clone(self):
         instance = self.__class__.__new__(self.__class__)
         instance._data = bytearray(self._data)
+        instance._ppqn = self._ppqn
         return instance
 
     def to_dict(self):
-        return {"steps": list(self._data)}
+        try:
+            ppqn = M8GroovePPQN(self._ppqn).name
+        except ValueError:
+            ppqn = self._ppqn
+        return {"steps": list(self._data), "ppqn": ppqn}
 
     @classmethod
     def from_dict(cls, d):
-        return cls(steps=d.get("steps", []))
+        ppqn = d.get("ppqn", M8GroovePPQN.PPQN_24)
+        if isinstance(ppqn, str):
+            ppqn = M8GroovePPQN[ppqn]
+        return cls(steps=d.get("steps", []), ppqn=ppqn)
 
 
 class M8Grooves(list):
@@ -86,6 +129,7 @@ class M8Grooves(list):
 
     COUNT = GROOVE_COUNT
     TOTAL_BYTES = GROOVE_COUNT * GROOVE_BYTES
+    PPQN_BYTES = GROOVE_COUNT  # one byte per groove, stored separately
 
     def __init__(self):
         super().__init__()
@@ -93,7 +137,9 @@ class M8Grooves(list):
             self.append(M8Groove())
 
     @classmethod
-    def read(cls, data, version=None):
+    def read(cls, data, version=None, ppqn=None):
+        """`ppqn` is the separate 32-byte PPQN block (firmware 6.5+); None
+        leaves every groove at PPQN_24."""
         instance = cls.__new__(cls)
         list.__init__(instance)
         for i in range(cls.COUNT):
@@ -101,11 +147,15 @@ class M8Grooves(list):
             block = data[start:start + GROOVE_BYTES]
             if len(block) < GROOVE_BYTES:
                 block = block + bytes([EMPTY_STEP] * (GROOVE_BYTES - len(block)))
-            instance.append(M8Groove.read(block))
+            instance.append(M8Groove.read(block, ppqn=ppqn[i] if ppqn else 0))
         return instance
 
     def write(self):
         return b"".join(g.write() for g in self)
+
+    def write_ppqn(self):
+        """The 32-byte PPQN block, written by M8Project at its own offset."""
+        return bytes(g.ppqn for g in self)
 
     def clone(self):
         instance = self.__class__.__new__(self.__class__)

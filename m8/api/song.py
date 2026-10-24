@@ -1,3 +1,17 @@
+"""M8 song matrix — 256 rows × 8 tracks of chain references.
+
+Each row also carries two bookmark bytes that live outside the matrix
+(m8-file-parser/src/songs.rs SongSteps):
+
+  bookmarks     bitmask of bookmarked song steps (bit n = track n), 256
+                bytes at file offset 0x1A97E
+  row_bookmark  whole-row bookmark colour (0 = none), firmware 6.6+, 256
+                bytes at file offset 0x1B6C6
+
+M8Project reads/writes both blocks and hands them to M8SongMatrix, the
+same "separate attribute merged at write time" pattern as HyperSynth chords.
+"""
+
 # Song configuration
 SONG_OFFSET = 750
 SONG_COL_COUNT = 8
@@ -15,8 +29,10 @@ class M8SongRow:
 
     EMPTY_CHAIN = EMPTY_CHAIN
     
-    def __init__(self, **kwargs):
+    def __init__(self, bookmarks=0, row_bookmark=0, **kwargs):
         self._data = bytearray([self.EMPTY_CHAIN] * COL_COUNT)
+        self.bookmarks = bookmarks
+        self.row_bookmark = row_bookmark
         
         # Set any values provided in kwargs
         for col, chain in kwargs.items():
@@ -26,15 +42,29 @@ class M8SongRow:
                     self[col_idx] = chain
 
     @classmethod
-    def read(cls, data):
-        instance = cls()
+    def read(cls, data, bookmarks=0, row_bookmark=0):
+        instance = cls(bookmarks=bookmarks, row_bookmark=row_bookmark)
         instance._data = bytearray(data[:COL_COUNT])
         return instance
     
     def clone(self):
-        instance = self.__class__()
+        instance = self.__class__(bookmarks=self.bookmarks, row_bookmark=self.row_bookmark)
         instance._data = bytearray(self._data)
         return instance
+
+    def is_bookmarked(self, col):
+        """Whether the song step in track `col` (0-7) is bookmarked."""
+        if not (0 <= col < COL_COUNT):
+            raise IndexError("Index out of range")
+        return bool(self.bookmarks & (1 << col))
+
+    def set_bookmark(self, col, on=True):
+        if not (0 <= col < COL_COUNT):
+            raise IndexError("Index out of range")
+        if on:
+            self.bookmarks |= 1 << col
+        else:
+            self.bookmarks &= ~(1 << col) & 0xFF
     
     def __getitem__(self, index):
         if not (0 <= index < COL_COUNT):
@@ -79,14 +109,20 @@ class M8SongMatrix(list):
             self.append(M8SongRow())
     
     @classmethod
-    def read(cls, data):
+    def read(cls, data, bookmarks=None, row_bookmarks=None):
+        """`bookmarks` / `row_bookmarks` are the separate 256-byte blocks
+        (see module docstring); None leaves them zeroed."""
         instance = cls.__new__(cls)  # Create instance without calling __init__
         list.__init__(instance)  # Initialize the list properly
         
         for i in range(ROW_COUNT):
             start = i * COL_COUNT
             row_data = data[start:start + COL_COUNT]
-            instance.append(M8SongRow.read(row_data))
+            instance.append(M8SongRow.read(
+                row_data,
+                bookmarks=bookmarks[i] if bookmarks else 0,
+                row_bookmark=row_bookmarks[i] if row_bookmarks else 0,
+            ))
         
         return instance
     
@@ -105,6 +141,12 @@ class M8SongMatrix(list):
             row_data = row.write()
             result.extend(row_data)
         return bytes(result)
+
+    def write_bookmarks(self):
+        return bytes(row.bookmarks & 0xFF for row in self)
+
+    def write_row_bookmarks(self):
+        return bytes(row.row_bookmark & 0xFF for row in self)
 
     def validate(self):
         """Validate the song matrix.

@@ -9,7 +9,7 @@ import unittest
 from m8.api.project import (
     EFFECTS_SETTINGS_OFFSET, MIXER_SETTINGS_OFFSET, M8Project,
 )
-from m8.api.settings import M8EffectsSettings, M8MixerSettings
+from m8.api.settings import M8EffectsSettings, M8MfxKind, M8MixerSettings
 
 
 class TestM8MixerSettingsByteLayout(unittest.TestCase):
@@ -188,6 +188,13 @@ class TestM8EffectsSettingsRoundTrip(unittest.TestCase):
         reloaded = M8EffectsSettings.from_dict(fx.to_dict())
         self.assertEqual(reloaded.delay_time_l, 0x60)
         self.assertEqual(reloaded.reverb_damping, 0x80)
+
+    def test_mfx_kind_comb(self):
+        """Firmware 6.6 adds COMB as the fourth MFX kind (effect_settings.rs FxKind)."""
+        fx = M8EffectsSettings(mfx_kind=M8MfxKind.COMB)
+        self.assertEqual(fx.write()[25], 3)
+        self.assertEqual(fx.to_dict()["mfx_kind"], "COMB")
+        self.assertEqual(M8EffectsSettings.from_dict(fx.to_dict()).mfx_kind, M8MfxKind.COMB)
 
 
 class TestProjectIntegration(unittest.TestCase):

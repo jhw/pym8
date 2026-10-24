@@ -16,6 +16,8 @@ currently treats as a single block; integrating it requires restructuring
 the metadata reader. Tracked in docs/planning/roadmap.md.
 """
 
+from enum import IntEnum
+
 from m8.api.fields import ByteField, IndexedBytesField, iter_fields
 
 
@@ -114,6 +116,14 @@ class M8MixerSettings:
 
 # ---- effects ----
 
+class M8MfxKind(IntEnum):
+    """Mod-FX send type. Mirrors effect_settings.rs FxKind (COMB is 6.6+)."""
+    CHORUS = 0
+    PHASER = 1
+    FLANGER = 2
+    COMB = 3
+
+
 class M8EffectsSettings:
     """Project-level chorus/delay/reverb knob state.
 
@@ -154,7 +164,7 @@ class M8EffectsSettings:
     reverb_shimmer     = ByteField(22)
     ott_time           = ByteField(23)
     ott_color          = ByteField(24)
-    mfx_kind           = ByteField(25)  # 0=Chorus, 1=Phaser, 2=Flanger
+    mfx_kind           = ByteField(25, enum=M8MfxKind)
 
     def __init__(self, **kwargs):
         self._data = bytearray(self.BYTES)

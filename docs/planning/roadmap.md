@@ -46,8 +46,8 @@ directly into subclass.read instead of overwriting after.
 - 6-byte `M8EqBand` with packed type/mode byte + 16-bit freq + signed
   16-bit gain + Q
 - 18-byte `M8Eq` = 3 bands (low / mid / high)
-- 132-entry `M8Eqs` at offset 0x1AD5E (v6.0+ layout). Exactly fills
-  the bundled template to EOF.
+- 132-entry `M8Eqs` at offset 0x1AD5E (v6.0+ layout). Ends at EOF on
+  6.0–6.4 files; 6.5+ append groove PPQN and row bookmarks after it.
 - **Per-instrument `associated_eq` byte** added to `M8Instrument` base
   at offset 62 (just before modulators). 0xFF = no EQ bound.
 
@@ -153,6 +153,24 @@ Implementation differs from the Rust crate in two ways:
   reuses that slot if found). pym8 always allocates a fresh slot. Easy
   to add later if collisions stop fitting; for now, find-next-free is
   simpler and matches user expectations.
+
+## Phase 4 — Firmware 6.5 / 6.6 ✅
+
+Ported from m8-file-parser 0.7 / 0.7.1 (`songs.rs`, `effect_settings.rs`,
+`instruments/hypersynth.rs`, `instruments/common.rs`):
+
+- **Groove PPQN** (6.5+): 32 bytes at 0x1B6A6, exposed as
+  `M8Groove.ppqn` (`M8GroovePPQN`, 24/48/96/192).
+- **Song-step bookmarks**: 256-byte bitmask at 0x1A97E, exposed as
+  `M8SongRow.bookmarks` / `is_bookmarked()` / `set_bookmark()`.
+- **Row bookmarks** (6.6+): 256 colour bytes at 0x1B6C6, exposed as
+  `M8SongRow.row_bookmark` (raw byte; Rust doesn't decode the colours).
+- **HyperSynth shape** (6.6+): byte 43, `M8HyperSynthShape`.
+- **MFX kind COMB** (6.6+): `M8MfxKind` bound to `M8EffectsSettings.mfx_kind`.
+
+The 6.5/6.6 tail blocks are read/written only when version and file
+length both allow, so older files never grow. Upstream's `BOOKMARK_ON`,
+`GRV` and `EMPTY65` example songs are test fixtures.
 
 ## Out of scope / not pursued
 

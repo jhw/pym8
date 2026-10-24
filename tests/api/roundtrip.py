@@ -29,15 +29,16 @@ class TestProjectRoundTrip(unittest.TestCase):
         file exactly, including metadata: EXTERNAL.m8s has stale non-zero
         bytes trailing the `directory` string's null terminator (left over
         from a previously-longer path), which used to get zeroed on every
-        save regardless of whether metadata was touched."""
-        fixture_path = os.path.join(FIXTURES_DIR, "EXTERNAL.m8s")
-        with open(fixture_path, "rb") as f:
-            original = f.read()
+        save regardless of whether metadata was touched.
 
-        project = M8Project.read(original)
-        rewritten = project.write()
-
-        self.assertEqual(rewritten, original)
+        The other fixtures come from m8-file-parser's examples and span the
+        three file lengths: EMPTY65 (6.5, groove PPQN block), GRV and
+        BOOKMARK_ON (6.6, non-default PPQN and bookmark bytes)."""
+        for name in ("EXTERNAL.m8s", "EMPTY65.m8s", "GRV.m8s", "BOOKMARK_ON.m8s"):
+            with self.subTest(fixture=name):
+                with open(os.path.join(FIXTURES_DIR, name), "rb") as f:
+                    original = f.read()
+                self.assertEqual(M8Project.read(original).write(), original)
 
     def test_populated_project_round_trips(self):
         """Exercise chain/phrase/FX data specifically (not just near-empty

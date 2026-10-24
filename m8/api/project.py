@@ -9,7 +9,7 @@ from m8.api.midi_settings import M8MidiSettings
 from m8.api.phrase import M8Phrases, PHRASES_OFFSET, EMPTY_INSTRUMENT
 from m8.api.scale import M8Scales
 from m8.api.settings import M8EffectsSettings, M8MixerSettings
-from m8.api.song import M8SongMatrix, SONG_OFFSET, EMPTY_CHAIN, COL_COUNT
+from m8.api.song import M8SongMatrix, SONG_OFFSET, EMPTY_CHAIN, COL_COUNT, ROW_COUNT
 from m8.api.table import M8Tables, TABLE_OFFSET
 from m8.api.version import M8Version
 
@@ -34,14 +34,24 @@ GROOVE_OFFSET = 238
 # pym8 targets v6.0+).
 EFFECTS_SETTINGS_OFFSET = 107969  # 0x1A5C1
 MIDI_MAPPING_OFFSET = 108030      # 0x1A5FE — 128 × 7-byte mappings
+SONG_BOOKMARKS_OFFSET = 108926    # 0x1A97E — 256 × song-step bookmark bitmask
 SCALE_OFFSET = 109182             # 0x1AA7E — 16 × 46-byte scales
 EQ_OFFSET = 109918                # 0x1AD5A + 4
 
-# Offsets for sections pym8 parses today. Sections present in the binary
-# format but not yet parsed (groove, midi_mapping, scale, theme) are
-# preserved verbatim through the raw `data` buffer. The musical-key byte
-# at offset 187 isn't a section per se — M8Project handles it specially
-# (see read/write below).
+# Blocks appended after the EQs by later firmware. Each one grows the file:
+# 6.0-6.4 files end at the EQs (112294 bytes), 6.5 adds groove PPQN
+# (112326), 6.6 adds row bookmarks (112582). Read and written only when
+# both the version and the buffer length say the block is there, as in
+# m8-file-parser's songs.rs.
+GROOVE_PPQN_OFFSET = 112294       # 0x1B6A6 — 32 bytes, firmware 6.5+
+GROOVE_PPQN_VERSION = (6, 5, 0)
+ROW_BOOKMARKS_OFFSET = 112326     # 0x1B6C6 — 256 bytes, firmware 6.6+
+ROW_BOOKMARKS_VERSION = (6, 6, 0)
+
+# Offsets for the contiguous sections M8Project reads/writes generically.
+# The musical-key byte, the bookmark blocks and the groove PPQN block
+# belong to other objects (project.key, project.song, project.grooves)
+# and are handled specially in read/write below.
 OFFSETS = {
     "version": VERSION_OFFSET,
     "metadata": METADATA_OFFSET,
@@ -80,9 +90,9 @@ class M8Project:
         self.key = 0
         self.version = M8Version()
 
-    #: Minimum byte length for a well-formed .m8s project — the EQ section
-    #: (the highest-offset section pym8 parses) plus its size exactly
-    #: reaches EOF on a real file. Anything shorter is a truncated/corrupt
+    #: Minimum byte length for a well-formed .m8s project — the end of the
+    #: EQ section, which is EOF on a 6.0-6.4 file (6.5+ files append the
+    #: optional blocks above). Anything shorter is a truncated/corrupt
     #: file; matches m8-file-parser's length check in songs.rs, which
     #: raises a ParseError rather than silently reading short slices.
     MIN_SIZE = OFFSETS["eqs"] + M8Eqs.TOTAL_BYTES
@@ -110,11 +120,23 @@ class M8Project:
         # the 18 reserved bytes that precede MixerSettings (file 206).
         instance.key = data[KEY_OFFSET]
 
+        ppqn = None
+        if instance._has_block(data, GROOVE_PPQN_OFFSET, M8Grooves.PPQN_BYTES, GROOVE_PPQN_VERSION):
+            ppqn = data[GROOVE_PPQN_OFFSET:GROOVE_PPQN_OFFSET + M8Grooves.PPQN_BYTES]
         instance.grooves = M8Grooves.read(
             data[OFFSETS["grooves"]:OFFSETS["grooves"] + M8Grooves.TOTAL_BYTES],
             version=instance.version,
+            ppqn=ppqn,
         )
-        instance.song = M8SongMatrix.read(data[OFFSETS["song"]:])
+
+        row_bookmarks = None
+        if instance._has_block(data, ROW_BOOKMARKS_OFFSET, ROW_COUNT, ROW_BOOKMARKS_VERSION):
+            row_bookmarks = data[ROW_BOOKMARKS_OFFSET:ROW_BOOKMARKS_OFFSET + ROW_COUNT]
+        instance.song = M8SongMatrix.read(
+            data[OFFSETS["song"]:],
+            bookmarks=data[SONG_BOOKMARKS_OFFSET:SONG_BOOKMARKS_OFFSET + ROW_COUNT],
+            row_bookmarks=row_bookmarks,
+        )
         instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
         instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
         instance.tables = M8Tables.read(
@@ -148,6 +170,9 @@ class M8Project:
             version=instance.version,
         )
         return instance
+
+    def _has_block(self, data, offset, length, min_version):
+        return self.version >= min_version and len(data) >= offset + length
 
     def clone(self):
         instance = self.__class__()
@@ -190,6 +215,15 @@ class M8Project:
         # contiguous block, so written explicitly here rather than via the
         # OFFSETS loop.
         output[KEY_OFFSET] = self.key & 0xFF
+
+        if self.song is not None:
+            output[SONG_BOOKMARKS_OFFSET:SONG_BOOKMARKS_OFFSET + ROW_COUNT] = self.song.write_bookmarks()
+            if self._has_block(output, ROW_BOOKMARKS_OFFSET, ROW_COUNT, ROW_BOOKMARKS_VERSION):
+                output[ROW_BOOKMARKS_OFFSET:ROW_BOOKMARKS_OFFSET + ROW_COUNT] = self.song.write_row_bookmarks()
+        if self.grooves is not None and self._has_block(
+            output, GROOVE_PPQN_OFFSET, M8Grooves.PPQN_BYTES, GROOVE_PPQN_VERSION
+        ):
+            output[GROOVE_PPQN_OFFSET:GROOVE_PPQN_OFFSET + M8Grooves.PPQN_BYTES] = self.grooves.write_ppqn()
 
         return bytes(output)
 

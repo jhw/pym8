@@ -10,7 +10,7 @@ import unittest
 from m8.api.instrument import M8InstrumentType
 from m8.api.instruments.hypersynth import (
     CHORD_BYTES, CHORD_COUNT, CHORDS_OFFSET,
-    M8Chord, M8HyperSynth, M8HyperSynthChords, M8HyperSynthModDest,
+    M8Chord, M8HyperSynth, M8HyperSynthChords, M8HyperSynthModDest, M8HyperSynthShape,
 )
 
 
@@ -167,6 +167,21 @@ class TestM8HyperSynth(unittest.TestCase):
         self.assertEqual(M8HyperSynthModDest.WIDTH, 0x05)
         self.assertEqual(M8HyperSynthModDest.SUBOSC, 0x06)
         self.assertEqual(M8HyperSynthModDest.MOD_BINV, 0x0E)
+
+    def test_shape_default_saw(self):
+        self.assertEqual(M8HyperSynth().shape, M8HyperSynthShape.SAW)
+
+    def test_shape_at_byte_43(self):
+        """Firmware 6.6: SynthParams reads shape 3 bytes past mixer_reverb (39)."""
+        h = M8HyperSynth(shape=M8HyperSynthShape.SINE_ORGAN)
+        self.assertEqual(h.write()[43], 0x0B)
+        self.assertEqual(M8HyperSynth.read(h.write()).shape, M8HyperSynthShape.SINE_ORGAN)
+
+    def test_shape_dict_by_name(self):
+        h = M8HyperSynth(shape=M8HyperSynthShape.SINE_FOLD)
+        d = h.to_dict()
+        self.assertEqual(d["params"]["shape"], "SINE_FOLD")
+        self.assertEqual(M8HyperSynth.from_dict(d).shape, M8HyperSynthShape.SINE_FOLD)
 
 
 if __name__ == "__main__":

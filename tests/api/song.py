@@ -1,8 +1,16 @@
+import os
 import unittest
 
 from m8.api.chain import CHAIN_COUNT
-from m8.api.project import M8Project
+from m8.api.project import M8Project, ROW_BOOKMARKS_OFFSET, SONG_BOOKMARKS_OFFSET
 from m8.api.song import M8SongRow, M8SongMatrix, COL_COUNT, ROW_COUNT
+
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "..", "fixtures")
+
+
+def _read_fixture(name):
+    with open(os.path.join(FIXTURES_DIR, name), "rb") as f:
+        return f.read()
 
 class TestM8SongRow(unittest.TestCase):
     def test_read_from_binary(self):
@@ -319,6 +327,84 @@ class TestSongRowCount(unittest.TestCase):
         project.song[255][3] = 7
         reloaded = M8Project.read(project.write())
         self.assertEqual(reloaded.song[255][3], 7)
+
+
+class TestSongBookmarks(unittest.TestCase):
+    """Song-step bookmarks (bitmask per row) and 6.6+ row bookmarks."""
+
+    def test_default_rows_unbookmarked(self):
+        row = M8SongRow()
+        self.assertEqual(row.bookmarks, 0)
+        self.assertEqual(row.row_bookmark, 0)
+        self.assertFalse(any(row.is_bookmarked(c) for c in range(COL_COUNT)))
+
+    def test_set_and_clear_bookmark(self):
+        row = M8SongRow()
+        row.set_bookmark(7)
+        row.set_bookmark(0)
+        self.assertEqual(row.bookmarks, 0x81)
+        row.set_bookmark(7, on=False)
+        self.assertEqual(row.bookmarks, 0x01)
+        self.assertTrue(row.is_bookmarked(0))
+        self.assertFalse(row.is_bookmarked(7))
+
+    def test_bookmark_col_out_of_range(self):
+        with self.assertRaises(IndexError):
+            M8SongRow().is_bookmarked(COL_COUNT)
+        with self.assertRaises(IndexError):
+            M8SongRow().set_bookmark(-1)
+
+    def test_clone_copies_bookmarks(self):
+        row = M8SongRow(bookmarks=0x05, row_bookmark=0x0B)
+        clone = row.clone()
+        clone.bookmarks = 0
+        self.assertEqual(row.bookmarks, 0x05)
+        self.assertEqual(clone.row_bookmark, 0x0B)
+
+    def test_matrix_bookmark_blocks(self):
+        bookmarks = bytes([0x01] + [0] * (ROW_COUNT - 1))
+        row_bookmarks = bytes([0] * (ROW_COUNT - 1) + [0x0B])
+        matrix = M8SongMatrix.read(bytes([0xFF] * ROW_COUNT * COL_COUNT), bookmarks, row_bookmarks)
+        self.assertTrue(matrix[0].is_bookmarked(0))
+        self.assertEqual(matrix[255].row_bookmark, 0x0B)
+        self.assertEqual(matrix.write_bookmarks(), bookmarks)
+        self.assertEqual(matrix.write_row_bookmarks(), row_bookmarks)
+        self.assertEqual(matrix.clone()[255].row_bookmark, 0x0B)
+
+    def test_reads_bookmarks_from_device_file(self):
+        """BOOKMARK_ON.m8s (from m8-file-parser): track 1 bookmarked on rows
+        00/01, track 8 on row FF; coloured row bookmarks on 00/02/05/09/0B/FF."""
+        p = M8Project.read(_read_fixture("BOOKMARK_ON.m8s"))
+        self.assertTrue(p.song[0].is_bookmarked(0))
+        self.assertTrue(p.song[1].is_bookmarked(0))
+        self.assertTrue(p.song[255].is_bookmarked(7))
+        self.assertFalse(p.song[2].is_bookmarked(0))
+        self.assertEqual(
+            {i: r.row_bookmark for i, r in enumerate(p.song) if r.row_bookmark},
+            {0: 0x06, 2: 0x05, 5: 0x04, 9: 0x18, 11: 0x0B, 255: 0x0B},
+        )
+
+    def test_bookmarks_written_at_expected_offsets(self):
+        p = M8Project.initialise()
+        p.song[4].set_bookmark(2)
+        p.song[6].row_bookmark = 0x05
+        data = p.write()
+        self.assertEqual(data[SONG_BOOKMARKS_OFFSET + 4], 0x04)
+        self.assertEqual(data[ROW_BOOKMARKS_OFFSET + 6], 0x05)
+        reloaded = M8Project.read(data)
+        self.assertTrue(reloaded.song[4].is_bookmarked(2))
+        self.assertEqual(reloaded.song[6].row_bookmark, 0x05)
+
+    def test_pre_6_6_file_has_no_row_bookmarks(self):
+        """EMPTY65.m8s ends at the PPQN block; writing a row bookmark must
+        not grow it."""
+        data = _read_fixture("EMPTY65.m8s")
+        p = M8Project.read(data)
+        p.song[0].row_bookmark = 0x05
+        p.song[0].set_bookmark(0)
+        out = p.write()
+        self.assertEqual(len(out), len(data))
+        self.assertEqual(out[SONG_BOOKMARKS_OFFSET], 0x01)
 
 
 class TestSongValidation(unittest.TestCase):

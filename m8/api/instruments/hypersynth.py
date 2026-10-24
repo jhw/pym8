@@ -30,7 +30,10 @@ Layout follows m8-file-parser/src/instruments/hypersynth.rs:
   byte  37      chorus_send
   byte  38      delay_send
   byte  39      reverb_send
-  bytes 40-62   reserved / EQ byte (preserved as raw bytes)
+  bytes 40-42   reserved (preserved as raw bytes)
+  byte  43      shape (firmware 6.6+; SynthParams.shape in common.rs)
+  bytes 44-61   reserved (preserved as raw bytes)
+  byte  62      associated_eq (M8Instrument base)
   bytes 63-86   modulators (4 × 6 bytes, standard)
   bytes 87-198  chords (16 × 7 bytes — mask + 6 offsets each)
   bytes 199-214 trailing pad (preserved)
@@ -74,6 +77,22 @@ class M8HyperSynthModDest(IntEnum):
     MOD_RATE = 0x0C
     MOD_BOTH = 0x0D
     MOD_BINV = 0x0E
+
+
+class M8HyperSynthShape(IntEnum):
+    """Oscillator shape (firmware 6.6+). Mirrors hypersynth.rs HyperSynthShape."""
+    SAW = 0x00
+    SOFT_SAW = 0x01
+    DARK_SAW = 0x02
+    SQUARE_SOFT = 0x03
+    TRIANGLE = 0x04
+    SINE = 0x05
+    SINE_3X = 0x06
+    SINE_FB = 0x07
+    SINE_FOLD = 0x08
+    SINE_RING = 0x09
+    SINE_HALF = 0x0A
+    SINE_ORGAN = 0x0B
 
 
 class M8Chord:
@@ -214,6 +233,8 @@ class M8HyperSynth(M8Instrument):
     chorus_send    = ByteField(37)
     delay_send     = ByteField(38)
     reverb_send    = ByteField(39)
+
+    shape          = ByteField(43, enum=M8HyperSynthShape)
 
     def __init__(self, **kwargs):
         # Pop chord kwargs so the base __init__ (which setattrs every kwarg)
