@@ -1,4 +1,4 @@
-# tests/integration/test_project_workflow.py
+# tests/integration/project_workflow.py
 """Integration tests for complete M8 project workflows."""
 
 import unittest

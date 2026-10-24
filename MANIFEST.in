@@ -6,10 +6,8 @@ recursive-include m8 *.py
 
 # Include documentation
 include README.md
-include LICENSE
 
 # Exclude development files
-exclude pyproject.toml
 recursive-exclude tests *
 recursive-exclude demos *
 recursive-exclude tools *

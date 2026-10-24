@@ -4,7 +4,7 @@ A Python library for reading and writing Dirtywave M8 tracker files.
 
 ## Overview
 
-pym8 lets you create, read, and edit M8 projects (`.m8s`) and single-instrument exports (`.m8i`) programmatically. The M8 is a portable music tracker/synthesizer by [Dirtywave](https://dirtywave.com/products/m8-tracker). pym8 is a Python port of [m8-file-parser](https://github.com/Twinside/m8-file-parser); target firmware is **6.2+**.
+pym8 lets you create, read, and edit M8 projects (`.m8s`) and single-instrument exports (`.m8i`) programmatically. The M8 is a portable music tracker/synthesizer by [Dirtywave](https://dirtywave.com/products/m8-tracker). pym8 is a Python port of [m8-file-parser](https://github.com/Twinside/m8-file-parser); target firmware is **6.0+**, modelled up to the **6.6** layout.
 
 What it covers:
 - All seven instrument types (Wavsynth, Macrosynth, Sampler, MIDIOut, FMSynth, HyperSynth, External)
@@ -12,7 +12,7 @@ What it covers:
 - Phrases (notes + FX), chains, song matrix, instrument slots
 - Tables (256 × 16-step modulation grids — transpose, velocity, 3 FX per step)
 - 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — global, effect-section, and per-instrument
-- Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT), MIDI settings (sync, transport, per-track input routing), effects settings (chorus / delay / reverb knobs, OTT config), MIDI mappings (128 controller routings), grooves (32 timing curves), and scales (16 microtonal tuning maps)
+- Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT), MIDI settings (sync, transport, per-track input routing), effects settings (chorus / delay / reverb knobs, OTT config), MIDI mappings (128 controller routings), grooves (32 timing curves with per-groove PPQN, 6.5+), song-step and row bookmarks (row bookmarks 6.6+), and scales (16 microtonal tuning maps)
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
 - Audio helpers: sample-chain WAV builder, slice-point WAV writer
 
@@ -21,10 +21,10 @@ What it doesn't cover: theme/UI colors (separate `.m8c` file format, not part of
 ## Install
 
 ```bash
-pip install -e .
+pip install -e ".[demos]"
 ```
 
-Dependencies (`pydub` for sample tooling, `pyyaml` for the demo preset loader) are declared in `pyproject.toml`.
+Requires Python 3.7+. `pydub` (sample tooling) is a core dependency; `pyyaml` is only needed by the demo preset loader, hence the `demos` extra. Drop `[demos]` if you only want the library.
 
 ## Quick start
 
@@ -132,6 +132,8 @@ hs.width = 0x40              # stereo width
 hs.default_chord = [0, 4, 7, 0, 0, 0, 0]  # plays a major triad by default
 # Slot 0 = root + 5th + octave on oscillators 0, 1, 2
 hs.chords[0] = M8Chord(mask=0b00000111, offsets=[0, 7, 12, 0, 0, 0])
+from m8.api.instruments.hypersynth import M8HyperSynthShape
+hs.shape = M8HyperSynthShape.SINE_FOLD     # firmware 6.6+
 
 # External (audio in)
 from m8.api.instruments.external import M8External, M8ExternalPort, M8ExternalInput
@@ -231,6 +233,18 @@ project.effects.chorus_mod_depth = 0x40
 project.effects.delay_feedback   = 0xA0
 project.effects.reverb_size      = 0xC0
 project.effects.reverb_shimmer   = 0x30  # firmware 6.2+
+from m8.api.settings import M8MfxKind
+project.effects.mfx_kind = M8MfxKind.COMB  # firmware 6.6+
+
+# Grooves — 16 timing steps each, plus tick resolution (firmware 6.5+)
+from m8.api.groove import M8GroovePPQN
+project.grooves[1][0] = 0x0C
+project.grooves[1].ppqn = M8GroovePPQN.PPQN_96
+
+# Bookmarks — per song step (bitmask by track) and per row (colour, 6.6+)
+project.song[0].set_bookmark(3)           # bookmark track 4 on row 00
+project.song[0].is_bookmarked(3)          # True
+project.song[8].row_bookmark = 0x05
 
 # MIDI — sync, transport, per-track input routing
 project.midi.receive_sync = 1

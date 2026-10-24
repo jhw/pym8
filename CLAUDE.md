@@ -1,6 +1,6 @@
 # pym8 — agent guide
 
-Python port of [m8-file-parser](https://github.com/Twinside/m8-file-parser) (Rust). Reads, writes, and manipulates Dirtywave M8 tracker files (`.m8s` projects, `.m8i` single-instrument exports). Target firmware **6.2+**.
+Python port of [m8-file-parser](https://github.com/Twinside/m8-file-parser) (Rust). Reads, writes, and manipulates Dirtywave M8 tracker files (`.m8s` projects, `.m8i` single-instrument exports). Target firmware **6.0+**, modelled up to the **6.6** layout (the bundled template is 6.6.2).
 
 ## Code philosophy
 
@@ -51,7 +51,10 @@ bytes worth modelling: the 16-row chord matrix at offset 87. It's stored as a
 separate Python attribute (`chords`, a `M8HyperSynthChords` list) and merged
 into the byte buffer at write time — same pattern as `modulators` at offset 63.
 If a future instrument adds another structured sub-record, follow this pattern
-rather than trying to express it via descriptors.
+rather than trying to express it via descriptors. The project-level analogue is
+data stored in a separate file block but owned by another object: song/row
+bookmarks live on `M8SongRow`, groove PPQN on `M8Groove`, and `M8Project`
+reads/writes their blocks explicitly (like the `key` byte).
 
 ## Testing
 
@@ -88,3 +91,4 @@ Pass `--test` to operate on `tmp/virtual-m8/` instead of `/Volumes/M8/`.
 - All top-level sections pym8 defines offsets for are now parsed and editable: metadata, MIDI settings, mixer settings, grooves, song matrix, chains, phrases, tables, instruments, effects settings, MIDI mappings, scales, EQs. The `.m8c` theme file format (separate from `.m8s`/`.m8i`) is the one thing pym8 doesn't touch at all — see `docs/out-of-scope.md`.
 - Instruments are 215 bytes each; modulators sit at offset 63 within an instrument block (offset 61 in `.m8i` files, which also reorder LFO bytes).
 - Firmware-conditional offsets exist between v4.0 and v4.1 (mostly in unparsed sections — see `m8-file-parser/src/songs.rs`).
+- Later firmware appends blocks after the EQs, so file length varies: 6.0–6.4 end at the EQs (112294 bytes), 6.5 adds groove PPQN (112326), 6.6 adds row bookmarks (112582). `M8Project` reads/writes each block only when both the version and the buffer length say it's there — never grow a file. Song-step bookmarks (0x1A97E) sit between MIDI mappings and scales in every layout.

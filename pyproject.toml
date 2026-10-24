@@ -16,9 +16,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 dependencies = [
     "pydub>=0.25.1",  # m8/tools/chain_builder.py — sample-chain WAV processing
+]
+
+[project.optional-dependencies]
+demos = [
     "pyyaml>=6.0",    # demos/lib/preset_yaml.py — YAML preset round-trip
 ]
 
@@ -26,7 +30,6 @@ dependencies = [
 Homepage = "https://github.com/jhw/pym8"
 
 [tool.setuptools]
-py-modules = ["m8"]
 include-package-data = true
 
 [tool.setuptools.packages.find]
@@ -34,6 +37,6 @@ where = ["."]
 include = ["m8*"]
 
 [tool.setuptools.package-data]
-"m8" = ["**/*.m8s", "**/*.yaml"]
+"m8" = ["**/*.m8s"]
 
 [tool.setuptools_scm]

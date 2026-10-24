@@ -10,7 +10,9 @@ Skips demos that require external samples (downloaded by
 demos/utils/download_erica_pico_samples.py) when those samples aren't
 present locally.
 """
+import contextlib
 import importlib.util
+import io
 import os
 import sys
 import unittest
@@ -65,8 +67,10 @@ class TestDemosSmoke(unittest.TestCase):
             # so flag defaults take effect.
             old_argv = sys.argv
             sys.argv = [str(demo_path)]
+            # Demos narrate progress to stdout; keep it out of test output.
             try:
-                module.main()
+                with contextlib.redirect_stdout(io.StringIO()):
+                    module.main()
             finally:
                 sys.argv = old_argv
         finally:

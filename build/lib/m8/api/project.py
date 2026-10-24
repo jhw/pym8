@@ -1,0 +1,371 @@
+from m8.api import M8Block
+from m8.api.chain import M8Chains, CHAINS_OFFSET, EMPTY_PHRASE
+from m8.api.eq import M8Eqs
+from m8.api.groove import M8Grooves
+from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
+from m8.api.metadata import M8Metadata, METADATA_OFFSET
+from m8.api.midi_mapping import M8MidiMappings
+from m8.api.midi_settings import M8MidiSettings
+from m8.api.phrase import M8Phrases, PHRASES_OFFSET, EMPTY_INSTRUMENT
+from m8.api.scale import M8Scales
+from m8.api.settings import M8EffectsSettings, M8MixerSettings
+from m8.api.song import M8SongMatrix, SONG_OFFSET, EMPTY_CHAIN, COL_COUNT, ROW_COUNT
+from m8.api.table import M8Tables, TABLE_OFFSET
+from m8.api.version import M8Version
+
+# Reference: https://github.com/Twinside/m8-file-parser/blob/master/src/songs.rs
+
+VERSION_OFFSET = 10
+
+# MidiSettings starts immediately after metadata (file 14-159; contiguous
+# metadata block is 146 bytes ending at the project name).
+MIDI_SETTINGS_OFFSET = 160       # 27 bytes
+KEY_OFFSET = 187                 # 1 byte (project musical key)
+# bytes 188-205 reserved        # preserved as raw data
+
+MIXER_SETTINGS_OFFSET = 206
+
+# Grooves region — 32 × 16 bytes at offset 0xEE (238), right after
+# MixerSettings, before the song matrix.
+GROOVE_OFFSET = 238
+
+# Effects/MIDI-mapping/scale/EQ offsets (v4.1+ — both V4_0 and V4_1 in
+# m8-file-parser use these same offsets; only inner counts differ, and
+# pym8 targets v6.0+).
+EFFECTS_SETTINGS_OFFSET = 107969  # 0x1A5C1
+MIDI_MAPPING_OFFSET = 108030      # 0x1A5FE — 128 × 7-byte mappings
+SONG_BOOKMARKS_OFFSET = 108926    # 0x1A97E — 256 × song-step bookmark bitmask
+SCALE_OFFSET = 109182             # 0x1AA7E — 16 × 46-byte scales
+EQ_OFFSET = 109918                # 0x1AD5A + 4
+
+# Blocks appended after the EQs by later firmware. Each one grows the file:
+# 6.0-6.4 files end at the EQs (112294 bytes), 6.5 adds groove PPQN
+# (112326), 6.6 adds row bookmarks (112582). Read and written only when
+# both the version and the buffer length say the block is there, as in
+# m8-file-parser's songs.rs.
+GROOVE_PPQN_OFFSET = 112294       # 0x1B6A6 — 32 bytes, firmware 6.5+
+GROOVE_PPQN_VERSION = (6, 5, 0)
+ROW_BOOKMARKS_OFFSET = 112326     # 0x1B6C6 — 256 bytes, firmware 6.6+
+ROW_BOOKMARKS_VERSION = (6, 6, 0)
+
+# Offsets for the contiguous sections M8Project reads/writes generically.
+# The musical-key byte, the bookmark blocks and the groove PPQN block
+# belong to other objects (project.key, project.song, project.grooves)
+# and are handled specially in read/write below.
+OFFSETS = {
+    "version": VERSION_OFFSET,
+    "metadata": METADATA_OFFSET,
+    "midi": MIDI_SETTINGS_OFFSET,
+    "mixer": MIXER_SETTINGS_OFFSET,
+    "grooves": GROOVE_OFFSET,
+    "song": SONG_OFFSET,
+    "phrases": PHRASES_OFFSET,
+    "chains": CHAINS_OFFSET,
+    "tables": TABLE_OFFSET,
+    "instruments": INSTRUMENTS_OFFSET,
+    "effects": EFFECTS_SETTINGS_OFFSET,
+    "midi_mappings": MIDI_MAPPING_OFFSET,
+    "scales": SCALE_OFFSET,
+    "eqs": EQ_OFFSET,
+}
+
+class M8Project:
+    """Top-level container for all M8 data, including metadata, instruments, chains, phrases, and song arrangement."""
+    
+    def __init__(self):
+        self.data = bytearray()
+        self.metadata = None
+        self.midi = None
+        self.song = None
+        self.chains = None
+        self.phrases = None
+        self.tables = None
+        self.instruments = None
+        self.grooves = None
+        self.mixer = None
+        self.effects = None
+        self.midi_mappings = None
+        self.scales = None
+        self.eqs = None
+        self.key = 0
+        self.version = M8Version()
+
+    #: Minimum byte length for a well-formed .m8s project — the end of the
+    #: EQ section, which is EOF on a 6.0-6.4 file (6.5+ files append the
+    #: optional blocks above). Anything shorter is a truncated/corrupt
+    #: file; matches m8-file-parser's length check in songs.rs, which
+    #: raises a ParseError rather than silently reading short slices.
+    MIN_SIZE = OFFSETS["eqs"] + M8Eqs.TOTAL_BYTES
+
+    @classmethod
+    def read(cls, data):
+        if len(data) < cls.MIN_SIZE:
+            raise ValueError(
+                f"Data too short to be a M8 project: {len(data)} bytes, "
+                f"need at least {cls.MIN_SIZE}"
+            )
+        instance = cls()
+        instance.data = bytearray(data)
+        instance.version = M8Version.read(data[OFFSETS["version"]:])
+
+        # Sections that don't yet have firmware-conditional logic — read
+        # without threading version. Add the parameter on a per-section basis
+        # when implementing settings/EQ/etc. (see docs/planning/roadmap.md).
+        instance.metadata = M8Metadata.read(data[OFFSETS["metadata"]:])
+        instance.midi = M8MidiSettings.read(
+            data[OFFSETS["midi"]:OFFSETS["midi"] + M8MidiSettings.BYTES],
+            version=instance.version,
+        )
+        # Musical key byte sits between MidiSettings (file 160-186) and
+        # the 18 reserved bytes that precede MixerSettings (file 206).
+        instance.key = data[KEY_OFFSET]
+
+        ppqn = None
+        if instance._has_block(data, GROOVE_PPQN_OFFSET, M8Grooves.PPQN_BYTES, GROOVE_PPQN_VERSION):
+            ppqn = data[GROOVE_PPQN_OFFSET:GROOVE_PPQN_OFFSET + M8Grooves.PPQN_BYTES]
+        instance.grooves = M8Grooves.read(
+            data[OFFSETS["grooves"]:OFFSETS["grooves"] + M8Grooves.TOTAL_BYTES],
+            version=instance.version,
+            ppqn=ppqn,
+        )
+
+        row_bookmarks = None
+        if instance._has_block(data, ROW_BOOKMARKS_OFFSET, ROW_COUNT, ROW_BOOKMARKS_VERSION):
+            row_bookmarks = data[ROW_BOOKMARKS_OFFSET:ROW_BOOKMARKS_OFFSET + ROW_COUNT]
+        instance.song = M8SongMatrix.read(
+            data[OFFSETS["song"]:],
+            bookmarks=data[SONG_BOOKMARKS_OFFSET:SONG_BOOKMARKS_OFFSET + ROW_COUNT],
+            row_bookmarks=row_bookmarks,
+        )
+        instance.chains = M8Chains.read(data[OFFSETS["chains"]:])
+        instance.phrases = M8Phrases.read(data[OFFSETS["phrases"]:])
+        instance.tables = M8Tables.read(
+            data[OFFSETS["tables"]:OFFSETS["tables"] + M8Tables.TOTAL_BYTES],
+            version=instance.version,
+        )
+
+        # Sections that consume firmware version (per-instrument
+        # associated_eq byte, mixer limiter v6.0+ / OTT v6.2+, EQ count).
+        instance.mixer = M8MixerSettings.read(
+            data[OFFSETS["mixer"]:OFFSETS["mixer"] + M8MixerSettings.BYTES],
+            version=instance.version,
+        )
+        instance.instruments = M8Instruments.read(
+            data[OFFSETS["instruments"]:], version=instance.version,
+        )
+        instance.effects = M8EffectsSettings.read(
+            data[OFFSETS["effects"]:OFFSETS["effects"] + M8EffectsSettings.BYTES],
+            version=instance.version,
+        )
+        instance.midi_mappings = M8MidiMappings.read(
+            data[OFFSETS["midi_mappings"]:OFFSETS["midi_mappings"] + M8MidiMappings.TOTAL_BYTES],
+            version=instance.version,
+        )
+        instance.scales = M8Scales.read(
+            data[OFFSETS["scales"]:OFFSETS["scales"] + M8Scales.TOTAL_BYTES],
+            version=instance.version,
+        )
+        instance.eqs = M8Eqs.read(
+            data[OFFSETS["eqs"]:OFFSETS["eqs"] + M8Eqs.TOTAL_BYTES],
+            version=instance.version,
+        )
+        return instance
+
+    def _has_block(self, data, offset, length, min_version):
+        return self.version >= min_version and len(data) >= offset + length
+
+    def clone(self):
+        instance = self.__class__()
+        instance.data = bytearray(self.data)
+        instance.version = self.version.clone()
+        instance.metadata = self.metadata.clone() if self.metadata else None
+        instance.midi = self.midi.clone() if self.midi else None
+        instance.instruments = self.instruments.clone() if self.instruments else None
+        instance.phrases = self.phrases.clone() if self.phrases else None
+        instance.chains = self.chains.clone() if self.chains else None
+        instance.tables = self.tables.clone() if self.tables else None
+        instance.grooves = self.grooves.clone() if self.grooves else None
+        instance.song = self.song.clone() if self.song else None
+        instance.mixer = self.mixer.clone() if self.mixer else None
+        instance.effects = self.effects.clone() if self.effects else None
+        instance.midi_mappings = self.midi_mappings.clone() if self.midi_mappings else None
+        instance.scales = self.scales.clone() if self.scales else None
+        instance.eqs = self.eqs.clone() if self.eqs else None
+        instance.key = self.key
+        return instance
+        
+    def write(self) -> bytes:
+        output = bytearray(self.data)
+
+        # Version is a 4-byte header at offset 10 — handled specially
+        # because it's a value, not a section block.
+        version_data = self.version.write()
+        output[OFFSETS["version"]:OFFSETS["version"] + len(version_data)] = version_data
+
+        for name, offset in OFFSETS.items():
+            if hasattr(self, name) and name != "version":
+                block = getattr(self, name)
+                if block is None:
+                    continue
+                data = block.write()
+                output[offset:offset + len(data)] = data
+
+        # Musical key byte at file offset 187 — between MidiSettings and
+        # the 18 reserved bytes preceding MixerSettings. Not part of any
+        # contiguous block, so written explicitly here rather than via the
+        # OFFSETS loop.
+        output[KEY_OFFSET] = self.key & 0xFF
+
+        if self.song is not None:
+            output[SONG_BOOKMARKS_OFFSET:SONG_BOOKMARKS_OFFSET + ROW_COUNT] = self.song.write_bookmarks()
+            if self._has_block(output, ROW_BOOKMARKS_OFFSET, ROW_COUNT, ROW_BOOKMARKS_VERSION):
+                output[ROW_BOOKMARKS_OFFSET:ROW_BOOKMARKS_OFFSET + ROW_COUNT] = self.song.write_row_bookmarks()
+        if self.grooves is not None and self._has_block(
+            output, GROOVE_PPQN_OFFSET, M8Grooves.PPQN_BYTES, GROOVE_PPQN_VERSION
+        ):
+            output[GROOVE_PPQN_OFFSET:GROOVE_PPQN_OFFSET + M8Grooves.PPQN_BYTES] = self.grooves.write_ppqn()
+
+        return bytes(output)
+
+    @staticmethod
+    def read_from_file(filename: str):
+        with open(filename, "rb") as f:
+            project = M8Project.read(f.read())
+            
+        # Context management was removed with enum system simplification
+        
+        return project
+
+    @classmethod
+    def initialise(cls, template_name: str = "TEMPLATE-6-6-2"):
+        """Creates a new project from a template file."""
+        import os
+        import sys
+
+        template_filename = template_name if template_name.endswith('.m8s') else f"{template_name}.m8s"
+
+        # Strategy 1: Try importlib.resources (Python 3.7+, works with installed packages)
+        try:
+            import importlib.resources
+            with importlib.resources.path('m8.templates', template_filename) as template_path:
+                if os.path.exists(template_path):
+                    return cls.read_from_file(str(template_path))
+        except (ImportError, ModuleNotFoundError, FileNotFoundError, TypeError):
+            pass
+
+        # Strategy 2: Search sys.path for m8/templates
+        for path in sys.path:
+            potential_path = os.path.join(path, 'm8', 'templates', template_filename)
+            if os.path.exists(potential_path):
+                return cls.read_from_file(potential_path)
+
+        # Strategy 3: Relative to this module (development/source installs)
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(module_path, "..", "templates", template_filename)
+        if os.path.exists(template_path):
+            return cls.read_from_file(template_path)
+
+        raise FileNotFoundError(f"Template '{template_filename}' not found. Check that it exists in the m8/templates directory.")
+
+    def write_to_file(self, filename: str):
+        import os
+
+        # Create intermediate directories if they don't exist
+        directory = os.path.dirname(filename)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+
+        with open(filename, "wb") as f:
+            f.write(self.write())
+
+    def check_references(self):
+        """Find references that point at empty or out-of-range slots.
+
+        Checks the reference chain a programmatic song edit is most likely
+        to break: song -> chain -> phrase -> instrument. A reference is
+        flagged when its target is out of range, or when it resolves but
+        the target slot itself has nothing programmed on it (so the M8
+        would play silence when it got there). Read-only; does not mutate
+        the project.
+
+        Returns:
+            list[str]: human-readable problem descriptions, empty if every
+            reference resolves to real, populated data.
+        """
+        problems = []
+
+        if self.song and self.chains:
+            for row_index, row in enumerate(self.song):
+                for col_index in range(COL_COUNT):
+                    chain_ref = row[col_index]
+                    if chain_ref == EMPTY_CHAIN:
+                        continue
+                    if not (0 <= chain_ref < len(self.chains)):
+                        problems.append(
+                            f"song[{row_index}][{col_index}] -> chain {chain_ref}: out of range"
+                        )
+                    elif self.chains[chain_ref].is_empty():
+                        problems.append(
+                            f"song[{row_index}][{col_index}] -> chain {chain_ref}: empty (no phrase references)"
+                        )
+
+        if self.chains and self.phrases:
+            for chain_index, chain in enumerate(self.chains):
+                for step_index, step in enumerate(chain):
+                    if step.phrase == EMPTY_PHRASE:
+                        continue
+                    if not (0 <= step.phrase < len(self.phrases)):
+                        problems.append(
+                            f"chain {chain_index} step {step_index} -> phrase {step.phrase}: out of range"
+                        )
+                    elif self.phrases[step.phrase].is_empty():
+                        problems.append(
+                            f"chain {chain_index} step {step_index} -> phrase {step.phrase}: empty"
+                        )
+
+        if self.phrases and self.instruments:
+            for phrase_index, phrase in enumerate(self.phrases):
+                for step_index, step in enumerate(phrase):
+                    if step.instrument == EMPTY_INSTRUMENT:
+                        continue
+                    if not self.instruments.is_concrete(step.instrument):
+                        problems.append(
+                            f"phrase {phrase_index} step {step_index} -> instrument {step.instrument}: "
+                            "not a populated instrument slot"
+                        )
+
+        return problems
+
+    def validate(self, deep=False):
+        """Validate all project components.
+
+        Validates:
+        - Chains collection (count and phrase references)
+        - Phrases collection (count and instrument references)
+        - Song matrix (chain references)
+        - Instruments collection (count)
+
+        Args:
+            deep: also run check_references() and raise if it finds any
+                dangling or empty references (song->chain->phrase->instrument).
+
+        Raises:
+            ValueError: If any validation fails
+        """
+        if self.chains:
+            self.chains.validate()
+        if self.phrases:
+            self.phrases.validate()
+        if self.song:
+            self.song.validate()
+        if self.instruments:
+            self.instruments.validate()
+
+        if deep:
+            problems = self.check_references()
+            if problems:
+                raise ValueError(
+                    f"{len(problems)} dangling/empty reference(s) found:\n"
+                    + "\n".join(problems)
+                )
+
