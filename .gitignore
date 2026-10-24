@@ -4,3 +4,4 @@ venv
 .venv
 tmp
 pym8.egg-info/
+build/
