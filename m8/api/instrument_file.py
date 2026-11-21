@@ -20,7 +20,7 @@ on read, which makes them read-only: writing one back would put typed
 modulators under a pre-3.0 version header.
 """
 
-from m8.api.eq import M8Eq, EQ_BYTES
+from m8.api.eq import M8Eq, EQ_BYTES, NO_EQ
 from m8.api.instrument import BLOCK_SIZE, TYPE_OFFSET, _INSTRUMENT_REGISTRY
 from m8.api.modulator import M8Modulators
 from m8.api.table import M8Table, TABLE_BYTES
@@ -75,7 +75,7 @@ class M8InstrumentFile:
         if version < TYPED_MODULATORS_VERSION:
             instrument.modulators = M8Modulators.read_v2(instrument_data[V2_MODULATORS_OFFSET:])
             # Byte 62 is modulator data in this layout, not an EQ index.
-            instrument.associated_eq = 0xFF
+            instrument.associated_eq = NO_EQ
 
         # Firmware 1.x files are 349 bytes — too short for a full table.
         table = M8Table.read(data[TABLE_OFFSET:EQ_OFFSET]) if len(data) >= EQ_OFFSET else M8Table()

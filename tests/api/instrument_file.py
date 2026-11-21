@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from m8.api.eq import M8Eq, M8EqType
+from m8.api.eq import M8Eq, M8EqType, NO_EQ
 from m8.api.fx import M8SequenceFX
 from m8.api.instrument_file import M8InstrumentFile, EQ_OFFSET, FILE_BYTES
 from m8.api.instruments.fmsynth import M8FMSynth
@@ -93,7 +93,7 @@ class TestV2File(unittest.TestCase):
         self.assertEqual(inst.modulators[0].destination, 1)
         self.assertEqual(inst.modulators[0].decay, 0x60)
         # Byte 62 is modulator data in this layout, not an EQ index.
-        self.assertEqual(inst.associated_eq, 0xFF)
+        self.assertEqual(inst.associated_eq, NO_EQ)
         self.assertIsNone(self.file.eq)
 
     def test_write_refused(self):

@@ -7,12 +7,13 @@ missed references.
 import unittest
 
 from m8.api.chain import M8ChainStep
+from m8.api.eq import NO_EQ
 from m8.api.fx import M8FXTuple, M8MixerFX, M8SequenceFX
 from m8.api.instruments.wavsynth import M8Wavsynth
 from m8.api.phrase import M8Note, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.remapper import (
-    EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, NO_EQ, N_INSTRUMENTS,
+    EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, N_INSTRUMENTS,
     EQ_REF_FX_KEYS, INSTRUMENT_REF_FX_KEYS, TABLE_REF_FX_KEYS,
     Mappings, NoFreeSlotError, Remapper, Remapping,
     allocate, apply, move_chains, renumber, walk_dependencies, walk_song,
@@ -103,9 +104,9 @@ class TestWalkFromChain(unittest.TestCase):
         self.assertEqual(m.instruments, set())
 
     def test_instrument_no_eq_assigned_skipped(self):
-        """instrument.associated_eq == 0xFF — don't pull an EQ."""
+        """instrument.associated_eq == NO_EQ (0x80) — don't pull an EQ."""
         self.project.instruments[3] = M8Wavsynth(name="NOEQ")
-        # default is 0xFF; do not set
+        # default is NO_EQ; do not set
         self.assertEqual(self.project.instruments[3].associated_eq, NO_EQ)
 
         self.project.phrases[1][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=3)
@@ -316,14 +317,39 @@ class TestOutOfRangeRefsIgnored(unittest.TestCase):
         m = walk_dependencies(self.project, chains={0})
         self.assertNotIn(200, m.instruments)
 
-    def test_fx_value_ge_n_eqs_for_eqm_skipped(self):
-        """EQ index >= 132 (v6 EQ count) isn't a real EQ."""
+    def test_fx_value_ge_instrument_eqs_for_eqm_skipped(self):
+        """Only instrument EQs (0-127) are referenceable; 128-131 are the
+        effects/global EQs."""
         self.project.phrases[1][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=0)
-        self.project.phrases[1][0].fx[0] = M8FXTuple(key=M8MixerFX.EQM, value=200)
+        self.project.phrases[1][0].fx[0] = M8FXTuple(key=M8MixerFX.EQM, value=128)
+        self.project.phrases[1][0].fx[1] = M8FXTuple(key=M8MixerFX.EQI, value=200)
         self.project.chains[0][0] = M8ChainStep(phrase=1, transpose=0)
 
         m = walk_dependencies(self.project, chains={0})
-        self.assertNotIn(200, m.eqs)
+        self.assertEqual(m.eqs, set())
+
+
+class TestNoEqInstrumentLeavesEffectEqsAlone(unittest.TestCase):
+    """Regression: the firmware writes 0x80 for "no EQ". The remapper used
+    to read that as a reference to EQ 128 (an effects EQ) and copy the
+    source's effects EQ over the destination's."""
+
+    def test_move_chain_with_no_eq_instrument(self):
+        src = M8Project.initialise()
+        src.instruments[5] = M8Wavsynth(name="NOEQ")
+        src.instruments[5].associated_eq = 0x80
+        src.eqs[128].low.level = 0x11          # non-default effects EQ in source
+        src.phrases[1][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=5)
+        src.chains[3][0] = M8ChainStep(phrase=1, transpose=0)
+
+        dst = M8Project.initialise()
+        dst_effects_eq = dst.eqs[128].write()
+
+        remap = move_chains(src, dst, {3})
+
+        self.assertEqual(remap.eqs, {})
+        self.assertEqual(dst.eqs[128].write(), dst_effects_eq)
+        self.assertEqual(dst.instruments[remap.out_instrument(5)].associated_eq, 0x80)
 
 
 # ----------------------------------------------------------------------

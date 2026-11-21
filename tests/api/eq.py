@@ -11,7 +11,7 @@ Covers:
 import unittest
 
 from m8.api.eq import (
-    EQ_BAND_BYTES, EQ_BYTES, EQ_COUNT,
+    EQ_BAND_BYTES, EQ_BYTES, EQ_COUNT, NO_EQ,
     M8Eq, M8EqBand, M8EqMode, M8EqType, M8Eqs,
 )
 from m8.api.instruments.wavsynth import M8Wavsynth
@@ -222,9 +222,9 @@ class TestAssociatedEqOnInstrument(unittest.TestCase):
     """Every instrument has a byte at offset 62 binding it to a project EQ."""
 
     def test_default_is_unassigned(self):
-        """0xFF = no EQ bound; matches Rust's pre-v5 default."""
-        self.assertEqual(M8Wavsynth().associated_eq, 0xFF)
-        self.assertEqual(M8HyperSynth().associated_eq, 0xFF)
+        """NO_EQ (0x80) = no EQ bound — what the firmware writes."""
+        self.assertEqual(M8Wavsynth().associated_eq, NO_EQ)
+        self.assertEqual(M8HyperSynth().associated_eq, NO_EQ)
 
     def test_set_round_trips(self):
         for cls in (M8Wavsynth, M8HyperSynth):

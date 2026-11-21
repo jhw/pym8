@@ -11,6 +11,7 @@ import warnings
 from enum import IntEnum
 
 from m8.api import M8Block
+from m8.api.eq import NO_EQ
 from m8.api.fields import ByteField, StringField, iter_fields
 from m8.api.modulator import M8Modulators
 from m8.api.version import M8Version
@@ -81,11 +82,9 @@ class M8Instrument:
 
     name = StringField(NAME_OFFSET, NAME_LENGTH)
     # associated_eq lives at the byte just before modulators (firmware 5.0+).
-    # 0xFF means "no EQ assigned"; otherwise indexes into project.eq.
-    # The byte was unused/padded in older firmware, so it's safe to expose
-    # on every instrument — pre-v5.0 files will just round-trip the byte
-    # as whatever was there (typically 0xFF anyway).
-    associated_eq = ByteField(MODULATORS_OFFSET - 1, default=0xFF)
+    # Indexes the instrument EQs (0-127); >= 128 means "no EQ assigned",
+    # and the firmware writes NO_EQ (0x80) for that.
+    associated_eq = ByteField(MODULATORS_OFFSET - 1, default=NO_EQ)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

@@ -11,7 +11,7 @@ What it covers:
 - All six modulator types (AHD, ADSR, Drum, LFO, Trig, Tracking) as distinct classes
 - Phrases (notes + FX), chains, song matrix, instrument slots
 - Tables (256 × 16-step modulation grids — transpose, velocity, 3 FX per step)
-- 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — global, effect-section, and per-instrument
+- 3-band parametric EQ (132 slots, 7 EQ types × 5 stereo modes) — per-instrument, effect-section, and global
 - Mixer settings (master volume, 8 track volumes, send levels, DJ filter, limiter, OTT), MIDI settings (sync, transport, per-track input routing), effects settings (chorus / delay / reverb knobs, OTT config), MIDI mappings (128 controller routings), grooves (32 timing curves with per-groove PPQN, 6.5+), song-step and row bookmarks (row bookmarks 6.6+), and scales (16 microtonal tuning maps)
 - FX command enums for Sequence, Sampler, Mixer (firmware 6.2), and Modulator FX groups
 - Audio helpers: sample-chain WAV builder, slice-point WAV writer
@@ -199,35 +199,33 @@ Files from firmware before 3.0 use an older untyped modulator layout. They're co
 
 ## EQ
 
-Every project ships 132 EQ slots (1 global + 3 effect-section + 128 per-instrument). Each EQ has three bands (low / mid / high), each band has a filter type, stereo processing mode, frequency, gain, and Q:
+Every project ships 132 EQ slots: 128 instrument EQs (0–127), then the 3 effect-section EQs and the global EQ (128–131). Each EQ has three bands (low / mid / high), each band has a filter type, stereo processing mode, frequency, gain, and Q:
 
 ```python
 from m8.api.project import M8Project
-from m8.api.eq import M8EqType, M8EqMode
+from m8.api.eq import M8EqType, M8EqMode, NO_EQ
 from m8.api.instruments.wavsynth import M8Wavsynth
 
 project = M8Project.initialise()
 
-# Tweak the global EQ
+# Bind instrument 0 to EQ 0 — the firmware pairs instrument N with EQ N
+w = M8Wavsynth(name="EQUALIZED")
+w.associated_eq = 0
+project.instruments[0] = w
+
 project.eqs[0].low.eq_type = M8EqType.LOWCUT
 project.eqs[0].mid.q = 0x80
 project.eqs[0].high.eq_mode = M8EqMode.SIDE
-
-# Bind an instrument to EQ slot 4 (first per-instrument slot)
-w = M8Wavsynth(name="EQUALIZED")
-w.associated_eq = 4
-project.instruments[0] = w
 
 # Frequency and gain are 16-bit packed across two bytes; helpers decode:
 print(project.eqs[0].mid.frequency())   # Hz
 print(project.eqs[0].mid.gain_db())     # signed dB
 ```
 
-Slot convention (matching m8-file-parser):
-- `eqs[0]` — global / master EQ
-- `eqs[1..3]` — effect-section EQs (chorus, delay, reverb)
-- `eqs[4..131]` — per-instrument EQs (referenced by `instrument.associated_eq`)
-- `associated_eq = 0xFF` (default) means "no EQ bound to this instrument"
+Slot layout (matching m8-file-parser's `songs.rs`):
+- `eqs[0..127]` — instrument EQs, referenced by `instrument.associated_eq` and the EQM/EQI FX commands
+- `eqs[128..131]` — the effect-section EQs and the global EQ; nothing references these by index
+- `associated_eq >= 128` means "no EQ bound to this instrument"; the firmware writes `NO_EQ` (0x80), which is also the default for new instruments
 
 ## Mixer and effects settings
 

@@ -15,13 +15,18 @@ The project ships M EQs where M depends on firmware:
 - v4.0:  36  (32 instrument + 3 effects + 1 global)
 - v4.1+: 132 (128 instrument + 3 effects + 1 global)
 
+Instrument EQs come first (0-127), then the effects and global EQs
+(128-131) — m8-file-parser's `eq_count()` in songs.rs. Only 0-127 can be
+referenced by an instrument or an EQM/EQI FX command.
+
 pym8 targets v6.0+ so M = 132 — matches the bundled TEMPLATE-6-6-2.m8s
 where EQ data extends to exactly EOF (plus trailing reserved padding added
 in later firmware, preserved verbatim through the raw `data` buffer).
 
 Per-instrument EQ binding is the `associated_eq` byte on each instrument
-(byte 62 of the instrument block in v5.0+). It indexes into the project's
-EQ list; 0xFF means "no EQ assigned".
+(byte 62 of the instrument block in v5.0+). It indexes into the
+instrument EQs; any value >= 128 means "no EQ assigned". The firmware
+writes `NO_EQ` (0x80) for that.
 """
 
 from enum import IntEnum
@@ -36,6 +41,8 @@ EQ_BYTES = EQ_BAND_BYTES * EQ_BANDS_PER_EQ  # 18
 # v4.1+ layout: 128 per-instrument + 3 effect-section + 1 global.
 EQ_COUNT_V4_1 = 132
 EQ_COUNT = EQ_COUNT_V4_1
+INSTRUMENT_EQ_COUNT = 128
+NO_EQ = 0x80
 
 
 class M8EqType(IntEnum):
@@ -260,12 +267,12 @@ class M8Eq:
 class M8Eqs(list):
     """Project-level EQ collection (132 entries in v6.0+).
 
-    Index map by convention (matching m8-file-parser):
-    -   0      : global (master) EQ
-    -   1-3    : effect-section EQs (chorus, delay, reverb)
-    -   4-131  : per-instrument EQs (referenced by instrument.associated_eq)
+    Index map (matching m8-file-parser's songs.rs):
+    -   0-127   : instrument EQs (referenced by instrument.associated_eq and
+                  EQM/EQI FX; firmware pairs instrument N with EQ N)
+    -   128-131 : 3 effect-section EQs + 1 global EQ
 
-    `associated_eq = 0xFF` on an instrument means "no EQ assigned".
+    `associated_eq >= 128` on an instrument means "no EQ assigned".
     """
 
     COUNT = EQ_COUNT

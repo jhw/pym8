@@ -54,7 +54,7 @@ from typing import Iterable, Optional
 from m8.api.fx import M8MixerFX, M8SequenceFX
 from m8.api.instrument import BLOCK_COUNT as N_INSTRUMENTS, M8InstrumentType
 from m8.api.table import TABLE_COUNT as N_TABLES
-from m8.api.eq import EQ_COUNT as N_EQS
+from m8.api.eq import INSTRUMENT_EQ_COUNT as N_EQS
 from m8.api.song import COL_COUNT
 
 
@@ -62,7 +62,6 @@ from m8.api.song import COL_COUNT
 EMPTY_PHRASE = 0xFF
 EMPTY_CHAIN = 0xFF
 EMPTY_INSTRUMENT_REF = 0xFF
-NO_EQ = 0xFF
 
 # FX keys whose value byte is a reference into another section.
 INSTRUMENT_REF_FX_KEYS = frozenset({int(M8MixerFX.INS), int(M8MixerFX.NXT)})
@@ -180,7 +179,7 @@ def walk_dependencies(
                 continue
             m.instruments.add(i)
             inst = project.instruments[i]
-            if inst.associated_eq != NO_EQ and 0 <= inst.associated_eq < N_EQS:
+            if inst.associated_eq < N_EQS:
                 m.eqs.add(inst.associated_eq)
             # Firmware-6+ convention: instrument N owns table N.
             # Enqueue (may already be a default-empty table — walker
@@ -419,7 +418,7 @@ def _rewrite_table_refs(table, remap: Remapping):
 
 
 def _rewrite_instrument_refs(instrument, remap: Remapping):
-    if hasattr(instrument, "associated_eq") and instrument.associated_eq != NO_EQ:
+    if hasattr(instrument, "associated_eq") and instrument.associated_eq < N_EQS:
         instrument.associated_eq = remap.out_eq(instrument.associated_eq)
 
 

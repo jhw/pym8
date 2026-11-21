@@ -49,7 +49,8 @@ directly into subclass.read instead of overwriting after.
 - 132-entry `M8Eqs` at offset 0x1AD5E (v6.0+ layout). Ends at EOF on
   6.0–6.4 files; 6.5+ append groove PPQN and row bookmarks after it.
 - **Per-instrument `associated_eq` byte** added to `M8Instrument` base
-  at offset 62 (just before modulators). 0xFF = no EQ bound.
+  at offset 62 (just before modulators). >= 128 = no EQ bound (firmware
+  writes 0x80); only instrument EQs 0-127 are referenceable.
 
 Pre-v6 layouts (v4.0 with 32 EQs, v4.1 transpose-byte-packed EQ index)
 are explicitly out of scope — pym8 targets v6.0+.
