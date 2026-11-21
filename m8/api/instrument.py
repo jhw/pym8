@@ -26,6 +26,13 @@ NAME_OFFSET = 1
 NAME_LENGTH = 12
 MODULATORS_OFFSET = 63
 
+# Pre-3.0 firmware stored modulators untyped at offset 61 (slots fixed as
+# AHD, AHD, LFO, LFO; LFO bytes in a different order). 3.0+ uses the same
+# typed layout at offset 63 in both .m8s and .m8i files — m8-file-parser's
+# `from_reader2` vs `from_reader3` split in instruments/common.rs.
+V2_MODULATORS_OFFSET = 61
+TYPED_MODULATORS_VERSION = (3, 0, 0)
+
 BLOCK_SIZE = INSTRUMENTS_BLOCK_SIZE
 BLOCK_COUNT = INSTRUMENTS_COUNT
 
@@ -145,9 +152,14 @@ class M8Instrument:
         M8i files have:
         - Metadata header at byte 0
         - Version at byte 10
-        - Instrument data at byte 14 (the metadata offset constant)
-        - Modulators at instrument-offset 61 in an M8i-specific layout
-          (instead of offset 63 used in M8s project files)
+        - Instrument data at byte 14 (the metadata offset constant), in the
+          same 215-byte layout as an .m8s instrument slot
+        - The instrument table (and, if the instrument has one, its EQ)
+          after the instrument block — not read here
+
+        Files from firmware before 3.0 use the old untyped modulator layout
+        at offset 61; it's converted to the typed in-memory layout, and
+        `associated_eq` is cleared because byte 62 holds modulator data.
         """
         from m8.api.metadata import METADATA_OFFSET
         # Eagerly import every subclass so the registry is populated.
@@ -172,9 +184,9 @@ class M8Instrument:
             raise ValueError(f"Unsupported instrument type 0x{instr_type:02X} in {file_path}")
 
         instance = subclass.read(instrument_data, version=version)
-        # M8i modulators are at offset 61 and use a different parameter order
-        # for LFO modulators — convert to the M8s in-memory layout.
-        instance.modulators = M8Modulators.read_m8i(instrument_data[61:])
+        if version < TYPED_MODULATORS_VERSION:
+            instance.modulators = M8Modulators.read_v2(instrument_data[V2_MODULATORS_OFFSET:])
+            instance.associated_eq = 0xFF
         return instance
 
     def to_dict(self):

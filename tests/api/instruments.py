@@ -21,6 +21,7 @@ from m8.api.instruments.macrosynth import M8Macrosynth, M8MacroShape
 from m8.api.instruments.midiout import M8MIDIOut, M8MIDIPort
 from m8.api.instruments.sampler import M8Sampler, M8PlayMode
 from m8.api.instruments.wavsynth import M8Wavsynth, M8WavShape
+from m8.api.modulator import M8ADSRModulator, M8AHDModulator, M8LFOModulator
 
 
 # (class, sample_mutations, default_checks). Mutations cover enum + numeric
@@ -226,16 +227,35 @@ class TestM8Instruments(unittest.TestCase):
 
 
 class TestM8iRoundTrip(unittest.TestCase):
-    FIXTURE = os.path.join(
-        os.path.dirname(__file__), "..", "fixtures", "KICK_MORPH.m8i"
-    )
+    FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures")
 
-    def test_read_m8i_file(self):
-        if not os.path.exists(self.FIXTURE):
-            self.skipTest("KICK_MORPH.m8i fixture not present")
-        inst = M8Instrument.read_from_file(self.FIXTURE)
+    def test_read_v2_m8i_file(self):
+        """KICK_MORPH is firmware 2.7.0: untyped modulators at offset 61."""
+        inst = M8Instrument.read_from_file(os.path.join(self.FIXTURES, "KICK_MORPH.m8i"))
         self.assertIsInstance(inst, M8FMSynth)
-        self.assertEqual(len(inst.modulators), 4)
+        self.assertEqual(
+            [type(m) for m in inst.modulators],
+            [M8AHDModulator, M8AHDModulator, M8LFOModulator, M8LFOModulator],
+        )
+        self.assertEqual(inst.modulators[0].destination, 1)
+        self.assertEqual(inst.modulators[0].decay, 0x60)
+        self.assertEqual(inst.associated_eq, 0xFF)
+
+    def test_read_modern_m8i_file(self):
+        """METRONOME is firmware 6.0.1 (shipped in the M8's System folder):
+        typed modulators at offset 63, same as an .m8s instrument slot —
+        slot 0 is an ADSR, which the pre-3.0 layout can't express."""
+        path = os.path.join(self.FIXTURES, "METRONOME.m8i")
+        inst = M8Instrument.read_from_file(path)
+        self.assertIsInstance(inst, M8FMSynth)
+        self.assertEqual(inst.name, "METRONOME")
+        self.assertEqual(
+            [type(m) for m in inst.modulators],
+            [M8ADSRModulator, M8AHDModulator, M8LFOModulator, M8LFOModulator],
+        )
+        with open(path, "rb") as f:
+            block = f.read()[14:14 + 215]
+        self.assertEqual(inst.write(), block)
 
 
 class TestInstrumentErrorHandling(unittest.TestCase):

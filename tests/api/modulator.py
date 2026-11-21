@@ -213,22 +213,22 @@ class TestM8Modulators(unittest.TestCase):
         self.assertEqual(reloaded[0].peak, 0x80)
 
 
-class TestM8iConversion(unittest.TestCase):
-    """M8i (single-instrument file) modulators have a different layout."""
+class TestV2Conversion(unittest.TestCase):
+    """Pre-3.0 firmware modulators have an untyped, position-fixed layout."""
 
-    def test_ahd_in_m8i_slot_zero(self):
-        # M8i AHD: dest, amt, atk, hold, dec, ?
+    def test_ahd_in_v2_slot_zero(self):
+        # v2 AHD: dest, amt, atk, hold, dec, ?
         m8i_bytes = bytes([3, 0x80, 0x10, 0x20, 0x30, 0x00])
         # Pad to 4 slots worth
         full = m8i_bytes + bytes(18)
-        mods = M8Modulators.read_m8i(full)
+        mods = M8Modulators.read_v2(full)
         self.assertIsInstance(mods[0], M8AHDModulator)
         self.assertEqual(mods[0].destination, 3)
         self.assertEqual(mods[0].amount, 0x80)
         self.assertEqual(mods[0].attack, 0x10)
 
-    def test_lfo_in_m8i_slot_two_reorders_bytes(self):
-        # M8i LFO: osc, dest, trig, freq, amt, retrig
+    def test_lfo_in_v2_slot_two_reorders_bytes(self):
+        # v2 LFO: osc, dest, trig, freq, amt, retrig
         m8i_lfo = bytes([
             int(M8LFOShape.SIN),  # osc
             5,                     # dest
@@ -239,7 +239,7 @@ class TestM8iConversion(unittest.TestCase):
         ])
         # Slot layout: AHD, AHD, LFO, LFO
         data = bytes(6) + bytes(6) + m8i_lfo + bytes(6)
-        mods = M8Modulators.read_m8i(data)
+        mods = M8Modulators.read_v2(data)
         self.assertIsInstance(mods[2], M8LFOModulator)
         self.assertEqual(mods[2].destination, 5)
         self.assertEqual(mods[2].amount, 0x90)

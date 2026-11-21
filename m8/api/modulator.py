@@ -267,12 +267,12 @@ class M8Modulators(list):
         return instance
 
     @classmethod
-    def read_m8i(cls, data):
-        """Read modulators from M8i format (different layout) and convert.
+    def read_v2(cls, data):
+        """Read modulators in the pre-3.0 firmware layout and convert.
 
-        M8i lacks explicit type bytes — it uses position in the slot list:
-        slots 0-1 are AHD, slots 2-3 are LFO. M8i LFO byte ordering also
-        differs from M8s and must be reordered.
+        That layout lacks type nibbles — slot position fixes the type:
+        slots 0-1 are AHD, slots 2-3 are LFO. LFO byte ordering also
+        differs from the typed (3.0+) layout and must be reordered.
         """
         instance = cls.__new__(cls)
         list.__init__(instance)
@@ -282,7 +282,7 @@ class M8Modulators(list):
             if len(block) < BLOCK_SIZE:
                 block = block + bytes(BLOCK_SIZE - len(block))
             klass = _DEFAULT_MODULATOR_CLASSES[i]
-            instance.append(_read_m8i_block(klass, block))
+            instance.append(_read_v2_block(klass, block))
         return instance
 
     def clone(self):
@@ -317,20 +317,20 @@ class M8Modulators(list):
         return bytes(result)
 
 
-def _read_m8i_block(klass, block):
-    """Translate one M8i modulator block to M8s layout and instantiate."""
+def _read_v2_block(klass, block):
+    """Translate one pre-3.0 modulator block to the typed layout and instantiate."""
     m8s = bytearray(BLOCK_SIZE)
     type_id = int(klass.MOD_TYPE)
 
     if klass is M8AHDModulator:
-        # M8i AHD: dest, amt, atk, hold, dec, ?
-        # M8s AHD: type+dest, amt, atk, hold, dec, ?
+        # v2 AHD: dest, amt, atk, hold, dec, ?
+        # v3 AHD: type+dest, amt, atk, hold, dec, ?
         dest = block[0]
         m8s[0] = (type_id << 4) | (dest & 0x0F)
         m8s[1:] = block[1:]
     elif klass is M8LFOModulator:
-        # M8i LFO: osc, dest, trig, freq, amt, retrig
-        # M8s LFO: type+dest, amt, osc, trig, freq, retrig
+        # v2 LFO: osc, dest, trig, freq, amt, retrig
+        # v3 LFO: type+dest, amt, osc, trig, freq, retrig
         osc, dest, trig, freq, amt, retrig = block
         m8s[0] = (type_id << 4) | (dest & 0x0F)
         m8s[1] = amt

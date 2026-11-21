@@ -89,6 +89,6 @@ Pass `--test` to operate on `tmp/virtual-m8/` instead of `/Volumes/M8/`.
 
 - Binary, little-endian, mostly unsigned 8-bit fields. Tempo is float32. Strings are null-padded (some are 0xFF-tolerant).
 - All top-level sections pym8 defines offsets for are now parsed and editable: metadata, MIDI settings, mixer settings, grooves, song matrix, chains, phrases, tables, instruments, effects settings, MIDI mappings, scales, EQs. The `.m8c` theme file format (separate from `.m8s`/`.m8i`) is the one thing pym8 doesn't touch at all — see `docs/out-of-scope.md`.
-- Instruments are 215 bytes each; modulators sit at offset 63 within an instrument block (offset 61 in `.m8i` files, which also reorder LFO bytes).
+- Instruments are 215 bytes each; modulators sit at offset 63 within an instrument block, in both `.m8s` and `.m8i` files. Only pre-3.0 firmware `.m8i` files differ (untyped AHD/AHD/LFO/LFO at offset 61, LFO bytes reordered) — `M8Instrument.read_from_file` picks the layout by file version.
 - Firmware-conditional offsets exist between v4.0 and v4.1 (mostly in unparsed sections — see `m8-file-parser/src/songs.rs`).
 - Later firmware appends blocks after the EQs, so file length varies: 6.0–6.4 end at the EQs (112294 bytes), 6.5 adds groove PPQN (112326), 6.6 adds row bookmarks (112582). `M8Project` reads/writes each block only when both the version and the buffer length say it's there — never grow a file. Song-step bookmarks (0x1A97E) sit between MIDI mappings and scales in every layout.
