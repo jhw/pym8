@@ -1,8 +1,9 @@
 from m8.api import M8Block
 from m8.api.chain import M8Chains, CHAINS_OFFSET, EMPTY_PHRASE
-from m8.api.eq import M8Eqs
+from m8.api.eq import M8Eqs, INSTRUMENT_EQ_COUNT, NO_EQ
 from m8.api.groove import M8Grooves
 from m8.api.instrument import M8Instruments, INSTRUMENTS_OFFSET
+from m8.api.instrument_file import M8InstrumentFile
 from m8.api.metadata import M8Metadata, METADATA_OFFSET
 from m8.api.midi_mapping import M8MidiMappings
 from m8.api.midi_settings import M8MidiSettings
@@ -277,6 +278,61 @@ class M8Project:
 
         with open(filename, "wb") as f:
             f.write(self.write())
+
+    def import_instrument(self, instrument_file, slot=None):
+        """Place an .m8i's instrument, table and EQ into the project.
+
+        Follows the firmware's pairing of instrument N with table N and
+        EQ N: the instrument lands in `slot`, its table in `tables[slot]`,
+        and its EQ (if the file has one) in `eqs[slot]`, with
+        `associated_eq` pointed at it. Without an EQ, `associated_eq` is
+        set to NO_EQ. Whatever was in those slots is replaced.
+
+        FX in the imported table that reference other instruments, tables
+        or EQs (INS, TBL, EQM, ...) still carry the source project's
+        numbers; they are not rewritten.
+
+        Args:
+            instrument_file: an M8InstrumentFile.
+            slot: instrument slot 0-127; defaults to the first empty one.
+
+        Returns:
+            int: the slot used.
+        """
+        if slot is None:
+            slot = next((i for i in range(len(self.instruments))
+                         if not self.instruments.is_concrete(i)), None)
+            if slot is None:
+                raise ValueError("No empty instrument slot")
+        elif not 0 <= slot < len(self.instruments):
+            raise IndexError(f"instrument slot {slot} out of range [0, {len(self.instruments) - 1}]")
+
+        instrument = instrument_file.instrument.clone()
+        self.tables[slot] = instrument_file.table.clone()
+        if instrument_file.eq is not None:
+            self.eqs[slot] = instrument_file.eq.clone()
+            instrument.associated_eq = slot
+        else:
+            instrument.associated_eq = NO_EQ
+        self.instruments[slot] = instrument
+        return slot
+
+    def export_instrument(self, slot):
+        """Build an M8InstrumentFile from instrument `slot`, its table and
+        (if `associated_eq` points at one) its EQ. Inverse of
+        import_instrument()."""
+        if not self.instruments.is_concrete(slot):
+            raise ValueError(f"Instrument slot {slot} is empty")
+        instrument = self.instruments[slot].clone()
+        eq = None
+        if instrument.associated_eq < INSTRUMENT_EQ_COUNT:
+            eq = self.eqs[instrument.associated_eq].clone()
+        return M8InstrumentFile(
+            instrument,
+            table=self.tables[slot].clone(),
+            eq=eq,
+            version=self.version.clone(),
+        )
 
     def check_references(self):
         """Find references that point at empty or out-of-range slots.

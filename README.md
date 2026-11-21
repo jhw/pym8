@@ -176,7 +176,7 @@ The six modulator classes:
 
 ## Instrument files (`.m8i`)
 
-An `.m8i` export holds one instrument plus its table and, if the instrument had one assigned, its EQ. `M8InstrumentFile` reads and writes all three; placing them into a project is up to you.
+An `.m8i` export holds one instrument plus its table and, if the instrument had one assigned, its EQ. `M8InstrumentFile` reads and writes all three, and `M8Project` moves them in and out following the firmware's pairing of instrument N with table N and EQ N.
 
 ```python
 from m8.api.instrument_file import M8InstrumentFile
@@ -186,14 +186,13 @@ f.instrument      # M8FMSynth / M8Sampler / ... — same class as in a project
 f.table           # M8Table — the instrument's own table
 f.eq              # M8Eq, or None
 
-project.instruments[5] = f.instrument
-project.tables[5] = f.table          # instrument N owns table N
-if f.eq is not None:
-    project.eqs[5] = f.eq
-    f.instrument.associated_eq = 5
+slot = project.import_instrument(f)          # first empty slot, or slot=N
+project.export_instrument(slot).write_to_file("KICK-COPY.m8i")
 
 M8InstrumentFile(M8Wavsynth(name="LEAD")).write_to_file("LEAD.m8i")
 ```
+
+Importing replaces whatever is in instrument/table/EQ slot N. FX in the imported table that reference other instruments, tables or EQs keep the source project's numbers.
 
 Files from firmware before 3.0 use an older untyped modulator layout. They're converted on read but can't be written back.
 

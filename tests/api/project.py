@@ -10,6 +10,10 @@ from m8.api.chain import M8Chain, M8Chains
 from m8.api.phrase import M8Phrase, M8Phrases
 from m8.api.instrument import M8Instruments
 from m8.api.instruments.sampler import M8Sampler
+from m8.api.instruments.fmsynth import M8FMSynth
+from m8.api.instruments.wavsynth import M8Wavsynth
+from m8.api.instrument_file import M8InstrumentFile
+from m8.api.eq import M8Eq, NO_EQ
 
 
 class TestM8Project(unittest.TestCase):
@@ -285,6 +289,66 @@ class TestProjectDeepValidation(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             project.validate(deep=True)
         self.assertIn("2 dangling", str(ctx.exception))
+
+
+class TestImportExportInstrument(unittest.TestCase):
+    FIXTURE = os.path.join(os.path.dirname(__file__), "..", "fixtures", "METRONOME.m8i")
+
+    def setUp(self):
+        self.project = M8Project.initialise()
+        self.file = M8InstrumentFile.read_from_file(self.FIXTURE)
+
+    def test_import_into_first_empty_slot(self):
+        self.project.instruments[0] = M8Wavsynth(name="TAKEN")
+        slot = self.project.import_instrument(self.file)
+        self.assertEqual(slot, 1)
+        self.assertIsInstance(self.project.instruments[1], M8FMSynth)
+        self.assertEqual(self.project.tables[1].write(), self.file.table.write())
+        self.assertEqual(self.project.instruments[1].associated_eq, NO_EQ)
+
+    def test_import_with_eq_pairs_eq_with_slot(self):
+        self.file.eq = M8Eq()
+        self.file.eq.mid.level = 0x22
+        self.file.instrument.associated_eq = 40   # source project's numbering
+        slot = self.project.import_instrument(self.file, slot=7)
+        self.assertEqual(slot, 7)
+        self.assertEqual(self.project.instruments[7].associated_eq, 7)
+        self.assertEqual(self.project.eqs[7].mid.level, 0x22)
+        # The file object is left untouched.
+        self.assertEqual(self.file.instrument.associated_eq, 40)
+
+    def test_import_without_empty_slot_raises(self):
+        for i in range(len(self.project.instruments)):
+            self.project.instruments[i] = M8Wavsynth(name="X")
+        with self.assertRaises(ValueError):
+            self.project.import_instrument(self.file)
+
+    def test_import_slot_out_of_range_raises(self):
+        with self.assertRaises(IndexError):
+            self.project.import_instrument(self.file, slot=128)
+
+    def test_export_then_import_round_trips(self):
+        self.file.eq = M8Eq()
+        self.file.eq.low.level = 0x33
+        self.project.import_instrument(self.file, slot=3)
+
+        exported = self.project.export_instrument(3)
+        self.assertEqual(exported.eq.low.level, 0x33)
+        self.assertEqual(exported.instrument.associated_eq, 3)
+
+        other = M8Project.initialise()
+        other.import_instrument(M8InstrumentFile.read(exported.write()), slot=9)
+        self.assertEqual(other.instruments[9].name, "METRONOME")
+        self.assertEqual(other.tables[9].write(), self.file.table.write())
+        self.assertEqual(other.eqs[9].low.level, 0x33)
+
+    def test_export_without_eq(self):
+        self.project.import_instrument(self.file, slot=2)
+        self.assertIsNone(self.project.export_instrument(2).eq)
+
+    def test_export_empty_slot_raises(self):
+        with self.assertRaises(ValueError):
+            self.project.export_instrument(50)
 
 
 if __name__ == "__main__":
