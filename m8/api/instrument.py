@@ -12,7 +12,7 @@ from enum import IntEnum
 
 from m8.api import M8Block
 from m8.api.eq import NO_EQ
-from m8.api.fields import ByteField, StringField, iter_fields
+from m8.api.fields import ByteField, StringField, iter_fields, repr_value
 from m8.api.modulator import M8Modulators
 from m8.api.version import M8Version
 
@@ -137,6 +137,15 @@ class M8Instrument:
         instance.modulators = M8Modulators.read(data[MODULATORS_OFFSET:])
         return instance
 
+    def __repr__(self):
+        """Every parameter, then the modulators with destinations named.
+        Long for big instruments — it's meant to show everything."""
+        parts = [repr(self.name)]
+        parts += [f"{n}={repr_value(getattr(self, n))}" for n, _ in iter_fields(type(self)) if n != "name"]
+        mods = ", ".join(m.repr_with(self.MOD_DEST_ENUM_CLASS) for m in self.modulators)
+        parts.append(f"modulators=[{mods}]")
+        return f"{type(self).__name__}({', '.join(parts)})"
+
     def to_dict(self):
         """Serialize to a name-keyed dict suitable for YAML/JSON.
 
@@ -203,6 +212,14 @@ class M8Instrument:
         return instance
 
 
+def _label(instrument):
+    """The instrument's name, or for an unnamed sampler its sample's file name."""
+    if instrument.name:
+        return instrument.name
+    path = getattr(instrument, "sample_path", "")
+    return path.rsplit("/", 1)[-1] if path else ""
+
+
 class M8Instruments(list):
     """The 128-slot instrument collection inside a project."""
 
@@ -215,6 +232,12 @@ class M8Instruments(list):
         block = M8Block()
         block.data = bytearray([0xFF] + [0] * (BLOCK_SIZE - 1))
         return block
+
+    def __repr__(self):
+        used = [f"{i}: {type(x).__name__[2:]} {_label(x)!r}" for i, x in enumerate(self) if self.is_concrete(i)]
+        if not used:
+            return f"M8Instruments(none used of {len(self)})"
+        return f"M8Instruments({len(used)} used of {len(self)}: " + ", ".join(used) + ")"
 
     def __init__(self, items=None):
         super().__init__()

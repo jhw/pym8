@@ -455,5 +455,38 @@ class TestPhraseValidation(unittest.TestCase):
         self.assertIn("Too many phrases", str(ctx.exception))
 
 
+
+class TestPhraseToDictAndRepr(unittest.TestCase):
+    def _phrase(self):
+        ph = M8Phrase()
+        ph[4] = M8PhraseStep(note=M8Note.C_4, velocity=0x6F, instrument=2)
+        ph[4].fx[1] = M8FXTuple(key=M8SequenceFX.TBL, value=0x03)
+        return ph
+
+    def test_note_reads_as_enum(self):
+        self.assertIs(self._phrase()[4].note, M8Note.C_4)
+
+    def test_step_to_dict(self):
+        d = self._phrase()[4].to_dict()
+        self.assertEqual(d["note"], "C_4")
+        self.assertEqual(d["fx"][1], {"key": int(M8SequenceFX.TBL), "value": 3})
+
+    def test_round_trip(self):
+        ph = self._phrase()
+        self.assertEqual(M8Phrase.from_dict(ph.to_dict()).write(), ph.write())
+
+    def test_repr_shows_only_used_steps_and_fx(self):
+        self.assertEqual(
+            repr(self._phrase()),
+            "M8Phrase({4: M8PhraseStep(note=C_4, velocity=0x6F, instrument=0x02, fx=[--, 0x14:03, --])})",
+        )
+        self.assertEqual(repr(M8Phrase()), "M8Phrase(empty)")
+
+    def test_phrases_repr_lists_used_slots(self):
+        phrases = M8Phrases()
+        for i in (0, 1, 2, 9):
+            phrases[i] = self._phrase()
+        self.assertEqual(repr(phrases), "M8Phrases(4 used of 255: 0-2, 9)")
+
 if __name__ == '__main__':
     unittest.main()

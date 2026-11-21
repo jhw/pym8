@@ -12,7 +12,7 @@ in place — different types reinterpret bytes 2-5 differently.
 
 from enum import IntEnum
 
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import ByteField, iter_fields, repr_value
 
 
 MODULATOR_BLOCK_SIZE = 6
@@ -125,6 +125,22 @@ class M8Modulator:
         instance = cls.__new__(cls)
         instance._data = bytearray(data[:BLOCK_SIZE])
         return instance
+
+    def repr_with(self, dest_enum_class=None):
+        """repr with the destination named by the owning instrument's
+        destination enum (each instrument type has its own)."""
+        destination = self.destination
+        if dest_enum_class is not None:
+            try:
+                destination = dest_enum_class(destination)
+            except ValueError:
+                pass
+        parts = [f"destination={repr_value(destination)}", f"amount={repr_value(self.amount)}"]
+        parts += [f"{n}={repr_value(getattr(self, n))}" for n, _ in iter_fields(type(self)) if n != "amount"]
+        return f"{type(self).__name__}({', '.join(parts)})"
+
+    def __repr__(self):
+        return self.repr_with()
 
     def to_dict(self, dest_enum_class=None):
         destination = self.destination

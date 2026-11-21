@@ -1,6 +1,6 @@
 from enum import IntEnum
 from m8.api import M8Block
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import ByteField, M8Record, iter_fields, repr_slots, repr_steps
 from m8.api.fx import M8FXTuples, M8FXTuple
 
 # Generate note enum dynamically using functional API
@@ -52,7 +52,7 @@ STEP_BLOCK_SIZE = PHRASE_STEP_SIZE
 STEP_COUNT = PHRASE_STEP_COUNT
 PHRASE_COUNT = PHRASES_COUNT
 
-class M8PhraseStep:
+class M8PhraseStep(M8Record):
     """Step in an M8 phrase with note, velocity, instrument reference, and up to three effects.
 
     `fx` is a separate M8FXTuples attribute merged into the byte buffer at
@@ -61,7 +61,7 @@ class M8PhraseStep:
 
     BASE_BYTES = BASE_DATA_SIZE
 
-    note       = ByteField(NOTE_OFFSET, default=EMPTY_NOTE)
+    note       = ByteField(NOTE_OFFSET, default=EMPTY_NOTE, enum=M8Note)
     velocity   = ByteField(VELOCITY_OFFSET, default=EMPTY_VELOCITY)
     instrument = ByteField(INSTRUMENT_OFFSET, default=EMPTY_INSTRUMENT)
 
@@ -90,6 +90,22 @@ class M8PhraseStep:
         buffer = bytearray(self._data)
         buffer.extend(self.fx.write())
         return bytes(buffer)
+
+    def to_dict(self):
+        d = super().to_dict()
+        d["fx"] = self.fx.to_dict()
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        instance = super().from_dict(d)
+        if "fx" in d:
+            instance.fx = M8FXTuples.from_dict(d["fx"])
+        return instance
+
+    def _repr_fields(self):
+        fields = super()._repr_fields()
+        return fields + [("fx", self.fx)] if not self.fx.is_empty() else fields
 
     def off(self):
         """Set this step to OFF note, clearing all other fields."""
@@ -178,6 +194,19 @@ class M8Phrase(list):
     def is_empty(self):
         return all(step.is_empty() for step in self)
 
+    def to_dict(self):
+        return [step.to_dict() for step in self]
+
+    @classmethod
+    def from_dict(cls, items):
+        instance = cls()
+        for i, d in enumerate(items[:STEP_COUNT]):
+            instance[i] = M8PhraseStep.from_dict(d)
+        return instance
+
+    def __repr__(self):
+        return repr_steps(self)
+
     def validate(self, phrase_index=None):
         """Validate the phrase.
 
@@ -197,6 +226,9 @@ class M8Phrase(list):
 class M8Phrases(list):
     """Collection of up to 255 phrases that make up a complete M8 project."""
     
+    def __repr__(self):
+        return repr_slots(self, (i for i, ph in enumerate(self) if not ph.is_empty()))
+
     def __init__(self):
         super().__init__()
         # Initialize with empty phrases

@@ -31,7 +31,7 @@ writes `NO_EQ` (0x80) for that.
 
 from enum import IntEnum
 
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import ByteField, iter_fields, repr_slots
 
 
 EQ_BAND_BYTES = 6
@@ -246,6 +246,9 @@ class M8Eq:
             return NotImplemented
         return self.low == other.low and self.mid == other.mid and self.high == other.high
 
+    def __repr__(self):
+        return f"M8Eq(low={self.low!r}, mid={self.mid!r}, high={self.high!r})"
+
     def is_default(self):
         """True if every band still matches the firmware defaults."""
         return (self.low == _default_low_band()
@@ -277,6 +280,9 @@ class M8Eqs(list):
 
     COUNT = EQ_COUNT
     TOTAL_BYTES = EQ_COUNT * EQ_BYTES
+
+    def __repr__(self):
+        return repr_slots(self, (i for i, e in enumerate(self) if not e.is_default()))
 
     def __init__(self):
         super().__init__()

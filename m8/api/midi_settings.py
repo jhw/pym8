@@ -11,14 +11,14 @@ provide list-like accessors for ergonomic indexing without exposing 16
 discrete `track_input_channel_N` descriptors.
 """
 
-from m8.api.fields import ByteField, IndexedBytesField, iter_fields
+from m8.api.fields import M8Record, ByteField, IndexedBytesField, iter_fields
 
 
 MIDI_SETTINGS_BYTES = 27
 N_TRACKS = 8
 
 
-class M8MidiSettings:
+class M8MidiSettings(M8Record):
     """MIDI sync, transport, and per-track input routing.
 
     Boolean fields are stored as raw bytes (0 / non-zero). Convenience:
@@ -64,15 +64,3 @@ class M8MidiSettings:
         instance._data = bytearray(self._data)
         return instance
 
-    def to_dict(self):
-        return {name: fld.to_dict(self) for name, fld in iter_fields(type(self))}
-
-    @classmethod
-    def from_dict(cls, d):
-        instance = cls()
-        fields_by_name = {name: fld for name, fld in iter_fields(cls)}
-        for key, value in d.items():
-            fld = fields_by_name.get(key)
-            if fld is not None:
-                fld.from_dict(instance, value)
-        return instance

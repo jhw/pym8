@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import ByteField, M8Record, iter_fields
 
 # FX configuration
 FX_BLOCK_SIZE = 2
@@ -300,7 +300,7 @@ class M8MixerFX(IntEnum):
     MTT = 0x4D  # Master tempo
 
 
-class M8FXTuple:
+class M8FXTuple(M8Record):
     """Key-value pair for M8 effects with key (effect type) and value (effect parameter).
 
     `key` has no `enum=` binding — the byte's meaning depends on which
@@ -333,6 +333,9 @@ class M8FXTuple:
         instance = self.__class__.__new__(self.__class__)
         instance._data = bytearray(self._data)
         return instance
+
+    def is_empty(self):
+        return self.key == EMPTY_KEY
 
 
 class M8FXTuples(list):
@@ -376,3 +379,21 @@ class M8FXTuples(list):
             tuple_data = fx_tuple.write()
             result.extend(tuple_data)
         return bytes(result)
+
+    def is_empty(self):
+        return all(t.is_empty() for t in self)
+
+    def to_dict(self):
+        return [t.to_dict() for t in self]
+
+    @classmethod
+    def from_dict(cls, items):
+        instance = cls()
+        for i, d in enumerate(items[:len(instance)]):
+            instance[i] = M8FXTuple.from_dict(d)
+        return instance
+
+    def __repr__(self):
+        """Positional, e.g. [0x14:03, --, --] — the key's meaning depends on
+        the instrument, so it stays hex."""
+        return "[" + ", ".join("--" if t.is_empty() else f"0x{t.key:02X}:{t.value:02X}" for t in self) + "]"

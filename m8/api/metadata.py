@@ -8,7 +8,7 @@ project name. The musical `key` byte is NOT here (it lives at file byte
 """
 import struct
 
-from m8.api.fields import ByteField, StringField
+from m8.api.fields import ByteField, M8Record, StringField
 
 
 METADATA_OFFSET = 14
@@ -32,7 +32,7 @@ DEFAULT_QUANTIZE = 0
 DEFAULT_NAME = 'HELLO'
 
 
-class M8Metadata:
+class M8Metadata(M8Record):
     """Project metadata: directory, transpose, tempo, quantize, name.
 
     Backed by a raw 146-byte buffer (`_data`), same pattern as instruments
@@ -65,6 +65,21 @@ class M8Metadata:
         self.tempo = tempo
         self.quantize = quantize
         self.name = name
+
+    def to_dict(self):
+        d = super().to_dict()
+        d["tempo"] = self.tempo
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        instance = super().from_dict(d)
+        if "tempo" in d:
+            instance.tempo = d["tempo"]
+        return instance
+
+    def _repr_fields(self):
+        return super()._repr_fields() + [("tempo", self.tempo)]
 
     @property
     def tempo(self):

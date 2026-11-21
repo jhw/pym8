@@ -18,12 +18,12 @@ the metadata reader. Tracked in docs/planning/roadmap.md.
 
 from enum import IntEnum
 
-from m8.api.fields import ByteField, IndexedBytesField, iter_fields
+from m8.api.fields import M8Record, ByteField, IndexedBytesField, iter_fields
 
 
 # ---- mixer ----
 
-class M8MixerSettings:
+class M8MixerSettings(M8Record):
     """Project-level mixer state.
 
     Lives at file offset 206. 32 bytes in firmware 6.2+. The Rust source
@@ -100,19 +100,6 @@ class M8MixerSettings:
         instance._data = bytearray(self._data)
         return instance
 
-    def to_dict(self):
-        return {name: fld.to_dict(self) for name, fld in iter_fields(type(self))}
-
-    @classmethod
-    def from_dict(cls, d):
-        instance = cls()
-        fields_by_name = {name: fld for name, fld in iter_fields(cls)}
-        for key, value in d.items():
-            fld = fields_by_name.get(key)
-            if fld is not None:
-                fld.from_dict(instance, value)
-        return instance
-
 
 # ---- effects ----
 
@@ -124,7 +111,7 @@ class M8MfxKind(IntEnum):
     COMB = 3
 
 
-class M8EffectsSettings:
+class M8EffectsSettings(M8Record):
     """Project-level chorus/delay/reverb knob state.
 
     Lives at file offset 107969. 26 bytes in firmware 6.2+. The Rust source
@@ -187,15 +174,3 @@ class M8EffectsSettings:
         instance._data = bytearray(self._data)
         return instance
 
-    def to_dict(self):
-        return {name: fld.to_dict(self) for name, fld in iter_fields(type(self))}
-
-    @classmethod
-    def from_dict(cls, d):
-        instance = cls()
-        fields_by_name = {name: fld for name, fld in iter_fields(cls)}
-        for key, value in d.items():
-            fld = fields_by_name.get(key)
-            if fld is not None:
-                fld.from_dict(instance, value)
-        return instance

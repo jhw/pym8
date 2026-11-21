@@ -18,10 +18,16 @@ hands it to M8Grooves; each groove exposes it as `ppqn`.
 
 from enum import IntEnum
 
+from m8.api.fields import index_ranges, repr_value
+
 GROOVE_STEPS = 16
 GROOVE_COUNT = 32
 GROOVE_BYTES = GROOVE_STEPS
 EMPTY_STEP = 0xFF
+
+
+# What the firmware puts in every groove of a new project.
+DEFAULT_STEPS = [6, 6]
 
 
 class M8GroovePPQN(IntEnum):
@@ -52,8 +58,11 @@ class M8Groove:
 
     @property
     def ppqn(self):
-        """Raw PPQN byte (an M8GroovePPQN value on well-formed files)."""
-        return self._ppqn
+        """M8GroovePPQN, or the raw byte if it isn't one."""
+        try:
+            return M8GroovePPQN(self._ppqn)
+        except ValueError:
+            return self._ppqn
 
     @ppqn.setter
     def ppqn(self, value):
@@ -116,6 +125,9 @@ class M8Groove:
             ppqn = self._ppqn
         return {"steps": list(self._data), "ppqn": ppqn}
 
+    def __repr__(self):
+        return f"M8Groove(steps={repr_value(self.active_steps())}, ppqn={repr_value(self.ppqn)})"
+
     @classmethod
     def from_dict(cls, d):
         ppqn = d.get("ppqn", M8GroovePPQN.PPQN_24)
@@ -130,6 +142,12 @@ class M8Grooves(list):
     COUNT = GROOVE_COUNT
     TOTAL_BYTES = GROOVE_COUNT * GROOVE_BYTES
     PPQN_BYTES = GROOVE_COUNT  # one byte per groove, stored separately
+
+    def __repr__(self):
+        changed = [i for i, g in enumerate(self) if g.active_steps() != DEFAULT_STEPS]
+        if not changed:
+            return f"M8Grooves(all {len(self)} at the default {repr_value(DEFAULT_STEPS)})"
+        return f"M8Grooves({len(changed)} changed from the default {repr_value(DEFAULT_STEPS)}: {index_ranges(changed)})"
 
     def __init__(self):
         super().__init__()

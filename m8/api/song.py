@@ -18,6 +18,8 @@ SONG_COL_COUNT = 8
 SONG_ROW_COUNT = 256
 
 # Constants
+from m8.api.fields import repr_slots
+
 EMPTY_CHAIN = 255
 
 # Module-level constants from config
@@ -79,6 +81,22 @@ class M8SongRow:
     def write(self):
         return bytes(self._data)
 
+    def is_empty(self):
+        return (all(self[c] == self.EMPTY_CHAIN for c in range(COL_COUNT))
+                and not self.bookmarks and not self.row_bookmark)
+
+    def to_dict(self):
+        return {"chains": list(self._data), "bookmarks": self.bookmarks, "row_bookmark": self.row_bookmark}
+
+    def __repr__(self):
+        cells = ", ".join("--" if c == self.EMPTY_CHAIN else f"0x{c:02X}" for c in self._data)
+        extra = ""
+        if self.bookmarks:
+            extra += f", bookmarks=0x{self.bookmarks:02X}"
+        if self.row_bookmark:
+            extra += f", row_bookmark=0x{self.row_bookmark:02X}"
+        return f"M8SongRow([{cells}]{extra})"
+
     def validate(self, row_index=None):
         """Validate the song row.
 
@@ -108,6 +126,9 @@ class M8SongMatrix(list):
         for _ in range(ROW_COUNT):
             self.append(M8SongRow())
     
+    def __repr__(self):
+        return repr_slots(self, (i for i, r in enumerate(self) if not r.is_empty()))
+
     @classmethod
     def read(cls, data, bookmarks=None, row_bookmarks=None):
         """`bookmarks` / `row_bookmarks` are the separate 256-byte blocks

@@ -19,14 +19,14 @@ The seven bytes:
   byte 6  max_value       high end of the scaling range
 """
 
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import M8Record, ByteField, iter_fields, repr_slots
 
 
 MIDI_MAPPING_BYTES = 7
 MIDI_MAPPING_COUNT = 128
 
 
-class M8MidiMapping:
+class M8MidiMapping(M8Record):
     """One MIDI controller → M8 parameter mapping. 7 bytes."""
 
     BYTES = MIDI_MAPPING_BYTES
@@ -64,19 +64,6 @@ class M8MidiMapping:
         instance._data = bytearray(self._data)
         return instance
 
-    def to_dict(self):
-        return {name: fld.to_dict(self) for name, fld in iter_fields(type(self))}
-
-    @classmethod
-    def from_dict(cls, d):
-        instance = cls()
-        fields_by_name = {name: fld for name, fld in iter_fields(cls)}
-        for key, value in d.items():
-            fld = fields_by_name.get(key)
-            if fld is not None:
-                fld.from_dict(instance, value)
-        return instance
-
 
 class M8MidiMappings(list):
     """128 MIDI controller mappings."""
@@ -110,6 +97,9 @@ class M8MidiMappings(list):
         for m in self:
             instance.append(m.clone())
         return instance
+
+    def __repr__(self):
+        return repr_slots(self, (i for i, m in enumerate(self) if not m.is_empty()))
 
     def to_dict(self):
         return [m.to_dict() for m in self]

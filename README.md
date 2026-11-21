@@ -67,6 +67,24 @@ for i, inst in enumerate(project.instruments):
         print(f"  {i:02X}: {type(inst).__name__} {inst.name!r}")
 ```
 
+## Inspecting a project
+
+Everything prints readably, and `to_dict()` turns the whole song into plain data:
+
+```python
+project = M8Project.read_from_file("SONG.m8s")
+project               # M8Project('SONG', firmware 6.6.2, tempo 168, 52 song rows, 68 chains, ...)
+project.phrases       # M8Phrases(148 used of 255: 0-61, 80-82, ...)
+project.phrases[0]    # M8Phrase({12: M8PhraseStep(note=C_4, velocity=0x64, instrument=0x08)})
+project.instruments   # M8Instruments(18 used of 128: 0: Sampler 'KICK.wav', ...)
+project.instruments[2].limit   # M8LimiterType.POSTAD — enum fields read as their enum
+
+import json
+json.dumps(project.to_dict())   # big collections list only the slots in use
+```
+
+Byte values print in hex, as on the M8's screen; enum values print by name.
+
 ## Instruments
 
 Parameters are exposed as typed descriptor attributes. Setting an out-of-range value raises `ValueError`; enum-typed fields accept either an enum member or a raw int.

@@ -2,7 +2,9 @@
 import unittest
 from enum import IntEnum
 
-from m8.api.fields import ByteField, BytesField, StringField, iter_fields
+from m8.api.fields import (
+    ByteField, BytesField, M8Record, StringField, index_ranges, iter_fields, repr_value,
+)
 
 
 class Mode(IntEnum):
@@ -176,6 +178,64 @@ class TestIterFields(unittest.TestCase):
         # Each name appears exactly once
         self.assertEqual(len(names), len(set(names)))
 
+
+
+class Rec(M8Record):
+    mode = ByteField(0, enum=Mode, default=Mode.A)
+    level = ByteField(1, default=0x40)
+    label = StringField(2, length=4, default="AB")
+
+    def __init__(self):
+        self._data = bytearray(6)
+        for _, fld in iter_fields(type(self)):
+            fld.apply_default(self)
+
+
+class TestEnumReads(unittest.TestCase):
+    def test_returns_member_when_known(self):
+        s = Sample()
+        s.mode = 2
+        self.assertIs(s.mode, Mode.B)
+        self.assertEqual(s.mode, 2)          # still an int
+
+    def test_returns_int_when_unknown(self):
+        s = Sample()
+        s._data[1] = 0x7F
+        self.assertEqual(s.mode, 0x7F)
+        self.assertNotIsInstance(s.mode, Mode)
+
+    def test_unbound_field_returns_int(self):
+        self.assertIs(type(Sample().cutoff), int)
+
+
+class TestM8Record(unittest.TestCase):
+    def test_to_dict_names_enums(self):
+        self.assertEqual(Rec().to_dict(), {"mode": "A", "level": 0x40, "label": "AB"})
+
+    def test_from_dict_round_trip(self):
+        r = Rec()
+        r.mode, r.level, r.label = Mode.B, 0x11, "XY"
+        back = Rec.from_dict(r.to_dict())
+        self.assertEqual(back._data, r._data)
+
+    def test_from_dict_ignores_unknown_keys(self):
+        self.assertEqual(Rec.from_dict({"nope": 1}).level, 0x40)
+
+    def test_repr(self):
+        self.assertEqual(repr(Rec()), "Rec(mode=A, level=0x40, label='AB')")
+
+
+class TestReprHelpers(unittest.TestCase):
+    def test_repr_value(self):
+        self.assertEqual(repr_value(Mode.B), "B")
+        self.assertEqual(repr_value(10), "0x0A")
+        self.assertEqual(repr_value(True), "True")
+        self.assertEqual(repr_value("x"), "'x'")
+        self.assertEqual(repr_value([1, Mode.A]), "[0x01, A]")
+
+    def test_index_ranges(self):
+        self.assertEqual(index_ranges([0, 1, 2, 5, 7, 8]), "0-2, 5, 7-8")
+        self.assertEqual(index_ranges([]), "")
 
 if __name__ == "__main__":
     unittest.main()

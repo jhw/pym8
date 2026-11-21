@@ -342,6 +342,46 @@ class M8Project:
             version=self.version.clone(),
         )
 
+    def to_dict(self):
+        """The whole project as plain data (JSON/YAML-ready).
+
+        Settings, grooves and scales are included in full. The big slot
+        collections — song rows, chains, phrases, instruments, tables, EQs,
+        MIDI mappings — list only slots in use, keyed by slot index.
+        """
+        def used(collection, in_use):
+            return {i: item.to_dict() for i, item in enumerate(collection) if in_use(i, item)}
+
+        return {
+            "version": str(self.version),
+            "metadata": self.metadata.to_dict(),
+            "key": self.key,
+            "song": used(self.song, lambda i, r: not r.is_empty()),
+            "chains": used(self.chains, lambda i, c: not c.is_empty()),
+            "phrases": used(self.phrases, lambda i, ph: not ph.is_empty()),
+            "instruments": used(self.instruments, lambda i, x: self.instruments.is_concrete(i)),
+            "tables": used(self.tables, lambda i, t: not t.is_empty()),
+            "eqs": used(self.eqs, lambda i, e: not e.is_default()),
+            "grooves": self.grooves.to_dict(),
+            "scales": self.scales.to_dict(),
+            "mixer": self.mixer.to_dict(),
+            "effects": self.effects.to_dict(),
+            "midi": self.midi.to_dict(),
+            "midi_mappings": used(self.midi_mappings, lambda i, m: not m.is_empty()),
+        }
+
+    def __repr__(self):
+        def count(collection, in_use):
+            return sum(1 for i, item in enumerate(collection) if in_use(i, item))
+        return (
+            f"M8Project({self.metadata.name!r}, firmware {self.version}, tempo {self.metadata.tempo:g}, "
+            f"{count(self.song, lambda i, r: not r.is_empty())} song rows, "
+            f"{count(self.chains, lambda i, c: not c.is_empty())} chains, "
+            f"{count(self.phrases, lambda i, ph: not ph.is_empty())} phrases, "
+            f"{count(self.instruments, lambda i, x: self.instruments.is_concrete(i))} instruments, "
+            f"{count(self.tables, lambda i, t: not t.is_empty())} tables)"
+        )
+
     def check_references(self):
         """Find references that point at empty or out-of-range slots.
 

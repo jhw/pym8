@@ -360,5 +360,50 @@ class TestImportExportInstrument(unittest.TestCase):
             self.project.export_instrument(50)
 
 
+
+class TestProjectToDictAndRepr(unittest.TestCase):
+    def setUp(self):
+        from m8.api.chain import M8ChainStep
+        from m8.api.phrase import M8PhraseStep, M8Note
+        self.project = M8Project.initialise()
+        self.project.metadata.name = "DICT"
+        self.project.instruments[0] = M8Sampler(name="KICK")
+        self.project.phrases[3][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x6F, instrument=0)
+        self.project.chains[5][0] = M8ChainStep(phrase=3)
+        self.project.song[0][0] = 5
+
+    def test_to_dict_lists_only_used_slots(self):
+        d = self.project.to_dict()
+        self.assertEqual(list(d["phrases"]), [3])
+        self.assertEqual(list(d["chains"]), [5])
+        self.assertEqual(list(d["instruments"]), [0])
+        self.assertEqual(d["instruments"][0]["name"], "KICK")
+        self.assertEqual(d["song"][0]["chains"][0], 5)
+        self.assertEqual(len(d["grooves"]), 32)
+
+    def test_to_dict_is_json_ready(self):
+        import json
+        json.dumps(self.project.to_dict())
+
+    def test_repr_summarises(self):
+        self.assertEqual(
+            repr(self.project),
+            "M8Project('DICT', firmware 6.6.2, tempo 120, 1 song rows, 1 chains, 1 phrases, 1 instruments, 0 tables)",
+        )
+
+    def test_no_default_object_reprs(self):
+        """Everything reachable from a project prints as something readable."""
+        p = self.project
+        objects = [p, p.metadata, p.song, p.song[0], p.chains, p.chains[5], p.chains[5][0],
+                   p.phrases, p.phrases[3], p.phrases[3][0], p.phrases[3][0].fx, p.phrases[3][0].fx[0],
+                   p.instruments, p.instruments[0], p.instruments[0].modulators[0],
+                   p.tables, p.tables[0], p.tables[0][0], p.grooves, p.grooves[0], p.scales, p.scales[0],
+                   p.eqs, p.eqs[0], p.eqs[0].low, p.mixer, p.effects, p.midi, p.midi_mappings[0],
+                   p.export_instrument(0)]
+        for obj in objects:
+            with self.subTest(type(obj).__name__):
+                self.assertNotIn(" object at 0x", repr(obj))
+
+
 if __name__ == "__main__":
     unittest.main()

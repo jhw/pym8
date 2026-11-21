@@ -20,6 +20,7 @@ The 12 notes index from C (note 0) to B (note 11).
 import struct
 
 from m8.api import _read_fixed_string, _write_fixed_string
+from m8.api.fields import repr_value
 
 
 SCALE_BYTES = 46
@@ -111,6 +112,15 @@ class M8Scale:
 
     # --- serialization ---
 
+    def __repr__(self):
+        """Enabled notes with their offsets, e.g. M8Scale('MAJOR', C=+0.00, D=+0.00, ...)."""
+        notes = []
+        for i, note in enumerate(NOTE_NAMES):
+            if self.is_note_enabled(i):
+                semitones, cents = self.get_note_offset(i)
+                notes.append(f"{note}=+{semitones}.{cents:02d}")
+        return f"M8Scale({self.name!r}, " + ", ".join(notes) + ")"
+
     @classmethod
     def read(cls, data):
         instance = cls.__new__(cls)
@@ -163,6 +173,9 @@ class M8Scales(list):
 
     COUNT = SCALE_COUNT
     TOTAL_BYTES = SCALE_COUNT * SCALE_BYTES
+
+    def __repr__(self):
+        return "M8Scales(" + ", ".join(repr(s.name) for s in self) + ")"
 
     def __init__(self):
         super().__init__()

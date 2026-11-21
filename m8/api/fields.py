@@ -11,13 +11,20 @@ unchanged, which is what makes the format-faithful read/write work even when
 pym8 doesn't yet model every byte.
 """
 
+from enum import IntEnum
+
 from m8.api import _read_fixed_string, _write_fixed_string
 
 
 class ByteField:
-    """Single unsigned byte at a fixed offset."""
+    """Single unsigned byte at a fixed offset.
 
-    __slots__ = ("offset", "default", "enum", "min", "max", "name")
+    With `enum=`, reads return the enum member when the byte is one of its
+    values (an IntEnum, so it still compares and computes as an int) and
+    the plain int otherwise.
+    """
+
+    __slots__ = ("offset", "default", "enum", "min", "max", "name", "_members")
 
     def __init__(self, offset, default=0, enum=None, min=0, max=255):
         self.offset = offset
@@ -26,6 +33,7 @@ class ByteField:
         self.min = min
         self.max = max
         self.name = None
+        self._members = {int(m): m for m in enum} if enum is not None else None
 
     def __set_name__(self, owner, name):
         self.name = name
@@ -33,7 +41,10 @@ class ByteField:
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
-        return obj._data[self.offset]
+        value = obj._data[self.offset]
+        if self._members is not None:
+            return self._members.get(value, value)
+        return value
 
     def __set__(self, obj, value):
         if hasattr(value, "value"):
@@ -234,6 +245,88 @@ class IndexedBytesField:
 
 
 _FIELD_TYPES = (ByteField, StringField, BytesField, IndexedBytesField)
+
+
+def repr_value(value):
+    """Format a field value for __repr__: enum members by name, bytes in
+    hex (as the M8 screen shows them), strings quoted, sequences
+    element-wise."""
+    if isinstance(value, IntEnum):
+        return value.name
+    if isinstance(value, bool):
+        return repr(value)
+    if isinstance(value, int):
+        return f"0x{value:02X}"
+    if isinstance(value, str):
+        return repr(value)
+    if type(value) in (list, tuple, _IndexedByteView):   # not subclasses with their own repr
+        return "[" + ", ".join(repr_value(v) for v in value) + "]"
+    return repr(value)
+
+
+def index_ranges(indices):
+    """[0, 1, 2, 5, 7, 8] -> '0-2, 5, 7-8'."""
+    out, start, prev = [], None, None
+    for i in indices:
+        if start is None:
+            start = prev = i
+        elif i == prev + 1:
+            prev = i
+        else:
+            out.append(f"{start}-{prev}" if prev > start else f"{start}")
+            start = prev = i
+    if start is not None:
+        out.append(f"{start}-{prev}" if prev > start else f"{start}")
+    return ", ".join(out)
+
+
+def repr_steps(steps):
+    """Repr for a fixed run of steps (phrase, chain, table): only the
+    non-empty steps, keyed by step index."""
+    filled = [(i, s) for i, s in enumerate(steps) if not s.is_empty()]
+    if not filled:
+        return f"{type(steps).__name__}(empty)"
+    inner = ", ".join(f"{i}: {s!r}" for i, s in filled)
+    return f"{type(steps).__name__}({{{inner}}})"
+
+
+def repr_slots(collection, used):
+    """Repr for a big slot collection (phrases, chains, ...): which slots
+    are in use, not their contents — index into it to see one."""
+    used = list(used)
+    if not used:
+        return f"{type(collection).__name__}(none used of {len(collection)})"
+    return f"{type(collection).__name__}({len(used)} used of {len(collection)}: {index_ranges(used)})"
+
+
+class M8Record:
+    """Generic to_dict / from_dict / __repr__ for a descriptor-backed record.
+
+    Every field declared on the class (and its bases) is included. Classes
+    with structure beyond their descriptors (sub-records, properties)
+    extend these rather than replacing them.
+    """
+
+    def to_dict(self):
+        return {name: fld.to_dict(self) for name, fld in iter_fields(type(self))}
+
+    @classmethod
+    def from_dict(cls, d):
+        """Build from a to_dict() dict. Unknown keys are ignored."""
+        instance = cls()
+        fields_by_name = dict(iter_fields(cls))
+        for key, value in d.items():
+            fld = fields_by_name.get(key)
+            if fld is not None:
+                fld.from_dict(instance, value)
+        return instance
+
+    def _repr_fields(self):
+        return [(name, getattr(self, name)) for name, _ in iter_fields(type(self))]
+
+    def __repr__(self):
+        parts = ", ".join(f"{n}={repr_value(v)}" for n, v in self._repr_fields())
+        return f"{type(self).__name__}({parts})"
 
 
 def iter_fields(cls):

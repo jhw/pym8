@@ -404,5 +404,13 @@ class TestChainValidation(unittest.TestCase):
         self.assertIn("Too many chains", str(ctx.exception))
 
 
+
+class TestChainToDictAndRepr(unittest.TestCase):
+    def test_round_trip_and_repr(self):
+        chain = M8Chain()
+        chain[0] = M8ChainStep(phrase=0x10, transpose=0x0C)
+        self.assertEqual(M8Chain.from_dict(chain.to_dict()).write(), chain.write())
+        self.assertEqual(repr(chain), "M8Chain({0: M8ChainStep(phrase=0x10, transpose=0x0C)})")
+
 if __name__ == '__main__':
     unittest.main()

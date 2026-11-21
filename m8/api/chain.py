@@ -1,4 +1,4 @@
-from m8.api.fields import ByteField, iter_fields
+from m8.api.fields import ByteField, M8Record, iter_fields, repr_slots, repr_steps
 
 # Chains configuration
 CHAINS_OFFSET = 39518
@@ -20,7 +20,7 @@ STEP_BLOCK_SIZE = CHAIN_STEP_SIZE
 STEP_COUNT = CHAIN_STEP_COUNT
 CHAIN_COUNT = CHAINS_COUNT
 
-class M8ChainStep:
+class M8ChainStep(M8Record):
     """Represents a single step in an M8 chain that references a phrase with transposition."""
 
     BYTES = STEP_BLOCK_SIZE
@@ -108,6 +108,19 @@ class M8Chain(list):
     def is_empty(self):
         return all(step.is_empty() for step in self)
 
+    def to_dict(self):
+        return [step.to_dict() for step in self]
+
+    @classmethod
+    def from_dict(cls, items):
+        instance = cls()
+        for i, d in enumerate(items[:STEP_COUNT]):
+            instance[i] = M8ChainStep.from_dict(d)
+        return instance
+
+    def __repr__(self):
+        return repr_steps(self)
+
     def validate(self, chain_index=None):
         """Validate the chain.
 
@@ -127,6 +140,9 @@ class M8Chain(list):
 class M8Chains(list):
     """Collection of up to 255 chains for song composition in the M8 tracker."""
     
+    def __repr__(self):
+        return repr_slots(self, (i for i, c in enumerate(self) if not c.is_empty()))
+
     def __init__(self):
         super().__init__()
         # Initialize with empty chains

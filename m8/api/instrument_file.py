@@ -53,6 +53,11 @@ class M8InstrumentFile:
         self.eq = eq
         self.version = version if version is not None else M8Version()
 
+    def __repr__(self):
+        eq = "with EQ" if self.eq is not None else "no EQ"
+        table = "empty table" if self.table.is_empty() else "table"
+        return f"M8InstrumentFile({type(self.instrument).__name__} {self.instrument.name!r}, firmware {self.version}, {table}, {eq})"
+
     @classmethod
     def read(cls, data):
         # Eagerly import every subclass so the registry is populated.

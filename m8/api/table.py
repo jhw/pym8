@@ -22,6 +22,7 @@ EQ (via EQ-class). When the remapper lands, it'll need to walk every
 step's three FX slots and rewrite those reference values.
 """
 
+from m8.api.fields import ByteField, M8Record, iter_fields, repr_slots, repr_steps
 from m8.api.fx import M8FXTuples
 
 
@@ -36,34 +37,26 @@ EMPTY_VELOCITY = 0xFF
 DEFAULT_TRANSPOSE = 0
 
 
-class M8TableStep:
-    """One step in a table: transpose + velocity + 3 FX slots."""
+class M8TableStep(M8Record):
+    """One step in a table: transpose + velocity + 3 FX slots.
+
+    `fx` is a separate M8FXTuples attribute merged into the byte buffer at
+    write time, as on M8PhraseStep.
+    """
 
     BYTES = TABLE_STEP_BYTES
+    BASE_BYTES = 2
 
-    def __init__(self, transpose=DEFAULT_TRANSPOSE, velocity=EMPTY_VELOCITY):
-        self._data = bytearray([transpose & 0xFF, velocity & 0xFF])
+    transpose = ByteField(0, default=DEFAULT_TRANSPOSE)
+    velocity  = ByteField(1, default=EMPTY_VELOCITY)
+
+    def __init__(self, **kwargs):
+        self._data = bytearray(self.BASE_BYTES)
+        for _, fld in iter_fields(type(self)):
+            fld.apply_default(self)
         self.fx = M8FXTuples()
-
-    @property
-    def transpose(self):
-        return self._data[0]
-
-    @transpose.setter
-    def transpose(self, value):
-        if hasattr(value, "value"):
-            value = value.value
-        self._data[0] = int(value) & 0xFF
-
-    @property
-    def velocity(self):
-        return self._data[1]
-
-    @velocity.setter
-    def velocity(self, value):
-        if hasattr(value, "value"):
-            value = value.value
-        self._data[1] = int(value) & 0xFF
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def is_empty(self):
         """Match Rust's `is_empty`: default transpose, default velocity, no FX."""
@@ -75,9 +68,9 @@ class M8TableStep:
 
     @classmethod
     def read(cls, data):
-        instance = cls()
-        instance._data = bytearray(data[:2])
-        instance.fx = M8FXTuples.read(data[2:cls.BYTES])
+        instance = cls.__new__(cls)
+        instance._data = bytearray(data[:cls.BASE_BYTES])
+        instance.fx = M8FXTuples.read(data[cls.BASE_BYTES:cls.BYTES])
         return instance
 
     def write(self):
@@ -90,22 +83,20 @@ class M8TableStep:
         return instance
 
     def to_dict(self):
-        return {
-            "transpose": self.transpose,
-            "velocity": self.velocity,
-            "fx": [{"key": tup.key, "value": tup.value} for tup in self.fx],
-        }
+        d = super().to_dict()
+        d["fx"] = self.fx.to_dict()
+        return d
 
     @classmethod
     def from_dict(cls, d):
-        instance = cls(
-            transpose=d.get("transpose", DEFAULT_TRANSPOSE),
-            velocity=d.get("velocity", EMPTY_VELOCITY),
-        )
-        for i, fx_d in enumerate(d.get("fx", [])[:len(instance.fx)]):
-            instance.fx[i].key = fx_d.get("key", 0xFF)
-            instance.fx[i].value = fx_d.get("value", 0)
+        instance = super().from_dict(d)
+        if "fx" in d:
+            instance.fx = M8FXTuples.from_dict(d["fx"])
         return instance
+
+    def _repr_fields(self):
+        fields = super()._repr_fields()
+        return fields + [("fx", self.fx)] if not self.fx.is_empty() else fields
 
 
 class M8Table(list):
@@ -118,6 +109,9 @@ class M8Table(list):
         super().__init__()
         for _ in range(self.COUNT):
             self.append(M8TableStep())
+
+    def __repr__(self):
+        return repr_steps(self)
 
     @classmethod
     def read(cls, data):
@@ -165,6 +159,9 @@ class M8Tables(list):
         super().__init__()
         for _ in range(self.COUNT):
             self.append(M8Table())
+
+    def __repr__(self):
+        return repr_slots(self, (i for i, t in enumerate(self) if not t.is_empty()))
 
     @classmethod
     def read(cls, data, version=None):
