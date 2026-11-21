@@ -174,6 +174,29 @@ The six modulator classes:
 - `M8TrigModulator` — Attack / Hold / Decay / Source
 - `M8TrackingModulator` — Source / Low / High values
 
+## Instrument files (`.m8i`)
+
+An `.m8i` export holds one instrument plus its table and, if the instrument had one assigned, its EQ. `M8InstrumentFile` reads and writes all three; placing them into a project is up to you.
+
+```python
+from m8.api.instrument_file import M8InstrumentFile
+
+f = M8InstrumentFile.read_from_file("/Volumes/M8/Instruments/Drums/KICK.m8i")
+f.instrument      # M8FMSynth / M8Sampler / ... — same class as in a project
+f.table           # M8Table — the instrument's own table
+f.eq              # M8Eq, or None
+
+project.instruments[5] = f.instrument
+project.tables[5] = f.table          # instrument N owns table N
+if f.eq is not None:
+    project.eqs[5] = f.eq
+    f.instrument.associated_eq = 5
+
+M8InstrumentFile(M8Wavsynth(name="LEAD")).write_to_file("LEAD.m8i")
+```
+
+Files from firmware before 3.0 use an older untyped modulator layout. They're converted on read but can't be written back.
+
 ## EQ
 
 Every project ships 132 EQ slots (1 global + 3 effect-section + 128 per-instrument). Each EQ has three bands (low / mid / high), each band has a filter type, stereo processing mode, frequency, gain, and Q:
@@ -418,6 +441,7 @@ m8/
 ├── api/
 │   ├── project.py        # M8Project — top-level container
 │   ├── instrument.py     # M8Instrument base + M8Instruments collection
+│   ├── instrument_file.py # M8InstrumentFile — .m8i read/write (instrument + table + EQ)
 │   ├── fields.py         # ByteField / BytesField / StringField descriptors
 │   ├── modulator.py      # 6 modulator subclasses + M8Modulators
 │   ├── eq.py             # M8EqBand / M8Eq / M8Eqs (3-band parametric)

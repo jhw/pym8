@@ -25,7 +25,7 @@ Instrument types:
     2 = Sampler
     3 = MIDIOut
     4 = FM Synth
-    5 = HyperSynth (not yet supported)
+    5 = HyperSynth
     6 = External
 """
 
@@ -37,7 +37,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from m8.api.instrument import M8Instrument
+from m8.api.instrument_file import M8InstrumentFile
 import yaml
 
 
@@ -54,7 +54,7 @@ def extract_instrument_to_yaml(m8i_path, output_dir, instrument_type_filter=None
     """
     try:
         # Read the instrument
-        instrument = M8Instrument.read_from_file(m8i_path)
+        instrument = M8InstrumentFile.read_from_file(m8i_path).instrument
 
         # Check type filter
         if instrument_type_filter is not None:

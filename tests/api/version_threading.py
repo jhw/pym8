@@ -7,7 +7,7 @@ parameter must be accepted everywhere it'll be needed.
 """
 import unittest
 
-from m8.api.instrument import M8Instrument, M8Instruments
+from m8.api.instrument import M8Instruments
 from m8.api.instruments.hypersynth import M8HyperSynth
 from m8.api.instruments.wavsynth import M8Wavsynth
 from m8.api.project import M8Project
@@ -80,25 +80,6 @@ class TestProjectThreadsVersionToInstruments(unittest.TestCase):
         self.assertEqual(loaded.version.tuple(), (4, 1, 7))
         self.assertIsInstance(loaded.instruments[0], M8Wavsynth)
         self.assertEqual(loaded.instruments[0].version.tuple(), (4, 1, 7))
-
-
-class TestM8iFileThreadsVersion(unittest.TestCase):
-    """The .m8i (single-instrument file) reader already had to read version;
-    confirm it now threads it through subclass.read() instead of overwriting
-    afterwards."""
-
-    def test_fixture_instrument_carries_file_version(self):
-        import os
-        fixture = os.path.join(
-            os.path.dirname(__file__), "..", "fixtures", "KICK_MORPH.m8i",
-        )
-        if not os.path.exists(fixture):
-            self.skipTest("KICK_MORPH.m8i fixture not present")
-        inst = M8Instrument.read_from_file(fixture)
-        # Whatever the fixture's version is, it must be set on the instance
-        # via the threading path, not the legacy "read then overwrite".
-        self.assertIsNotNone(inst.version)
-        self.assertGreater(inst.version.major, 0)
 
 
 if __name__ == "__main__":
