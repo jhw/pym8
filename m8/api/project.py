@@ -17,6 +17,7 @@ from m8.api.version import M8Version
 # Reference: https://github.com/Twinside/m8-file-parser/blob/master/src/songs.rs
 
 VERSION_OFFSET = 10
+MIN_VERSION = (6, 0, 0)
 
 # MidiSettings starts immediately after metadata (file 14-159; contiguous
 # metadata block is 146 bytes ending at the project name).
@@ -100,6 +101,13 @@ class M8Project:
 
     @classmethod
     def read(cls, data):
+        if len(data) >= OFFSETS["version"] + 4:
+            version = M8Version.read(data[OFFSETS["version"]:])
+            if version < MIN_VERSION:
+                raise ValueError(
+                    f"Firmware {version} project: pym8 supports firmware "
+                    f"{'.'.join(map(str, MIN_VERSION))}+"
+                )
         if len(data) < cls.MIN_SIZE:
             raise ValueError(
                 f"Data too short to be a M8 project: {len(data)} bytes, "

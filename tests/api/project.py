@@ -14,6 +14,7 @@ from m8.api.instruments.fmsynth import M8FMSynth
 from m8.api.instruments.wavsynth import M8Wavsynth
 from m8.api.instrument_file import M8InstrumentFile
 from m8.api.eq import M8Eq, NO_EQ
+from m8.api.version import M8Version
 
 
 class TestM8Project(unittest.TestCase):
@@ -119,6 +120,14 @@ class TestProjectErrorHandling(unittest.TestCase):
         full = M8Project.initialise().write()
         with self.assertRaises(ValueError):
             M8Project.read(full[:M8Project.MIN_SIZE - 1])
+
+    def test_read_pre_6_0_names_firmware(self):
+        """A pre-6.0 song is shorter than MIN_SIZE too, but the error should
+        say it's old firmware, not that the file is truncated."""
+        data = bytearray(M8Project.initialise().write())
+        data[10:14] = M8Version(3, 0, 1).write()
+        with self.assertRaisesRegex(ValueError, r"Firmware 3\.0\.1 project"):
+            M8Project.read(bytes(data[:109854]))
 
     def test_read_empty_data_raises(self):
         with self.assertRaises(ValueError):

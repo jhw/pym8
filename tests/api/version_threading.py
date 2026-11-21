@@ -65,7 +65,7 @@ class TestProjectThreadsVersionToInstruments(unittest.TestCase):
         p = M8Project.initialise()
         # Force a non-default version into the underlying byte buffer so
         # we can verify it reaches the instruments
-        p.version = M8Version(4, 1, 7)
+        p.version = M8Version(6, 1, 7)
         data = p.write()
 
         # Replace the template's empty instrument slot 0 with a real
@@ -77,9 +77,9 @@ class TestProjectThreadsVersionToInstruments(unittest.TestCase):
         data[INSTRUMENTS_OFFSET:INSTRUMENTS_OFFSET + BLOCK_SIZE] = w.write()
 
         loaded = M8Project.read(bytes(data))
-        self.assertEqual(loaded.version.tuple(), (4, 1, 7))
+        self.assertEqual(loaded.version.tuple(), (6, 1, 7))
         self.assertIsInstance(loaded.instruments[0], M8Wavsynth)
-        self.assertEqual(loaded.instruments[0].version.tuple(), (4, 1, 7))
+        self.assertEqual(loaded.instruments[0].version.tuple(), (6, 1, 7))
 
 
 if __name__ == "__main__":
