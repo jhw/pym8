@@ -6,14 +6,16 @@ missed references.
 """
 import unittest
 
-from m8.api.chain import M8ChainStep
+from m8.api.chain import EMPTY_PHRASE, M8ChainStep
+from m8.api.phrase import EMPTY_INSTRUMENT
+from m8.api.song import EMPTY_CHAIN
 from m8.api.eq import NO_EQ
 from m8.api.fx import M8FXTuple, M8MixerFX, M8SequenceFX
 from m8.api.instruments.wavsynth import M8Wavsynth
 from m8.api.phrase import M8Note, M8PhraseStep
 from m8.api.project import M8Project
 from m8.api.remapper import (
-    EMPTY_CHAIN, EMPTY_INSTRUMENT_REF, EMPTY_PHRASE, N_INSTRUMENTS,
+    N_INSTRUMENTS,
     EQ_REF_FX_KEYS, INSTRUMENT_REF_FX_KEYS, TABLE_REF_FX_KEYS,
     Mappings, NoFreeSlotError, Remapper, Remapping,
     allocate, apply, move_chains, renumber, walk_dependencies, walk_song,
@@ -96,7 +98,7 @@ class TestWalkFromChain(unittest.TestCase):
     def test_empty_instrument_ref_skipped(self):
         """Step.instrument == 0xFF — don't walk to instrument."""
         self.project.phrases[5][0] = M8PhraseStep(
-            note=M8Note.C_4, velocity=0x80, instrument=EMPTY_INSTRUMENT_REF,
+            note=M8Note.C_4, velocity=0x80, instrument=EMPTY_INSTRUMENT,
         )
         self.project.chains[0][0] = M8ChainStep(phrase=5, transpose=0)
 
@@ -387,7 +389,7 @@ class TestAllocatorFindsAlternateOnCollision(unittest.TestCase):
         src.chains[3][1] = M8ChainStep(phrase=EMPTY_PHRASE, transpose=0)
         # Actually we need an occupied step. Set step 0 phrase to something:
         src.chains[3][0].phrase = 0
-        src.phrases[0][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=EMPTY_INSTRUMENT_REF)
+        src.phrases[0][0] = M8PhraseStep(note=M8Note.C_4, velocity=0x80, instrument=EMPTY_INSTRUMENT)
 
         dst = M8Project.initialise()
         dst.chains[3][0] = M8ChainStep(phrase=99, transpose=0)  # occupies slot 3

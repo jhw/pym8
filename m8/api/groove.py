@@ -18,7 +18,7 @@ hands it to M8Grooves; each groove exposes it as `ppqn`.
 
 from enum import IntEnum
 
-from m8.api.fields import index_ranges, repr_value
+from m8.api.fields import enum_or_int, index_ranges, repr_value
 
 GROOVE_STEPS = 16
 GROOVE_COUNT = 32
@@ -59,10 +59,7 @@ class M8Groove:
     @property
     def ppqn(self):
         """M8GroovePPQN, or the raw byte if it isn't one."""
-        try:
-            return M8GroovePPQN(self._ppqn)
-        except ValueError:
-            return self._ppqn
+        return enum_or_int(M8GroovePPQN, self._ppqn)
 
     @ppqn.setter
     def ppqn(self, value):

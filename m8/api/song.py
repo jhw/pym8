@@ -126,6 +126,9 @@ class M8SongMatrix(list):
         for _ in range(ROW_COUNT):
             self.append(M8SongRow())
     
+    def to_dict(self):
+        return [row.to_dict() for row in self]
+
     def __repr__(self):
         return repr_slots(self, (i for i, r in enumerate(self) if not r.is_empty()))
 

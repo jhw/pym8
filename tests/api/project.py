@@ -399,11 +399,27 @@ class TestProjectToDictAndRepr(unittest.TestCase):
                    p.instruments, p.instruments[0], p.instruments[0].modulators[0],
                    p.tables, p.tables[0], p.tables[0][0], p.grooves, p.grooves[0], p.scales, p.scales[0],
                    p.eqs, p.eqs[0], p.eqs[0].low, p.mixer, p.effects, p.midi, p.midi_mappings[0],
-                   p.export_instrument(0)]
+                   p.export_instrument(0), p.instruments[1]]
         for obj in objects:
             with self.subTest(type(obj).__name__):
                 self.assertNotIn(" object at 0x", repr(obj))
 
+
+
+class TestCollectionToDict(unittest.TestCase):
+    def test_full_lists_with_none_for_empty_instruments(self):
+        p = M8Project.initialise()
+        p.instruments[2] = M8Sampler(name="KICK")
+        self.assertEqual(len(p.phrases.to_dict()), 255)
+        self.assertEqual(len(p.chains.to_dict()), 255)
+        self.assertEqual(len(p.song.to_dict()), 256)
+        instruments = p.instruments.to_dict()
+        self.assertEqual(len(instruments), 128)
+        self.assertEqual(instruments[2]["name"], "KICK")
+        self.assertIsNone(instruments[0])
+
+    def test_empty_slot_repr(self):
+        self.assertEqual(repr(M8Project.initialise().instruments[0]), "M8Block(empty slot, 215 bytes)")
 
 if __name__ == "__main__":
     unittest.main()

@@ -233,6 +233,10 @@ class M8Instruments(list):
         block.data = bytearray([0xFF] + [0] * (BLOCK_SIZE - 1))
         return block
 
+    def to_dict(self):
+        """One entry per slot; None for empty or unparsed slots."""
+        return [x.to_dict() if self.is_concrete(i) else None for i, x in enumerate(self)]
+
     def __repr__(self):
         used = [f"{i}: {type(x).__name__[2:]} {_label(x)!r}" for i, x in enumerate(self) if self.is_concrete(i)]
         if not used:

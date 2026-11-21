@@ -31,7 +31,7 @@ writes `NO_EQ` (0x80) for that.
 
 from enum import IntEnum
 
-from m8.api.fields import ByteField, iter_fields, repr_slots
+from m8.api.fields import ByteField, enum_or_int, iter_fields, repr_slots
 
 
 EQ_BAND_BYTES = 6
@@ -93,7 +93,8 @@ class M8EqBand:
 
     @property
     def eq_type(self):
-        return self.mode_byte & 0x07
+        """M8EqType, or the raw 3-bit value if it isn't one."""
+        return enum_or_int(M8EqType, self.mode_byte & 0x07)
 
     @eq_type.setter
     def eq_type(self, value):
@@ -103,7 +104,8 @@ class M8EqBand:
 
     @property
     def eq_mode(self):
-        return (self.mode_byte >> 5) & 0x07
+        """M8EqMode, or the raw 3-bit value if it isn't one."""
+        return enum_or_int(M8EqMode, (self.mode_byte >> 5) & 0x07)
 
     @eq_mode.setter
     def eq_mode(self, value):

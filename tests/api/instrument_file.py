@@ -101,6 +101,21 @@ class TestV2File(unittest.TestCase):
             self.file.write()
 
 
+class TestToDictAndRepr(unittest.TestCase):
+    def test_to_dict_is_json_ready(self):
+        import json
+        f = M8InstrumentFile.read(_fixture("METRONOME.m8i"))
+        d = json.loads(json.dumps(f.to_dict()))
+        self.assertEqual(d["version"], "6.0.1")
+        self.assertEqual(d["instrument"]["name"], "METRONOME")
+        self.assertEqual(len(d["table"]), 16)
+        self.assertIsNone(d["eq"])
+
+    def test_repr(self):
+        f = M8InstrumentFile.read(_fixture("METRONOME.m8i"))
+        self.assertEqual(repr(f), "M8InstrumentFile(M8FMSynth 'METRONOME', firmware 6.0.1, table, no EQ)")
+
+
 class TestNewFile(unittest.TestCase):
     def test_build_write_read(self):
         inst = M8Wavsynth(name="LEAD")

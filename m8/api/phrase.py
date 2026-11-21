@@ -226,6 +226,9 @@ class M8Phrase(list):
 class M8Phrases(list):
     """Collection of up to 255 phrases that make up a complete M8 project."""
     
+    def to_dict(self):
+        return [ph.to_dict() for ph in self]
+
     def __repr__(self):
         return repr_slots(self, (i for i, ph in enumerate(self) if not ph.is_empty()))
 

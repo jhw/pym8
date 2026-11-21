@@ -37,6 +37,10 @@ Modulators follow the same pattern with one subclass per type (`M8AHDModulator`,
 
 Records get `to_dict` / `from_dict` / `__repr__` by subclassing `M8Record` (`m8/api/fields.py`); records with extra structure (`fx`, `tempo`) extend those rather than replace them. Fixed runs of steps use `repr_steps` (non-empty steps only) and big slot collections use `repr_slots` (which slots are in use). **Every object reachable from a project prints as something readable** — `tests/api/project.py` checks that — because sessions explore this library by printing it. `M8Project.to_dict()` is the whole song as plain data.
 
+**"Nothing here" values are defined once, in the module that owns them** — `EMPTY_PHRASE` (chain.py), `EMPTY_CHAIN` (song.py), `EMPTY_INSTRUMENT` / `EMPTY_NOTE` (phrase.py), `EMPTY_KEY` (fx.py), `NO_EQ` (eq.py). Import them; never redefine one locally. A remapper-local `NO_EQ = 0xFF` that disagreed with the firmware's 0x80 caused a real bug.
+
+Empty instrument slots stay `M8Block`s rather than `None`: the firmware leaves bytes in empty slots, and the block is what makes them round-trip.
+
 **Don't hand-roll a new fixed-layout record with manual `@property` getters/setters and bytearray slicing.** That was the old style (`phrase.py`/`chain.py`/`fx.py` used it before a refactor unified them onto descriptors); a plain bytearray-backed class with per-field properties is the anti-pattern here, not the norm.
 
 ### Two MIDI-ish instrument types — don't confuse them

@@ -53,6 +53,14 @@ class M8InstrumentFile:
         self.eq = eq
         self.version = version if version is not None else M8Version()
 
+    def to_dict(self):
+        return {
+            "version": str(self.version),
+            "instrument": self.instrument.to_dict(),
+            "table": self.table.to_dict(),
+            "eq": self.eq.to_dict() if self.eq is not None else None,
+        }
+
     def __repr__(self):
         eq = "with EQ" if self.eq is not None else "no EQ"
         table = "empty table" if self.table.is_empty() else "table"

@@ -140,6 +140,9 @@ class M8Chain(list):
 class M8Chains(list):
     """Collection of up to 255 chains for song composition in the M8 tracker."""
     
+    def to_dict(self):
+        return [c.to_dict() for c in self]
+
     def __repr__(self):
         return repr_slots(self, (i for i, c in enumerate(self) if not c.is_empty()))
 

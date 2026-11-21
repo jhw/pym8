@@ -55,13 +55,10 @@ from m8.api.fx import M8MixerFX, M8SequenceFX
 from m8.api.instrument import BLOCK_COUNT as N_INSTRUMENTS, M8InstrumentType
 from m8.api.table import TABLE_COUNT as N_TABLES
 from m8.api.eq import INSTRUMENT_EQ_COUNT as N_EQS
-from m8.api.song import COL_COUNT
+from m8.api.song import COL_COUNT, EMPTY_CHAIN
+from m8.api.chain import EMPTY_PHRASE
+from m8.api.phrase import EMPTY_INSTRUMENT
 
-
-# Sentinel values for "no reference" in each slot kind.
-EMPTY_PHRASE = 0xFF
-EMPTY_CHAIN = 0xFF
-EMPTY_INSTRUMENT_REF = 0xFF
 
 # FX keys whose value byte is a reference into another section.
 INSTRUMENT_REF_FX_KEYS = frozenset({int(M8MixerFX.INS), int(M8MixerFX.NXT)})
@@ -167,7 +164,7 @@ def walk_dependencies(
                 continue
             m.phrases.add(p)
             for step in project.phrases[p]:
-                if step.instrument != EMPTY_INSTRUMENT_REF and 0 <= step.instrument < N_INSTRUMENTS:
+                if step.instrument != EMPTY_INSTRUMENT and 0 <= step.instrument < N_INSTRUMENTS:
                     queue_instruments.add(step.instrument)
                 _walk_fx(step.fx, m, queue_instruments, queue_tables)
             continue
@@ -424,7 +421,7 @@ def _rewrite_instrument_refs(instrument, remap: Remapping):
 
 def _rewrite_phrase_refs(phrase, remap: Remapping):
     for step in phrase:
-        if step.instrument != EMPTY_INSTRUMENT_REF:
+        if step.instrument != EMPTY_INSTRUMENT:
             step.instrument = remap.out_instrument(step.instrument)
         _rewrite_fx_tuples(step.fx, remap)
 

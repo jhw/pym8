@@ -247,6 +247,14 @@ class IndexedBytesField:
 _FIELD_TYPES = (ByteField, StringField, BytesField, IndexedBytesField)
 
 
+def enum_or_int(enum, value):
+    """The enum member for `value`, or `value` itself if it isn't one."""
+    try:
+        return enum(value)
+    except ValueError:
+        return value
+
+
 def repr_value(value):
     """Format a field value for __repr__: enum members by name, bytes in
     hex (as the M8 screen shows them), strings quoted, sequences

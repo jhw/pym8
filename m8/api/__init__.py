@@ -61,6 +61,15 @@ class M8Block:
     def __init__(self):
         self.data = bytearray()
 
+    def __repr__(self):
+        """Empty instrument slots and instruments of a type pym8 doesn't
+        parse are kept as raw blocks (so their bytes round-trip)."""
+        if self.data[:1] == b"\xff":
+            return f"M8Block(empty slot, {len(self.data)} bytes)"
+        if self.data:
+            return f"M8Block(unparsed, type 0x{self.data[0]:02X}, {len(self.data)} bytes)"
+        return "M8Block()"
+
     @classmethod
     def read(cls, data):
         instance = cls()

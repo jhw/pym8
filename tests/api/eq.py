@@ -253,5 +253,20 @@ class TestAssociatedEqOnInstrument(unittest.TestCase):
         self.assertEqual(loaded.instruments[0].associated_eq, 0x05)
 
 
+
+class TestEqBandEnumReads(unittest.TestCase):
+    def test_type_and_mode_read_as_enums(self):
+        band = M8EqBand()
+        band.eq_type = M8EqType.HICUT
+        band.eq_mode = M8EqMode.SIDE
+        self.assertIs(band.eq_type, M8EqType.HICUT)
+        self.assertIs(band.eq_mode, M8EqMode.SIDE)
+
+    def test_unknown_type_reads_as_int(self):
+        band = M8EqBand()
+        band.mode_byte = 0x07            # type 7 isn't an M8EqType
+        self.assertEqual(band.eq_type, 7)
+        self.assertNotIsInstance(band.eq_type, M8EqType)
+
 if __name__ == "__main__":
     unittest.main()
