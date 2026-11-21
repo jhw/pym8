@@ -58,18 +58,34 @@ class TestM8EqBand(unittest.TestCase):
         band = M8EqBand()
         band.freq = 0x03
         band.freq_fin = 0xE8
-        self.assertEqual(band.frequency(), 1000)
+        self.assertEqual(band.frequency, 1000)
 
     def test_gain_is_signed_centi_db(self):
         band = M8EqBand()
         band.level = 0x00
         band.level_fin = 0x64  # 100 / 100 = +1.00 dB
-        self.assertAlmostEqual(band.gain_db(), 1.00)
+        self.assertAlmostEqual(band.gain_db, 1.00)
 
         # Negative gain (two's complement)
         band.level = 0xFF
         band.level_fin = 0x9C  # 0xFF9C = -100 as signed16 / 100 = -1.00 dB
-        self.assertAlmostEqual(band.gain_db(), -1.00)
+        self.assertAlmostEqual(band.gain_db, -1.00)
+
+    def test_frequency_and_gain_are_settable(self):
+        band = M8EqBand()
+        band.frequency = 1000
+        band.gain_db = -3.5
+        self.assertEqual((band.freq, band.freq_fin), (0x03, 0xE8))
+        self.assertEqual((band.level, band.level_fin), (0xFE, 0xA2))   # -350
+        self.assertEqual(band.frequency, 1000)
+        self.assertAlmostEqual(band.gain_db, -3.5)
+
+    def test_frequency_and_gain_range_checked(self):
+        band = M8EqBand()
+        with self.assertRaises(ValueError):
+            band.frequency = 70000
+        with self.assertRaises(ValueError):
+            band.gain_db = 400
 
     def test_binary_round_trip(self):
         band = M8EqBand()
@@ -111,14 +127,14 @@ class TestM8Eq(unittest.TestCase):
         HiShelf @ 5kHz, all Stereo, Q=50."""
         eq = M8Eq()
         self.assertEqual(eq.low.eq_type, int(M8EqType.LOWSHELF))
-        self.assertEqual(eq.low.frequency(), 100)
+        self.assertEqual(eq.low.frequency, 100)
         self.assertEqual(eq.low.q, 50)
 
         self.assertEqual(eq.mid.eq_type, int(M8EqType.BELL))
-        self.assertEqual(eq.mid.frequency(), 1000)
+        self.assertEqual(eq.mid.frequency, 1000)
 
         self.assertEqual(eq.high.eq_type, int(M8EqType.HISHELF))
-        self.assertEqual(eq.high.frequency(), 5000)
+        self.assertEqual(eq.high.frequency, 5000)
 
     def test_size_is_eighteen_bytes(self):
         self.assertEqual(len(M8Eq().write()), EQ_BYTES)

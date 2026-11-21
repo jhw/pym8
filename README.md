@@ -234,15 +234,26 @@ project.eqs[0].low.eq_type = M8EqType.LOWCUT
 project.eqs[0].mid.q = 0x80
 project.eqs[0].high.eq_mode = M8EqMode.SIDE
 
-# Frequency and gain are 16-bit packed across two bytes; helpers decode:
-print(project.eqs[0].mid.frequency())   # Hz
-print(project.eqs[0].mid.gain_db())     # signed dB
+# Frequency and gain span two bytes each; these properties combine them:
+project.eqs[0].mid.frequency = 1000   # Hz
+project.eqs[0].mid.gain_db = -3.5     # dB
 ```
 
 Slot layout (matching m8-file-parser's `songs.rs`):
 - `eqs[0..127]` — instrument EQs, referenced by `instrument.associated_eq` and the EQM/EQI FX commands
 - `eqs[128..131]` — the effect-section EQs and the global EQ; nothing references these by index
 - `associated_eq >= 128` means "no EQ bound to this instrument"; the firmware writes `NO_EQ` (0x80), which is also the default for new instruments
+
+## Scales
+
+16 scale slots, each with 12 notes (C..B) that can be switched off or detuned:
+
+```python
+scale = project.scales[1]          # M8Scale('MAJOR', C=+0.00, D=+0.00, ...)
+scale.notes[4].enabled = False     # drop E
+scale.notes[7].cents = 50          # G up half a semitone
+scale.enabled_bitmap = 0b101010110101   # or set every note at once
+```
 
 ## Mixer and effects settings
 

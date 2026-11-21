@@ -38,6 +38,62 @@ RESERVED_LENGTH = 4
 NOTE_NAMES = ("C", "CS", "D", "DS", "E", "F", "FS", "G", "GS", "A", "AS", "B")
 
 
+class M8ScaleNote:
+    """One note of a scale, as a live view into the scale's bytes.
+
+    `enabled` is the note's bit in the scale's bitmap; `semitones` and
+    `cents` are its two raw offset bytes (m8-file-parser reads the offset
+    as semitones + cents / 100).
+    """
+
+    __slots__ = ("_scale", "index")
+
+    def __init__(self, scale, index):
+        self._scale = scale
+        self.index = index
+
+    @property
+    def name(self):
+        return NOTE_NAMES[self.index]
+
+    @property
+    def enabled(self):
+        return bool(self._scale.enabled_bitmap & (1 << self.index))
+
+    @enabled.setter
+    def enabled(self, on):
+        bitmap = self._scale.enabled_bitmap
+        self._scale.enabled_bitmap = bitmap | (1 << self.index) if on else bitmap & ~(1 << self.index)
+
+    def _byte(self, offset):
+        return self._scale._data[NOTES_OFFSET + self.index * NOTE_PAIR_BYTES + offset]
+
+    def _set_byte(self, offset, value, name):
+        value = int(value)
+        if not 0 <= value <= 0xFF:
+            raise ValueError(f"{name}={value} out of range [0, 255]")
+        self._scale._data[NOTES_OFFSET + self.index * NOTE_PAIR_BYTES + offset] = value
+
+    @property
+    def semitones(self):
+        return self._byte(0)
+
+    @semitones.setter
+    def semitones(self, value):
+        self._set_byte(0, value, "semitones")
+
+    @property
+    def cents(self):
+        return self._byte(1)
+
+    @cents.setter
+    def cents(self, value):
+        self._set_byte(1, value, "cents")
+
+    def __repr__(self):
+        return f"M8ScaleNote({self.name}, enabled={self.enabled}, semitones={self.semitones}, cents={self.cents})"
+
+
 class M8Scale:
     """One microtonal scale: 12 notes, each with enabled flag + offset."""
 
@@ -67,36 +123,11 @@ class M8Scale:
     def _set_bitmap(self, value):
         self._data[BITMAP_OFFSET:BITMAP_OFFSET + 2] = struct.pack("<H", int(value) & 0xFFFF)
 
-    def is_note_enabled(self, note):
-        if not 0 <= note < self.NOTE_COUNT:
-            raise IndexError(f"note {note} out of range [0, {self.NOTE_COUNT - 1}]")
-        return bool(self.enabled_bitmap & (1 << note))
-
-    def set_note_enabled(self, note, enabled):
-        if not 0 <= note < self.NOTE_COUNT:
-            raise IndexError(f"note {note} out of range [0, {self.NOTE_COUNT - 1}]")
-        bitmap = self.enabled_bitmap
-        if enabled:
-            bitmap |= 1 << note
-        else:
-            bitmap &= ~(1 << note)
-        self._set_bitmap(bitmap)
-
-    # --- per-note (int_semitone, cents) offsets ---
-
-    def get_note_offset(self, note):
-        """Return (int_semitones, cents) as raw bytes for note 0..11."""
-        if not 0 <= note < self.NOTE_COUNT:
-            raise IndexError(f"note {note} out of range [0, {self.NOTE_COUNT - 1}]")
-        base = NOTES_OFFSET + note * NOTE_PAIR_BYTES
-        return (self._data[base], self._data[base + 1])
-
-    def set_note_offset(self, note, semitones, cents):
-        if not 0 <= note < self.NOTE_COUNT:
-            raise IndexError(f"note {note} out of range [0, {self.NOTE_COUNT - 1}]")
-        base = NOTES_OFFSET + note * NOTE_PAIR_BYTES
-        self._data[base] = int(semitones) & 0xFF
-        self._data[base + 1] = int(cents) & 0xFF
+    @property
+    def notes(self):
+        """The 12 notes (C..B) as live views: `scale.notes[4].enabled = False`,
+        `scale.notes[4].cents = 50`."""
+        return tuple(M8ScaleNote(self, i) for i in range(self.NOTE_COUNT))
 
     # --- name ---
 
@@ -114,11 +145,7 @@ class M8Scale:
 
     def __repr__(self):
         """Enabled notes with their offsets, e.g. M8Scale('MAJOR', C=+0.00, D=+0.00, ...)."""
-        notes = []
-        for i, note in enumerate(NOTE_NAMES):
-            if self.is_note_enabled(i):
-                semitones, cents = self.get_note_offset(i)
-                notes.append(f"{note}=+{semitones}.{cents:02d}")
+        notes = [f"{n.name}=+{n.semitones}.{n.cents:02d}" for n in self.notes if n.enabled]
         return f"M8Scale({self.name!r}, " + ", ".join(notes) + ")"
 
     @classmethod
@@ -140,12 +167,8 @@ class M8Scale:
             "name": self.name,
             "enabled_bitmap": self.enabled_bitmap,
             "notes": [
-                {
-                    "enabled": self.is_note_enabled(i),
-                    "semitones": self.get_note_offset(i)[0],
-                    "cents": self.get_note_offset(i)[1],
-                }
-                for i in range(self.NOTE_COUNT)
+                {"enabled": n.enabled, "semitones": n.semitones, "cents": n.cents}
+                for n in self.notes
             ],
         }
 
@@ -156,15 +179,10 @@ class M8Scale:
             instance.name = d["name"]
         if "enabled_bitmap" in d:
             instance.enabled_bitmap = d["enabled_bitmap"]
-        for i, note in enumerate(d.get("notes", [])[:cls.NOTE_COUNT]):
-            if "enabled" in note:
-                instance.set_note_enabled(i, note["enabled"])
-            if "semitones" in note or "cents" in note:
-                instance.set_note_offset(
-                    i,
-                    note.get("semitones", 0),
-                    note.get("cents", 0),
-                )
+        for view, note in zip(instance.notes, d.get("notes", [])):
+            for key in ("enabled", "semitones", "cents"):
+                if key in note:
+                    setattr(view, key, note[key])
         return instance
 
 

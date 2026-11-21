@@ -113,16 +113,35 @@ class M8EqBand:
             value = value.value
         self.mode_byte = (self.mode_byte & 0x1F) | ((int(value) & 0x07) << 5)
 
+    @property
     def frequency(self):
-        """Combined 16-bit unsigned frequency."""
+        """Frequency in Hz — `freq` (high byte) and `freq_fin` (low byte)
+        combined."""
         return (self.freq << 8) | self.freq_fin
 
+    @frequency.setter
+    def frequency(self, hz):
+        hz = int(hz)
+        if not 0 <= hz <= 0xFFFF:
+            raise ValueError(f"frequency={hz} out of range [0, 65535]")
+        self.freq, self.freq_fin = hz >> 8, hz & 0xFF
+
+    @property
     def gain_db(self):
-        """Combined 16-bit signed gain divided by 100 (dB)."""
+        """Gain in dB — `level` (high byte) and `level_fin` (low byte) form
+        a signed 16-bit value in hundredths of a dB."""
         raw = (self.level << 8) | self.level_fin
         if raw >= 0x8000:
             raw -= 0x10000  # two's complement
         return raw / 100.0
+
+    @gain_db.setter
+    def gain_db(self, db):
+        raw = round(db * 100)
+        if not -0x8000 <= raw <= 0x7FFF:
+            raise ValueError(f"gain_db={db} out of range [-327.68, 327.67]")
+        raw &= 0xFFFF
+        self.level, self.level_fin = raw >> 8, raw & 0xFF
 
     @classmethod
     def read(cls, data):
@@ -152,7 +171,7 @@ class M8EqBand:
             m = M8EqMode(self.eq_mode).name
         except ValueError:
             m = f"0x{self.eq_mode:02X}"
-        return f"M8EqBand({t}/{m}, freq={self.frequency()}, gain={self.gain_db():+.2f}dB, q={self.q})"
+        return f"M8EqBand({t}/{m}, freq={self.frequency}, gain={self.gain_db:+.2f}dB, q={self.q})"
 
     def to_dict(self):
         try:
