@@ -12,7 +12,7 @@ in place — different types reinterpret bytes 2-5 differently.
 
 from enum import IntEnum
 
-from m8.api.fields import ByteField, iter_fields, repr_value
+from m8.api.fields import ByteField, M8FixedList, iter_fields, repr_value
 
 
 MODULATOR_BLOCK_SIZE = 6
@@ -259,13 +259,15 @@ _DEFAULT_MODULATOR_CLASSES = [
 ]
 
 
-class M8Modulators(list):
+class M8Modulators(M8FixedList):
     """4 modulator slots within an instrument."""
+
+    CLEAR_HINT = "replace a slot with a new modulator instead"
 
     def __init__(self):
         super().__init__()
         for klass in _DEFAULT_MODULATOR_CLASSES:
-            self.append(klass())
+            list.append(self, klass())
 
     @classmethod
     def read(cls, data):
@@ -279,7 +281,7 @@ class M8Modulators(list):
                 block = block + bytes(BLOCK_SIZE - len(block))
             type_id = (block[0] >> 4) & 0x0F
             subclass = _MODULATOR_REGISTRY.get(type_id, M8AHDModulator)
-            instance.append(subclass.read(block))
+            list.append(instance, subclass.read(block))
         return instance
 
     @classmethod
@@ -298,14 +300,14 @@ class M8Modulators(list):
             if len(block) < BLOCK_SIZE:
                 block = block + bytes(BLOCK_SIZE - len(block))
             klass = _DEFAULT_MODULATOR_CLASSES[i]
-            instance.append(_read_v2_block(klass, block))
+            list.append(instance, _read_v2_block(klass, block))
         return instance
 
     def clone(self):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for mod in self:
-            instance.append(mod.clone())
+            list.append(instance, mod.clone())
         return instance
 
     def to_dict(self, dest_enum_class=None):
@@ -316,9 +318,9 @@ class M8Modulators(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for mod_params in modulators_list:
-            instance.append(M8Modulator.from_dict(mod_params, dest_enum_class=dest_enum_class))
+            list.append(instance, M8Modulator.from_dict(mod_params, dest_enum_class=dest_enum_class))
         while len(instance) < BLOCK_COUNT:
-            instance.append(_DEFAULT_MODULATOR_CLASSES[len(instance)]())
+            list.append(instance, _DEFAULT_MODULATOR_CLASSES[len(instance)]())
         return instance
 
     def write(self):

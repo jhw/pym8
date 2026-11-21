@@ -18,7 +18,7 @@ SONG_COL_COUNT = 8
 SONG_ROW_COUNT = 256
 
 # Constants
-from m8.api.fields import repr_slots
+from m8.api.fields import M8FixedList, repr_slots
 
 EMPTY_CHAIN = 255
 
@@ -117,14 +117,16 @@ class M8SongRow:
                     f"must be 0-{CHAIN_COUNT - 1} or 255 (empty)"
                 )
 
-class M8SongMatrix(list):
+class M8SongMatrix(M8FixedList):
     """Represents the M8 song grid as a 2D matrix with 256 rows and 8 columns of chain references."""
+
+    CLEAR_HINT = "assign 0xFF (EMPTY_CHAIN) to a cell to clear it"
     
     def __init__(self):
         super().__init__()
         # Initialize with empty rows
         for _ in range(ROW_COUNT):
-            self.append(M8SongRow())
+            list.append(self, M8SongRow())
     
     def to_dict(self):
         return [row.to_dict() for row in self]
@@ -142,7 +144,7 @@ class M8SongMatrix(list):
         for i in range(ROW_COUNT):
             start = i * COL_COUNT
             row_data = data[start:start + COL_COUNT]
-            instance.append(M8SongRow.read(
+            list.append(instance, M8SongRow.read(
                 row_data,
                 bookmarks=bookmarks[i] if bookmarks else 0,
                 row_bookmark=row_bookmarks[i] if row_bookmarks else 0,
@@ -152,10 +154,10 @@ class M8SongMatrix(list):
     
     def clone(self):
         instance = self.__class__()
-        instance.clear()  # Remove default items
+        list.clear(instance)  # Remove default items
         
         for row in self:
-            instance.append(row.clone())
+            list.append(instance, row.clone())
         
         return instance
     
@@ -176,10 +178,7 @@ class M8SongMatrix(list):
         """Validate the song matrix.
 
         Raises:
-            ValueError: If there are more rows than allowed or invalid chain references
+            ValueError: If a row has an invalid chain reference
         """
-        if len(self) > ROW_COUNT:
-            raise ValueError(f"Too many song rows: {len(self)}, maximum is {ROW_COUNT}")
-
         for i, row in enumerate(self):
             row.validate(row_index=i)

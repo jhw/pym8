@@ -430,13 +430,6 @@ class TestPhraseValidation(unittest.TestCase):
     def test_phrase_valid(self):
         M8Phrase().validate()
 
-    def test_phrase_wrong_step_count(self):
-        phrase = M8Phrase()
-        phrase.append(M8PhraseStep())
-        with self.assertRaises(ValueError) as ctx:
-            phrase.validate()
-        self.assertIn("steps", str(ctx.exception))
-
     def test_phrase_invalid_instrument_in_step(self):
         phrase = M8Phrase()
         phrase[0] = M8PhraseStep(note=36, velocity=0xFF, instrument=200)
@@ -446,15 +439,6 @@ class TestPhraseValidation(unittest.TestCase):
 
     def test_phrases_valid(self):
         M8Phrases().validate()
-
-    def test_phrases_too_many(self):
-        phrases = M8Phrases()
-        phrases.append(M8Phrase())
-        with self.assertRaises(ValueError) as ctx:
-            phrases.validate()
-        self.assertIn("Too many phrases", str(ctx.exception))
-
-
 
 class TestPhraseToDictAndRepr(unittest.TestCase):
     def _phrase(self):

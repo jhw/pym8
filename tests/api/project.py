@@ -421,5 +421,34 @@ class TestCollectionToDict(unittest.TestCase):
     def test_empty_slot_repr(self):
         self.assertEqual(repr(M8Project.initialise().instruments[0]), "M8Block(empty slot, 215 bytes)")
 
+
+class TestCollectionsAreFixedSize(unittest.TestCase):
+    """Deleting a slot used to silently renumber every later slot — and
+    every reference to them — while the file still wrote cleanly."""
+
+    def test_every_collection_refuses_to_change_size(self):
+        from m8.api.fields import M8FixedList
+        from m8.api.instruments.hypersynth import M8HyperSynth
+        p = M8Project.initialise()
+        p.instruments[0] = M8HyperSynth(name="H")
+        collections = [p.instruments, p.instruments[0].modulators, p.instruments[0].chords,
+                       p.phrases, p.phrases[0], p.phrases[0][0].fx, p.chains, p.chains[0],
+                       p.tables, p.tables[0], p.song, p.grooves, p.scales, p.eqs, p.midi_mappings]
+        for c in collections:
+            with self.subTest(type(c).__name__):
+                self.assertIsInstance(c, M8FixedList)
+                n = len(c)
+                for op in (lambda: c.append(c[0]), lambda: c.__delitem__(0), lambda: c.pop()):
+                    with self.assertRaises(TypeError):
+                        op()
+                self.assertEqual(len(c), n)
+
+    def test_clone_and_round_trip_still_work(self):
+        p = M8Project.initialise()
+        p.instruments[3] = M8Sampler(name="S")
+        q = p.clone()
+        self.assertEqual(q.write(), p.write())
+        self.assertEqual(M8Project.read(p.write()).write(), p.write())
+
 if __name__ == "__main__":
     unittest.main()

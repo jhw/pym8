@@ -31,7 +31,7 @@ writes `NO_EQ` (0x80) for that.
 
 from enum import IntEnum
 
-from m8.api.fields import ByteField, enum_or_int, iter_fields, repr_slots
+from m8.api.fields import ByteField, M8FixedList, enum_or_int, iter_fields, repr_slots
 
 
 EQ_BAND_BYTES = 6
@@ -269,7 +269,7 @@ class M8Eq:
         )
 
 
-class M8Eqs(list):
+class M8Eqs(M8FixedList):
     """Project-level EQ collection (132 entries in v6.0+).
 
     Index map (matching m8-file-parser's songs.rs):
@@ -289,7 +289,7 @@ class M8Eqs(list):
     def __init__(self):
         super().__init__()
         for _ in range(self.COUNT):
-            self.append(M8Eq())
+            list.append(self, M8Eq())
 
     @classmethod
     def read(cls, data, version=None):
@@ -305,7 +305,7 @@ class M8Eqs(list):
             block = data[start:start + EQ_BYTES]
             if len(block) < EQ_BYTES:
                 block = block + bytes(EQ_BYTES - len(block))
-            instance.append(M8Eq.read(block))
+            list.append(instance, M8Eq.read(block))
         return instance
 
     def write(self):
@@ -315,7 +315,7 @@ class M8Eqs(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for eq in self:
-            instance.append(eq.clone())
+            list.append(instance, eq.clone())
         return instance
 
     def to_dict(self):
@@ -326,7 +326,7 @@ class M8Eqs(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for item in items[:cls.COUNT]:
-            instance.append(M8Eq.from_dict(item))
+            list.append(instance, M8Eq.from_dict(item))
         while len(instance) < cls.COUNT:
-            instance.append(M8Eq())
+            list.append(instance, M8Eq())
         return instance

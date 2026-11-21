@@ -12,7 +12,7 @@ from enum import IntEnum
 
 from m8.api import M8Block
 from m8.api.eq import NO_EQ
-from m8.api.fields import ByteField, StringField, iter_fields, repr_value
+from m8.api.fields import ByteField, M8FixedList, StringField, iter_fields, repr_value
 from m8.api.modulator import M8Modulators
 from m8.api.version import M8Version
 
@@ -220,8 +220,10 @@ def _label(instrument):
     return path.rsplit("/", 1)[-1] if path else ""
 
 
-class M8Instruments(list):
+class M8Instruments(M8FixedList):
     """The 128-slot instrument collection inside a project."""
+
+    CLEAR_HINT = "use clear_slot(i) to empty a slot"
 
     @staticmethod
     def empty_block():
@@ -246,9 +248,9 @@ class M8Instruments(list):
     def __init__(self, items=None):
         super().__init__()
         for item in (items or []):
-            self.append(item)
+            list.append(self, item)
         while len(self) < BLOCK_COUNT:
-            self.append(self.empty_block())
+            list.append(self, self.empty_block())
 
     def clear_slot(self, index):
         """Empty a slot in place. The safe way to null out an instrument —
@@ -277,9 +279,9 @@ class M8Instruments(list):
 
             subclass = _INSTRUMENT_REGISTRY.get(instr_type)
             if subclass is not None:
-                instance.append(subclass.read(block_data, version=version))
+                list.append(instance, subclass.read(block_data, version=version))
             elif instr_type == 0xFF:
-                instance.append(M8Block.read(block_data))
+                list.append(instance, M8Block.read(block_data))
             else:
                 try:
                     type_name = M8InstrumentType(instr_type).name
@@ -293,7 +295,7 @@ class M8Instruments(list):
                         "data will round-trip but cannot be edited"
                     )
                 warnings.warn(msg, stacklevel=2)
-                instance.append(M8Block.read(block_data))
+                list.append(instance, M8Block.read(block_data))
 
         return instance
 
@@ -301,7 +303,7 @@ class M8Instruments(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for instr in self:
-            instance.append(instr.clone() if hasattr(instr, "clone") else instr)
+            list.append(instance, instr.clone() if hasattr(instr, "clone") else instr)
         return instance
 
     def write(self):
@@ -318,6 +320,3 @@ class M8Instruments(list):
             result.extend(instr_data)
         return bytes(result)
 
-    def validate(self):
-        if len(self) > BLOCK_COUNT:
-            raise ValueError(f"Too many instruments: {len(self)}, maximum is {BLOCK_COUNT}")

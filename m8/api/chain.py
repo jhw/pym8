@@ -1,4 +1,4 @@
-from m8.api.fields import ByteField, M8Record, iter_fields, repr_slots, repr_steps
+from m8.api.fields import ByteField, M8FixedList, M8Record, iter_fields, repr_slots, repr_steps
 
 # Chains configuration
 CHAINS_OFFSET = 39518
@@ -52,30 +52,16 @@ class M8ChainStep(M8Record):
     def is_empty(self):
         return self.phrase == EMPTY_PHRASE
 
-    def validate(self, step_index=None, chain_index=None):
-        """Validate the chain step.
-
-        Args:
-            step_index: Optional step index for error messages
-            chain_index: Optional chain index for error messages
-
-        Raises:
-            ValueError: If phrase reference is invalid
-        """
-        # Phrase reference must be 0-254 (valid phrase index) or 255 (empty)
-        # Since there are 255 phrases (indices 0-254), any non-empty reference
-        # must be within that range. 255 (EMPTY_PHRASE) is valid as "no phrase".
-        # All byte values 0-255 are technically valid, so no validation needed here.
-        pass
-
-class M8Chain(list):
+class M8Chain(M8FixedList):
     """A sequence of up to 16 chain steps for sequencing and transposing phrases."""
+
+    CLEAR_HINT = "assign M8ChainStep() to a step to clear it"
     
     def __init__(self):
         super().__init__()
         # Initialize with empty steps
         for _ in range(STEP_COUNT):
-            self.append(M8ChainStep())
+            list.append(self, M8ChainStep())
     
     @classmethod
     def read(cls, data):
@@ -85,16 +71,16 @@ class M8Chain(list):
         for i in range(STEP_COUNT):
             start = i * STEP_BLOCK_SIZE
             row_data = data[start:start + STEP_BLOCK_SIZE]
-            instance.append(M8ChainStep.read(row_data))
+            list.append(instance, M8ChainStep.read(row_data))
         
         return instance
     
     def clone(self):
         instance = self.__class__()
-        instance.clear()  # Remove default items
+        list.clear(instance)  # Remove default items
         
         for step in self:
-            instance.append(step.clone())
+            list.append(instance, step.clone())
         
         return instance
     
@@ -121,24 +107,10 @@ class M8Chain(list):
     def __repr__(self):
         return repr_steps(self)
 
-    def validate(self, chain_index=None):
-        """Validate the chain.
-
-        Args:
-            chain_index: Optional chain index for error messages
-
-        Raises:
-            ValueError: If chain has incorrect number of steps
-        """
-        if len(self) != STEP_COUNT:
-            ctx = f" (chain {chain_index})" if chain_index is not None else ""
-            raise ValueError(f"Chain{ctx} has {len(self)} steps, expected {STEP_COUNT}")
-
-        for i, step in enumerate(self):
-            step.validate(step_index=i, chain_index=chain_index)
-
-class M8Chains(list):
+class M8Chains(M8FixedList):
     """Collection of up to 255 chains for song composition in the M8 tracker."""
+
+    CLEAR_HINT = "assign M8Chain() to a slot to clear it"
     
     def to_dict(self):
         return [c.to_dict() for c in self]
@@ -150,7 +122,7 @@ class M8Chains(list):
         super().__init__()
         # Initialize with empty chains
         for _ in range(CHAIN_COUNT):
-            self.append(M8Chain())
+            list.append(self, M8Chain())
     
     @classmethod
     def read(cls, data):
@@ -160,16 +132,16 @@ class M8Chains(list):
         for i in range(CHAIN_COUNT):
             start = i * CHAIN_BLOCK_SIZE
             chain_data = data[start:start + CHAIN_BLOCK_SIZE]
-            instance.append(M8Chain.read(chain_data))
+            list.append(instance, M8Chain.read(chain_data))
         
         return instance
     
     def clone(self):
         instance = self.__class__()
-        instance.clear()  # Remove default items
+        list.clear(instance)  # Remove default items
 
         for chain in self:
-            instance.append(chain.clone())
+            list.append(instance, chain.clone())
 
         return instance
     
@@ -180,14 +152,3 @@ class M8Chains(list):
             result.extend(chain_data)
         return bytes(result)
 
-    def validate(self):
-        """Validate the chains collection.
-
-        Raises:
-            ValueError: If there are more chains than allowed
-        """
-        if len(self) > CHAIN_COUNT:
-            raise ValueError(f"Too many chains: {len(self)}, maximum is {CHAIN_COUNT}")
-
-        for i, chain in enumerate(self):
-            chain.validate(chain_index=i)

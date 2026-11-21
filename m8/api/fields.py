@@ -307,6 +307,38 @@ def repr_slots(collection, used):
     return f"{type(collection).__name__}({len(used)} used of {len(collection)}: {index_ranges(used)})"
 
 
+class M8FixedList(list):
+    """A list with a fixed number of slots.
+
+    Index, slice, iterate and assign as usual — but nothing may change the
+    length or the order. Deleting slot 5 of a list would silently renumber
+    slots 6+, and every phrase/chain/song reference to them would then
+    point at the wrong thing while the file still wrote cleanly.
+
+    Construction code inside pym8 fills instances with `list.append(x, ...)`
+    directly, bypassing the guard.
+    """
+
+    #: What to do instead; subclasses tailor it.
+    CLEAR_HINT = "assign a new, empty item to a slot to clear it"
+
+    def _refuse(self, *args, **kwargs):
+        raise TypeError(
+            f"{type(self).__name__} has a fixed {len(self)} slots and can't grow, "
+            f"shrink or be reordered; {self.CLEAR_HINT}"
+        )
+
+    append = extend = insert = pop = remove = clear = sort = reverse = _refuse
+    __delitem__ = __iadd__ = __imul__ = _refuse
+
+    def __setitem__(self, index, value):
+        if isinstance(index, slice):
+            value = list(value)
+            if len(value) != len(range(*index.indices(len(self)))):
+                self._refuse()
+        list.__setitem__(self, index, value)
+
+
 class M8Record:
     """Generic to_dict / from_dict / __repr__ for a descriptor-backed record.
 

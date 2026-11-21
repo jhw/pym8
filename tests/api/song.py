@@ -435,13 +435,5 @@ class TestSongValidation(unittest.TestCase):
     def test_song_matrix_valid(self):
         M8SongMatrix().validate()
 
-    def test_song_matrix_too_many_rows(self):
-        matrix = M8SongMatrix()
-        matrix.append(M8SongRow())  # one over the limit
-        with self.assertRaises(ValueError) as ctx:
-            matrix.validate()
-        self.assertIn("Too many song rows", str(ctx.exception))
-
-
 if __name__ == '__main__':
     unittest.main()

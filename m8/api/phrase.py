@@ -1,6 +1,6 @@
 from enum import IntEnum
 from m8.api import M8Block
-from m8.api.fields import ByteField, M8Record, iter_fields, repr_slots, repr_steps
+from m8.api.fields import ByteField, M8FixedList, M8Record, iter_fields, repr_slots, repr_steps
 from m8.api.fx import M8FXTuples, M8FXTuple
 
 # Generate note enum dynamically using functional API
@@ -146,14 +146,16 @@ class M8PhraseStep(M8Record):
                 ctx += f" step {step_index}"
             raise ValueError(f"Invalid instrument reference {self.instrument}{ctx}: must be 0-127 or 255 (empty)")
 
-class M8Phrase(list):
+class M8Phrase(M8FixedList):
     """Collection of up to 16 steps that defines a musical pattern in the M8 tracker."""
+
+    CLEAR_HINT = "assign M8PhraseStep() to a step to clear it"
     
     def __init__(self):
         super().__init__()
         # Initialize with empty steps
         for _ in range(STEP_COUNT):
-            self.append(M8PhraseStep())
+            list.append(self, M8PhraseStep())
     
     @classmethod
     def read(cls, data):
@@ -163,19 +165,19 @@ class M8Phrase(list):
         for i in range(STEP_COUNT):
             start = i * STEP_BLOCK_SIZE
             step_data = data[start:start + STEP_BLOCK_SIZE]
-            instance.append(M8PhraseStep.read(step_data))
+            list.append(instance, M8PhraseStep.read(step_data))
         
         return instance
     
     def clone(self):
         instance = self.__class__()
-        instance.clear()  # Remove default items
+        list.clear(instance)  # Remove default items
         
         for step in self:
             if hasattr(step, 'clone'):
-                instance.append(step.clone())
+                list.append(instance, step.clone())
             else:
-                instance.append(M8PhraseStep.read(step.write()))
+                list.append(instance, M8PhraseStep.read(step.write()))
         
         return instance
     
@@ -214,17 +216,15 @@ class M8Phrase(list):
             phrase_index: Optional phrase index for error messages
 
         Raises:
-            ValueError: If phrase has incorrect number of steps
+            ValueError: If a step references an invalid instrument
         """
-        if len(self) != STEP_COUNT:
-            ctx = f" (phrase {phrase_index})" if phrase_index is not None else ""
-            raise ValueError(f"Phrase{ctx} has {len(self)} steps, expected {STEP_COUNT}")
-
         for i, step in enumerate(self):
             step.validate(step_index=i, phrase_index=phrase_index)
 
-class M8Phrases(list):
+class M8Phrases(M8FixedList):
     """Collection of up to 255 phrases that make up a complete M8 project."""
+
+    CLEAR_HINT = "assign M8Phrase() to a slot to clear it"
     
     def to_dict(self):
         return [ph.to_dict() for ph in self]
@@ -236,7 +236,7 @@ class M8Phrases(list):
         super().__init__()
         # Initialize with empty phrases
         for _ in range(PHRASE_COUNT):
-            self.append(M8Phrase())
+            list.append(self, M8Phrase())
     
     @classmethod
     def read(cls, data):
@@ -246,16 +246,16 @@ class M8Phrases(list):
         for i in range(PHRASE_COUNT):
             start = i * PHRASE_BLOCK_SIZE
             phrase_data = data[start:start + PHRASE_BLOCK_SIZE]
-            instance.append(M8Phrase.read(phrase_data))
+            list.append(instance, M8Phrase.read(phrase_data))
         
         return instance
     
     def clone(self):
         instance = self.__class__()
-        instance.clear()  # Remove default items
+        list.clear(instance)  # Remove default items
         
         for phrase in self:
-            instance.append(phrase.clone())
+            list.append(instance, phrase.clone())
         
         return instance
     
@@ -275,10 +275,7 @@ class M8Phrases(list):
         """Validate the phrases collection.
 
         Raises:
-            ValueError: If there are more phrases than allowed
+            ValueError: If a step references an invalid instrument
         """
-        if len(self) > PHRASE_COUNT:
-            raise ValueError(f"Too many phrases: {len(self)}, maximum is {PHRASE_COUNT}")
-
         for i, phrase in enumerate(self):
             phrase.validate(phrase_index=i)

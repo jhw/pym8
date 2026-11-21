@@ -371,40 +371,6 @@ class TestChainStepBoundaries(unittest.TestCase):
         self.assertEqual(chain[1].transpose, 128)
 
 
-class TestChainValidation(unittest.TestCase):
-    """Validation rules on chain step / chain / chains."""
-
-    def test_chain_step_valid(self):
-        M8ChainStep(phrase=0, transpose=0).validate()  # no raise
-
-    def test_chain_step_empty_phrase(self):
-        M8ChainStep(phrase=255, transpose=0).validate()  # no raise
-
-    def test_chain_step_max_phrase(self):
-        M8ChainStep(phrase=254, transpose=0).validate()  # no raise
-
-    def test_chain_valid(self):
-        M8Chain().validate()  # no raise
-
-    def test_chain_wrong_step_count(self):
-        chain = M8Chain()
-        chain.append(M8ChainStep())  # one extra
-        with self.assertRaises(ValueError) as ctx:
-            chain.validate()
-        self.assertIn("steps", str(ctx.exception))
-
-    def test_chains_valid(self):
-        M8Chains().validate()  # no raise
-
-    def test_chains_too_many(self):
-        chains = M8Chains()
-        chains.append(M8Chain())  # one over the limit
-        with self.assertRaises(ValueError) as ctx:
-            chains.validate()
-        self.assertIn("Too many chains", str(ctx.exception))
-
-
-
 class TestChainToDictAndRepr(unittest.TestCase):
     def test_round_trip_and_repr(self):
         chain = M8Chain()

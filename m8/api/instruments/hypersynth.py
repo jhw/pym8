@@ -41,7 +41,7 @@ Layout follows m8-file-parser/src/instruments/hypersynth.rs:
 
 from enum import IntEnum
 
-from m8.api.fields import ByteField, BytesField
+from m8.api.fields import ByteField, BytesField, M8FixedList
 from m8.api.instrument import (
     M8FilterType,
     M8Instrument,
@@ -149,7 +149,7 @@ class M8Chord:
         return cls(mask=data.get("mask", 0), offsets=data.get("offsets", [0] * CHORD_OSC_COUNT))
 
 
-class M8HyperSynthChords(list):
+class M8HyperSynthChords(M8FixedList):
     """The 16 chord rows on a HyperSynth (mutable list of M8Chord)."""
 
     COUNT = CHORD_COUNT
@@ -158,7 +158,7 @@ class M8HyperSynthChords(list):
     def __init__(self):
         super().__init__()
         for _ in range(self.COUNT):
-            self.append(M8Chord())
+            list.append(self, M8Chord())
 
     @classmethod
     def read(cls, data):
@@ -169,7 +169,7 @@ class M8HyperSynthChords(list):
             block = data[start:start + CHORD_BYTES]
             if len(block) < CHORD_BYTES:
                 block = block + bytes(CHORD_BYTES - len(block))
-            instance.append(M8Chord.read(block))
+            list.append(instance, M8Chord.read(block))
         return instance
 
     def write(self):
@@ -185,7 +185,7 @@ class M8HyperSynthChords(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for chord in self:
-            instance.append(chord.clone())
+            list.append(instance, chord.clone())
         return instance
 
     def to_dict(self):
@@ -196,9 +196,9 @@ class M8HyperSynthChords(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for item in items[:cls.COUNT]:
-            instance.append(M8Chord.from_dict(item))
+            list.append(instance, M8Chord.from_dict(item))
         while len(instance) < cls.COUNT:
-            instance.append(M8Chord())
+            list.append(instance, M8Chord())
         return instance
 
 

@@ -19,7 +19,7 @@ The seven bytes:
   byte 6  max_value       high end of the scaling range
 """
 
-from m8.api.fields import M8Record, ByteField, iter_fields, repr_slots
+from m8.api.fields import ByteField, M8FixedList, M8Record, iter_fields, repr_slots
 
 
 MIDI_MAPPING_BYTES = 7
@@ -65,7 +65,7 @@ class M8MidiMapping(M8Record):
         return instance
 
 
-class M8MidiMappings(list):
+class M8MidiMappings(M8FixedList):
     """128 MIDI controller mappings."""
 
     COUNT = MIDI_MAPPING_COUNT
@@ -74,7 +74,7 @@ class M8MidiMappings(list):
     def __init__(self):
         super().__init__()
         for _ in range(self.COUNT):
-            self.append(M8MidiMapping())
+            list.append(self, M8MidiMapping())
 
     @classmethod
     def read(cls, data, version=None):
@@ -85,7 +85,7 @@ class M8MidiMappings(list):
             block = data[start:start + MIDI_MAPPING_BYTES]
             if len(block) < MIDI_MAPPING_BYTES:
                 block = block + bytes(MIDI_MAPPING_BYTES - len(block))
-            instance.append(M8MidiMapping.read(block))
+            list.append(instance, M8MidiMapping.read(block))
         return instance
 
     def write(self):
@@ -95,7 +95,7 @@ class M8MidiMappings(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for m in self:
-            instance.append(m.clone())
+            list.append(instance, m.clone())
         return instance
 
     def __repr__(self):
@@ -109,7 +109,7 @@ class M8MidiMappings(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for item in items[:cls.COUNT]:
-            instance.append(M8MidiMapping.from_dict(item))
+            list.append(instance, M8MidiMapping.from_dict(item))
         while len(instance) < cls.COUNT:
-            instance.append(M8MidiMapping())
+            list.append(instance, M8MidiMapping())
         return instance

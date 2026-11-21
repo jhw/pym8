@@ -18,7 +18,7 @@ hands it to M8Grooves; each groove exposes it as `ppqn`.
 
 from enum import IntEnum
 
-from m8.api.fields import enum_or_int, index_ranges, repr_value
+from m8.api.fields import M8FixedList, enum_or_int, index_ranges, repr_value
 
 GROOVE_STEPS = 16
 GROOVE_COUNT = 32
@@ -133,7 +133,7 @@ class M8Groove:
         return cls(steps=d.get("steps", []), ppqn=ppqn)
 
 
-class M8Grooves(list):
+class M8Grooves(M8FixedList):
     """32 grooves at file offset 0xEE (238)."""
 
     COUNT = GROOVE_COUNT
@@ -149,7 +149,7 @@ class M8Grooves(list):
     def __init__(self):
         super().__init__()
         for _ in range(self.COUNT):
-            self.append(M8Groove())
+            list.append(self, M8Groove())
 
     @classmethod
     def read(cls, data, version=None, ppqn=None):
@@ -162,7 +162,7 @@ class M8Grooves(list):
             block = data[start:start + GROOVE_BYTES]
             if len(block) < GROOVE_BYTES:
                 block = block + bytes([EMPTY_STEP] * (GROOVE_BYTES - len(block)))
-            instance.append(M8Groove.read(block, ppqn=ppqn[i] if ppqn else 0))
+            list.append(instance, M8Groove.read(block, ppqn=ppqn[i] if ppqn else 0))
         return instance
 
     def write(self):
@@ -176,7 +176,7 @@ class M8Grooves(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for g in self:
-            instance.append(g.clone())
+            list.append(instance, g.clone())
         return instance
 
     def to_dict(self):
@@ -187,7 +187,7 @@ class M8Grooves(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for item in items[:cls.COUNT]:
-            instance.append(M8Groove.from_dict(item))
+            list.append(instance, M8Groove.from_dict(item))
         while len(instance) < cls.COUNT:
-            instance.append(M8Groove())
+            list.append(instance, M8Groove())
         return instance

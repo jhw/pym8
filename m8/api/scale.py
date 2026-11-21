@@ -20,7 +20,7 @@ The 12 notes index from C (note 0) to B (note 11).
 import struct
 
 from m8.api import _read_fixed_string, _write_fixed_string
-from m8.api.fields import repr_value
+from m8.api.fields import M8FixedList, repr_value
 
 
 SCALE_BYTES = 46
@@ -168,7 +168,7 @@ class M8Scale:
         return instance
 
 
-class M8Scales(list):
+class M8Scales(M8FixedList):
     """16 scales at file offset 0x1AA7E (109182)."""
 
     COUNT = SCALE_COUNT
@@ -180,7 +180,7 @@ class M8Scales(list):
     def __init__(self):
         super().__init__()
         for _ in range(self.COUNT):
-            self.append(M8Scale())
+            list.append(self, M8Scale())
 
     @classmethod
     def read(cls, data, version=None):
@@ -191,7 +191,7 @@ class M8Scales(list):
             block = data[start:start + SCALE_BYTES]
             if len(block) < SCALE_BYTES:
                 block = block + bytes(SCALE_BYTES - len(block))
-            instance.append(M8Scale.read(block))
+            list.append(instance, M8Scale.read(block))
         return instance
 
     def write(self):
@@ -201,7 +201,7 @@ class M8Scales(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for s in self:
-            instance.append(s.clone())
+            list.append(instance, s.clone())
         return instance
 
     def to_dict(self):
@@ -212,7 +212,7 @@ class M8Scales(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for item in items[:cls.COUNT]:
-            instance.append(M8Scale.from_dict(item))
+            list.append(instance, M8Scale.from_dict(item))
         while len(instance) < cls.COUNT:
-            instance.append(M8Scale())
+            list.append(instance, M8Scale())
         return instance

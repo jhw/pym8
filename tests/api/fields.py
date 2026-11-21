@@ -3,7 +3,7 @@ import unittest
 from enum import IntEnum
 
 from m8.api.fields import (
-    ByteField, BytesField, M8Record, StringField, index_ranges, iter_fields, repr_value,
+    ByteField, BytesField, M8FixedList, M8Record, StringField, index_ranges, iter_fields, repr_value,
 )
 
 
@@ -236,6 +236,39 @@ class TestReprHelpers(unittest.TestCase):
     def test_index_ranges(self):
         self.assertEqual(index_ranges([0, 1, 2, 5, 7, 8]), "0-2, 5, 7-8")
         self.assertEqual(index_ranges([]), "")
+
+
+class TestM8FixedList(unittest.TestCase):
+    def _fixed(self):
+        fl = M8FixedList()
+        list.extend(fl, [1, 2, 3])
+        return fl
+
+    def test_reads_and_assigns_like_a_list(self):
+        fl = self._fixed()
+        fl[1] = 9
+        fl[0:2] = [7, 8]                 # same-length slice is fine
+        self.assertEqual(list(fl), [7, 8, 3])
+        self.assertEqual(fl[-1], 3)
+        self.assertEqual(len(fl), 3)
+
+    def test_refuses_length_and_order_changes(self):
+        ops = {
+            "append": lambda fl: fl.append(4), "extend": lambda fl: fl.extend([4]),
+            "insert": lambda fl: fl.insert(0, 4), "pop": lambda fl: fl.pop(),
+            "remove": lambda fl: fl.remove(1), "clear": lambda fl: fl.clear(),
+            "sort": lambda fl: fl.sort(), "reverse": lambda fl: fl.reverse(),
+            "del": lambda fl: fl.__delitem__(0), "del slice": lambda fl: fl.__delitem__(slice(0, 1)),
+            "+=": lambda fl: fl.__iadd__([4]), "*=": lambda fl: fl.__imul__(2),
+            "short slice": lambda fl: fl.__setitem__(slice(0, 2), [1]),
+            "long slice": lambda fl: fl.__setitem__(slice(0, 1), [1, 2]),
+        }
+        for name, op in ops.items():
+            with self.subTest(name):
+                fl = self._fixed()
+                with self.assertRaises(TypeError):
+                    op(fl)
+                self.assertEqual(list(fl), [1, 2, 3])
 
 if __name__ == "__main__":
     unittest.main()

@@ -269,16 +269,5 @@ class TestInstrumentsCollection(unittest.TestCase):
         self.assertIsInstance(project.instruments[0], M8Wavsynth)
         self.assertEqual(project.instruments[0].name, "SECOND")
 
-    def test_instruments_too_many_validates(self):
-        instruments = M8Instruments()
-        instruments.append(M8Block())  # one over the limit
-        with self.assertRaises(ValueError) as ctx:
-            instruments.validate()
-        self.assertIn("Too many instruments", str(ctx.exception))
-
-    def test_instruments_default_validates(self):
-        M8Instruments().validate()  # should not raise
-
-
 if __name__ == "__main__":
     unittest.main()

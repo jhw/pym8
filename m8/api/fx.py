@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from m8.api.fields import ByteField, M8Record, iter_fields
+from m8.api.fields import ByteField, M8FixedList, M8Record, iter_fields
 
 # FX configuration
 FX_BLOCK_SIZE = 2
@@ -338,7 +338,7 @@ class M8FXTuple(M8Record):
         return self.key == EMPTY_KEY
 
 
-class M8FXTuples(list):
+class M8FXTuples(M8FixedList):
     """Collection of effect settings that can be applied to phrases, instruments, and chains."""
     
     def __init__(self):
@@ -346,7 +346,7 @@ class M8FXTuples(list):
         
         # Initialize with empty FX tuples
         for _ in range(BLOCK_COUNT):
-            self.append(M8FXTuple())
+            list.append(self, M8FXTuple())
     
     @classmethod
     def read(cls, data):
@@ -356,20 +356,20 @@ class M8FXTuples(list):
         for i in range(BLOCK_COUNT):
             start = i * BLOCK_SIZE
             tuple_data = data[start:start + BLOCK_SIZE]
-            instance.append(M8FXTuple.read(tuple_data))
+            list.append(instance, M8FXTuple.read(tuple_data))
         
         return instance
     
     def clone(self):
         instance = self.__class__()
-        instance.clear()  # Remove default items
+        list.clear(instance)  # Remove default items
         
         for fx_tuple in self:
             if hasattr(fx_tuple, 'clone'):
-                instance.append(fx_tuple.clone())
+                list.append(instance, fx_tuple.clone())
             else:
                 cloned_tuple = M8FXTuple.read(fx_tuple.write())
-                instance.append(cloned_tuple)
+                list.append(instance, cloned_tuple)
         
         return instance
     

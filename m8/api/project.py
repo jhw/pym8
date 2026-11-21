@@ -444,10 +444,11 @@ class M8Project:
         """Validate all project components.
 
         Validates:
-        - Chains collection (count and phrase references)
-        - Phrases collection (count and instrument references)
+        - Phrases (instrument references)
         - Song matrix (chain references)
-        - Instruments collection (count)
+
+        Collection sizes can't go wrong: the collections refuse to grow
+        or shrink.
 
         Args:
             deep: also run check_references() and raise if it finds any
@@ -456,14 +457,10 @@ class M8Project:
         Raises:
             ValueError: If any validation fails
         """
-        if self.chains:
-            self.chains.validate()
         if self.phrases:
             self.phrases.validate()
         if self.song:
             self.song.validate()
-        if self.instruments:
-            self.instruments.validate()
 
         if deep:
             problems = self.check_references()

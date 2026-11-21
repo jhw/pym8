@@ -22,7 +22,7 @@ EQ (via EQ-class). When the remapper lands, it'll need to walk every
 step's three FX slots and rewrite those reference values.
 """
 
-from m8.api.fields import ByteField, M8Record, iter_fields, repr_slots, repr_steps
+from m8.api.fields import ByteField, M8FixedList, M8Record, iter_fields, repr_slots, repr_steps
 from m8.api.fx import M8FXTuples
 
 
@@ -99,8 +99,10 @@ class M8TableStep(M8Record):
         return fields + [("fx", self.fx)] if not self.fx.is_empty() else fields
 
 
-class M8Table(list):
+class M8Table(M8FixedList):
     """16 table steps — list-like of M8TableStep."""
+
+    CLEAR_HINT = "assign M8TableStep() to a step to clear it"
 
     COUNT = TABLE_STEP_COUNT
     BYTES = TABLE_BYTES
@@ -108,7 +110,7 @@ class M8Table(list):
     def __init__(self):
         super().__init__()
         for _ in range(self.COUNT):
-            self.append(M8TableStep())
+            list.append(self, M8TableStep())
 
     def __repr__(self):
         return repr_steps(self)
@@ -119,7 +121,7 @@ class M8Table(list):
         list.__init__(instance)
         for i in range(cls.COUNT):
             start = i * TABLE_STEP_BYTES
-            instance.append(M8TableStep.read(data[start:start + TABLE_STEP_BYTES]))
+            list.append(instance, M8TableStep.read(data[start:start + TABLE_STEP_BYTES]))
         return instance
 
     def write(self):
@@ -129,7 +131,7 @@ class M8Table(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for step in self:
-            instance.append(step.clone())
+            list.append(instance, step.clone())
         return instance
 
     def is_empty(self):
@@ -143,14 +145,16 @@ class M8Table(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for item in items[:cls.COUNT]:
-            instance.append(M8TableStep.from_dict(item))
+            list.append(instance, M8TableStep.from_dict(item))
         while len(instance) < cls.COUNT:
-            instance.append(M8TableStep())
+            list.append(instance, M8TableStep())
         return instance
 
 
-class M8Tables(list):
+class M8Tables(M8FixedList):
     """256 tables at file offset 0xBA3E."""
+
+    CLEAR_HINT = "assign M8Table() to a slot to clear it"
 
     COUNT = TABLE_COUNT
     TOTAL_BYTES = TABLES_TOTAL_BYTES
@@ -158,7 +162,7 @@ class M8Tables(list):
     def __init__(self):
         super().__init__()
         for _ in range(self.COUNT):
-            self.append(M8Table())
+            list.append(self, M8Table())
 
     def __repr__(self):
         return repr_slots(self, (i for i, t in enumerate(self) if not t.is_empty()))
@@ -172,7 +176,7 @@ class M8Tables(list):
         list.__init__(instance)
         for i in range(cls.COUNT):
             start = i * TABLE_BYTES
-            instance.append(M8Table.read(data[start:start + TABLE_BYTES]))
+            list.append(instance, M8Table.read(data[start:start + TABLE_BYTES]))
         return instance
 
     def write(self):
@@ -182,7 +186,7 @@ class M8Tables(list):
         instance = self.__class__.__new__(self.__class__)
         list.__init__(instance)
         for table in self:
-            instance.append(table.clone())
+            list.append(instance, table.clone())
         return instance
 
     def to_dict(self):
@@ -193,7 +197,7 @@ class M8Tables(list):
         instance = cls.__new__(cls)
         list.__init__(instance)
         for item in items[:cls.COUNT]:
-            instance.append(M8Table.from_dict(item))
+            list.append(instance, M8Table.from_dict(item))
         while len(instance) < cls.COUNT:
-            instance.append(M8Table())
+            list.append(instance, M8Table())
         return instance
